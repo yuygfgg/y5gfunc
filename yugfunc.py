@@ -87,21 +87,39 @@ def output(*args):
             used_indices.add(_output_index)
             _output_index += 1
 
-def auto_descale_nnedi3(clip, possible_heights, threshold_black=0.1, threshold_white=0.9, loss_threshold=1):
+def auto_descale_nnedi3(clip, possible_heights, loss_threshold=1):
     """
     :param clip: 输入的clip
-    :param possible_heights: 可能的原生高度列表
-    :param threshold_black: 判断过暗的阈值
-    :param threshold_white: 判断过亮的阈值
+    :param possible_heights: 可能的原生宽度列表
     :param loss_threshold: 判断loss显著增加的阈值
-    :return: 处理后的clip
     """
     
-    denoised = core.nlm_ispc.NLMeans(clip, d=0, wmode=3, h=6)
-
     best_params = [None]
     best_loss = [float('inf')]
     prev_params = [None]
+
+    kernel_list = [
+        {'name': 'Debicubic',  'dparams': {'b': 1/3,  'c': 1/3},     'rparams': {'filter_param_a': 1/3,  'filter_param_b': 1/3}},
+        {'name': 'Debicubic',  'dparams': {'b': 0,    'c': 0.5},     'rparams': {'filter_param_a': 0,    'filter_param_b': 0.5}},
+        {'name': 'Debicubic',  'dparams': {'b': 0,    'c': 0},       'rparams': {'filter_param_a': 0,    'filter_param_b': 0}},
+        {'name': 'Debicubic',  'dparams': {'b': -0.5, 'c': 0.25},    'rparams': {'filter_param_a': -0.5, 'filter_param_b': 0.25}},
+        {'name': 'Debicubic',  'dparams': {'b': -1,   'c': 0},       'rparams': {'filter_param_a': -1,   'filter_param_b': 0}},
+        {'name': 'Debicubic',  'dparams': {'b': -2,   'c': 1},       'rparams': {'filter_param_a': -2,   'filter_param_b': 1}},
+
+        {'name': 'Delanczos',  'dparams': {'taps': 2},               'rparams': {'filter_param_a': 2}},
+        {'name': 'Delanczos',  'dparams': {'taps': 3},               'rparams': {'filter_param_a': 3}},
+        {'name': 'Delanczos',  'dparams': {'taps': 4},               'rparams': {'filter_param_a': 4}},
+        {'name': 'Delanczos',  'dparams': {'taps': 5},               'rparams': {'filter_param_a': 5}},
+        {'name': 'Delanczos',  'dparams': {'taps': 6},               'rparams': {'filter_param_a': 6}},
+        {'name': 'Delanczos',  'dparams': {'taps': 8},               'rparams': {'filter_param_a': 8}},
+
+        # Spline kernels always get the lowest loss, even thry are clearly not the correct ones
+        # {'name': 'Despline16', 'dparams': {}, 'rparams': {}},
+        # {'name': 'Despline36', 'dparams': {}, 'rparams': {}},
+        # {'name': 'Despline64', 'dparams': {}, 'rparams': {}},
+
+        {'name': 'Debilinear', 'dparams': {}, 'rparams': {}},
+    ]
 
     def iterate(clip, func, count):
         for _ in range(count):
@@ -114,7 +132,7 @@ def auto_descale_nnedi3(clip, possible_heights, threshold_black=0.1, threshold_w
         return descale_name
 
     def generate_descale_mask(source, upscaled, threshold=0.05):
-        mask = core.std.Expr([source, upscaled], 'x y - abs').std.Binarize(threshold)
+        mask = core.akarin.Expr([source, upscaled], 'x y - abs').std.Binarize(threshold)
         mask = iterate(mask, core.std.Maximum, 2)
         mask = iterate(mask, core.std.Inflate, 2)
         return mask
@@ -127,18 +145,7 @@ def auto_descale_nnedi3(clip, possible_heights, threshold_black=0.1, threshold_w
 
         frame = f.copy()
 
-        # 判断是否过暗或过亮（还没调参）
-        arr = np.asarray(frame[0]).astype(np.float32)
-        max_pixel = (1 << clip.format.bits_per_sample) - 1
-        # arr_norm = arr / max_pixel
-        # dark_ratio = np.mean(arr_norm < threshold_black)
-        # bright_ratio = np.mean(arr_norm > threshold_white)
-        # if dark_ratio > 0.5 or bright_ratio > 0.5:
-        #     if VERBOSE_LOGGING:
-        #         logger.info(f"Frame {n} is too dark or too bright, skipping")
-        #     return frame
-
-        src_luma = core.std.ShufflePlanes([denoised], planes=0, colorfamily=vs.GRAY)
+        src_luma = core.std.ShufflePlanes([clip], planes=0, colorfamily=vs.GRAY)
         src_luma_frame = src_luma.get_frame(n)
         src_luma_arr = np.asarray(src_luma_frame[0]).astype(np.float32)
 
@@ -148,7 +155,13 @@ def auto_descale_nnedi3(clip, possible_heights, threshold_black=0.1, threshold_w
             params = prev_params[0]
             descaled = getattr(core.descale, params['kernel'])(
                 src_luma, 
-                **params
+                width=params.get('width', 0), 
+                height=params.get('height', 0), 
+                src_left=params.get('src_left', 0),
+                src_top=params.get('src_top', 0),
+                src_width=params.get('src_width', src_luma.width),
+                src_height=params.get('src_height', src_luma.height),
+                **params.get('dkernel_params', {})
             )
             resize_name = get_resize_name(params['kernel'])
             upscaled = getattr(core.resize, resize_name)(
@@ -158,7 +171,8 @@ def auto_descale_nnedi3(clip, possible_heights, threshold_black=0.1, threshold_w
                 src_left=params.get('src_left', 0),
                 src_top=params.get('src_top', 0),
                 src_width=params.get('src_width', src_luma.width),
-                src_height=params.get('src_height', src_luma.height)
+                src_height=params.get('src_height', src_luma.height),
+                **params.get('rkernel_params', {})
             )
             upscaled_frame = upscaled.get_frame(n)
             upscaled_arr = np.asarray(upscaled_frame[0]).astype(np.float32)
@@ -176,28 +190,32 @@ def auto_descale_nnedi3(clip, possible_heights, threshold_black=0.1, threshold_w
         if best_params[0] is None:
             if VERBOSE_LOGGING:
                 logger.info(f"Frame {n}: Performing full scan")
-            kernels = ['Debicubic', 'Debilinear', 'Delanczos', 'Despline16', 'Despline36', 'Despline64']
-            # kernels = ['Delanczos']
-            for kernel in kernels:
+            
+            for kernel_info in kernel_list:
+                kernel = kernel_info['name']
+                dkernel_params = kernel_info['dparams']
+                rkernel_params = kernel_info['rparams']
                 for src_height in possible_heights:
                     for base_height in [clip.height, clip.height-1]:
                         for base_width in [clip.width, clip.width-1]:
                             dargs = descale_cropping_args(src_luma, src_height, base_height, base_width)
                             if VERBOSE_LOGGING:
-                                logger.info(f"Frame {n}: trying..... dargs = {dargs}")
+                                logger.info(f"Frame {n}: trying dargs = {dargs}")
                             descaled = getattr(core.descale, kernel)(
                                 src_luma,
-                                **dargs
+                                **dargs,
+                                **dkernel_params
                             )
                             resize_name = get_resize_name(kernel)
                             upscaled = getattr(core.resize, resize_name)(
                                 descaled, 
                                 width=clip.width, 
-                                height=clip.height
+                                height=clip.height,
                                 src_left=dargs['src_left'],
                                 src_top=dargs['src_top'],
                                 src_width=dargs['src_width'],
-                                src_height=dargs['src_height']
+                                src_height=dargs['src_height'],
+                                **rkernel_params
                             )
                             upscaled_frame = upscaled.get_frame(n)
                             upscaled_arr = np.asarray(upscaled_frame[0]).astype(np.float32)
@@ -207,6 +225,8 @@ def auto_descale_nnedi3(clip, possible_heights, threshold_black=0.1, threshold_w
                                 best_loss[0] = loss # type: ignore
                                 best_params[0] = { # type: ignore
                                     'kernel': kernel,
+                                    'dkernel_params': dkernel_params,
+                                    'rkernel_params': rkernel_params,
                                     **dargs
                                 }
 
@@ -220,7 +240,13 @@ def auto_descale_nnedi3(clip, possible_heights, threshold_black=0.1, threshold_w
             logger.info(f"Frame {n}: Best parameters - {params}")
         descaled = getattr(core.descale, params['kernel'])(
             src_luma, 
-            **params
+            width=params.get('width', 0), 
+            height=params.get('height', 0), 
+            src_left=params.get('src_left', 0),
+            src_top=params.get('src_top', 0),
+            src_width=params.get('src_width', src_luma.width),
+            src_height=params.get('src_height', src_luma.height),
+            **params.get('dkernel_params', {})
         )
         rescaled = nnedi3_resample.nnedi3_resample(
             descaled, clip.width, clip.height, mode="nnedi3cl", qual=2, nns=4,
@@ -229,9 +255,7 @@ def auto_descale_nnedi3(clip, possible_heights, threshold_black=0.1, threshold_w
                 src_width=params.get('src_width', src_luma.width),
                 src_height=params.get('src_height', src_luma.height)
         )
-        rescaled_frame = rescaled.get_frame(n)
-        rescaled_arr = np.asarray(rescaled_frame[0]).astype(np.float32)
-
+        
         resize_name = get_resize_name(params['kernel'])
         upscaled = getattr(core.resize, resize_name)(
             descaled, 
@@ -240,23 +264,20 @@ def auto_descale_nnedi3(clip, possible_heights, threshold_black=0.1, threshold_w
             src_left=params.get('src_left', 0),
             src_top=params.get('src_top', 0),
             src_width=params.get('src_width', src_luma.width),
-            src_height=params.get('src_height', src_luma.height)
+            src_height=params.get('src_height', src_luma.height),
+            **params.get('rkernel_params', {})
         )
-        upscaled_frame = upscaled.get_frame(n)
-        upscaled_arr = np.asarray(upscaled_frame[0]).astype(np.float32)
         mask = generate_descale_mask(src_luma, upscaled)
-        mask_frame = mask.get_frame(n)
-        mask_arr = np.asarray(mask_frame[0]).astype(np.float32) / max_pixel
-
-        luma_arr = arr.copy()
-        luma_arr = rescaled_arr * mask_arr + arr * (1 - mask_arr)
-        luma_arr = np.clip(luma_arr, 0, max_pixel).astype(np.float32)
+        luma = core.std.MaskedMerge(rescaled, src_luma, mask)
+        luma_frame = luma.get_frame(n)
+        luma_arr = np.asanyarray(luma_frame[0]).astype(np.float32)
+        
         np.copyto(np.asarray(frame[0]), luma_arr)
 
         prev_params[0] = best_params[0] # type: ignore
 
         return frame
 
-    result = denoised.std.ModifyFrame(clips=clip, selector=process_frame)
+    result = clip.std.ModifyFrame(clips=clip, selector=process_frame)
     
     return result
