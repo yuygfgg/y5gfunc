@@ -1,5 +1,6 @@
 import functools
 import inspect
+from typing import Tuple, Union
 import vapoursynth as vs
 from vapoursynth import core
 import mvsfunc as mvf
@@ -97,7 +98,11 @@ def rescale(
     taps: int = 4,
     b: float = 0.33,
     c: float = 0.33
-):
+)-> Union[
+    vs.VideoNode, 
+    Tuple[vs.VideoNode, vs.VideoNode], 
+    Tuple[vs.VideoNode, vs.VideoNode, vs.VideoNode, vs.VideoNode]
+]:
     """
     Rescales a video clip using a specified descale kernel and optional masking.
 
@@ -233,11 +238,11 @@ def rescale(
         rescaled_fft = core.fftspectrum.FFTSpectrum(clip=mvf.Depth(ret, 8), grid=True)
 
     if show_mask and fft:
-        return ret, cmask, src_fft, rescaled_fft
+        return ret, cmask, src_fft, rescaled_fft # type: ignore
     elif show_mask:
-        return ret, cmask
+        return ret, cmask # type: ignore
     elif fft:
-        return ret, src_fft, rescaled_fft
+        return ret, src_fft, rescaled_fft # type: ignore
     else:
         return ret
     
