@@ -119,7 +119,7 @@ def rescale(
     bh : int
         Height of the output clip. Defaults to the input clip's height.
     fft : bool
-        Whether to generate FFT spectrum of the original and rescaled clips.
+        Whether to generate FFT spectrum of the original and rescaled_fft clips.
     mask_threshold : float
         Threshold for generating the descale mask. Smaller values yield stricter masking.
     mask : bool
@@ -159,8 +159,8 @@ def rescale(
 
     def _generate_descale_mask(source: vs.VideoNode, upscaled: vs.VideoNode, threshold: float) -> vs.VideoNode:
         mask = core.akarin.Expr([source, upscaled], 'x y - abs').std.Binarize(threshold)
-        mask = vsutil.iterate(mask, core.std.Maximum, 2)
-        mask = vsutil.iterate(mask, core.std.Inflate, 2)
+        mask = vsutil.iterate(mask, core.std.Maximum, 3)
+        mask = vsutil.iterate(mask, core.std.Inflate, 3)
         return mask
 
     def _mergeuv(clipy: vs.VideoNode, clipuv: vs.VideoNode) -> vs.VideoNode:
@@ -206,8 +206,8 @@ def rescale(
     n2x = nnedi3(nnedi3(descaled, dh=True), dw=True)
     rescaled = SSIM_downsample(
         clip=n2x,
-        w=bw,
-        h=bh,
+        w=clip.width,
+        h=clip.height,
         sigmoid=True,
         src_left=dargs['src_left'] * 2 - 0.5,
         src_top=dargs['src_top'] * 2 - 0.5,
@@ -412,6 +412,7 @@ def auto_descale_nnedi3(clip, possible_heights, loss_threshold=1, bh=[], bw=[], 
             src_height=params.get('src_height', src_luma.height),
             **params.get('dkernel_params', {})
         )
+        
         rescaled = nnedi3_resample.nnedi3_resample(
             descaled, clip.width, clip.height, mode="nnedi3cl", qual=2, nns=4,
                 src_left=params.get('src_left', 0),
