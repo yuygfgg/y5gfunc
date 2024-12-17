@@ -2,9 +2,6 @@ import functools
 import inspect
 from itertools import product
 from typing import List, Tuple, Union
-
-from tabulate import tabulate
-
 import vapoursynth as vs
 from vapoursynth import core
 import mvsfunc as mvf
@@ -166,7 +163,7 @@ def rescale(
             for i in range(len(diffs)):
                 d[f'Diff{i}'] = exprs[i]
                 params = params_list[i]
-                d[f'Kernel{i}'] = KERNEL_MAP.get(params["Kernel"], 0)
+                d[f'Kernel{i}'] = KERNEL_MAP.get(params["Kernel"], 0) # type: ignore
                 d[f'SrcHeight{i}'] = params['SrcHeight']
                 d[f'B{i}'] = params.get('B', 0)
                 d[f'C{i}'] = params.get('C', 0)
@@ -304,6 +301,11 @@ def rescale(
             return final, src_fft, rescaled_fft
         else:
             return final
+
+def ranger(start, end, step):
+    if step == 0:
+        raise ValueError("ranger: step must not be 0!")
+    return [round(start + i * step, 10) for i in range(int((end - start) / step))]
     
 ##################################################################################################################################
 ##################################################################################################################################
