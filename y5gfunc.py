@@ -2,6 +2,9 @@ import functools
 import inspect
 from itertools import product
 from typing import List, Tuple, Union
+
+from tabulate import tabulate
+
 import vapoursynth as vs
 from vapoursynth import core
 import mvsfunc as mvf
@@ -81,12 +84,13 @@ def output(*args):
                     clip = _add_text(clip, "Unknown Variable")
             clip.set_output(_output_index)
             used_indices.add(_output_index)
-            _output_index += 1
+
+
 
 def rescale(
     clip: vs.VideoNode,
     descale_kernel: Union[str, List[str]] = "Debicubic",
-    src_height: Union[float, List[float]] = 720,
+    src_height: Union[Union[float, int], List[Union[float, int]]] = 720,
     bw: Union[int, List[int]] = 0,
     bh: Union[int, List[int]] = 0,
     fft: bool = False,
@@ -96,26 +100,37 @@ def rescale(
     nnedi3_args: dict = {'field': 1, 'nsize': 4, 'nns': 4, 'qual': 2},
     taps: Union[int, List[int]] = 4,
     b: Union[Union[float, int], List[Union[float, int]]] = 0.33,
-    c: Union[Union[float, int], List[Union[float, int]]] = 0.33
+    c: Union[Union[float, int], List[Union[float, int]]] = 0.33,
+    min_err: float = 0.007,
+    osd: bool = True
 ) -> Union[
-    vs.VideoNode, 
-    Tuple[vs.VideoNode, vs.VideoNode], 
-    Tuple[vs.VideoNode, vs.VideoNode, vs.VideoNode], 
-    Tuple[vs.VideoNode, vs.VideoNode, vs.VideoNode, vs.VideoNode]
+    vs.VideoNode,
+    Tuple[vs.VideoNode, vs.VideoNode],
+    Tuple[vs.VideoNode, vs.VideoNode, vs.VideoNode],
+    Tuple[vs.VideoNode, vs.VideoNode, vs.VideoNode, vs.VideoNode],
+    Tuple[vs.VideoNode, vs.VideoNode, vs.VideoNode, vs.VideoNode, vs.VideoNode],
+    Tuple[vs.VideoNode, vs.VideoNode, vs.VideoNode, vs.VideoNode, vs.VideoNode, vs.VideoNode]
 ]:
     
     from getfnative import descale_cropping_args
     from muvsfunc import SSIM_downsample
+    
+    KERNEL_MAP = {
+        "Debicubic": 1,
+        "Delanczos": 2,
+        "Bicubic": 3,
+        "Lanczos": 4,
+    }
     
     descale_kernel = [descale_kernel] if isinstance(descale_kernel, str) else descale_kernel
     src_height = [src_height] if isinstance(src_height, (int, float)) else src_height
     bw = [bw] if isinstance(bw, int) else bw
     bh = [bh] if isinstance(bh, int) else bh
     taps = [taps] if isinstance(taps, int) else taps
-    b = [b] if isinstance(b, (float,int)) else b
-    c = [c] if isinstance(c, (float,int)) else c
+    b = [b] if isinstance(b, (float, int)) else b
+    c = [c] if isinstance(c, (float, int)) else c
     
-    clip = mvf.Depth(clip,32)
+    clip = mvf.Depth(clip, 32)
     
     def _get_resize_name(descale_name: str) -> str:
         if descale_name.startswith('De'):
@@ -129,41 +144,69 @@ def rescale(
         return mask
 
     def _mergeuv(clipy: vs.VideoNode, clipuv: vs.VideoNode) -> vs.VideoNode:
-        from vapoursynth import YUV
-        return core.std.ShufflePlanes([clipy, clipuv], [0, 1, 2], YUV)
+        return core.std.ShufflePlanes([clipy, clipuv], [0, 1, 2], vs.YUV)
+    
+    def _select(reference: vs.VideoNode, compare_clips: List[vs.VideoNode], result_clips: List[vs.VideoNode], params_list: List[dict], min_err: float = 0.007) -> vs.VideoNode:
+        if len(compare_clips) != len(result_clips) or len(compare_clips) != len(params_list):
+            raise ValueError("compare_clips, result_clips, and params_list must have the same length.")
 
-    def select(reference: vs.VideoNode, compare_clips: list[vs.VideoNode], result_clips: list[vs.VideoNode]) -> vs.VideoNode:
-        if len(compare_clips) != len(result_clips):
-            raise ValueError("The number of compare_clips and result_clips must be the same.")
+        diffs = [core.akarin.Expr([reference, compare_clip], 'x y - abs').std.PlaneStats() for compare_clip in compare_clips]
 
-        diffs = [
-            core.akarin.Expr([reference, compare_clip], 'x y - abs').std.PlaneStats()
-            for compare_clip in compare_clips
-        ]
-        
-        expr = ' '.join(f'src{i}.PlaneStatsAverage' for i in range(len(diffs)))
-        expr += f' argmin{len(diffs)}'
-        
-        return core.akarin.Select(
-            clip_src=result_clips,
-            prop_src=diffs,
-            expr=expr
-        )
-        
+        exprs = [f'src{i}.PlaneStatsAverage' for i in range(len(diffs))]
+        diff_expr = ' '.join(exprs)
+        argmin_expr = diff_expr + f' argmin{len(diffs)}'
+
+        min_diff_expr = diff_expr + f' sort{len(diffs)} min_err! drop{len(diffs)-1} min_err@'
+
+        def props():
+            d = {
+                'MinIndex': argmin_expr,
+                'MinDiff': min_diff_expr
+            }
+            for i in range(len(diffs)):
+                d[f'Diff{i}'] = exprs[i]
+                params = params_list[i]
+                d[f'Kernel{i}'] = KERNEL_MAP.get(params["Kernel"], 0)
+                d[f'SrcHeight{i}'] = params['SrcHeight']
+                d[f'B{i}'] = params.get('B', 0)
+                d[f'C{i}'] = params.get('C', 0)
+                d[f'Taps{i}'] = params.get('Taps', 0)
+            return d
+
+        prop_src = core.akarin.PropExpr(diffs, props)
+
+        selected_clip = core.akarin.Select(clip_src=result_clips, prop_src=[prop_src], expr='x.MinIndex')
+
+        final_clip = core.akarin.Select(clip_src=[reference, selected_clip], prop_src=[prop_src], expr=f'x.MinDiff {min_err} > 0 1 ?')
+
+        final_clip = final_clip.std.CopyFrameProps(prop_src)
+        final_clip = core.akarin.PropExpr([final_clip], lambda: {'Descaled': f'x.MinDiff {min_err} <= '})
+
+        return final_clip
+
     nnedi3 = functools.partial(core.nnedi3cl.NNEDI3CL, **nnedi3_args)
     
     compare_clips = []
     result_clips = []
     cmasks = []
+    params_list = []
     
     src_luma = vsutil.get_y(clip)
     
-    for kernel_name, sh, base_w, base_h, _taps, _b, _c in product(descale_kernel, src_height, bw, bh, taps, b, c): # type: ignore
+    for kernel_name, sh, base_w, base_h, _taps, _b, _c in product(descale_kernel, src_height, bw, bh, taps, b, c):
         extra_params = {}
         if kernel_name == "Debicubic":
-            extra_params = {'dparams': {'b': _b, 'c': _c}, 'rparams': {'filter_param_a': _b, 'filter_param_b': _c}}
+            extra_params = {
+                'dparams': {'b': _b, 'c': _c},
+                'rparams': {'filter_param_a': _b, 'filter_param_b': _c}
+            }
         elif kernel_name == "Delanczos":
-            extra_params = {'dparams': {'taps': _taps}, 'rparams': {'filter_param_a': _taps}}
+            extra_params = {
+                'dparams': {'taps': _taps},
+                'rparams': {'filter_param_a': _taps}
+            }
+        else:
+            extra_params = {}
 
         dargs = descale_cropping_args(clip=clip, src_height=sh, base_height=base_h, base_width=base_w)
 
@@ -172,7 +215,7 @@ def rescale(
             **dargs,
             **extra_params.get('dparams', {})
         )
-        
+
         upscaled = getattr(core.resize, _get_resize_name(kernel_name))(
             descaled,
             width=clip.width,
@@ -196,32 +239,71 @@ def rescale(
             src_height=dargs['src_height'] * 2
         )
         cmask = _generate_descale_mask(src_luma, upscaled, mask_threshold)
-        
+
         compare_clips.append(upscaled)
         result_clips.append(rescaled)
         if mask or show_mask:
             cmasks.append(cmask)
 
-    rescaled = select(reference=src_luma, compare_clips=compare_clips, result_clips=result_clips)
-    cmask = select(reference=src_luma, compare_clips=compare_clips, result_clips=cmasks)
+        params_list.append({
+            'Kernel': kernel_name,
+            'SrcHeight': sh,
+            'BaseWidth': base_w,
+            'BaseHeight': base_h,
+            'Taps': _taps,
+            'B': _b,
+            'C': _c
+        })
+
+    rescaled = _select(reference=src_luma, compare_clips=compare_clips, result_clips=result_clips, params_list=params_list, min_err=min_err)
+    cmask = _select(reference=src_luma, compare_clips=compare_clips, result_clips=cmasks, params_list=params_list, min_err=min_err)
 
     if mask:
         rescaled = core.std.MaskedMerge(rescaled, src_luma, cmask)
-    
+
     final = _mergeuv(rescaled, clip) if clip.format.color_family == vs.YUV else rescaled
+    
+    format_string = (
+        "\nMinIndex: {MinIndex}\n"
+        "MinDiff: {MinDiff}\n"
+        "Descaled: {Descaled}\n"
+        f"Threshold: {min_err}\n\n"
+    )
+
+    format_string += (
+        "| i   |            Diff             |           Kernel            | SrcHeight | B      | C      | Taps   |\n"
+        "|-----|-----------------------------|-----------------------------|-----------|--------|--------|--------|\n"
+    )
+
+    for i in range(len(compare_clips)):
+        format_string += (
+            f"| {i}   | {{Diff{i}}}  | {{Kernel{i}}}  | {{SrcHeight{i}}}   | "
+            f"{{B{i}}}   | {{C{i}}}   | {{Taps{i}}}   |\n"
+        )
+    osd_clip = core.akarin.Text(final, format_string)
 
     if fft:
         src_fft = core.fftspectrum.FFTSpectrum(clip=mvf.Depth(clip, 8), grid=True)
         rescaled_fft = core.fftspectrum.FFTSpectrum(clip=mvf.Depth(final, 8), grid=True)
     
-    if show_mask and fft:
-        return final, cmask, src_fft, rescaled_fft
-    elif show_mask:
-        return final, cmask
-    elif fft:
-        return final, src_fft, rescaled_fft
+    if osd:
+        if show_mask and fft:
+            return final, cmask, src_fft, rescaled_fft, osd_clip
+        elif show_mask:
+            return final, cmask, osd_clip
+        elif fft:
+            return final, src_fft, rescaled_fft, osd_clip
+        else:
+            return final, osd_clip
     else:
-        return final
+        if show_mask and fft:
+            return final, cmask, src_fft, rescaled_fft
+        elif show_mask:
+            return final, cmask
+        elif fft:
+            return final, src_fft, rescaled_fft
+        else:
+            return final
     
 ##################################################################################################################################
 ##################################################################################################################################
