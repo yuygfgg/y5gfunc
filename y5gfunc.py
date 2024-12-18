@@ -115,8 +115,10 @@ def rescale(
     KERNEL_MAP = {
         "Debicubic": 1,
         "Delanczos": 2,
-        "Bicubic": 3,
-        "Lanczos": 4,
+        "Debilinear": 3,
+        "Despline16": 5,
+        "Despline36": 6,
+        "Despline64": 7
     }
     
     descale_kernel = [descale_kernel] if isinstance(descale_kernel, str) else descale_kernel
@@ -278,13 +280,13 @@ def rescale(
     )
 
     format_string += (
-        "| i   |            Diff             |           Kernel            | SrcHeight | Bw | Bh | B      | C      | Taps   |\n"
-        "|-----|-----------------------------|-----------------------------|-----------|----|----|--------|--------|--------|\n"
+        "|    i   |          Diff          |Kernel| SrcHeight |    Bw     |     Bh    | B      | C      | Taps   |\n"
+        "|--------|------------------------|------|-----------|-----------|-----------|--------|--------|--------|\n"
     )
 
     for i in range(len(compare_clips)):
         format_string += (
-            f"| {i}   | {{Diff{i}}}  | {{Kernel{i}}}  | {{SrcHeight{i}}}   | "
+            f"| {i:04}   | {{Diff{i}}}  | {{Kernel{i}}}  | {{SrcHeight{i}}}   | "
             f"{{Bw{i}}}|{{Bh{i}}}"
             f"{{B{i}}}   | {{C{i}}}   | {{Taps{i}}}   |\n"
         )
