@@ -151,19 +151,29 @@ def rescale(
 
         exprs = [f'src{i}.PlaneStatsAverage' for i in range(len(diffs))]
         diff_expr = ' '.join(exprs)
-        argmin_expr = diff_expr + f' argmin{len(diffs)}'
-
+        
+        min_index_expr = diff_expr + f' argmin{len(diffs)}'
         min_diff_expr = diff_expr + f' sort{len(diffs)} min_err! drop{len(diffs)-1} min_err@'
+        
+        max_index_expr = diff_expr + f' argmax{len(diffs)}'
+        max_diff_expr = diff_expr + f' sort{len(diffs)} drop{len(diffs)-1}'
+        
+        max_delta_expr = max_diff_expr + " " + min_diff_expr + " / "
 
         def props():
             d = {
-                'MinIndex': argmin_expr,
-                'MinDiff': min_diff_expr
+                'MinIndex': min_index_expr,
+                'MinDiff': min_diff_expr,
+                'MaxIndex': max_index_expr,
+                'MaxDiff': max_diff_expr,
+                "MaxDelta": max_delta_expr
             }
             for i in range(len(diffs)):
                 d[f'Diff{i}'] = exprs[i]
                 params = params_list[i]
                 d[f'Kernel{i}'] = KERNEL_MAP.get(params["Kernel"], 0) # type: ignore
+                d[f'Bw{i}'] = params.get("BaseWidth", 0), # type: ignore
+                d[f'Bh{i}'] = params.get("BaseHeight", 0)
                 d[f'SrcHeight{i}'] = params['SrcHeight']
                 d[f'B{i}'] = params.get('B', 0)
                 d[f'C{i}'] = params.get('C', 0)
@@ -268,13 +278,14 @@ def rescale(
     )
 
     format_string += (
-        "| i   |            Diff             |           Kernel            | SrcHeight | B      | C      | Taps   |\n"
-        "|-----|-----------------------------|-----------------------------|-----------|--------|--------|--------|\n"
+        "| i   |            Diff             |           Kernel            | SrcHeight | Bw | Bh | B      | C      | Taps   |\n"
+        "|-----|-----------------------------|-----------------------------|-----------|----|----|--------|--------|--------|\n"
     )
 
     for i in range(len(compare_clips)):
         format_string += (
             f"| {i}   | {{Diff{i}}}  | {{Kernel{i}}}  | {{SrcHeight{i}}}   | "
+            f"{{Bw{i}}}|{{Bh{i}}}"
             f"{{B{i}}}   | {{C{i}}}   | {{Taps{i}}}   |\n"
         )
     osd_clip = core.akarin.Text(final, format_string)
@@ -301,6 +312,8 @@ def rescale(
             return final, src_fft, rescaled_fft
         else:
             return final
+
+
 
 def ranger(start, end, step):
     if step == 0:
