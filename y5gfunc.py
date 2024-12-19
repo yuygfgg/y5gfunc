@@ -108,6 +108,19 @@ def rescale(
     Tuple[vs.VideoNode, vs.VideoNode, vs.VideoNode, vs.VideoNode, vs.VideoNode],
     Tuple[vs.VideoNode, vs.VideoNode, vs.VideoNode, vs.VideoNode, vs.VideoNode, vs.VideoNode]
 ]:
+    '''
+    To rescale from multiple native resolution, use this func for every possible src_height, then choose the largest MaxDelta one.
+    
+    e.g. 
+    rescaled1, cmask1, osd1 = rescale(clip=srcorg, src_height=ranger(714.5, 715, 0.025)+[713, 714, 716, 717], bw=1920, bh=1080, descale_kernel="Debicubic", b=1/3, c=1/3, show_mask=True) # type: ignore
+    rescaled2, cmask2, osd2 = rescale(clip=srcorg, src_height=ranger(955, 957,0.1)+[953, 954, 958], bw=1920, bh=1080, descale_kernel="Debicubic", b=1/3, c=1/3, show_mask=True) # type: ignore
+
+    select_expr = "src0.MaxDelta src0.Descaled * src1.MaxDelta src1.Descaled * argmax2"
+
+    osd = core.akarin.Select([osd1, osd2], [rescaled1, rescaled2], select_expr)
+    src = core.akarin.Select([rescaled1, rescaled2], [rescaled1, rescaled2], select_expr)
+    cmask = core.akarin.Select([cmask1, cmask2], [rescaled1, rescaled2], select_expr)
+    '''
     
     from getfnative import descale_cropping_args
     from muvsfunc import SSIM_downsample
