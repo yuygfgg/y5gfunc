@@ -99,7 +99,10 @@ def rescale(
     b: Union[Union[float, int], List[Union[float, int]]] = 0.33,
     c: Union[Union[float, int], List[Union[float, int]]] = 0.33,
     min_err: float = 0.007,
-    osd: bool = True
+    osd: bool = True,
+    ex_thr=0.015, 
+    norm_order=1, 
+    crop_size=5
 ) -> Union[
     vs.VideoNode,
     Tuple[vs.VideoNode, vs.VideoNode],
@@ -150,7 +153,7 @@ def rescale(
         return descale_name
     
     def _generate_descale_mask(source: vs.VideoNode, upscaled: vs.VideoNode, threshold: float) -> vs.VideoNode:
-        mask = core.akarin.Expr([source, upscaled], 'x y - abs').std.Binarize(threshold)
+        mask = core.akarin.Expr([source, upscaled], 'x y - abs').std.Binarize(threshold=threshold)
         mask = vsutil.iterate(mask, core.std.Maximum, 3)
         mask = vsutil.iterate(mask, core.std.Inflate, 3)
         return mask
@@ -158,11 +161,11 @@ def rescale(
     def _mergeuv(clipy: vs.VideoNode, clipuv: vs.VideoNode) -> vs.VideoNode:
         return core.std.ShufflePlanes([clipy, clipuv], [0, 1, 2], vs.YUV)
     
-    def _select(reference: vs.VideoNode, compare_clips: List[vs.VideoNode], result_clips: List[vs.VideoNode], params_list: List[dict], min_err: float = 0.007) -> vs.VideoNode:
+    def _select(reference: vs.VideoNode, compare_clips: List[vs.VideoNode], result_clips: List[vs.VideoNode], params_list: List[dict], min_err: float = 0.007, ex_thr=0.015, norm_order=1, crop_size=5) -> vs.VideoNode:
         if len(compare_clips) != len(result_clips) or len(compare_clips) != len(params_list):
             raise ValueError("compare_clips, result_clips, and params_list must have the same length.")
 
-        diffs = [core.akarin.Expr([reference, compare_clip], 'x y - abs').std.PlaneStats() for compare_clip in compare_clips]
+        diffs = [core.akarin.Expr([reference.std.CropRel(*([crop_size] * 4)), compare_clip.std.CropRel(*([crop_size] * 4))], f"x y - abs dup {ex_thr} > swap {norm_order} pow 0 ?").std.PlaneStats() for compare_clip in compare_clips]
 
         exprs = [f'src{i}.PlaneStatsAverage' for i in range(len(diffs))]
         diff_expr = ' '.join(exprs)
@@ -277,8 +280,8 @@ def rescale(
             'C': _c
         })
 
-    rescaled = _select(reference=src_luma, compare_clips=compare_clips, result_clips=result_clips, params_list=params_list, min_err=min_err)
-    cmask = _select(reference=src_luma, compare_clips=compare_clips, result_clips=cmasks, params_list=params_list, min_err=min_err)
+    rescaled = _select(reference=src_luma, compare_clips=compare_clips, result_clips=result_clips, params_list=params_list, min_err=min_err, ex_thr=ex_thr, norm_order=norm_order, crop_size=crop_size)
+    cmask = _select(reference=src_luma, compare_clips=compare_clips, result_clips=cmasks, params_list=params_list, min_err=min_err, ex_thr=ex_thr, norm_order=norm_order, crop_size=crop_size)
 
     if mask:
         rescaled = core.std.MaskedMerge(rescaled, src_luma, cmask)
