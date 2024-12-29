@@ -2,6 +2,7 @@ import functools
 import inspect
 from itertools import product
 from typing import List, Tuple, Union
+from cv2 import merge
 import vapoursynth as vs
 from vapoursynth import core
 import mvsfunc as mvf
@@ -13,17 +14,17 @@ def reset_output_index(index=1):
     global _output_index
     _output_index = index
 
-def output(*args):
+def output(*args, debug=True):
     def _get_variable_name(frame, clip):
         for var_name, var_val in frame.f_locals.items():
             if var_val is clip:
                 return var_name
         return None
 
-    def _add_text(clip, text):
+    def _add_text(clip, text, debug=True):
         if not isinstance(clip, vs.VideoNode):
             raise TypeError(f"_add_text expected a VideoNode, but got {type(clip)}")
-        return core.text.Text(clip, text)
+        return core.text.Text(clip, text) if debug else clip
     
     global _output_index
     frame = inspect.currentframe().f_back # type: ignore
@@ -64,9 +65,9 @@ def output(*args):
             if index != 0:
                 variable_name = _get_variable_name(frame, clip)
                 if variable_name:
-                    clip = _add_text(clip, f"{variable_name}")
+                    clip = _add_text(clip, f"{variable_name}", debug)
                 else:
-                    clip = _add_text(clip, "Unknown Variable")
+                    clip = _add_text(clip, "Unknown Variable", debug)
             clip.set_output(index)
 
     for clip, index in clips_to_process:
@@ -76,9 +77,9 @@ def output(*args):
             if _output_index != 0:
                 variable_name = _get_variable_name(frame, clip)
                 if variable_name:
-                    clip = _add_text(clip, f"{variable_name}")
+                    clip = _add_text(clip, f"{variable_name}", debug)
                 else:
-                    clip = _add_text(clip, "Unknown Variable")
+                    clip = _add_text(clip, "Unknown Variable", debug)
             clip.set_output(_output_index)
             used_indices.add(_output_index)
 
@@ -102,7 +103,8 @@ def rescale(
     osd: bool = True,
     ex_thr=0.015, 
     norm_order=1, 
-    crop_size=5
+    crop_size=5,
+    common_mask=True
 ) -> Union[
     vs.VideoNode,
     Tuple[vs.VideoNode, vs.VideoNode],
@@ -153,7 +155,7 @@ def rescale(
         return descale_name
     
     def _generate_descale_mask(source: vs.VideoNode, upscaled: vs.VideoNode, threshold: float) -> vs.VideoNode:
-        mask = core.akarin.Expr([source, upscaled], 'x y - abs').std.Binarize(threshold=threshold)
+        mask = core.akarin.Expr([source, upscaled], 'src0 src1 - abs').std.Binarize(threshold=threshold)
         mask = vsutil.iterate(mask, core.std.Maximum, 3)
         mask = vsutil.iterate(mask, core.std.Inflate, 3)
         return mask
@@ -161,15 +163,24 @@ def rescale(
     def _mergeuv(clipy: vs.VideoNode, clipuv: vs.VideoNode) -> vs.VideoNode:
         return core.std.ShufflePlanes([clipy, clipuv], [0, 1, 2], vs.YUV)
     
-    def _select(reference: vs.VideoNode, compare_clips: List[vs.VideoNode], result_clips: List[vs.VideoNode], params_list: List[dict], min_err: float = 0.007, ex_thr=0.015, norm_order=1, crop_size=5) -> vs.VideoNode:
-        if len(compare_clips) != len(result_clips) or len(compare_clips) != len(params_list):
+    def _generate_common_mask(cmask_clips: List[vs.VideoNode], common_mask=common_mask) -> vs.VideoNode:
+        load_expr = [f'src{i} * ' for i in range(len(cmask_clips))]
+        merge_expr = ' '.join(load_expr)
+        merge_expr = merge_expr[:4] + merge_expr[6:]
+        return core.akarin.Expr(clips=cmask_clips, expr=merge_expr) if common_mask else core.std.BlankClip(clip=cmask_clips[0], color=0)  
+    
+    def _select(reference: vs.VideoNode, upscaled_clips: List[vs.VideoNode], rescaled_clips: List[vs.VideoNode], params_list: List[dict], common_mask: vs.VideoNode, min_err: float = 0.007, ex_thr=0.015, norm_order=1, crop_size=5) -> vs.VideoNode:
+        def _crop(clip: vs.VideoNode, crop_size=crop_size) -> vs.VideoNode:
+            return clip.std.CropRel(*([crop_size] * 4)) if crop_size > 0 else clip
+        
+        if len(upscaled_clips) != len(rescaled_clips) or len(upscaled_clips) != len(params_list):
             raise ValueError("compare_clips, result_clips, and params_list must have the same length.")
 
-        diffs = [core.akarin.Expr([reference.std.CropRel(*([crop_size] * 4)), compare_clip.std.CropRel(*([crop_size] * 4))], f"x y - abs dup {ex_thr} > swap {norm_order} pow 0 ?").std.PlaneStats() for compare_clip in compare_clips]
+        diffs = [core.akarin.Expr([_crop(reference), _crop(compare_clip), _crop(common_mask)], f"src0 src1 - abs dup {ex_thr} > swap {norm_order} pow 0 ? src2 - 0 1 clip").std.PlaneStats() for compare_clip in upscaled_clips]
 
         exprs = [f'src{i}.PlaneStatsAverage' for i in range(len(diffs))]
         diff_expr = ' '.join(exprs)
-        
+    
         min_index_expr = diff_expr + f' argmin{len(diffs)}'
         min_diff_expr = diff_expr + f' sort{len(diffs)} min_err! drop{len(diffs)-1} min_err@'
         
@@ -200,19 +211,22 @@ def rescale(
 
         prop_src = core.akarin.PropExpr(diffs, props)
 
-        selected_clip = core.akarin.Select(clip_src=result_clips, prop_src=[prop_src], expr='x.MinIndex')
+        minDiff_clip = core.akarin.Select(clip_src=rescaled_clips, prop_src=[prop_src], expr='x.MinIndex')
 
-        final_clip = core.akarin.Select(clip_src=[reference, selected_clip], prop_src=[prop_src], expr=f'x.MinDiff {min_err} > 0 1 ?')
+        final_clip = core.akarin.Select(clip_src=[reference, minDiff_clip], prop_src=[prop_src], expr=f'x.MinDiff {min_err} > 0 1 ?')
 
         final_clip = final_clip.std.CopyFrameProps(prop_src)
         final_clip = core.akarin.PropExpr([final_clip], lambda: {'Descaled': f'x.MinDiff {min_err} <= '})
 
         return final_clip
 
+    def _fft(clip: vs.VideoNode, grid=True):
+        return core.fftspectrum.FFTSpectrum(clip=mvf.Depth(clip,8), grid=grid)
+    
     nnedi3 = functools.partial(core.nnedi3cl.NNEDI3CL, **nnedi3_args)
     
-    compare_clips = []
-    result_clips = []
+    upscaled_clips = []
+    rescaled_clips = []
     cmasks = []
     params_list = []
     
@@ -257,7 +271,7 @@ def rescale(
             clip=n2x,
             w=clip.width,
             h=clip.height,
-            sigmoid=True,
+            sigmoid=False,
             src_left=dargs['src_left'] * 2 - 0.5,
             src_top=dargs['src_top'] * 2 - 0.5,
             src_width=dargs['src_width'] * 2,
@@ -265,8 +279,8 @@ def rescale(
         )
         cmask = _generate_descale_mask(src_luma, upscaled, mask_threshold)
 
-        compare_clips.append(upscaled)
-        result_clips.append(rescaled)
+        upscaled_clips.append(upscaled)
+        rescaled_clips.append(rescaled)
         if mask or show_mask:
             cmasks.append(cmask)
 
@@ -279,9 +293,10 @@ def rescale(
             'B': _b,
             'C': _c
         })
-
-    rescaled = _select(reference=src_luma, compare_clips=compare_clips, result_clips=result_clips, params_list=params_list, min_err=min_err, ex_thr=ex_thr, norm_order=norm_order, crop_size=crop_size)
-    cmask = _select(reference=src_luma, compare_clips=compare_clips, result_clips=cmasks, params_list=params_list, min_err=min_err, ex_thr=ex_thr, norm_order=norm_order, crop_size=crop_size)
+    
+    common_mask = _generate_common_mask(cmasks)
+    rescaled = _select(reference=src_luma, upscaled_clips=upscaled_clips, rescaled_clips=rescaled_clips, params_list=params_list, min_err=min_err, ex_thr=ex_thr, norm_order=norm_order, crop_size=crop_size, common_mask=common_mask)
+    cmask = _select(reference=src_luma, upscaled_clips=upscaled_clips, rescaled_clips=cmasks, params_list=params_list, min_err=min_err, ex_thr=ex_thr, norm_order=norm_order, crop_size=crop_size, common_mask=common_mask)
 
     if mask:
         rescaled = core.std.MaskedMerge(rescaled, src_luma, cmask)
@@ -300,17 +315,17 @@ def rescale(
         "|--------|------------------------|------|-----------|-----------|-----------|--------|--------|--------|\n"
     )
 
-    for i in range(len(compare_clips)):
+    for i in range(len(upscaled_clips)):
         format_string += (
             f"| {i:04}   | {{Diff{i}}}  | {{Kernel{i}}}  | {{SrcHeight{i}}}   | "
-            f"{{Bw{i}}}|{{Bh{i}}}"
+            f"{{Bw{i}}}|{{Bh{i}}}|"
             f"{{B{i}}}   | {{C{i}}}   | {{Taps{i}}}   |\n"
         )
     osd_clip = core.akarin.Text(final, format_string)
 
     if fft:
-        src_fft = core.fftspectrum.FFTSpectrum(clip=mvf.Depth(clip, 8), grid=True)
-        rescaled_fft = core.fftspectrum.FFTSpectrum(clip=mvf.Depth(final, 8), grid=True)
+        src_fft = _fft(clip)
+        rescaled_fft = _fft(final)
     
     if osd:
         if show_mask and fft:
@@ -337,7 +352,7 @@ def ranger(start, end, step):
     if step == 0:
         raise ValueError("ranger: step must not be 0!")
     return [round(start + i * step, 10) for i in range(int((end - start) / step))]
-    
+
 ##################################################################################################################################
 ##################################################################################################################################
 ##################################################################################################################################
