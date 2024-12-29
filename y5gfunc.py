@@ -2,7 +2,6 @@ import functools
 import inspect
 from itertools import product
 from typing import List, Tuple, Union
-from cv2 import merge
 import vapoursynth as vs
 from vapoursynth import core
 import mvsfunc as mvf
@@ -21,7 +20,7 @@ def output(*args, debug=True):
                 return var_name
         return None
 
-    def _add_text(clip, text, debug=True):
+    def _add_text(clip, text, debug=debug):
         if not isinstance(clip, vs.VideoNode):
             raise TypeError(f"_add_text expected a VideoNode, but got {type(clip)}")
         return core.text.Text(clip, text) if debug else clip
@@ -65,9 +64,9 @@ def output(*args, debug=True):
             if index != 0:
                 variable_name = _get_variable_name(frame, clip)
                 if variable_name:
-                    clip = _add_text(clip, f"{variable_name}", debug)
+                    clip = _add_text(clip, f"{variable_name}")
                 else:
-                    clip = _add_text(clip, "Unknown Variable", debug)
+                    clip = _add_text(clip, "Unknown Variable")
             clip.set_output(index)
 
     for clip, index in clips_to_process:
@@ -77,9 +76,9 @@ def output(*args, debug=True):
             if _output_index != 0:
                 variable_name = _get_variable_name(frame, clip)
                 if variable_name:
-                    clip = _add_text(clip, f"{variable_name}", debug)
+                    clip = _add_text(clip, f"{variable_name}")
                 else:
-                    clip = _add_text(clip, "Unknown Variable", debug)
+                    clip = _add_text(clip, "Unknown Variable")
             clip.set_output(_output_index)
             used_indices.add(_output_index)
 
