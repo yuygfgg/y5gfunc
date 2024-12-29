@@ -173,9 +173,9 @@ def rescale(
             return clip.std.CropRel(*([crop_size] * 4)) if crop_size > 0 else clip
         
         if len(upscaled_clips) != len(rescaled_clips) or len(upscaled_clips) != len(params_list):
-            raise ValueError("compare_clips, result_clips, and params_list must have the same length.")
+            raise ValueError("upscaled_clips, rescaled_clips, and params_list must have the same length.")
 
-        diffs = [core.akarin.Expr([_crop(reference), _crop(compare_clip), _crop(common_mask)], f"src0 src1 - abs dup {ex_thr} > swap {norm_order} pow 0 ? src2 - 0 1 clip").std.PlaneStats() for compare_clip in upscaled_clips]
+        diffs = [core.akarin.Expr([_crop(reference), _crop(upscaled_clip), _crop(common_mask)], f"src0 src1 - abs dup {ex_thr} > swap {norm_order} pow 0 ? src2 - 0 1 clip").std.PlaneStats() for upscaled_clip in upscaled_clips]
 
         exprs = [f'src{i}.PlaneStatsAverage' for i in range(len(diffs))]
         diff_expr = ' '.join(exprs)
