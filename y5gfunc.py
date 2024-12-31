@@ -90,40 +90,43 @@ def rescale(
     src_height: Union[Union[float, int], List[Union[float, int]]] = 720,
     bw: Union[int, List[int]] = 0,
     bh: Union[int, List[int]] = 0,
-    fft: bool = False,
-    mask_threshold: float = 0.05,
-    mask: bool = True,
-    show_mask: bool = False,
+    show_fft: bool = False,
+    detail_mask_threshold: float = 0.05,
+    use_detail_mask: bool = True,
+    show_detail_mask: bool = False,
+    show_common_mask: bool = False,
     nnedi3_args: dict = {'field': 1, 'nsize': 4, 'nns': 4, 'qual': 2},
     taps: Union[int, List[int]] = 4,
     b: Union[Union[float, int], List[Union[float, int]]] = 0.33,
     c: Union[Union[float, int], List[Union[float, int]]] = 0.33,
-    min_err: float = 0.007,
-    osd: bool = True,
-    ex_thr=0.015, 
-    norm_order=1, 
-    crop_size=5,
-    common_mask=True
+    threshold_max: float = 0.007,
+    threshold_min: float = -1,
+    show_osd: bool = True,
+    ex_thr: float = 0.015, 
+    norm_order: int = 1, 
+    crop_size: int = 5,
+    exclude_common_mask: bool = True
 ) -> Union[
     vs.VideoNode,
     Tuple[vs.VideoNode, vs.VideoNode],
     Tuple[vs.VideoNode, vs.VideoNode, vs.VideoNode],
     Tuple[vs.VideoNode, vs.VideoNode, vs.VideoNode, vs.VideoNode],
     Tuple[vs.VideoNode, vs.VideoNode, vs.VideoNode, vs.VideoNode, vs.VideoNode],
-    Tuple[vs.VideoNode, vs.VideoNode, vs.VideoNode, vs.VideoNode, vs.VideoNode, vs.VideoNode]
+    Tuple[vs.VideoNode, vs.VideoNode, vs.VideoNode, vs.VideoNode, vs.VideoNode, vs.VideoNode],
+    Tuple[vs.VideoNode, vs.VideoNode, vs.VideoNode, vs.VideoNode, vs.VideoNode, vs.VideoNode, vs.VideoNode]
 ]:
     '''
     To rescale from multiple native resolution, use this func for every possible src_height, then choose the largest MaxDelta one.
     
     e.g. 
-    rescaled1, cmask1, osd1 = rescale(clip=srcorg, src_height=ranger(714.5, 715, 0.025)+[713, 714, 716, 717], bw=1920, bh=1080, descale_kernel="Debicubic", b=1/3, c=1/3, show_mask=True) # type: ignore
-    rescaled2, cmask2, osd2 = rescale(clip=srcorg, src_height=ranger(955, 957,0.1)+[953, 954, 958], bw=1920, bh=1080, descale_kernel="Debicubic", b=1/3, c=1/3, show_mask=True) # type: ignore
+    rescaled1, detail_mask1, osd1 = rescale(clip=srcorg, src_height=ranger(714.5, 715, 0.025)+[713, 714, 716, 717], bw=1920, bh=1080, descale_kernel="Debicubic", b=1/3, c=1/3, show_detail_mask=True) # type: ignore
+    rescaled2, detail_mask2, osd2 = rescale(clip=srcorg, src_height=ranger(955, 957,0.1)+[953, 954, 958], bw=1920, bh=1080, descale_kernel="Debicubic", b=1/3, c=1/3, show_detail_mask=True) # type: ignore
 
     select_expr = "src0.MaxDelta src0.Descaled * src1.MaxDelta src1.Descaled * argmax2"
 
     osd = core.akarin.Select([osd1, osd2], [rescaled1, rescaled2], select_expr)
     src = core.akarin.Select([rescaled1, rescaled2], [rescaled1, rescaled2], select_expr)
-    cmask = core.akarin.Select([cmask1, cmask2], [rescaled1, rescaled2], select_expr)
+    detail_mask = core.akarin.Select([detail_mask1, detail_mask2], [rescaled1, rescaled2], select_expr)
     '''
     
     from getfnative import descale_cropping_args
@@ -153,8 +156,8 @@ def rescale(
             return descale_name[2:].capitalize()
         return descale_name
     
-    def _generate_descale_mask(source: vs.VideoNode, upscaled: vs.VideoNode, threshold: float) -> vs.VideoNode:
-        mask = core.akarin.Expr([source, upscaled], 'src0 src1 - abs').std.Binarize(threshold=threshold)
+    def _generate_detail_mask(source: vs.VideoNode, upscaled: vs.VideoNode, detail_mask_threshold: float = detail_mask_threshold) -> vs.VideoNode:
+        mask = core.akarin.Expr([source, upscaled], 'src0 src1 - abs').std.Binarize(threshold=detail_mask_threshold)
         mask = vsutil.iterate(mask, core.std.Maximum, 3)
         mask = vsutil.iterate(mask, core.std.Inflate, 3)
         return mask
@@ -162,26 +165,40 @@ def rescale(
     def _mergeuv(clipy: vs.VideoNode, clipuv: vs.VideoNode) -> vs.VideoNode:
         return core.std.ShufflePlanes([clipy, clipuv], [0, 1, 2], vs.YUV)
     
-    def _generate_common_mask(cmask_clips: List[vs.VideoNode], common_mask=common_mask) -> vs.VideoNode:
-        load_expr = [f'src{i} * ' for i in range(len(cmask_clips))]
+    def _generate_common_mask(detail_mask_clips: List[vs.VideoNode]) -> vs.VideoNode:
+        load_expr = [f'src{i} * ' for i in range(len(detail_mask_clips))]
         merge_expr = ' '.join(load_expr)
         merge_expr = merge_expr[:4] + merge_expr[6:]
-        return core.akarin.Expr(clips=cmask_clips, expr=merge_expr) if common_mask else core.std.BlankClip(clip=cmask_clips[0], color=0)  
+        return core.akarin.Expr(clips=detail_mask_clips, expr=merge_expr)
     
-    def _select(reference: vs.VideoNode, upscaled_clips: List[vs.VideoNode], rescaled_clips: List[vs.VideoNode], params_list: List[dict], common_mask: vs.VideoNode, min_err: float = 0.007, ex_thr=0.015, norm_order=1, crop_size=5) -> vs.VideoNode:
-        def _crop(clip: vs.VideoNode, crop_size=crop_size) -> vs.VideoNode:
+    def _select(
+        reference: vs.VideoNode,
+        upscaled_clips: List[vs.VideoNode],
+        candidate_clips: List[vs.VideoNode],
+        params_list: List[dict],
+        common_mask_clip: vs.VideoNode,
+        threshold_max: float = threshold_max,
+        threshold_min: float = threshold_min,
+        ex_thr: float = ex_thr,
+        norm_order: int = norm_order,
+        crop_size: int = crop_size
+    ) -> vs.VideoNode:
+        
+        def _crop(clip: vs.VideoNode, crop_size: int = crop_size) -> vs.VideoNode:
             return clip.std.CropRel(*([crop_size] * 4)) if crop_size > 0 else clip
         
-        if len(upscaled_clips) != len(rescaled_clips) or len(upscaled_clips) != len(params_list):
+        if len(upscaled_clips) != len(candidate_clips) or len(upscaled_clips) != len(params_list):
             raise ValueError("upscaled_clips, rescaled_clips, and params_list must have the same length.")
 
-        diffs = [core.akarin.Expr([_crop(reference), _crop(upscaled_clip), _crop(common_mask)], f"src0 src1 - abs dup {ex_thr} > swap {norm_order} pow 0 ? src2 - 0 1 clip").std.PlaneStats() for upscaled_clip in upscaled_clips]
+        calc_diff_expr = f"src0 src1 - abs dup {ex_thr} > swap {norm_order} pow 0 ? src2 - 0 1 clip"
+        
+        diffs = [core.akarin.Expr([_crop(reference), _crop(upscaled_clip), _crop(common_mask_clip)], calc_diff_expr).std.PlaneStats() for upscaled_clip in upscaled_clips]
 
-        exprs = [f'src{i}.PlaneStatsAverage' for i in range(len(diffs))]
-        diff_expr = ' '.join(exprs)
+        load_PlaneStatsAverage_exprs = [f'src{i}.PlaneStatsAverage' for i in range(len(diffs))]
+        diff_expr = ' '.join(load_PlaneStatsAverage_exprs)
     
         min_index_expr = diff_expr + f' argmin{len(diffs)}'
-        min_diff_expr = diff_expr + f' sort{len(diffs)} min_err! drop{len(diffs)-1} min_err@'
+        min_diff_expr = diff_expr + f' sort{len(diffs)} min_diff! drop{len(diffs)-1} min_diff@'
         
         max_index_expr = diff_expr + f' argmax{len(diffs)}'
         max_diff_expr = diff_expr + f' sort{len(diffs)} drop{len(diffs)-1}'
@@ -197,7 +214,7 @@ def rescale(
                 "MaxDelta": max_delta_expr
             }
             for i in range(len(diffs)):
-                d[f'Diff{i}'] = exprs[i]
+                d[f'Diff{i}'] = load_PlaneStatsAverage_exprs[i]
                 params = params_list[i]
                 d[f'Kernel{i}'] = KERNEL_MAP.get(params["Kernel"], 0) # type: ignore
                 d[f'Bw{i}'] = params.get("BaseWidth", 0), # type: ignore
@@ -210,12 +227,12 @@ def rescale(
 
         prop_src = core.akarin.PropExpr(diffs, props)
 
-        minDiff_clip = core.akarin.Select(clip_src=rescaled_clips, prop_src=[prop_src], expr='x.MinIndex')
+        minDiff_clip = core.akarin.Select(clip_src=candidate_clips, prop_src=[prop_src], expr='x.MinIndex')
 
-        final_clip = core.akarin.Select(clip_src=[reference, minDiff_clip], prop_src=[prop_src], expr=f'x.MinDiff {min_err} > 0 1 ?')
+        final_clip = core.akarin.Select(clip_src=[reference, minDiff_clip], prop_src=[prop_src], expr=f'x.MinDiff {threshold_max} > x.MinDiff {threshold_min} <= or 0 1 ?')
 
         final_clip = final_clip.std.CopyFrameProps(prop_src)
-        final_clip = core.akarin.PropExpr([final_clip], lambda: {'Descaled': f'x.MinDiff {min_err} <= '})
+        final_clip = core.akarin.PropExpr([final_clip], lambda: {'Descaled': f'x.MinDiff {threshold_max} <= x.MinDiff {threshold_min} > and'})
 
         return final_clip
 
@@ -224,10 +241,10 @@ def rescale(
     
     nnedi3 = functools.partial(core.nnedi3cl.NNEDI3CL, **nnedi3_args)
     
-    upscaled_clips = []
-    rescaled_clips = []
-    cmasks = []
-    params_list = []
+    upscaled_clips: List[vs.VideoNode] = []
+    rescaled_clips: List[vs.VideoNode] = []
+    detail_masks: List[vs.VideoNode] = []
+    params_list: List[dict] = []
     
     src_luma = vsutil.get_y(clip)
     
@@ -276,12 +293,13 @@ def rescale(
             src_width=dargs['src_width'] * 2,
             src_height=dargs['src_height'] * 2
         )
-        cmask = _generate_descale_mask(src_luma, upscaled, mask_threshold)
+        detail_mask = _generate_detail_mask(src_luma, upscaled, detail_mask_threshold)
 
         upscaled_clips.append(upscaled)
         rescaled_clips.append(rescaled)
-        if mask or show_mask:
-            cmasks.append(cmask)
+        
+        if use_detail_mask or show_detail_mask:
+            detail_masks.append(detail_mask)
 
         params_list.append({
             'Kernel': kernel_name,
@@ -293,12 +311,13 @@ def rescale(
             'C': _c
         })
     
-    common_mask = _generate_common_mask(cmasks)
-    rescaled = _select(reference=src_luma, upscaled_clips=upscaled_clips, rescaled_clips=rescaled_clips, params_list=params_list, min_err=min_err, ex_thr=ex_thr, norm_order=norm_order, crop_size=crop_size, common_mask=common_mask)
-    cmask = _select(reference=src_luma, upscaled_clips=upscaled_clips, rescaled_clips=cmasks, params_list=params_list, min_err=min_err, ex_thr=ex_thr, norm_order=norm_order, crop_size=crop_size, common_mask=common_mask)
+    common_mask_clip = _generate_common_mask(detail_mask_clips=detail_masks) if exclude_common_mask else core.std.BlankClip(clip=detail_masks[0], color=0)  
+    
+    rescaled = _select(reference=src_luma, upscaled_clips=upscaled_clips, candidate_clips=rescaled_clips, params_list=params_list, common_mask_clip=common_mask_clip)
+    detail_mask = _select(reference=src_luma, upscaled_clips=upscaled_clips, candidate_clips=detail_masks, params_list=params_list, common_mask_clip=common_mask_clip)
 
-    if mask:
-        rescaled = core.std.MaskedMerge(rescaled, src_luma, cmask)
+    if use_detail_mask:
+        rescaled = core.std.MaskedMerge(rescaled, src_luma, detail_mask)
 
     final = _mergeuv(rescaled, clip) if clip.format.color_family == vs.YUV else rescaled
     
@@ -306,7 +325,8 @@ def rescale(
         "\nMinIndex: {MinIndex}\n"
         "MinDiff: {MinDiff}\n"
         "Descaled: {Descaled}\n"
-        f"Threshold: {min_err}\n\n"
+        f"Threshold_Max: {threshold_max}\n"
+        f"Threshold_Min: {threshold_min}\n\n"
     )
 
     format_string += (
@@ -322,28 +342,48 @@ def rescale(
         )
     osd_clip = core.akarin.Text(final, format_string)
 
-    if fft:
+    if show_fft:
         src_fft = _fft(clip)
         rescaled_fft = _fft(final)
-    
-    if osd:
-        if show_mask and fft:
-            return final, cmask, src_fft, rescaled_fft, osd_clip
-        elif show_mask:
-            return final, cmask, osd_clip
-        elif fft:
-            return final, src_fft, rescaled_fft, osd_clip
+        
+    if show_common_mask:
+        if show_osd:
+            if show_detail_mask and show_fft:
+                return final, detail_mask, common_mask_clip, src_fft, rescaled_fft, osd_clip
+            elif show_detail_mask:
+                return final, detail_mask, common_mask_clip, osd_clip
+            elif show_fft:
+                return final, common_mask_clip, src_fft, rescaled_fft, osd_clip
+            else:
+                return final, common_mask_clip, osd_clip
         else:
-            return final, osd_clip
+            if show_detail_mask and show_fft:
+                return final, detail_mask, common_mask_clip, src_fft, rescaled_fft
+            elif show_detail_mask:
+                return final, detail_mask, common_mask_clip
+            elif show_fft:
+                return final, common_mask_clip, src_fft, rescaled_fft
+            else:
+                return final, common_mask_clip
     else:
-        if show_mask and fft:
-            return final, cmask, src_fft, rescaled_fft
-        elif show_mask:
-            return final, cmask
-        elif fft:
-            return final, src_fft, rescaled_fft
+        if show_osd:
+            if show_detail_mask and show_fft:
+                return final, detail_mask, src_fft, rescaled_fft, osd_clip
+            elif show_detail_mask:
+                return final, detail_mask, osd_clip
+            elif show_fft:
+                return final, src_fft, rescaled_fft, osd_clip
+            else:
+                return final, osd_clip
         else:
-            return final
+            if show_detail_mask and show_fft:
+                return final, detail_mask, src_fft, rescaled_fft
+            elif show_detail_mask:
+                return final, detail_mask
+            elif show_fft:
+                return final, src_fft, rescaled_fft
+            else:
+                return final
 
 
 
