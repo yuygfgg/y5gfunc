@@ -1,7 +1,6 @@
 import functools
-import inspect
-from itertools import product
-from typing import List, Tuple, Union
+from typing import List, Tuple, Union, Sequence
+from numpy import isin
 import vapoursynth as vs
 from vapoursynth import core
 import mvsfunc as mvf
@@ -14,6 +13,8 @@ def reset_output_index(index=1):
     _output_index = index
 
 def output(*args, debug=True):
+    import inspect
+    
     def _get_variable_name(frame, clip):
         for var_name, var_val in frame.f_locals.items():
             if var_val is clip:
@@ -115,6 +116,7 @@ def rescale(
     Tuple[vs.VideoNode, vs.VideoNode, vs.VideoNode, vs.VideoNode, vs.VideoNode, vs.VideoNode],
     Tuple[vs.VideoNode, vs.VideoNode, vs.VideoNode, vs.VideoNode, vs.VideoNode, vs.VideoNode, vs.VideoNode]
 ]:
+    
     '''
     To rescale from multiple native resolution, use this func for every possible src_height, then choose the largest MaxDelta one.
     
@@ -129,6 +131,7 @@ def rescale(
     detail_mask = core.akarin.Select([detail_mask1, detail_mask2], [rescaled1, rescaled2], select_expr)
     '''
     
+    from itertools import product
     from getfnative import descale_cropping_args
     from muvsfunc import SSIM_downsample
     
@@ -236,7 +239,7 @@ def rescale(
 
         return final_clip
 
-    def _fft(clip: vs.VideoNode, grid=True):
+    def _fft(clip: vs.VideoNode, grid: bool = True) -> vs.VideoNode:
         return core.fftspectrum.FFTSpectrum(clip=mvf.Depth(clip,8), grid=grid)
     
     nnedi3 = functools.partial(core.nnedi3cl.NNEDI3CL, **nnedi3_args)
@@ -249,7 +252,7 @@ def rescale(
     src_luma = vsutil.get_y(clip)
     
     for kernel_name, sh, base_w, base_h, _taps, _b, _c in product(descale_kernel, src_height, bw, bh, taps, b, c):
-        extra_params = {}
+        extra_params: dict[str, dict[str, Union[float, int]]] = {}
         if kernel_name == "Debicubic":
             extra_params = {
                 'dparams': {'b': _b, 'c': _c},
@@ -283,6 +286,7 @@ def rescale(
         )
 
         n2x = nnedi3(nnedi3(descaled, dh=True), dw=True)
+        
         rescaled = SSIM_downsample(
             clip=n2x,
             w=clip.width,
@@ -293,12 +297,12 @@ def rescale(
             src_width=dargs['src_width'] * 2,
             src_height=dargs['src_height'] * 2
         )
-        detail_mask = _generate_detail_mask(src_luma, upscaled, detail_mask_threshold)
 
         upscaled_clips.append(upscaled)
         rescaled_clips.append(rescaled)
         
-        if use_detail_mask or show_detail_mask:
+        if use_detail_mask or show_detail_mask or exclude_common_mask:
+            detail_mask = _generate_detail_mask(src_luma, upscaled, detail_mask_threshold)
             detail_masks.append(detail_mask)
 
         params_list.append({
@@ -391,6 +395,35 @@ def ranger(start, end, step):
     if step == 0:
         raise ValueError("ranger: step must not be 0!")
     return [round(start + i * step, 10) for i in range(int((end - start) / step))]
+
+
+def screen_shot(clip: vs.VideoNode, frames: Union[List[int], int], path: str, file_name: str, overwrite: bool):
+    from pathlib import Path
+
+    if isinstance(frames, int):
+        frames = [frames]
+        
+    clip = clip.resize.Spline36(format=vs.RGB24)
+    try: 
+        clip = core.akarin.PickFrames(clip, indices=frames)
+    except AttributeError:
+        try:
+            clip = core.pickframes.PickFrames(clip, indices=frames)
+        except AttributeError:
+            def PickFrames(clip: vs.VideoNode, indices: List[int]) -> vs.VideoNode:
+                new = clip.std.BlankClip(length=len(indices))
+                return new.std.FrameEval(lambda n: clip[indices[n]], None, clip) # type: ignore
+
+            clip = PickFrames(clip=clip, indices=frames)
+    
+    
+    output_path = Path(path).resolve()
+    
+    for i, frame in enumerate(clip.frames()):
+        tmp = clip.std.Trim(first=i, last=i).fpng.Write(filename=(output_path / (file_name%frames[i])).with_suffix('.png'), overwrite=overwrite, compression=2)
+        for f in tmp.frames():
+            pass
+
 
 ##################################################################################################################################
 ##################################################################################################################################
