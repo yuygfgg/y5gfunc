@@ -1,6 +1,5 @@
 import functools
 from typing import List, Tuple, Union, Sequence
-from numpy import isin
 import vapoursynth as vs
 from vapoursynth import core
 import mvsfunc as mvf
@@ -404,6 +403,7 @@ def screen_shot(clip: vs.VideoNode, frames: Union[List[int], int], path: str, fi
         frames = [frames]
         
     clip = clip.resize.Spline36(format=vs.RGB24)
+    
     try: 
         clip = core.akarin.PickFrames(clip, indices=frames)
     except AttributeError:
@@ -413,9 +413,7 @@ def screen_shot(clip: vs.VideoNode, frames: Union[List[int], int], path: str, fi
             def PickFrames(clip: vs.VideoNode, indices: List[int]) -> vs.VideoNode:
                 new = clip.std.BlankClip(length=len(indices))
                 return new.std.FrameEval(lambda n: clip[indices[n]], None, clip) # type: ignore
-
             clip = PickFrames(clip=clip, indices=frames)
-    
     
     output_path = Path(path).resolve()
     
