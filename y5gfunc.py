@@ -99,35 +99,24 @@ def Fast_BM3DWrapper(
     '''
     Note: delta_sigma_xxx is added to sigma_xxx in step basic.
     '''
-    from math import sqrt
     
     assert clip.format.id == vs.YUV420P16
     
-    def _rgb2opp(clip: vs.VideoNode, normalize: bool = False) -> vs.VideoNode:
-        # copy from yvsfunc
-        assert clip.format.id == vs.RGBS
-        
-        if normalize:
-            coef = [1/3, 1/3, 1/3, 0, 1/sqrt(6), -1/sqrt(6), 0, 0, 1/sqrt(18), 1/sqrt(18), -2/sqrt(18), 0]
-        else:
-            coef = [1/3, 1/3, 1/3, 0, 1/2, -1/2, 0, 0, 1/4, 1/4, -1/2, 0]
+    # modified from yvsfunc
+    def _rgb2opp(clip: vs.VideoNode) -> vs.VideoNode:
+        coef = [1/3, 1/3, 1/3, 0, 1/2, -1/2, 0, 0, 1/4, 1/4, -1/2, 0]
         opp = core.fmtc.matrix(clip, fulls=True, fulld=True, col_fam=vs.YUV, coef=coef)
         opp = core.std.SetFrameProps(opp, _Matrix=vs.MATRIX_UNSPECIFIED, BM3D_OPP=1)
         return opp
-    
-    def _opp2rgb(clip: vs.VideoNode, normalize: bool = False) -> vs.VideoNode:
-        # copy from yvsfunc
-        assert clip.format.id == vs.YUV444PS
-        
-        if normalize:
-            coef = [1, sqrt(3/2), 1/sqrt(2), 0, 1, -sqrt(3/2), 1/sqrt(2), 0, 1, 0, -sqrt(2), 0]
-        else:
-            coef = [1, 1, 2/3, 0, 1, -1, 2/3, 0, 1, 0, -4/3, 0]
+
+    # modified from yvsfunc
+    def _opp2rgb(clip: vs.VideoNode) -> vs.VideoNode:
+        coef = [1, 1, 2/3, 0, 1, -1, 2/3, 0, 1, 0, -4/3, 0]
         rgb = core.fmtc.matrix(clip, fulls=True, fulld=True, col_fam=vs.RGB, coef=coef)
         rgb = core.std.SetFrameProps(rgb, _Matrix=vs.MATRIX_RGB)
         rgb = core.std.RemoveFrameProps(rgb, 'BM3D_OPP')
         return rgb
-    
+
     half_width = clip.width // 2  # half width
     half_height = clip.height // 2  # half height
     srcY_float, srcU_float, srcV_float = vsutil.split(clip.fmtc.bitdepth(bits=32))
@@ -138,7 +127,7 @@ def Fast_BM3DWrapper(
         sigma=sigma_Y + delta_sigma_Y,
         radius=radius_Y
     )
-    
+
     vfinal_y = bm3d.BM3Dv2(
         clip=srcY_float,
         ref=vbasic_y,
@@ -197,6 +186,7 @@ def SynDeband(
     
     # copied from kagefunc.retinex_edgemask()
     def _retinex_edgemask(src: vs.VideoNode, sigma=1) -> vs.VideoNode:
+
         # copied from kagefunc.kirsch()
         def _kirsch(src: vs.VideoNode) -> vs.VideoNode:
             kirsch1 = src.std.Convolution(matrix=[ 5,  5,  5, -3,  0, -3, -3, -3, -3], saturate=False)
@@ -575,6 +565,7 @@ def screen_shot(clip: vs.VideoNode, frames: Union[List[int], int], path: str, fi
         try:
             clip = core.pickframes.PickFrames(clip, indices=frames)
         except AttributeError:
+            
             # modified from https://github.com/AkarinVS/vapoursynth-plugin/issues/26#issuecomment-1951230729
             def PickFrames(clip: vs.VideoNode, indices: List[int]) -> vs.VideoNode:
                 new = clip.std.BlankClip(length=len(indices))
