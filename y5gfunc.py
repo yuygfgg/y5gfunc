@@ -1,5 +1,5 @@
 import functools
-from typing import List, Tuple, Union, Sequence
+from typing import List, Tuple, Union
 import vapoursynth as vs
 from vapoursynth import core
 import mvsfunc as mvf
@@ -82,8 +82,173 @@ def output(*args, debug=True):
             clip.set_output(_output_index)
             used_indices.add(_output_index)
 
+# modified from rksfunc.BM3DWrapper()
+def Fast_BM3DWrapper(
+    clip: vs.VideoNode,
+    bm3d=core.bm3dcpu,
+    chroma: bool = True,
+    
+    sigma_Y: Union[float, int] = 1.2,
+    radius_Y: int = 1,
+    delta_sigma_Y: Union[float, int] = 0.6,
+    
+    sigma_chroma: Union[float, int] = 2.4,
+    radius_chroma: int = 0,
+    delta_sigma_chroma: Union[float, int] = 1.2
+) -> vs.VideoNode:
+    '''
+    Note: delta_sigma_xxx is added to sigma_xxx in step basic.
+    '''
+    from math import sqrt
+    
+    assert clip.format.id == vs.YUV420P16
+    
+    def _rgb2opp(clip: vs.VideoNode, normalize: bool = False) -> vs.VideoNode:
+        # copy from yvsfunc
+        assert clip.format.id == vs.RGBS
+        
+        if normalize:
+            coef = [1/3, 1/3, 1/3, 0, 1/sqrt(6), -1/sqrt(6), 0, 0, 1/sqrt(18), 1/sqrt(18), -2/sqrt(18), 0]
+        else:
+            coef = [1/3, 1/3, 1/3, 0, 1/2, -1/2, 0, 0, 1/4, 1/4, -1/2, 0]
+        opp = core.fmtc.matrix(clip, fulls=True, fulld=True, col_fam=vs.YUV, coef=coef)
+        opp = core.std.SetFrameProps(opp, _Matrix=vs.MATRIX_UNSPECIFIED, BM3D_OPP=1)
+        return opp
+    
+    def _opp2rgb(clip: vs.VideoNode, normalize: bool = False) -> vs.VideoNode:
+        # copy from yvsfunc
+        assert clip.format.id == vs.YUV444PS
+        
+        if normalize:
+            coef = [1, sqrt(3/2), 1/sqrt(2), 0, 1, -sqrt(3/2), 1/sqrt(2), 0, 1, 0, -sqrt(2), 0]
+        else:
+            coef = [1, 1, 2/3, 0, 1, -1, 2/3, 0, 1, 0, -4/3, 0]
+        rgb = core.fmtc.matrix(clip, fulls=True, fulld=True, col_fam=vs.RGB, coef=coef)
+        rgb = core.std.SetFrameProps(rgb, _Matrix=vs.MATRIX_RGB)
+        rgb = core.std.RemoveFrameProps(rgb, 'BM3D_OPP')
+        return rgb
+    
+    half_width = clip.width // 2  # half width
+    half_height = clip.height // 2  # half height
+    srcY_float, srcU_float, srcV_float = vsutil.split(clip.fmtc.bitdepth(bits=32))
 
+    vbasic_y = bm3d.BM3Dv2(
+        clip=srcY_float,
+        ref=srcY_float,
+        sigma=sigma_Y + delta_sigma_Y,
+        radius=radius_Y
+    )
+    
+    vfinal_y = bm3d.BM3Dv2(
+        clip=srcY_float,
+        ref=vbasic_y,
+        sigma=sigma_Y,
+        radius=radius_Y
+    )
+    
+    vyhalf = vfinal_y.resize.Spline36(half_width, half_height, src_left=-0.5)
+    srchalf_444 = vsutil.join([vyhalf, srcU_float, srcV_float])
+    srchalf_opp = _rgb2opp(mvf.ToRGB(input=srchalf_444, depth=32, matrix="709", sample=1))
 
+    vbasic_half = bm3d.BM3Dv2(
+        clip=srchalf_opp,
+        ref=srchalf_opp,
+        sigma=sigma_chroma + delta_sigma_chroma,
+        chroma=chroma,
+        radius=radius_chroma,
+        zero_init=0
+    )
+
+    vfinal_half = bm3d.BM3Dv2(
+        clip=srchalf_opp,
+        ref=vbasic_half,
+        sigma=sigma_chroma,
+        chroma=chroma,
+        radius=radius_chroma,
+        zero_init=0
+    )
+
+    vfinal_half = _opp2rgb(vfinal_half).resize.Spline36(format=vs.YUV444PS, matrix=1)
+    _, vfinal_u, vfinal_v = vsutil.split(vfinal_half)
+    vfinal = vsutil.join([vfinal_y, vfinal_u, vfinal_v])
+    return vfinal.fmtc.bitdepth(bits=16)
+
+# modified from rksfunc.SynDeband()
+def SynDeband(
+    clip: vs.VideoNode, 
+    r1: int = 14, 
+    y1: int = 72, 
+    uv1: int = 48, 
+    r2: int = 30,
+    y2: int = 48, 
+    uv2: int = 32, 
+    mstr: int = 6000, 
+    inflate: int = 2,
+    include_mask: bool = False, 
+    kill: Union[vs.VideoNode, None] = None, 
+    bmask: Union[vs.VideoNode, None] = None,
+    limit: bool = True,
+    limit_thry: float = 0.6,
+    limit_thrc: float = 0.5,
+    limit_elast: float = 1.75,
+) -> Union[vs.VideoNode, Tuple[vs.VideoNode, vs.VideoNode]]:
+    
+    assert clip.format.id == vs.YUV420P16
+    
+    # copied from kagefunc.retinex_edgemask()
+    def _retinex_edgemask(src: vs.VideoNode, sigma=1) -> vs.VideoNode:
+        # copied from kagefunc.kirsch()
+        def _kirsch(src: vs.VideoNode) -> vs.VideoNode:
+            kirsch1 = src.std.Convolution(matrix=[ 5,  5,  5, -3,  0, -3, -3, -3, -3], saturate=False)
+            kirsch2 = src.std.Convolution(matrix=[-3,  5,  5, -3,  0,  5, -3, -3, -3], saturate=False)
+            kirsch3 = src.std.Convolution(matrix=[-3, -3,  5, -3,  0,  5, -3, -3,  5], saturate=False)
+            kirsch4 = src.std.Convolution(matrix=[-3, -3, -3, -3,  0,  5, -3,  5,  5], saturate=False)
+            return core.akarin.Expr([kirsch1, kirsch2, kirsch3, kirsch4], 'x y max z max a max')
+            
+        luma = vsutil.get_y(src)
+        max_value = 1 if src.format.sample_type == vs.FLOAT else (1 << vsutil.get_depth(src)) - 1
+        ret = core.retinex.MSRCP(luma, sigma=[50, 200, 350], upper_thr=0.005)
+        tcanny = ret.tcanny.TCanny(mode=1, sigma=sigma).std.Minimum(coordinates=[1, 0, 1, 0, 0, 1, 0, 1])
+        return core.akarin.Expr([_kirsch(luma), tcanny], f'x y + {max_value} min')
+        
+    if kill is None:
+        kill = clip.rgvs.RemoveGrain([20, 11]).rgvs.RemoveGrain([20, 11])
+    elif not kill:
+        kill = clip
+    grain = core.std.MakeDiff(clip, kill)
+    f3kdb_params = {
+        'grainy': 0,
+        'grainc': 0,
+        'sample_mode': 2,
+        'blur_first': True,
+        'dither_algo': 2,
+    }
+    f3k1 = kill.neo_f3kdb.Deband(r1, y1, uv1, uv1, **f3kdb_params)
+    f3k2 = f3k1.neo_f3kdb.Deband(r2, y2, uv2, uv2, **f3kdb_params)
+    if limit:
+        f3k2 = mvf.LimitFilter(f3k2, kill, thr=limit_thry, thrc=limit_thrc, elast=limit_elast)
+    if bmask is None:
+        bmask = _retinex_edgemask(kill).std.Binarize(mstr)
+        bmask = vsutil.iterate(bmask, core.std.Inflate, inflate)
+    deband = core.std.MaskedMerge(f3k2, kill, bmask)
+    deband = core.std.MergeDiff(deband, grain)
+    if include_mask:
+        return deband, bmask
+    else:
+        return deband
+
+# modified from LoliHouse: https://share.dmhy.org/topics/view/478666_LoliHouse_LoliHouse_1st_Anniversary_Announcement_and_Gift.html)
+def DBMask(clip: vs.VideoNode) -> vs.VideoNode:
+    nr8: vs.VideoNode = mvf.Depth(clip, 8)
+    nrmasks = core.tcanny.TCanny(nr8, sigma=0.8, op=2, mode=1, planes=[0, 1, 2]).akarin.Expr(["x 7 < 0 65535 ?",""], vs.YUV420P16)
+    nrmaskb = core.tcanny.TCanny(nr8, sigma=1.3, t_h=6.5, op=2, planes=0)
+    nrmaskg = core.tcanny.TCanny(nr8, sigma=1.1, t_h=5.0, op=2, planes=0)
+    nrmask = core.akarin.Expr([nrmaskg, nrmaskb, nrmasks, nr8],["a 20 < 65535 a 48 < x 256 * a 96 < y 256 * z ? ? ?",""], vs.YUV420P16)
+    nrmask = core.std.Maximum(nrmask, 0).std.Maximum(0).std.Minimum(0)
+    nrmask = core.rgvs.RemoveGrain(nrmask, [20, 0])
+    return nrmask
+
+# inspired by https://skyeysnow.com/forum.php?mod=viewthread&tid=58390
 def rescale(
     clip: vs.VideoNode,
     descale_kernel: Union[str, List[str]] = "Debicubic",
@@ -158,6 +323,7 @@ def rescale(
             return descale_name[2:].capitalize()
         return descale_name
     
+    # modified from kegefunc._generate_descale_mask()
     def _generate_detail_mask(source: vs.VideoNode, upscaled: vs.VideoNode, detail_mask_threshold: float = detail_mask_threshold) -> vs.VideoNode:
         mask = core.akarin.Expr([source, upscaled], 'src0 src1 - abs').std.Binarize(threshold=detail_mask_threshold)
         mask = vsutil.iterate(mask, core.std.Maximum, 3)
@@ -403,17 +569,19 @@ def screen_shot(clip: vs.VideoNode, frames: Union[List[int], int], path: str, fi
         frames = [frames]
         
     clip = clip.resize.Spline36(format=vs.RGB24)
-    
     try: 
         clip = core.akarin.PickFrames(clip, indices=frames)
     except AttributeError:
         try:
             clip = core.pickframes.PickFrames(clip, indices=frames)
         except AttributeError:
+            # modified from https://github.com/AkarinVS/vapoursynth-plugin/issues/26#issuecomment-1951230729
             def PickFrames(clip: vs.VideoNode, indices: List[int]) -> vs.VideoNode:
                 new = clip.std.BlankClip(length=len(indices))
                 return new.std.FrameEval(lambda n: clip[indices[n]], None, clip) # type: ignore
+
             clip = PickFrames(clip=clip, indices=frames)
+    
     
     output_path = Path(path).resolve()
     
@@ -439,6 +607,8 @@ def screen_shot(clip: vs.VideoNode, frames: Union[List[int], int], path: str, fi
 ##################################################################################################################################
 ##################################################################################################################################
 ##################################################################################################################################
+
+# copied from https://github.com/Artoriuz/glsl-chroma-from-luma-prediction/blob/main/CfL_Prediction.glsl
 
 cfl_shader = R'''
 //!PARAM chroma_offset_x
