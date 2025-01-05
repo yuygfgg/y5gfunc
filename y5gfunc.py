@@ -639,11 +639,6 @@ def postfix2infix(expr: str):
     while i < len(tokens):
         token = tokens[i]
         
-        # Skip empty tokens
-        if not token:
-            i += 1
-            continue
-
         # Single letter
         if token.isalpha() and len(token) == 1:
             push(token)
@@ -757,7 +752,7 @@ def postfix2infix(expr: str):
             i += 1
             continue
 
-        # Unary functions
+        # Unary operators
         if token in ('sin', 'cos', 'round', 'trunc', 'floor', 'bitnot', 'abs', 'not'):
             a = pop()
             if token == 'not':
@@ -767,17 +762,14 @@ def postfix2infix(expr: str):
             i += 1
             continue
 
-        # Binary and special functions
-        if token in ('%', '**', 'pow', 'clip', 'clamp', 'bitand', 'bitor', 'bitxor'):
+        # Binary operators
+        if token in ('%', '**', 'pow', 'bitand', 'bitor', 'bitxor'):
             b = pop()
             a = pop()
             if token == '%':
                 push(f"({a} % {b})")
             elif token in ('**', 'pow'):
                 push(f"pow({a}, {b})")
-            elif token in ('clip', 'clamp'):
-                c = pop()
-                push(f"clamp({c}, {a}, {b})")
             elif token == 'bitand':
                 push(f"({a} & {b})")
             elif token == 'bitor':
@@ -814,6 +806,14 @@ def postfix2infix(expr: str):
             push(f"({cond} ? {true_val} : {false_val})")
             i += 1
             continue
+        if token == 'clip' or token == 'clamp':
+            max = pop()
+            min = pop()
+            value = pop()
+            push(f"(clamp({value}, {min}, {max}))")
+            i += 1
+            continue
+        
 
         # Unknown tokens
         output_lines.append(f"# [Unknown token]: {token}  (Push as-is)")
