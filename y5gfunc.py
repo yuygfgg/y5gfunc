@@ -761,7 +761,7 @@ def postfix2infix(expr: str):
         if token in ('sin', 'cos', 'round', 'trunc', 'floor', 'bitnot', 'abs', 'not'):
             a = pop()
             if token == 'not':
-                push(f"(!{a})")  # 使用 ! 表示逻辑非
+                push(f"(!{a})")
             else:
                 push(f"{token}({a})")
             i += 1
@@ -788,7 +788,7 @@ def postfix2infix(expr: str):
             continue
 
         # Basic arithmetic, comparison and logical operators
-        if token in ('+', '-', '*', '/', 'max', 'min', '>', '<', '>=', '<=', '!=', '==', 'and', 'or'):
+        if token in ('+', '-', '*', '/', 'max', 'min', '>', '<', '>=', '<=', '!=', '==', 'and', 'or', 'xor'):
             b = pop()
             a = pop()
             if token in ('max', 'min'):
@@ -797,6 +797,10 @@ def postfix2infix(expr: str):
                 push(f"({a} && {b})")
             elif token == 'or':
                 push(f"({a} || {b})")
+            elif token == 'xor':
+                # (a || b) && !(a && b)
+                # or (a && !b) || (!a && b)
+                push(f"(({a} && !{b}) || (!{a} && {b}))")
             else:
                 push(f"({a} {token} {b})")
             i += 1
