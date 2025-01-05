@@ -96,10 +96,11 @@ def Fast_BM3DWrapper(
     radius_chroma: int = 0,
     delta_sigma_chroma: Union[float, int] = 1.2
 ) -> vs.VideoNode:
+
     '''
     Note: delta_sigma_xxx is added to sigma_xxx in step basic.
     '''
-    
+
     assert clip.format.id == vs.YUV420P16
     
     # modified from yvsfunc
@@ -185,7 +186,7 @@ def SynDeband(
     assert clip.format.id == vs.YUV420P16
     
     # copied from kagefunc.retinex_edgemask()
-    def _retinex_edgemask(src: vs.VideoNode, sigma=1) -> vs.VideoNode:
+    def _retinex_edgemask(src: vs.VideoNode) -> vs.VideoNode:
 
         # copied from kagefunc.kirsch()
         def _kirsch(src: vs.VideoNode) -> vs.VideoNode:
@@ -198,7 +199,7 @@ def SynDeband(
         luma = vsutil.get_y(src)
         max_value = 1 if src.format.sample_type == vs.FLOAT else (1 << vsutil.get_depth(src)) - 1
         ret = core.retinex.MSRCP(luma, sigma=[50, 200, 350], upper_thr=0.005)
-        tcanny = ret.tcanny.TCanny(mode=1, sigma=sigma).std.Minimum(coordinates=[1, 0, 1, 0, 0, 1, 0, 1])
+        tcanny = ret.tcanny.TCanny(mode=1, sigma=1).std.Minimum(coordinates=[1, 0, 1, 0, 0, 1, 0, 1])
         return core.akarin.Expr([_kirsch(luma), tcanny], f'x y + {max_value} min')
         
     if kill is None:
@@ -581,6 +582,247 @@ def screen_shot(clip: vs.VideoNode, frames: Union[List[int], int], path: str, fi
         for f in tmp.frames():
             pass
 
+# inspired by https://skyeysnow.com/forum.php?mod=viewthread&tid=41492
+def tweak_rgb(clip: vs.VideoNode, delta_r: float, delta_g: float, delta_b: float) -> vs.VideoNode:
+    
+    shY = 0.2126 * delta_r + 0.7152 * delta_g + 0.0722 * delta_b
+
+    new_r = delta_r - shY
+    new_g = delta_g - shY
+    new_b = delta_b - shY
+
+    r_expr = f"x {new_r} +"
+    g_expr = f"x {new_g} +"
+    b_expr = f"x {new_b} +"
+
+    r, g, b = vsutil.split(clip)
+
+    r_adj = core.akarin.Expr(r, r_expr)
+    g_adj = core.akarin.Expr(g, g_expr)
+    b_adj = core.akarin.Expr(b, b_expr)
+
+    return core.std.ShufflePlanes([r_adj, g_adj, b_adj], planes=[0, 0, 0], colorfamily=vs.RGB)
+
+# inspired by mvf.postfix2infix
+def postfix2infix(expr: str):
+    import re
+    # Preprocessing
+    expr = expr.strip()
+    expr = re.sub(r'\[\s*(\w+)\s*,\s*(\w+)\s*\]', r'[\1,\2]', expr)
+    tokens = re.split(r'\s+', expr)
+    
+    stack = []
+    output_lines = []
+
+    # Regex patterns
+    number_pattern = re.compile(
+        r'^('
+        r'0x[0-9A-Fa-f]+(\.[0-9A-Fa-f]+(p[+\-]?\d+)?)?'
+        r'|'
+        r'0[0-7]*'
+        r'|'
+        r'[+\-]?(\d+(\.\d+)?([eE][+\-]?\d+)?)'
+        r')$'
+    )
+
+    def pop(n=1):
+        if n == 1:
+            return stack.pop()
+        r = stack[-n:]
+        del stack[-n:]
+        return r
+
+    def push(item):
+        stack.append(item)
+
+    i = 0
+    while i < len(tokens):
+        token = tokens[i]
+        
+        # Skip empty tokens
+        if not token:
+            i += 1
+            continue
+
+        # Single letter
+        if token.isalpha() and len(token) == 1:
+            push(token)
+            i += 1
+            continue
+
+        # Numbers
+        if number_pattern.match(token):
+            push(token)
+            i += 1
+            continue
+
+        # Source clips (srcN)
+        if re.match(r'^src\d+$', token):
+            push(token)
+            i += 1
+            continue
+
+        # Frame property
+        if re.match(r'^[a-zA-Z]\w*\.[a-zA-Z]\w*$', token):
+            push(token)
+            i += 1
+            continue
+
+        # Dynamic pixel access
+        if token.endswith('[]'):
+            clip_identifier = token[:-2]
+            absY = pop()
+            absX = pop()
+            push(f"{clip_identifier}[{absX}, {absY}](dynamic)")
+            i += 1
+            continue
+
+        # Static relative pixel access
+        m = re.match(r'^([a-zA-Z]\w*)(\[\-?\d+\,\-?\d+\])(\:\w)?$', token)
+        if m:
+            clip_identifier = m.group(1)
+            coord_part = m.group(2)
+            boundary_suffix = m.group(3)
+            boundary_type = "clamped" if not boundary_suffix or boundary_suffix == ":c" else "mirrored"
+            push(f"{clip_identifier}{coord_part} ({boundary_type})(static)")
+            i += 1
+            continue
+
+        # Variable operations
+        var_store_match = re.match(r'^([a-zA-Z]\w*)\!$', token)
+        var_load_match = re.match(r'^([a-zA-Z]\w*)\@$', token)
+        if var_store_match:
+            var_name = var_store_match.group(1)
+            val = pop()
+            output_lines.append(f"{var_name} = {val}")
+            i += 1
+            continue
+        elif var_load_match:
+            var_name = var_load_match.group(1)
+            push(var_name)
+            i += 1
+            continue
+
+        # Drop operations
+        drop_match = re.match(r'^drop(\d*)$', token)
+        if drop_match:
+            num = int(drop_match.group(1)) if drop_match.group(1) else 1
+            pop(num)
+            i += 1
+            continue
+
+        # Sort operations
+        sort_match = re.match(r'^sort(\d+)$', token)
+        if sort_match:
+            num = int(sort_match.group(1))
+            items = pop(num)
+            sorted_items_expr = f"sort({', '.join(items)})"
+            for idx in range(len(items)):
+                push(f"{sorted_items_expr}[{idx}]")
+            i += 1
+            continue
+
+        # Duplicate operations
+        dup_match = re.match(r'^dup(\d*)$', token)
+        if dup_match:
+            n = int(dup_match.group(1)) if dup_match.group(1) else 0
+            if len(stack) <= n:
+                output_lines.append(f"# [Error] dup{n} needs at least index={n}")
+            else:
+                push(stack[-1 - n])
+            i += 1
+            continue
+
+        # Swap operations
+        swap_match = re.match(r'^swap(\d*)$', token)
+        if swap_match:
+            n = int(swap_match.group(1)) if swap_match.group(1) else 1
+            if len(stack) <= n:
+                output_lines.append(f"# [Error] swap{n} needs at least index={n}")
+            else:
+                stack[-1], stack[-1 - n] = stack[-1 - n], stack[-1]
+            i += 1
+            continue
+
+        # Special constants
+        if token in ('N', 'X', 'Y', 'width', 'height'):
+            constants = {
+                'N': 'current_frame_number',
+                'X': 'current_x',
+                'Y': 'current_y',
+                'width': 'current_width',
+                'height': 'current_height'
+            }
+            push(constants[token])
+            i += 1
+            continue
+
+        # Unary functions
+        if token in ('sin', 'cos', 'round', 'trunc', 'floor', 'bitnot', 'abs'):
+            a = pop()
+            push(f"{token}({a})")
+            i += 1
+            continue
+
+        # Binary and special functions
+        if token in ('%', '**', 'pow', 'clip', 'clamp', 'bitand', 'bitor', 'bitxor'):
+            b = pop()
+            a = pop()
+            if token == '%':
+                push(f"({a} % {b})")
+            elif token in ('**', 'pow'):
+                push(f"pow({a}, {b})")
+            elif token in ('clip', 'clamp'):
+                c = pop()
+                push(f"clamp({c}, {a}, {b})")
+            elif token == 'bitand':
+                push(f"({a} & {b})")
+            elif token == 'bitor':
+                push(f"({a} | {b})")
+            elif token == 'bitxor':
+                push(f"({a} ^ {b})")
+            i += 1
+            continue
+
+        # Basic arithmetic and comparison
+        if token in ('+', '-', '*', '/', 'max', 'min', '>', '<', '>=', '<=', '!='):
+            b = pop()
+            a = pop()
+            if token in ('max', 'min'):
+                push(f"{token}({a}, {b})")
+            else:
+                push(f"({a} {token} {b})")
+            i += 1
+            continue
+
+        # Ternary operator
+        if token == '?':
+            false_val = pop()
+            true_val = pop()
+            cond = pop()
+            push(f"({cond} ? {true_val} : {false_val})")
+            i += 1
+            continue
+
+        # Unknown tokens
+        output_lines.append(f"# [Unknown token]: {token}  (Push as-is)")
+        push(token)
+        i += 1
+
+    # Handle remaining stack items
+    if len(stack) == 1:
+        output_lines.append(f"RESULT = {stack[0]}")
+    else:
+        for idx, item in enumerate(stack):
+            if idx == len(stack) - 1:
+                output_lines.append(f"RESULT = {item}")
+            else:
+                output_lines.append(f"# stack[{idx}]: {item}")
+
+    ret = '\n'.join(output_lines)
+    print(ret)
+    
+
 
 ##################################################################################################################################
 ##################################################################################################################################
@@ -600,7 +842,6 @@ def screen_shot(clip: vs.VideoNode, frames: Union[List[int], int], path: str, fi
 ##################################################################################################################################
 
 # copied from https://github.com/Artoriuz/glsl-chroma-from-luma-prediction/blob/main/CfL_Prediction.glsl
-
 cfl_shader = R'''
 //!PARAM chroma_offset_x
 //!TYPE float
