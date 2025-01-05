@@ -608,13 +608,13 @@ def postfix2infix(expr: str):
     import re
     # Preprocessing
     expr = expr.strip()
-    expr = re.sub(r'\[\s*(\w+)\s*,\s*(\w+)\s*\]', r'[\1,\2]', expr)
+    expr = re.sub(r'\[\s*(\w+)\s*,\s*(\w+)\s*\]', r'[\1,\2]', expr) # [x, y] => [x,y]
     tokens = re.split(r'\s+', expr)
     
     stack = []
     output_lines = []
 
-    # Regex patterns
+    # Regex patterns for numbers
     number_pattern = re.compile(
         r'^('
         r'0x[0-9A-Fa-f]+(\.[0-9A-Fa-f]+(p[+\-]?\d+)?)?'
@@ -758,9 +758,12 @@ def postfix2infix(expr: str):
             continue
 
         # Unary functions
-        if token in ('sin', 'cos', 'round', 'trunc', 'floor', 'bitnot', 'abs'):
+        if token in ('sin', 'cos', 'round', 'trunc', 'floor', 'bitnot', 'abs', 'not'):
             a = pop()
-            push(f"{token}({a})")
+            if token == 'not':
+                push(f"(!{a})")  # 使用 ! 表示逻辑非
+            else:
+                push(f"{token}({a})")
             i += 1
             continue
 
@@ -784,12 +787,16 @@ def postfix2infix(expr: str):
             i += 1
             continue
 
-        # Basic arithmetic and comparison
-        if token in ('+', '-', '*', '/', 'max', 'min', '>', '<', '>=', '<=', '!='):
+        # Basic arithmetic, comparison and logical operators
+        if token in ('+', '-', '*', '/', 'max', 'min', '>', '<', '>=', '<=', '!=', '==', 'and', 'or'):
             b = pop()
             a = pop()
             if token in ('max', 'min'):
                 push(f"{token}({a}, {b})")
+            elif token == 'and':
+                push(f"({a} && {b})")
+            elif token == 'or':
+                push(f"({a} || {b})")
             else:
                 push(f"({a} {token} {b})")
             i += 1
