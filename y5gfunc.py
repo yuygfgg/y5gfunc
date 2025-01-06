@@ -1,6 +1,5 @@
 import functools
 from typing import List, Tuple, Union
-from torch import Value
 import vapoursynth as vs
 from vapoursynth import core
 import mvsfunc as mvf
@@ -24,7 +23,7 @@ def output(*args, debug=True):
     def _add_text(clip, text, debug=debug):
         if not isinstance(clip, vs.VideoNode):
             raise TypeError(f"_add_text expected a VideoNode, but got {type(clip)}")
-        return core.text.Text(clip, text) if debug else clip
+        return core.akarin.Text(clip, text) if debug else clip
     
     global _output_index
     frame = inspect.currentframe().f_back # type: ignore
@@ -362,7 +361,6 @@ def rescale(
     
         min_index_expr = diff_expr + f' argmin{len(diffs)}'
         min_diff_expr = diff_expr + f' sort{len(diffs)} min_diff! drop{len(diffs)-1} min_diff@'
-        print(min_diff_expr)
         
         max_index_expr = diff_expr + f' argmax{len(diffs)}'
         max_diff_expr = diff_expr + f' sort{len(diffs)} drop{len(diffs)-1}'
@@ -479,7 +477,8 @@ def rescale(
     common_mask_clip = _generate_common_mask(detail_mask_clips=detail_masks) if exclude_common_mask else core.std.BlankClip(clip=detail_masks[0], color=0)  
     
     rescaled = _select(reference=src_luma, upscaled_clips=upscaled_clips, candidate_clips=rescaled_clips, params_list=params_list, common_mask_clip=common_mask_clip)
-    detail_mask = _select(reference=src_luma, upscaled_clips=upscaled_clips, candidate_clips=detail_masks, params_list=params_list, common_mask_clip=common_mask_clip)
+    detail_mask = core.akarin.Select(clip_src=detail_masks, prop_src=rescaled, expr="src0.MinIndex")
+    detail_mask = core.akarin.Select(clip_src=[core.std.BlankClip(clip=detail_mask), detail_mask], prop_src=rescaled, expr="src0.Descaled")
 
     if use_detail_mask:
         rescaled = core.std.MaskedMerge(rescaled, src_luma, detail_mask)
