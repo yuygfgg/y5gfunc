@@ -1,5 +1,6 @@
 import functools
 from typing import List, Tuple, Union
+from torch import Value
 import vapoursynth as vs
 from vapoursynth import core
 import mvsfunc as mvf
@@ -353,11 +354,15 @@ def rescale(
         
         diffs = [core.akarin.Expr([_crop(reference), _crop(upscaled_clip), _crop(common_mask_clip)], calc_diff_expr).std.PlaneStats() for upscaled_clip in upscaled_clips]
 
+        for diff in diffs:
+            diff = diff.akarin.PropExpr(lambda: {'PlaneStatsAverage': f'x.PlaneStatsAverage {1 / norm_order} pow'})
+        
         load_PlaneStatsAverage_exprs = [f'src{i}.PlaneStatsAverage' for i in range(len(diffs))]
         diff_expr = ' '.join(load_PlaneStatsAverage_exprs)
     
         min_index_expr = diff_expr + f' argmin{len(diffs)}'
         min_diff_expr = diff_expr + f' sort{len(diffs)} min_diff! drop{len(diffs)-1} min_diff@'
+        print(min_diff_expr)
         
         max_index_expr = diff_expr + f' argmax{len(diffs)}'
         max_diff_expr = diff_expr + f' sort{len(diffs)} drop{len(diffs)-1}'
@@ -625,18 +630,20 @@ def postfix2infix(expr: str):
         r')$'
     )
 
-    def pop(n=1):
-        if n == 1:
-            return stack.pop()
-        r = stack[-n:]
-        del stack[-n:]
-        return r
-
-    def push(item):
-        stack.append(item)
-
     i = 0
     while i < len(tokens):
+        def pop(n=1):
+            try:
+                if n == 1:
+                    return stack.pop()
+                r = stack[-n:]
+                del stack[-n:]
+                return r
+            except IndexError:
+                raise IndexError(f"postfix2infix: Stack Underflow at token at {i}th token {token}.")
+
+        def push(item):
+            stack.append(item)
         token = tokens[i]
         
         # Single letter
@@ -668,18 +675,21 @@ def postfix2infix(expr: str):
             clip_identifier = token[:-2]
             absY = pop()
             absX = pop()
-            push(f"{clip_identifier}[{absX}, {absY}](dynamic)")
+            push(f"{clip_identifier}.dyn({absX}, {absY})")
             i += 1
             continue
 
         # Static relative pixel access
-        m = re.match(r'^([a-zA-Z]\w*)(\[\-?\d+\,\-?\d+\])(\:\w)?$', token)
+        m = re.match(r'^([a-zA-Z]\w*)\[\-?(\d+)\,\-?(\d+)\](\:\w)?$', token)
         if m:
             clip_identifier = m.group(1)
-            coord_part = m.group(2)
-            boundary_suffix = m.group(3)
-            boundary_type = "clamped" if not boundary_suffix or boundary_suffix == ":c" else "mirrored"
-            push(f"{clip_identifier}{coord_part} ({boundary_type})(static)")
+            statX = int(m.group(2))
+            statY = int(m.group(3))
+            boundary_suffix = m.group(4)
+            if boundary_suffix not in [None, ":c", ":m"]:
+                raise ValueError(f"postfix2infix: unknown boundary_suffix {boundary_suffix} at {i}th token {token}")
+            boundary_type = "_c" if not boundary_suffix or boundary_suffix == ":c" else "_m"
+            push(f"{clip_identifier}.stat{boundary_type}({statX}, {statY}")
             i += 1
             continue
 
@@ -722,7 +732,7 @@ def postfix2infix(expr: str):
         if dup_match:
             n = int(dup_match.group(1)) if dup_match.group(1) else 0
             if len(stack) <= n:
-                output_lines.append(f"# [Error] dup{n} needs at least index={n}")
+                raise ValueError(f"postfix2infix: {i}th token {token} needs at least {n} values, while only {len(stack)} in stack.")
             else:
                 push(stack[-1 - n])
             i += 1
@@ -733,7 +743,7 @@ def postfix2infix(expr: str):
         if swap_match:
             n = int(swap_match.group(1)) if swap_match.group(1) else 1
             if len(stack) <= n:
-                output_lines.append(f"# [Error] swap{n} needs at least index={n}")
+                raise ValueError(f"postfix2infix: {i}th token {token} needs at least {n} values, while only {len(stack)} in stack.")
             else:
                 stack[-1], stack[-1 - n] = stack[-1 - n], stack[-1]
             i += 1
@@ -791,7 +801,7 @@ def postfix2infix(expr: str):
                 push(f"({a} || {b})")
             elif token == 'xor':
                 # (a || b) && !(a && b)
-                # or (a && !b) || (!a && b)
+                # (a && !b) || (!a && b)
                 push(f"(({a} && !{b}) || (!{a} && {b}))")
             else:
                 push(f"({a} {token} {b})")
@@ -822,16 +832,17 @@ def postfix2infix(expr: str):
 
     # Handle remaining stack items
     if len(stack) == 1:
+        print(1)
         output_lines.append(f"RESULT = {stack[0]}")
+        ret = '\n'.join(output_lines)
+        print(ret)
     else:
         for idx, item in enumerate(stack):
-            if idx == len(stack) - 1:
-                output_lines.append(f"RESULT = {item}")
-            else:
-                output_lines.append(f"# stack[{idx}]: {item}")
-
-    ret = '\n'.join(output_lines)
-    print(ret)
+            output_lines.append(f"# stack[{idx}]: {item}")
+        ret = '\n'.join(output_lines)
+        raise ValueError(f"postfix2infix: Invalid expression: the stack contains not exactly one value after evaluation. \n {ret}")
+            
+    
     
 
 
