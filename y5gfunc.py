@@ -1,5 +1,5 @@
 import functools
-from typing import List, Tuple, Union
+from typing import List, Tuple, Union, Any, Callable
 import vapoursynth as vs
 from vapoursynth import core
 import mvsfunc as mvf
@@ -228,7 +228,7 @@ def SynDeband(
     else:
         return deband
 
-# modified from LoliHouse: https://share.dmhy.org/topics/view/478666_LoliHouse_LoliHouse_1st_Anniversary_Announcement_and_Gift.html)
+# modified from LoliHouse: https://share.dmhy.org/topics/view/478666_LoliHouse_LoliHouse_1st_Anniversary_Announcement_and_Gift.html
 def DBMask(clip: vs.VideoNode) -> vs.VideoNode:
     nr8: vs.VideoNode = mvf.Depth(clip, 8)
     nrmasks = core.tcanny.TCanny(nr8, sigma=0.8, op=2, mode=1, planes=[0, 1, 2]).akarin.Expr(["x 7 < 0 65535 ?",""], vs.YUV420P16)
@@ -238,6 +238,35 @@ def DBMask(clip: vs.VideoNode) -> vs.VideoNode:
     nrmask = core.std.Maximum(nrmask, 0).std.Maximum(0).std.Minimum(0)
     nrmask = core.rgvs.RemoveGrain(nrmask, [20, 0])
     return nrmask
+
+# modified from vardefunc.cambi_mask
+def cambi_mask(
+    clip: vs.VideoNode,
+    scale: int = 1,
+    merge_previous: bool = True,
+    blur_func: Callable[[vs.VideoNode], vs.VideoNode] = lambda clip: core.std.BoxBlur(clip, planes=0, hradius=2, hpasses=3),
+    **cambi_args: Any
+) -> vs.VideoNode:
+    
+    assert 0 <= scale < 5
+    assert callable(blur_func)
+    
+    if vsutil.get_depth(clip) > 10:
+        clip = mvf.Depth(clip, 10, dither="none")
+
+    scores = core.akarin.Cambi(clip, scores=True, **cambi_args)
+    if merge_previous:
+        cscores = [
+            blur_func(scores.std.PropToClip(f'CAMBI_SCALE{i}').std.Deflate().std.Deflate())
+            for i in range(scale + 1)
+        ]
+        expr_parts = [f"src{i} {scale + 1} /" for i in range(scale + 1)]
+        expr = " ".join(expr_parts) + " " + " ".join(["+"] * (scale))
+        deband_mask = core.akarin.Expr([core.resize.Bilinear(c, scores.width, scores.height) for c in cscores], expr)
+    else:
+        deband_mask = blur_func(scores.std.PropToClip(f'CAMBI_SCALE{scale}').std.Deflate().std.Deflate())
+
+    return deband_mask.std.CopyFrameProps(scores)
 
 # inspired by https://skyeysnow.com/forum.php?mod=viewthread&tid=58390
 def rescale(
