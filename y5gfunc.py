@@ -870,9 +870,18 @@ def postfix2infix(expr: str):
         ret = '\n'.join(output_lines)
         raise ValueError(f"postfix2infix: Invalid expression: the stack contains not exactly one value after evaluation. \n {ret}")
 
-def encode_check(encoded: vs.VideoNode, source: Union[vs.VideoNode, None] = None, mode: str = "both") -> vs.VideoNode:
-
+def encode_check(
+    encoded: vs.VideoNode,
+    source: Union[vs.VideoNode, None] = None,
+    mode: str = "BOTH",
+    threshold_cambi: float = 4.5,
+    threshold_ssim: float = 0.5
+) -> vs.VideoNode:
+    
     from muvsfunc import SSIM
+    
+    assert 0 <= threshold_cambi <= 24
+    assert 0 <= threshold_ssim <= 1
     
     assert mode in ["BOTH", "SSIM", "CAMBI"]
     if mode == "BOTH":
@@ -917,12 +926,14 @@ def encode_check(encoded: vs.VideoNode, source: Union[vs.VideoNode, None] = None
             print(f"Frame {n}: OK!")
             
         return fout
+
     if enable_ssim and enable_cambi:
-        output = core.std.ModifyFrame(encoded, [encoded, cambi, ssim], functools.partial(_chk, threshold_cambi=4.5, threshold_ssim=0.5, _enable_ssim=enable_ssim, _enable_cambi=enable_cambi))
+        output = core.std.ModifyFrame(encoded, [encoded, cambi, ssim], functools.partial(_chk, threshold_cambi=threshold_cambi, threshold_ssim=threshold_ssim, _enable_ssim=enable_ssim, _enable_cambi=enable_cambi))
     elif enable_cambi:
-        output = core.std.ModifyFrame(encoded, [encoded, cambi, cambi], functools.partial(_chk, threshold_cambi=4.5, threshold_ssim=0.5, _enable_ssim=enable_ssim, _enable_cambi=enable_cambi))
+        output = core.std.ModifyFrame(encoded, [encoded, cambi, cambi], functools.partial(_chk, threshold_cambi=threshold_cambi, threshold_ssim=threshold_ssim, _enable_ssim=enable_ssim, _enable_cambi=enable_cambi))
     else:
-        output = core.std.ModifyFrame(encoded, [encoded, ssim, ssim], functools.partial(_chk, threshold_cambi=4.5, threshold_ssim=0.5, _enable_ssim=enable_ssim, _enable_cambi=enable_cambi))
+        output = core.std.ModifyFrame(encoded, [encoded, ssim, ssim], functools.partial(_chk, threshold_cambi=threshold_cambi, threshold_ssim=threshold_ssim, _enable_ssim=enable_ssim, _enable_cambi=enable_cambi))
+    
     return output
     
 
