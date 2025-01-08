@@ -953,7 +953,7 @@ def encode_check(
     
     err = PickFrames(encoded, error_frames)
     if return_type == "both":
-        return encoded, err
+        return output, err
     else:
         return err
     
