@@ -876,8 +876,8 @@ def encode_check(
     encoded: vs.VideoNode,
     source: Union[vs.VideoNode, None] = None,
     mode: str = "BOTH",
-    threshold_cambi: float = 4.5,
-    threshold_ssim: float = 0.5,
+    threshold_cambi: float = 5,
+    threshold_ssim: float = 0.9,
     return_type: str = "encoded"
 ) -> Union[
     vs.VideoNode,
