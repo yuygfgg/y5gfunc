@@ -585,6 +585,19 @@ def ranger(start, end, step):
         raise ValueError("ranger: step must not be 0!")
     return [round(start + i * step, 10) for i in range(int((end - start) / step))]
 
+def PickFrames(clip: vs.VideoNode, indices: List[int]) -> vs.VideoNode:
+    try: 
+        ret = core.akarin.PickFrames(clip, indices=indices)
+    except AttributeError:
+        try:
+            ret = core.pickframes.PickFrames(clip, indices=indices)
+        except AttributeError:
+            
+            # modified from https://github.com/AkarinVS/vapoursynth-plugin/issues/26#issuecomment-1951230729
+            new = clip.std.BlankClip(length=len(indices))
+            ret = new.std.FrameEval(lambda n: clip[indices[n]], None, clip) # type: ignore
+    return ret
+
 
 def screen_shot(clip: vs.VideoNode, frames: Union[List[int], int], path: str, file_name: str, overwrite: bool):
     from pathlib import Path
@@ -593,25 +606,12 @@ def screen_shot(clip: vs.VideoNode, frames: Union[List[int], int], path: str, fi
         frames = [frames]
         
     clip = clip.resize.Spline36(format=vs.RGB24)
-    try: 
-        clip = core.akarin.PickFrames(clip, indices=frames)
-    except AttributeError:
-        try:
-            clip = core.pickframes.PickFrames(clip, indices=frames)
-        except AttributeError:
-            
-            # modified from https://github.com/AkarinVS/vapoursynth-plugin/issues/26#issuecomment-1951230729
-            def PickFrames(clip: vs.VideoNode, indices: List[int]) -> vs.VideoNode:
-                new = clip.std.BlankClip(length=len(indices))
-                return new.std.FrameEval(lambda n: clip[indices[n]], None, clip) # type: ignore
-
-            clip = PickFrames(clip=clip, indices=frames)
-    
+    clip = PickFrames(clip=clip, indices=frames)
     
     output_path = Path(path).resolve()
     
     for i, frame in enumerate(clip.frames()):
-        tmp = clip.std.Trim(first=i, last=i).fpng.Write(filename=(output_path / (file_name%frames[i])).with_suffix('.png'), overwrite=overwrite, compression=2)
+        tmp = clip.std.Trim(first=i, last=i).fpng.Write(filename=(output_path / (file_name%frames[i])).with_suffix('.png'), overwrite=overwrite, compression=2) # type: ignore
         for f in tmp.frames():
             pass
 
@@ -672,6 +672,8 @@ def postfix2infix(expr: str):
 
         def push(item):
             stack.append(item)
+        
+        
         token = tokens[i]
         
         # Single letter
@@ -875,8 +877,12 @@ def encode_check(
     source: Union[vs.VideoNode, None] = None,
     mode: str = "BOTH",
     threshold_cambi: float = 4.5,
-    threshold_ssim: float = 0.5
-) -> vs.VideoNode:
+    threshold_ssim: float = 0.5,
+    return_type: str = "encoded"
+) -> Union[
+    vs.VideoNode,
+    Tuple[vs.VideoNode, vs.VideoNode]
+]:
     
     from muvsfunc import SSIM
     
@@ -894,15 +900,17 @@ def encode_check(
         enable_cambi = True
     
     if enable_ssim:
-        assert encoded.format.id == source.format.id
+        assert encoded.format.id == source.format.id # type: ignore
+    
+    assert return_type in ['encoded', 'error', 'both']
     
     if enable_ssim:
-        ssim = SSIM(encoded, source)
+        ssim = SSIM(encoded, source) # type: ignore
     if enable_cambi:
         cambi = cambi_mask(encoded)
     
-    def _chk(n: int, f: List[vs.VideoFrame], threshold_cambi: float, threshold_ssim: float, _enable_ssim: bool, _enable_cambi: bool):
-        
+    error_frames = []
+    def _chk(n: int, f: List[vs.VideoFrame], threshold_cambi: float, threshold_ssim: float, _enable_ssim: bool, _enable_cambi: bool, error_frames: List):
         def print_red_bold(text):
             print("\033[1;31m" + text + "\033[0m")
             
@@ -924,17 +932,32 @@ def encode_check(
             print_red_bold(f"frame {n}: Distortion detected! SSIM: {ssim_val} \n    Note: distortion threshold is {threshold_ssim}")
         if not (cambi_err or ssim_err):
             print(f"Frame {n}: OK!")
-            
+        else:
+            error_frames.append(n)
+
         return fout
 
     if enable_ssim and enable_cambi:
-        output = core.std.ModifyFrame(encoded, [encoded, cambi, ssim], functools.partial(_chk, threshold_cambi=threshold_cambi, threshold_ssim=threshold_ssim, _enable_ssim=enable_ssim, _enable_cambi=enable_cambi))
+        output = core.std.ModifyFrame(encoded, [encoded, cambi, ssim], functools.partial(_chk, threshold_cambi=threshold_cambi, threshold_ssim=threshold_ssim, _enable_ssim=enable_ssim, _enable_cambi=enable_cambi, error_frames=error_frames))
     elif enable_cambi:
-        output = core.std.ModifyFrame(encoded, [encoded, cambi, cambi], functools.partial(_chk, threshold_cambi=threshold_cambi, threshold_ssim=threshold_ssim, _enable_ssim=enable_ssim, _enable_cambi=enable_cambi))
+        output = core.std.ModifyFrame(encoded, [encoded, cambi, cambi], functools.partial(_chk, threshold_cambi=threshold_cambi, threshold_ssim=threshold_ssim, _enable_ssim=enable_ssim, _enable_cambi=enable_cambi, error_frames=error_frames))
     else:
-        output = core.std.ModifyFrame(encoded, [encoded, ssim, ssim], functools.partial(_chk, threshold_cambi=threshold_cambi, threshold_ssim=threshold_ssim, _enable_ssim=enable_ssim, _enable_cambi=enable_cambi))
+        output = core.std.ModifyFrame(encoded, [encoded, ssim, ssim], functools.partial(_chk, threshold_cambi=threshold_cambi, threshold_ssim=threshold_ssim, _enable_ssim=enable_ssim, _enable_cambi=enable_cambi, error_frames=error_frames))
     
-    return output
+    if return_type == "encoded": 
+        return output
+    
+    print(output.num_frames)
+    for frame in output.frames():
+        pass
+    
+    err = PickFrames(encoded, error_frames)
+    if return_type == "both":
+        return encoded, err
+    else:
+        return err
+    
+    
     
 
 
