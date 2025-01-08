@@ -869,8 +869,61 @@ def postfix2infix(expr: str):
             output_lines.append(f"# stack[{idx}]: {item}")
         ret = '\n'.join(output_lines)
         raise ValueError(f"postfix2infix: Invalid expression: the stack contains not exactly one value after evaluation. \n {ret}")
-            
+
+def encode_check(encoded: vs.VideoNode, source: Union[vs.VideoNode, None] = None, mode: str = "both") -> vs.VideoNode:
+
+    from muvsfunc import SSIM
     
+    assert mode in ["BOTH", "SSIM", "CAMBI"]
+    if mode == "BOTH":
+        enable_ssim = enable_cambi = True
+    elif mode == "SSIM":
+        enable_ssim = True
+        enable_cambi = False
+    else:
+        enable_ssim = False
+        enable_cambi = True
+    
+    if enable_ssim:
+        assert encoded.format.id == source.format.id
+    
+    if enable_ssim:
+        ssim = SSIM(encoded, source)
+    if enable_cambi:
+        cambi = cambi_mask(encoded)
+    
+    def _chk(n: int, f: List[vs.VideoFrame], threshold_cambi: float, threshold_ssim: float, _enable_ssim: bool, _enable_cambi: bool):
+        
+        def print_red_bold(text):
+            print("\033[1;31m" + text + "\033[0m")
+            
+        fout = f[0].copy()
+        
+        ssim_err = cambi_err = False
+        
+        if _enable_ssim: 
+            fout.props['PlaneSSIM'] = ssim_val = f[2].props['PlaneSSIM']
+            fout.props['ssim_err'] = ssim_err = (1 if threshold_ssim > f[2].props['PlaneSSIM'] else 0) # type: ignore
+        
+        if _enable_cambi: 
+            fout.props['CAMBI'] = cambi_val = f[1].props['CAMBI'] 
+            fout.props['cambi_err'] = cambi_err = (1 if threshold_cambi < f[1].props['CAMBI'] else 0) # type: ignore
+        
+        if cambi_err and _enable_cambi:
+            print_red_bold(f"frame {n}: Banding detected! CAMBI: {cambi_val} \n    Note: banding threshold is {threshold_cambi}")
+        if ssim_err and _enable_ssim:
+            print_red_bold(f"frame {n}: Distortion detected! SSIM: {ssim_val} \n    Note: distortion threshold is {threshold_ssim}")
+        if not (cambi_err or ssim_err):
+            print(f"Frame {n}: OK!")
+            
+        return fout
+    if enable_ssim and enable_cambi:
+        output = core.std.ModifyFrame(encoded, [encoded, cambi, ssim], functools.partial(_chk, threshold_cambi=4.5, threshold_ssim=0.5, _enable_ssim=enable_ssim, _enable_cambi=enable_cambi))
+    elif enable_cambi:
+        output = core.std.ModifyFrame(encoded, [encoded, cambi, cambi], functools.partial(_chk, threshold_cambi=4.5, threshold_ssim=0.5, _enable_ssim=enable_ssim, _enable_cambi=enable_cambi))
+    else:
+        output = core.std.ModifyFrame(encoded, [encoded, ssim, ssim], functools.partial(_chk, threshold_cambi=4.5, threshold_ssim=0.5, _enable_ssim=enable_ssim, _enable_cambi=enable_cambi))
+    return output
     
 
 
