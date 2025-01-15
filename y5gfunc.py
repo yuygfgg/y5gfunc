@@ -1,7 +1,8 @@
+from ast import Call
 import functools
 from typing import List, Tuple, Union, Any, Callable
 import vapoursynth as vs
-from vapoursynth import core
+from vapoursynth import VideoNode, core
 import mvsfunc as mvf
 import vsutil
 
@@ -178,9 +179,9 @@ def SynDeband(
     kill: Union[vs.VideoNode, None] = None, 
     bmask: Union[vs.VideoNode, None] = None,
     limit: bool = True,
-    limit_thry: float = 0.6,
-    limit_thrc: float = 0.5,
-    limit_elast: float = 1.75,
+    limit_thry: float = 0.12,
+    limit_thrc: float = 0.1,
+    limit_elast: float = 20,
 ) -> Union[vs.VideoNode, Tuple[vs.VideoNode, vs.VideoNode]]:
     
     assert clip.format.id == vs.YUV420P16
@@ -267,6 +268,98 @@ def cambi_mask(
         deband_mask = blur_func(scores.std.PropToClip(f'CAMBI_SCALE{scale}').std.Deflate().std.Deflate())
 
     return deband_mask.std.CopyFrameProps(scores)
+
+
+def Descale(
+    src: vs.VideoNode,
+    width: int,
+    height: int,
+    kernel: str,
+    custom_kernel: Union[Callable, None] = None,
+    taps: int = 3,
+    b: Union[int, float] = 0.0,
+    c: Union[int, float] = 0.5,
+    blur: Union[int, float] = 1.0,
+    post_conv : Union[List[Union[float, int]], None] = None,
+    src_left: Union[int, float] = 0.0,
+    src_top: Union[int, float] = 0.0,
+    src_width: Union[int, float, None] = None,
+    src_height: Union[int, float, None] = None,
+    border_handling: int = 0,
+    ignore_mask: Union[vs.VideoNode, None] = None,
+    force: bool = False,
+    force_h: bool = False,
+    force_v: bool = False,
+    opt: int = 0
+) -> vs.VideoNode:
+    
+    def _get_resize_name(kernal_name: str) -> str:
+        if kernal_name.startswith('De'):
+            return kernal_name[2:].capitalize()
+        return kernal_name
+    
+    def _get_descaler_name(kernal_name: str) -> str:
+        if kernal_name.startswith('De'):
+            return kernal_name
+        return 'De' + kernal_name[0].lower() + kernal_name[1:]
+    
+    assert width > 0 and height > 0
+    assert opt in [0, 1, 2]
+    assert isinstance(src, vs.VideoNode) and src.format.id == vs.GRAYS
+    
+    kernel = kernel.capitalize()
+    
+    if src_width == None:
+        src_width = width
+    if src_height == None:
+        src_height = height
+    
+    if width > src.width or height > src.height:
+        kernel = _get_resize_name(kernel)
+    else:
+        kernel = _get_descaler_name(kernel)
+    
+    descaler = getattr(core.descale, kernel)
+    assert callable(descaler)
+    extra_params: dict[str, dict[str, Union[float, int, Callable]]] = {}
+    if kernel == "Debicubic":
+        extra_params = {
+            'dparams': {'b': b, 'c': c},
+        }
+    elif kernel == "Delanczos":
+        extra_params = {
+            'dparams': {'taps': taps},
+        }
+    elif kernel == "Decustom":
+        assert callable(custom_kernel)
+        extra_params = {
+            'dparams': {'custom_kernel': custom_kernel},
+        }
+    descaled = descaler(
+        src=src,
+        width=width,
+        height=height,
+        blur=blur,
+        post_conv=post_conv,
+        src_left=src_left,
+        src_top=src_top,
+        src_width=src_width,
+        src_height=src_height,
+        border_handling=border_handling,
+        ignore_mask=ignore_mask,
+        force=force,
+        force_h=force_h,
+        force_v=force_v,
+        opt=opt,
+        **extra_params.get('dparams', {})
+    )
+    
+    assert isinstance(descaled, vs.VideoNode)
+    
+    return descaled
+    
+    
+    
 
 # inspired by https://skyeysnow.com/forum.php?mod=viewthread&tid=58390
 def rescale(
@@ -956,9 +1049,7 @@ def encode_check(
         return output, err
     else:
         return err
-    
-    
-    
+
 
 
 ##################################################################################################################################
