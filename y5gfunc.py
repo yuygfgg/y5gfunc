@@ -294,11 +294,15 @@ def Descale(
 ) -> vs.VideoNode:
     
     def _get_resize_name(kernal_name: str) -> str:
+        if kernal_name == 'Decustom':
+            return 'ScaleCustom'
         if kernal_name.startswith('De'):
             return kernal_name[2:].capitalize()
         return kernal_name
     
     def _get_descaler_name(kernal_name: str) -> str:
+        if kernal_name == 'ScaleCustom':
+            return 'Decustom'
         if kernal_name.startswith('De'):
             return kernal_name
         return 'De' + kernal_name[0].lower() + kernal_name[1:]
@@ -322,15 +326,15 @@ def Descale(
     descaler = getattr(core.descale, kernel)
     assert callable(descaler)
     extra_params: dict[str, dict[str, Union[float, int, Callable]]] = {}
-    if kernel == "Debicubic":
+    if _get_descaler_name(kernel) == "Debicubic":
         extra_params = {
             'dparams': {'b': b, 'c': c},
         }
-    elif kernel == "Delanczos":
+    elif _get_descaler_name(kernel) == "Delanczos":
         extra_params = {
             'dparams': {'taps': taps},
         }
-    elif kernel == "Decustom":
+    elif _get_descaler_name(kernel) == "Decustom":
         assert callable(custom_kernel)
         extra_params = {
             'dparams': {'custom_kernel': custom_kernel},
