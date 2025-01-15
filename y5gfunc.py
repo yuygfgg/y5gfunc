@@ -1,8 +1,7 @@
-from ast import Call
 import functools
 from typing import List, Tuple, Union, Any, Callable
 import vapoursynth as vs
-from vapoursynth import VideoNode, core
+from vapoursynth import core
 import mvsfunc as mvf
 import vsutil
 
@@ -313,9 +312,9 @@ def Descale(
     
     kernel = kernel.capitalize()
     
-    if src_width == None:
+    if src_width is None:
         src_width = width
-    if src_height == None:
+    if src_height is None:
         src_height = height
     
     if width > src.width or height > src.height:
