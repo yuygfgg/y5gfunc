@@ -1,9 +1,11 @@
 import functools
-from typing import List, Tuple, Union, Any, Callable
+from typing import List, LiteralString, Tuple, Union, Any, Callable
 import vapoursynth as vs
 from vapoursynth import core
 import mvsfunc as mvf
 import vsutil
+from pathlib import Path
+import time
 
 _output_index = 1
 
@@ -20,7 +22,7 @@ def output(*args, debug=True):
                 return var_name
         return None
 
-    def _add_text(clip, text, debug=debug):
+    def _add_text(clip, text, debug=debug) -> vs.VideoNode:
         if not isinstance(clip, vs.VideoNode):
             raise TypeError(f"_add_text expected a VideoNode, but got {type(clip)}")
         return core.akarin.Text(clip, text) if debug else clip
@@ -371,6 +373,7 @@ def rescale(
     src_height: Union[Union[float, int], List[Union[float, int]]] = 720,
     bw: Union[int, List[int]] = 0,
     bh: Union[int, List[int]] = 0,
+    show_upscaled: bool = False,
     show_fft: bool = False,
     detail_mask_threshold: float = 0.05,
     use_detail_mask: bool = True,
@@ -394,7 +397,8 @@ def rescale(
     Tuple[vs.VideoNode, vs.VideoNode, vs.VideoNode, vs.VideoNode],
     Tuple[vs.VideoNode, vs.VideoNode, vs.VideoNode, vs.VideoNode, vs.VideoNode],
     Tuple[vs.VideoNode, vs.VideoNode, vs.VideoNode, vs.VideoNode, vs.VideoNode, vs.VideoNode],
-    Tuple[vs.VideoNode, vs.VideoNode, vs.VideoNode, vs.VideoNode, vs.VideoNode, vs.VideoNode, vs.VideoNode]
+    Tuple[vs.VideoNode, vs.VideoNode, vs.VideoNode, vs.VideoNode, vs.VideoNode, vs.VideoNode, vs.VideoNode],
+    Tuple[vs.VideoNode, vs.VideoNode, vs.VideoNode, vs.VideoNode, vs.VideoNode, vs.VideoNode, vs.VideoNode, vs.VideoNode]
 ]:
     
     '''
@@ -492,7 +496,7 @@ def rescale(
         
         max_delta_expr = max_diff_expr + " " + min_diff_expr + " / "
 
-        def props():
+        def props() -> dict[str, str]:
             d = {
                 'MinIndex': min_index_expr,
                 'MinDiff': min_diff_expr,
@@ -604,6 +608,7 @@ def rescale(
     rescaled = _select(reference=src_luma, upscaled_clips=upscaled_clips, candidate_clips=rescaled_clips, params_list=params_list, common_mask_clip=common_mask_clip)
     detail_mask = core.akarin.Select(clip_src=detail_masks, prop_src=rescaled, expr="src0.MinIndex")
     detail_mask = core.akarin.Select(clip_src=[core.std.BlankClip(clip=detail_mask), detail_mask], prop_src=rescaled, expr="src0.Descaled")
+    upscaled = core.akarin.Select(clip_src=upscaled_clips, prop_src=rescaled, expr="src0.MinIndex")
 
     if use_detail_mask:
         rescaled = core.std.MaskedMerge(rescaled, src_luma, detail_mask)
@@ -634,45 +639,86 @@ def rescale(
     if show_fft:
         src_fft = _fft(clip)
         rescaled_fft = _fft(final)
-        
-    if show_common_mask:
-        if show_osd:
-            if show_detail_mask and show_fft:
-                return final, detail_mask, common_mask_clip, src_fft, rescaled_fft, osd_clip
-            elif show_detail_mask:
-                return final, detail_mask, common_mask_clip, osd_clip
-            elif show_fft:
-                return final, common_mask_clip, src_fft, rescaled_fft, osd_clip
+    
+    # FUCK YOU PYLINT
+    if show_upscaled: 
+        if show_common_mask:
+            if show_osd:
+                if show_detail_mask and show_fft:
+                    return final, upscaled, detail_mask, common_mask_clip, src_fft, rescaled_fft, osd_clip
+                elif show_detail_mask:
+                    return final, upscaled, detail_mask, common_mask_clip, osd_clip
+                elif show_fft:
+                    return final, upscaled, common_mask_clip, src_fft, rescaled_fft, osd_clip
+                else:
+                    return final, upscaled, common_mask_clip, osd_clip
             else:
-                return final, common_mask_clip, osd_clip
+                if show_detail_mask and show_fft:
+                    return final, upscaled, detail_mask, common_mask_clip, src_fft, rescaled_fft
+                elif show_detail_mask:
+                    return final, upscaled, detail_mask, common_mask_clip
+                elif show_fft:
+                    return final, upscaled, common_mask_clip, src_fft, rescaled_fft
+                else:
+                    return final, upscaled, common_mask_clip
         else:
-            if show_detail_mask and show_fft:
-                return final, detail_mask, common_mask_clip, src_fft, rescaled_fft
-            elif show_detail_mask:
-                return final, detail_mask, common_mask_clip
-            elif show_fft:
-                return final, common_mask_clip, src_fft, rescaled_fft
+            if show_osd:
+                if show_detail_mask and show_fft:
+                    return final, upscaled, detail_mask, src_fft, rescaled_fft, osd_clip
+                elif show_detail_mask:
+                    return final, upscaled, detail_mask, osd_clip
+                elif show_fft:
+                    return final, upscaled, src_fft, rescaled_fft, osd_clip
+                else:
+                    return final, upscaled, osd_clip
             else:
-                return final, common_mask_clip
+                if show_detail_mask and show_fft:
+                    return final, upscaled, detail_mask, src_fft, rescaled_fft
+                elif show_detail_mask:
+                    return final, upscaled, detail_mask
+                elif show_fft:
+                    return final, upscaled, src_fft, rescaled_fft
+                else:
+                    return final, upscaled
     else:
-        if show_osd:
-            if show_detail_mask and show_fft:
-                return final, detail_mask, src_fft, rescaled_fft, osd_clip
-            elif show_detail_mask:
-                return final, detail_mask, osd_clip
-            elif show_fft:
-                return final, src_fft, rescaled_fft, osd_clip
+        if show_common_mask:
+            if show_osd:
+                if show_detail_mask and show_fft:
+                    return final, detail_mask, common_mask_clip, src_fft, rescaled_fft, osd_clip
+                elif show_detail_mask:
+                    return final, detail_mask, common_mask_clip, osd_clip
+                elif show_fft:
+                    return final, common_mask_clip, src_fft, rescaled_fft, osd_clip
+                else:
+                    return final, common_mask_clip, osd_clip
             else:
-                return final, osd_clip
+                if show_detail_mask and show_fft:
+                    return final, detail_mask, common_mask_clip, src_fft, rescaled_fft
+                elif show_detail_mask:
+                    return final, detail_mask, common_mask_clip
+                elif show_fft:
+                    return final, common_mask_clip, src_fft, rescaled_fft
+                else:
+                    return final, common_mask_clip
         else:
-            if show_detail_mask and show_fft:
-                return final, detail_mask, src_fft, rescaled_fft
-            elif show_detail_mask:
-                return final, detail_mask
-            elif show_fft:
-                return final, src_fft, rescaled_fft
+            if show_osd:
+                if show_detail_mask and show_fft:
+                    return final, detail_mask, src_fft, rescaled_fft, osd_clip
+                elif show_detail_mask:
+                    return final, detail_mask, osd_clip
+                elif show_fft:
+                    return final, src_fft, rescaled_fft, osd_clip
+                else:
+                    return final, osd_clip
             else:
-                return final
+                if show_detail_mask and show_fft:
+                    return final, detail_mask, src_fft, rescaled_fft
+                elif show_detail_mask:
+                    return final, detail_mask
+                elif show_fft:
+                    return final, src_fft, rescaled_fft
+                else:
+                    return final
 
 
 
@@ -696,7 +742,6 @@ def PickFrames(clip: vs.VideoNode, indices: List[int]) -> vs.VideoNode:
 
 
 def screen_shot(clip: vs.VideoNode, frames: Union[List[int], int], path: str, file_name: str, overwrite: bool):
-    from pathlib import Path
 
     if isinstance(frames, int):
         frames = [frames]
@@ -706,34 +751,73 @@ def screen_shot(clip: vs.VideoNode, frames: Union[List[int], int], path: str, fi
     
     output_path = Path(path).resolve()
     
-    for i, frame in enumerate(clip.frames()):
+    for i, _ in enumerate(clip.frames()):
         tmp = clip.std.Trim(first=i, last=i).fpng.Write(filename=(output_path / (file_name%frames[i])).with_suffix('.png'), overwrite=overwrite, compression=2) # type: ignore
         for f in tmp.frames():
             pass
 
-# inspired by https://skyeysnow.com/forum.php?mod=viewthread&tid=41492
-def tweak_rgb(clip: vs.VideoNode, delta_r: float, delta_g: float, delta_b: float) -> vs.VideoNode:
+# modified from https://github.com/DJATOM/VapourSynth-atomchtools/blob/34e16238291954206b3f7d5b704324dd6885b224/atomchtools.py#L370
+def TIVTC_VFR(
+    source: vs.VideoNode,
+    clip2: Union[vs.VideoNode, None] = None,
+    tfmIn: Union[Path, str] = "matches.txt",
+    tdecIn: Union[Path, str] = "metrics.txt",
+    mkvOut: Union[Path, str] = "timecodes.txt",
+    tfm_args: dict = dict(),
+    tdecimate_args: dict = dict()
+) -> vs.VideoNode:
     
-    shY = 0.2126 * delta_r + 0.7152 * delta_g + 0.0722 * delta_b
+    '''
+    Convenient wrapper on tivtc to perform automatic vfr decimation with one function.
+    '''
+    
+    def _resolve_folder_path(path: Path):
+        if not path.parent.exists():
+            path.parent.mkdir(parents=True)
 
-    new_r = delta_r - shY
-    new_g = delta_g - shY
-    new_b = delta_b - shY
+    analyze = True
 
-    r_expr = f"x {new_r} +"
-    g_expr = f"x {new_g} +"
-    b_expr = f"x {new_b} +"
+    assert isinstance(tfmIn, (str, Path))
+    assert isinstance(tdecIn, (str, Path))
+    assert isinstance(mkvOut, (str, Path))
+    
+    tfmIn = Path(tfmIn).resolve()
+    tdecIn = Path(tdecIn).resolve()
+    mkvOut = Path(mkvOut).resolve()
 
-    r, g, b = vsutil.split(clip)
+    if tfmIn.exists() and tdecIn.exists():
+        analyze = False
 
-    r_adj = core.akarin.Expr(r, r_expr)
-    g_adj = core.akarin.Expr(g, g_expr)
-    b_adj = core.akarin.Expr(b, b_expr)
+    if clip2:
+        tfm_args.update(dict(clip2=clip2))
 
-    return core.std.ShufflePlanes([r_adj, g_adj, b_adj], planes=[0, 0, 0], colorfamily=vs.RGB)
+    if analyze:
+        _resolve_folder_path(tfmIn)
+        _resolve_folder_path(tdecIn)
+        _resolve_folder_path(mkvOut)
+        tfm_pass1_args = tfm_args.copy()
+        tdecimate_pass1_args = tdecimate_args.copy()
+        tfm_pass1_args.update(dict(output=str(tfmIn)))
+        tdecimate_pass1_args.update(dict(output=str(tdecIn), mode=4))
+        tmpnode = core.tivtc.TFM(source, **tfm_pass1_args)
+        tmpnode = core.tivtc.TDecimate(tmpnode, **tdecimate_pass1_args)
+
+        for i, _ in enumerate(tmpnode.frames()):
+            print(f"Analyzing frame #{i}...", end='\r')
+
+        del tmpnode
+        time.sleep(0.5) # let it write logs
+
+    tfm_args.update(dict(input=str(tfmIn)))
+    tdecimate_args.update(dict(input=str(tdecIn), tfmIn=str(tfmIn), mkvOut=str(mkvOut), mode=5, hybrid=2, vfrDec=1))
+
+    output = core.tivtc.TFM(source, **tfm_args)
+    output = core.tivtc.TDecimate(output,  **tdecimate_args)
+
+    return output
 
 # inspired by mvf.postfix2infix
-def postfix2infix(expr: str):
+def postfix2infix(expr: str) -> LiteralString:
     import re
     # Preprocessing
     expr = expr.strip()
@@ -916,7 +1000,7 @@ def postfix2infix(expr: str):
             continue
 
         # Basic arithmetic, comparison and logical operators
-        if token in ('+', '-', '*', '/', 'max', 'min', '>', '<', '>=', '<=', '!=', '==', 'and', 'or', 'xor'):
+        if token in ('+', '-', '*', '/', 'max', 'min', '>', '<', '>=', '<=', '!=', '=', 'and', 'or', 'xor'):
             b = pop()
             a = pop()
             if token in ('max', 'min'):
@@ -929,6 +1013,8 @@ def postfix2infix(expr: str):
                 # (a || b) && !(a && b)
                 # (a && !b) || (!a && b)
                 push(f"(({a} && !{b}) || (!{a} && {b}))")
+            elif token == "=":
+                push(f"{a} == {b}")
             else:
                 push(f"({a} {token} {b})")
             i += 1
@@ -949,7 +1035,6 @@ def postfix2infix(expr: str):
             push(f"(clamp({value}, {min}, {max}))")
             i += 1
             continue
-        
 
         # Unknown tokens
         output_lines.append(f"# [Unknown token]: {token}  (Push as-is)")
@@ -958,7 +1043,6 @@ def postfix2infix(expr: str):
 
     # Handle remaining stack items
     if len(stack) == 1:
-        print(1)
         output_lines.append(f"RESULT = {stack[0]}")
         ret = '\n'.join(output_lines)
         print(ret)
@@ -967,6 +1051,7 @@ def postfix2infix(expr: str):
             output_lines.append(f"# stack[{idx}]: {item}")
         ret = '\n'.join(output_lines)
         raise ValueError(f"postfix2infix: Invalid expression: the stack contains not exactly one value after evaluation. \n {ret}")
+    return ret
 
 def encode_check(
     encoded: vs.VideoNode,
