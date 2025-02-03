@@ -389,7 +389,9 @@ def rescale(
     ex_thr: Union[float, int] = 0.015, 
     norm_order: int = 1, 
     crop_size: int = 5,
-    exclude_common_mask: bool = True
+    exclude_common_mask: bool = True,
+    scene_stable: bool = False,
+    scene_descale_threshold_ratio: float = 0.5
 ) -> Union[
     vs.VideoNode,
     Tuple[vs.VideoNode, vs.VideoNode],
@@ -438,6 +440,45 @@ def rescale(
     
     clip = mvf.Depth(clip, 32)
     
+    def scene_descale(n: int, f: List[vs.VideoFrame], cache: List[int], prefetch: vs.VideoNode, length: int, scene_descale_threshold_ratio: float = scene_descale_threshold_ratio) -> vs.VideoFrame:
+        fout = f[0].copy()
+        if n == 0 or n == prefetch.num_frames:
+            fout.props['_SceneChangePrev'] = 1
+
+        if cache[n] == -1: # not cached
+            i = n
+            scene_start = n
+            while i >= 0:
+                frame = prefetch.get_frame(i)
+                if frame.props['_SceneChangePrev'] == 1: # scene srart
+                    scene_start = i
+                    break
+                i -= 1
+            i = scene_start
+            scene_length = 0
+
+            min_index_buffer = [0] * length
+            num_descaled = 0
+
+            while (i < prefetch.num_frames):
+                frame = prefetch.get_frame(i)
+                min_index_buffer[frame.props['MinIndex']] += 1 # type: ignore
+                if frame.props['Descaled']:
+                    num_descaled += 1
+                scene_length += 1
+                i += 1
+                if frame.props['_SceneChangeNext'] == 1: # scene end
+                    break
+
+            scene_min_index = max(enumerate(min_index_buffer), key=lambda x: x[1])[0] if num_descaled >= scene_descale_threshold_ratio * scene_length else length
+            
+            i = scene_start
+            for i in ranger(scene_start, scene_start+scene_length, step=1): # write scene prop
+                cache[i] = scene_min_index
+
+        fout.props['SceneMinIndex'] = cache[n]
+        return fout
+
     def _get_resize_name(descale_name: str) -> str:
         if descale_name.startswith('De'):
             return descale_name[2:].capitalize()
@@ -459,7 +500,7 @@ def rescale(
         merge_expr = merge_expr[:4] + merge_expr[6:]
         return core.akarin.Expr(clips=detail_mask_clips, expr=merge_expr)
     
-    def _select(
+    def _select_per_frame(
         reference: vs.VideoNode,
         upscaled_clips: List[vs.VideoNode],
         candidate_clips: List[vs.VideoNode],
@@ -604,24 +645,53 @@ def rescale(
         })
     
     common_mask_clip = _generate_common_mask(detail_mask_clips=detail_masks) if exclude_common_mask else core.std.BlankClip(clip=detail_masks[0], color=0)  
-    
-    rescaled = _select(reference=src_luma, upscaled_clips=upscaled_clips, candidate_clips=rescaled_clips, params_list=params_list, common_mask_clip=common_mask_clip)
-    detail_mask = core.akarin.Select(clip_src=detail_masks, prop_src=rescaled, expr="src0.MinIndex")
-    detail_mask = core.akarin.Select(clip_src=[core.std.BlankClip(clip=detail_mask), detail_mask], prop_src=rescaled, expr="src0.Descaled")
-    upscaled = core.akarin.Select(clip_src=upscaled_clips, prop_src=rescaled, expr="src0.MinIndex")
+    if not scene_stable:
+        rescaled = _select_per_frame(reference=src_luma, upscaled_clips=upscaled_clips, candidate_clips=rescaled_clips, params_list=params_list, common_mask_clip=common_mask_clip)
+        detail_mask = core.akarin.Select(clip_src=detail_masks, prop_src=rescaled, expr="src0.MinIndex")
+        detail_mask = core.akarin.Select(clip_src=[core.std.BlankClip(clip=detail_mask), detail_mask], prop_src=rescaled, expr="src0.Descaled")
+        upscaled = core.akarin.Select(clip_src=upscaled_clips, prop_src=rescaled, expr="src0.MinIndex")
+    else:
+        # detail mask: matched one when descaling, otherwise blank clip
+        # upscaled clip: matched one when descaling, otherwise frame level decision
+        # rescaled clip: mostly-choosed index in a scene when descaling, otherwise src_luma
+        # 'Descaled', 'SceneMinIndex': scene-level information
+        # other props: frame-level information
+        per_frame = _select_per_frame(reference=src_luma, upscaled_clips=upscaled_clips, candidate_clips=upscaled_clips, params_list=params_list, common_mask_clip=common_mask_clip)
+        upscaled_per_frame = core.akarin.Select(clip_src=upscaled_clips, prop_src=per_frame, expr="src0.MinIndex")
+        scene = core.misc.SCDetect(clip)
+        prefetch = core.std.BlankClip(clip)
+        prefetch = core.akarin.PropExpr([scene, per_frame], lambda: {'_SceneChangeNext': 'x._SceneChangeNext', '_SceneChangePrev': 'x._SceneChangePrev', 'MinIndex': 'y.MinIndex', 'Descaled': 'y.Descaled'})
+        cache = [-1] * clip.num_frames
+        length = len(upscaled_clips)
+        per_scene = core.std.ModifyFrame(per_frame, [per_frame, per_frame], functools.partial(scene_descale, prefetch=prefetch, cache=cache, length=length, scene_descale_threshold_ratio=scene_descale_threshold_ratio))
+        rescaled = core.akarin.Select(rescaled_clips + [src_luma], [per_scene], 'src0.SceneMinIndex')
+        rescaled = core.std.CopyFrameProps(per_scene, per_scene)
+        rescaled = core.akarin.PropExpr([rescaled], lambda: {'Descaled': f'x.SceneMinIndex {len(upscaled_clips)} = 1 - -1 *'})
+        detail_mask = core.akarin.Select(clip_src=detail_masks + [core.std.BlankClip(clip=detail_masks[0])], prop_src=rescaled, expr="src0.SceneMinIndex")
+        upscaled = core.akarin.Select(clip_src=upscaled_clips + [upscaled_per_frame], prop_src=rescaled, expr="src0.SceneMinIndex")
 
     if use_detail_mask:
         rescaled = core.std.MaskedMerge(rescaled, src_luma, detail_mask)
 
     final = _mergeuv(rescaled, clip) if clip.format.color_family == vs.YUV else rescaled
     
-    format_string = (
-        "\nMinIndex: {MinIndex}\n"
-        "MinDiff: {MinDiff}\n"
-        "Descaled: {Descaled}\n"
-        f"Threshold_Max: {threshold_max}\n"
-        f"Threshold_Min: {threshold_min}\n\n"
-    )
+    if not scene_stable:
+        format_string = (
+            "\nMinIndex: {MinIndex}\n"
+            "MinDiff: {MinDiff}\n"
+            "Descaled: {Descaled}\n"
+            f"Threshold_Max: {threshold_max}\n"
+            f"Threshold_Min: {threshold_min}\n\n"
+        )
+    else:
+        format_string = (
+            "\nMinIndex: {MinIndex}\n"
+            "MinDiff: {MinDiff}\n"
+            "Descaled: {Descaled}\n"
+            "SceneMinIndex: {SceneMinIndex}\n"
+            f"Threshold_Max: {threshold_max}\n"
+            f"Threshold_Min: {threshold_min}\n"
+        )
 
     format_string += (
         "|    i   |          Diff          |Kernel| SrcHeight |    Bw     |     Bh    | B      | C      | Taps   |\n"
