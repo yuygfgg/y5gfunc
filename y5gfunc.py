@@ -371,8 +371,8 @@ def rescale(
     clip: vs.VideoNode,
     descale_kernel: Union[str, List[str]] = "Debicubic",
     src_height: Union[Union[float, int], List[Union[float, int]]] = 720,
-    bw: Union[int, List[int]] = 0,
-    bh: Union[int, List[int]] = 0,
+    bw: Union[int, List[int], None] = None,
+    bh: Union[int, List[int], None] = None,
     show_upscaled: bool = False,
     show_fft: bool = False,
     detail_mask_threshold: float = 0.05,
@@ -391,7 +391,8 @@ def rescale(
     crop_size: int = 5,
     exclude_common_mask: bool = True,
     scene_stable: bool = False,
-    scene_descale_threshold_ratio: float = 0.5
+    scene_descale_threshold_ratio: float = 0.5,
+    scenecut_threshold: Union[float, int] = 0.1
 ) -> Union[
     vs.VideoNode,
     Tuple[vs.VideoNode, vs.VideoNode],
@@ -432,6 +433,10 @@ def rescale(
     
     descale_kernel = [descale_kernel] if isinstance(descale_kernel, str) else descale_kernel
     src_height = [src_height] if isinstance(src_height, (int, float)) else src_height
+    if bw is None:
+        bw = clip.width
+    if bh is None:
+        bh = clip.height
     bw = [bw] if isinstance(bw, int) else bw
     bh = [bh] if isinstance(bh, int) else bh
     taps = [taps] if isinstance(taps, int) else taps
@@ -658,7 +663,7 @@ def rescale(
         # other props: frame-level information
         per_frame = _select_per_frame(reference=src_luma, upscaled_clips=upscaled_clips, candidate_clips=upscaled_clips, params_list=params_list, common_mask_clip=common_mask_clip)
         upscaled_per_frame = core.akarin.Select(clip_src=upscaled_clips, prop_src=per_frame, expr="src0.MinIndex")
-        scene = core.misc.SCDetect(clip)
+        scene = core.misc.SCDetect(clip, scenecut_threshold)
         prefetch = core.std.BlankClip(clip)
         prefetch = core.akarin.PropExpr([scene, per_frame], lambda: {'_SceneChangeNext': 'x._SceneChangeNext', '_SceneChangePrev': 'x._SceneChangePrev', 'MinIndex': 'y.MinIndex', 'Descaled': 'y.Descaled'})
         cache = [-1] * clip.num_frames
@@ -666,7 +671,7 @@ def rescale(
         per_scene = core.std.ModifyFrame(per_frame, [per_frame, per_frame], functools.partial(scene_descale, prefetch=prefetch, cache=cache, length=length, scene_descale_threshold_ratio=scene_descale_threshold_ratio))
         rescaled = core.akarin.Select(rescaled_clips + [src_luma], [per_scene], 'src0.SceneMinIndex')
         rescaled = core.std.CopyFrameProps(per_scene, per_scene)
-        rescaled = core.akarin.PropExpr([rescaled], lambda: {'Descaled': f'x.SceneMinIndex {len(upscaled_clips)} = 1 - -1 *'})
+        rescaled = core.akarin.PropExpr([rescaled], lambda: {'Descaled': f'x.SceneMinIndex {len(upscaled_clips)} = not'})
         detail_mask = core.akarin.Select(clip_src=detail_masks + [core.std.BlankClip(clip=detail_masks[0])], prop_src=rescaled, expr="src0.SceneMinIndex")
         upscaled = core.akarin.Select(clip_src=upscaled_clips + [upscaled_per_frame], prop_src=rescaled, expr="src0.SceneMinIndex")
 
@@ -1046,7 +1051,7 @@ def postfix2infix(expr: str) -> LiteralString:
         if token in ('sin', 'cos', 'round', 'trunc', 'floor', 'bitnot', 'abs', 'not'):
             a = pop()
             if token == 'not':
-                push(f"(!{a})")
+                push(f"(!({a}))")
             else:
                 push(f"{token}({a})")
             i += 1
@@ -1070,7 +1075,7 @@ def postfix2infix(expr: str) -> LiteralString:
             continue
 
         # Basic arithmetic, comparison and logical operators
-        if token in ('+', '-', '*', '/', 'max', 'min', '>', '<', '>=', '<=', '!=', '=', 'and', 'or', 'xor'):
+        if token in ('+', '-', '*', '/', 'max', 'min', '>', '<', '>=', '<=', '=', 'and', 'or', 'xor'):
             b = pop()
             a = pop()
             if token in ('max', 'min'):
@@ -1209,7 +1214,7 @@ def encode_check(
         return err
 
 # inspired by https://skyeysnow.com/forum.php?mod=redirect&goto=findpost&ptid=13824&pid=333218
-def is_stripe(clip: vs.VideoNode, threshold: Union[float, int] = 2, freq_range: Union[int, float] = 0.25) -> vs.VideoNode:
+def is_stripe(clip: vs.VideoNode, threshold: Union[float, int] = 2, freq_range: Union[int, float] = 0.25, scenecut_threshold: Union[float, int] = 0.1) -> vs.VideoNode:
     def scene_fft(n: int, f: List[vs.VideoFrame], cache: List[float], prefetch: vs.VideoNode) -> vs.VideoFrame:
         fout = f[0].copy()
         if n == 0 or n == prefetch.num_frames:
@@ -1247,10 +1252,6 @@ def is_stripe(clip: vs.VideoNode, threshold: Union[float, int] = 2, freq_range: 
         return fout
     
     assert clip.format.bits_per_sample == 8
-    
-    if freq_range is None:
-        freq_range = 0.25
-    
     assert 0 < freq_range < 0.5
     
     freq_drop_range = 1 - freq_range
@@ -1267,7 +1268,7 @@ def is_stripe(clip: vs.VideoNode, threshold: Union[float, int] = 2, freq_range: 
     bottom = core.std.Crop(fft, top=freq_drop_bt)
     ver = core.std.StackHorizontal([top, bottom]).std.PlaneStats()
 
-    scene = core.misc.SCDetect(clip)
+    scene = core.misc.SCDetect(clip, threshold=scenecut_threshold)
     
     prefetch = core.std.BlankClip(clip)
     prefetch = core.akarin.PropExpr([hor, ver, scene], lambda: {'hor': f'x.PlaneStatsAverage', 'ver': f'y.PlaneStatsAverage', '_SceneChangeNext': f'z._SceneChangeNext', '_SceneChangePrev': f'z._SceneChangePrev'})
