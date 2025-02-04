@@ -553,7 +553,7 @@ def rescale(
             for i in range(len(diffs)):
                 d[f'Diff{i}'] = load_PlaneStatsAverage_exprs[i]
                 params = params_list[i]
-                d[f'Kernel{i}'] = KERNEL_MAP.get(params["Kernel"], 0) # type: ignore
+                d[f'KernelId{i}'] = KERNEL_MAP.get(params["Kernel"], 0) # type: ignore
                 d[f'Bw{i}'] = params.get("BaseWidth", 0), # type: ignore
                 d[f'Bh{i}'] = params.get("BaseHeight", 0)
                 d[f'SrcHeight{i}'] = params['SrcHeight']
@@ -563,6 +563,11 @@ def rescale(
             return d
 
         prop_src = core.akarin.PropExpr(diffs, props)
+        
+        # Kernel is different because it's a string.
+        for i in range(len(diffs)):
+            print(f"Kernel{i} = {params_list[i]["Kernel"]}")
+            prop_src = core.akarin.Text(prop_src, params_list[i]["Kernel"], prop=f"Kernel{i}")
 
         minDiff_clip = core.akarin.Select(clip_src=candidate_clips, prop_src=[prop_src], expr='x.MinIndex')
 
@@ -699,14 +704,14 @@ def rescale(
         )
 
     format_string += (
-        "|    i   |          Diff          |Kernel| SrcHeight |    Bw     |     Bh    | B      | C      | Taps   |\n"
-        "|--------|------------------------|------|-----------|-----------|-----------|--------|--------|--------|\n"
+        "|    i   |          Diff          |   Kernel   | SrcHeight |    Bw     |     Bh    | B      | C      | Taps   |\n"
+        "|--------|------------------------|------------|-----------|-----------|-----------|--------|--------|--------|\n"
     )
 
     for i in range(len(upscaled_clips)):
         format_string += (
             f"| {i:04}   | {{Diff{i}}}  | {{Kernel{i}}}  | {{SrcHeight{i}}}   | "
-            f"{{Bw{i}}}|{{Bh{i}}}|"
+            f"{{Bw{i}}} | {{Bh{i}}} |"
             f"{{B{i}}}   | {{C{i}}}   | {{Taps{i}}}   |\n"
         )
     osd_clip = core.akarin.Text(final, format_string)
