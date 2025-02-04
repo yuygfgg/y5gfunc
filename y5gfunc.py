@@ -566,7 +566,6 @@ def rescale(
         
         # Kernel is different because it's a string.
         for i in range(len(diffs)):
-            print(f"Kernel{i} = {params_list[i]["Kernel"]}")
             prop_src = core.akarin.Text(prop_src, params_list[i]["Kernel"], prop=f"Kernel{i}")
 
         minDiff_clip = core.akarin.Select(clip_src=candidate_clips, prop_src=[prop_src], expr='x.MinIndex')
