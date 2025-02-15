@@ -455,9 +455,9 @@ def get_bd_chapter(
                 continue
             
             try:
-                if all: chapters = _process_mpls(os.path.join(mpls_dir, mpls_file))
-                else: chapters = _process_mpls(os.path.join(mpls_dir, mpls_file), target_clip)
+                _process_mpls(os.path.join(mpls_dir, mpls_file), target_clip)
                 if chapters:
+                    if all: chapters = _process_mpls(os.path.join(mpls_dir, mpls_file))
                     break
             except (ValueError, RuntimeError):
                 continue
