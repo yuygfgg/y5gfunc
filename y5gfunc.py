@@ -1,11 +1,18 @@
 import functools
-from typing import List, LiteralString, Tuple, Union, Any, Callable
+import subprocess
+from typing import List, Tuple, Union, Any, Callable, Optional, IO, Sequence, Dict
+from subprocess import Popen
 import vapoursynth as vs
 from vapoursynth import core
 import mvsfunc as mvf
 import vsutil
 from pathlib import Path
 import time
+import sys
+if sys.version_info >= (3, 11):
+    from typing import LiteralString
+else:
+    LiteralString = str 
 
 _output_index = 1
 
@@ -83,6 +90,485 @@ def output(*args, debug=True):
                     clip = _add_text(clip, "Unknown Variable")
             clip.set_output(_output_index)
             used_indices.add(_output_index)
+
+def encode_video(
+    filter: Callable,
+    encoder: Union[List[Popen], Popen],
+    filter_param: dict[str, Any] = {"":""},
+    multi: bool = False
+) -> Any:
+
+    # copied from https://skyeysnow.com/forum.php?mod=viewthread&tid=38690
+    def _y4m_header(clip: vs.VideoNode) -> str:
+        y4mformat = ""
+        if clip.format.color_family == vs.GRAY:
+            y4mformat = 'mono'
+            if clip.format.bits_per_sample > 8:
+                y4mformat = y4mformat + str(clip.format.bits_per_sample)
+        else: # YUV
+            if clip.format.subsampling_w == 1 and clip.format.subsampling_h == 1:
+                y4mformat = '420'
+            elif clip.format.subsampling_w == 1 and clip.format.subsampling_h == 0:
+                y4mformat = '422'
+            elif clip.format.subsampling_w == 0 and clip.format.subsampling_h == 0:
+                y4mformat = '444'
+            elif clip.format.subsampling_w == 2 and clip.format.subsampling_h == 2:
+                y4mformat = '410'
+            elif clip.format.subsampling_w == 2 and clip.format.subsampling_h == 0:
+                y4mformat = '411'
+            elif clip.format.subsampling_w == 0 and clip.format.subsampling_h == 1:
+                y4mformat = '440'
+            
+            if clip.format.bits_per_sample > 8:
+                y4mformat = y4mformat + 'p' + str(clip.format.bits_per_sample)
+
+        y4mformat = 'C' + y4mformat + ' '
+        data = 'YUV4MPEG2 {y4mformat}W{width} H{height} F{fps_num}:{fps_den} Ip A0:0 XLENGTH={length}\n'.format(
+            y4mformat=y4mformat,
+            width=clip.width,
+            height=clip.height,
+            fps_num=clip.fps_num,
+            fps_den=clip.fps_den,
+            length=len(clip)
+        )
+
+        return data
+    
+    # copied from https://skyeysnow.com/forum.php?mod=viewthread&tid=38690
+    def _MIMO(clips: Sequence[vs.VideoNode], files: Sequence[IO]) -> None:
+        ''' Multiple-Input-Multiple-Output
+        '''
+        # Checks
+        num_clips = len(clips)
+        num_files = len(files)
+        assert num_clips > 0 and num_clips == num_files
+        for clip in clips:
+            assert clip.format
+
+        is_y4m = [clip.format.color_family in (vs.YUV, vs.GRAY) for clip in clips]
+
+        buffer = [False] * num_files
+        for n in range(num_files):
+            fileobj = files[n]
+            if (fileobj is sys.stdout or fileobj is sys.stderr) and hasattr(fileobj, "buffer"):
+                buffer[n] = True
+
+        # Interleave
+        max_len = max(len(clip) for clip in clips)
+        clips_aligned: list[vs.VideoNode] = []
+        for clip in clips:
+            if len(clip) < max_len:
+                clip_aligned = clip + vs.core.std.BlankClip(clip, length=max_len - len(clip))
+            else:
+                clip_aligned = clip
+            clips_aligned.append(vs.core.std.Interleave([clip_aligned] * num_clips))   
+        clips_varfmt = vs.core.std.BlankClip(length=max_len * num_clips, varformat=True, varsize=True)
+        def _interleave(n: int, f: vs.VideoFrame):
+            return clips_aligned[n % num_clips]
+        interleaved = vs.core.std.FrameEval(clips_varfmt, _interleave, clips_aligned, clips)
+
+        # Y4M header
+        for n in range(num_clips):
+            if is_y4m[n]:
+                clip = clips[n]
+                fileobj = files[n].buffer if buffer[n] else files[n] # type: ignore
+                data = _y4m_header(clip)
+                fileobj.write(data.encode("ascii"))
+
+        # Output
+        for idx, frame in enumerate(interleaved.frames(close=True)):
+            n = idx % num_clips
+            clip = clips[n]
+            fileobj = files[n].buffer if buffer[n] else files[n] # type: ignore
+            finished = idx // num_clips
+            if finished < len(clip):
+                if is_y4m[n]:
+                    fileobj.write(b"FRAME\n")
+                for planeno, plane in enumerate(frame): # type: ignore
+                    if frame.get_stride(planeno) != plane.shape[1] * clip.format.bytes_per_sample: # type: ignore
+                        fileobj.write(bytes(plane))
+                    else:
+                        fileobj.write(plane)
+                if hasattr(fileobj, "flush"):
+                    fileobj.flush()
+
+    filter_output = filter(**filter_param)
+    
+    if not multi:
+        if isinstance(filter_output, vs.VideoNode):
+            output_clip = filter_output
+        elif isinstance(filter_output, list):
+            for item in filter_output:
+                if isinstance(item, tuple):
+                    clip, index = item
+                    if isinstance(clip, vs.VideoNode) and isinstance(index, int):
+                            if index == 0:
+                                output_clip = clip
+                    else:
+                        raise TypeError("encode_video: Tuple must be (VideoNode, int)")
+            if not output_clip:
+                output_clip = filter_output[0]
+        
+        assert output_clip.format.color_family == vs.YUV
+
+        _MIMO([output_clip], [encoder.stdin]) # type: ignore
+        encoder.communicate() # type: ignore
+        encoder.wait() # type: ignore
+    else:
+        assert isinstance(encoder, List)
+        assert all(isinstance(item, vs.VideoNode) for item in filter_output)
+        
+        output_clips = [] * len(filter_output)
+        for i, clip in enumerate(filter_output):
+            assert isinstance(clip, vs.VideoNode)
+            output_clips[i] = clip
+        
+        _MIMO(output_clips, encoder) # type: ignore
+        for i, clip in enumerate(filter_output):
+            encoder[i].communicate()
+            encoder[i].wait()
+
+def encode_audio(
+    input_file: str,
+    output_file: str,
+    audio_track: int = 0,
+    bitrate: Optional[str] = None,
+    overwrite: bool = True
+) -> None:
+
+    import json
+    import os
+    if not os.path.exists(input_file):
+        raise FileNotFoundError(f"encode_audio: Input file not found: {input_file}")
+    if os.path.exists(output_file):
+        if overwrite: os.remove(output_file)
+        else: raise RuntimeError(f"encode_audio: Output file already exists! {output_file}")
+    if output_file.lower().endswith(".flac") and not bitrate is None:
+        raise ValueError("encode_audio: Don't set bitrate for flac file!")
+    if output_file.lower().endswith(".aac") and bitrate is None:
+        bitrate = "320k"
+        
+    
+    probe_cmd = [
+        'ffprobe',
+        '-v', 'quiet',
+        '-print_format', 'json',
+        '-show_streams',
+        '-select_streams', f'a:{audio_track}',
+        input_file
+    ]
+    
+    probe_result = subprocess.run(probe_cmd, capture_output=True, text=True)
+    if probe_result.returncode != 0:
+        raise RuntimeError(f"encode_audio: FFprobe failed: {probe_result.stderr}")
+    
+    audio_info = json.loads(probe_result.stdout)
+    if not audio_info.get('streams'):
+        raise RuntimeError(f"encode_audio: No audio track {audio_track} found in file")
+    
+    sample_fmt = audio_info['streams'][0]['sample_fmt']
+    sample_rate = audio_info['streams'][0]['sample_rate']
+    
+    if output_file.lower().endswith(".flac"):
+        process = subprocess.run([
+            'ffmpeg',
+            '-i', input_file,
+            '-map', f'0:a:{audio_track}',
+            '-c:a', 'flac',
+            '-sample_fmt', sample_fmt,
+            '-ar', sample_rate,
+            '-compression_level', '12',
+            output_file
+        ], capture_output=True, text=True)
+    elif output_file.lower().endswith(".aac"):
+        assert isinstance(bitrate, str)
+        process = subprocess.run([
+            'ffmpeg',
+            '-i', input_file,
+            '-map', f'0:a:{audio_track}',
+            '-c:a', 'aac_at',
+            '-global_quality:a', '14',
+            '-aac_at_mode', '2',
+            '-b:a', bitrate,
+            '-sample_fmt', sample_fmt,
+            '-compression_level', '12',
+            output_file
+        ], capture_output=True, text=True)
+    else:
+        raise ValueError("encode_audio: Unknown format: {format}")
+    
+    if process.returncode != 0:
+        raise RuntimeError(f"encode_audio: FFmpeg failed: {process.stderr}")
+
+
+def get_bd_chapter(
+    m2ts_or_mpls_path: str,
+    chapter_save_path: str,
+    target_clip: Optional[str] = None,
+    all: bool = False # True: return all mpls marks; False: return chapter
+) -> None:
+
+    import os
+    import struct
+
+    def _format_timestamp(seconds: float) -> str:
+        hours = int(seconds // 3600)
+        minutes = int((seconds % 3600) // 60)
+        seconds_remainder = seconds % 60
+        whole_seconds = int(seconds_remainder)
+        milliseconds = int((seconds_remainder - whole_seconds) * 1000)
+        return f"{hours:02d}:{minutes:02d}:{whole_seconds:02d}.{milliseconds:03d}"
+
+    def _process_mpls(mpls_path: str, target_clip: Optional[str] = None) -> Optional[List[float]]:
+        try:
+            with open(mpls_path, 'rb') as f:
+                if f.read(4) != b'MPLS':
+                    raise ValueError(f"get_bd_chapter: Invalid MPLS format in file: {mpls_path}")
+                
+                f.seek(0)
+                header: Dict[str, Any] = {}
+                header["TypeIndicator"] = f.read(4)
+                header["VersionNumber"] = f.read(4)
+                header["PlayListStartAddress"], = struct.unpack(">I", f.read(4))
+                header["PlayListMarkStartAddress"], = struct.unpack(">I", f.read(4))
+                header["ExtensionDataStartAddress"], = struct.unpack(">I", f.read(4))
+
+                f.seek(header["PlayListStartAddress"])
+                playlist_length, = struct.unpack(">I", f.read(4))
+                f.read(2)  # reserved
+                num_items, = struct.unpack(">H", f.read(2))
+                num_subpaths, = struct.unpack(">H", f.read(2))
+
+                play_items = []
+                target_item_index = None
+                for i in range(num_items):
+                    item_length, = struct.unpack(">H", f.read(2))
+                    item_start = f.tell()
+                    
+                    clip_name = f.read(5).decode('utf-8', errors='ignore')
+                    codec_id = f.read(4).decode('utf-8', errors='ignore')
+                    
+                    f.read(3)  # skip reserved bytes
+                    stc_id = f.read(1)
+                    in_time, = struct.unpack(">I", f.read(4))
+                    out_time, = struct.unpack(">I", f.read(4))
+                    
+                    if target_clip and clip_name == target_clip:
+                        target_item_index = i
+                    
+                    play_items.append({
+                        'clip_name': clip_name,
+                        'in_time': in_time,
+                        'out_time': out_time
+                    })
+                    
+                    f.seek(item_start + item_length)
+
+                if target_clip and target_item_index is None:
+                    return None
+
+                f.seek(header["PlayListMarkStartAddress"])
+                marks_length, = struct.unpack(">I", f.read(4))
+                num_marks, = struct.unpack(">H", f.read(2))
+
+                chapters_by_item = {}
+                for _ in range(num_marks):
+                    f.read(1)  # reserved
+                    mark_type, = struct.unpack(">B", f.read(1))
+                    ref_play_item_id, = struct.unpack(">H", f.read(2))
+                    mark_timestamp, = struct.unpack(">I", f.read(4))
+                    entry_es_pid, = struct.unpack(">H", f.read(2))
+                    duration, = struct.unpack(">I", f.read(4))
+
+                    if mark_type == 1:
+                        if ref_play_item_id not in chapters_by_item:
+                            chapters_by_item[ref_play_item_id] = []
+                        chapters_by_item[ref_play_item_id].append(mark_timestamp)
+
+                result = []
+                if target_clip:
+                    if target_item_index in chapters_by_item:
+                        marks = chapters_by_item[target_item_index]
+                        offset = min(marks)
+                        if play_items[target_item_index]['in_time'] < offset: # type: ignore
+                            offset = play_items[target_item_index]['in_time'] # type: ignore
+                        
+                        for timestamp in marks:
+                            relative_time = (timestamp - offset) / 45000.0
+                            if relative_time >= 0:
+                                result.append(relative_time)
+                else:
+                    for item_id, marks in chapters_by_item.items():
+                        offset = min(marks)
+                        if play_items[item_id]['in_time'] < offset:
+                            offset = play_items[item_id]['in_time']
+                        
+                        for timestamp in marks:
+                            relative_time = (timestamp - offset) / 45000.0
+                            if relative_time >= 0:
+                                result.append(relative_time)
+
+                return sorted(result)
+
+        except ValueError:
+            raise
+        except Exception as e:
+            raise RuntimeError(f"get_bd_chapter: Error processing MPLS file: {str(e)}")
+
+    if not os.path.exists(m2ts_or_mpls_path):
+        raise FileNotFoundError(f"get_bd_chapter: Path does not exist: {m2ts_or_mpls_path}")
+
+    is_mpls = m2ts_or_mpls_path.lower().endswith('.mpls')
+    
+    if is_mpls:
+        if not target_clip:
+            if not all:
+                raise ValueError("get_bd_chapter: target_clip must be provided with mpls input if all is False!")
+            else:
+                chapters = _process_mpls(m2ts_or_mpls_path)
+        else:
+            if all: chapters = _process_mpls(m2ts_or_mpls_path)
+            else: chapters = _process_mpls(m2ts_or_mpls_path, target_clip)
+    else:
+        bdmv_root = m2ts_or_mpls_path
+        found = False
+        while not found and bdmv_root:
+            parent_dir = os.path.dirname(bdmv_root)
+            if os.path.basename(parent_dir).upper() == "BDMV":
+                found = True
+                bdmv_root = os.path.dirname(parent_dir)
+            else:
+                bdmv_root = parent_dir
+
+        if not found:
+            raise FileNotFoundError("get_bd_chapter: Could not find BDMV directory in path hierarchy")
+
+        target_clip = os.path.basename(m2ts_or_mpls_path).replace('.m2ts', '')
+        mpls_dir = os.path.join(bdmv_root, "BDMV", "PLAYLIST")
+
+        if not os.path.exists(mpls_dir):
+            raise FileNotFoundError(f"PLAYLIST directory not found: {mpls_dir}")
+
+        chapters = None
+        for mpls_file in os.listdir(mpls_dir):
+            if not mpls_file.endswith('.mpls'):
+                continue
+            
+            try:
+                if all: chapters = _process_mpls(os.path.join(mpls_dir, mpls_file))
+                else: chapters = _process_mpls(os.path.join(mpls_dir, mpls_file), target_clip)
+                if chapters:
+                    break
+            except (ValueError, RuntimeError):
+                continue
+
+    if not chapters:
+        raise ValueError("get_bd_chapter: No chapters found in the Blu-ray disc")
+
+    try:
+        with open(chapter_save_path, 'w', encoding='utf-8') as f:
+            for i, time in enumerate(chapters, 1):
+                chapter_num = f"{i:02d}"
+                timestamp = _format_timestamp(time)
+                f.write(f"CHAPTER{chapter_num}={timestamp}\n")
+                f.write(f"CHAPTER{chapter_num}NAME=Chapter {i}\n")
+    except IOError as e:
+        raise IOError(f"get_bd_chapter: Failed to write chapter file: {str(e)}")
+
+def subset_fonts(ass_path: Union[List[str], str], fonts_path: str, output_directory: str):
+    if isinstance(ass_path, str): ass_path = [ass_path]
+    subtitle_command = ["assfonts"]
+    for path in ass_path:
+        subtitle_command += ["-i", path]
+    
+    subtitle_command += ["-r", "-c", "-f", fonts_path, "-o", output_directory]
+    process = subprocess.run(subtitle_command, capture_output=True, text=True)
+    if process.returncode != 0:
+        raise RuntimeError(f"subset_fonts: assfonts failed: {process.stderr}")
+
+def mux_mkv(
+    output_path: Union[str, Path],
+    videos: Optional[Union[List[Dict[str, Union[str, Path, bool]]], Dict[str, Union[str, Path, bool]]]] = None,
+    audios: Optional[Union[List[Dict[str, Union[str, Path, bool]]], Dict[str, Union[str, Path, bool]]]] = None,
+    subtitles: Optional[Union[List[Dict[str, Union[str, Path, bool]]], Dict[str, Union[str, Path, bool]]]] = None,
+    fonts_dir: Optional[Union[str, Path]] = None,
+    chapters: Optional[Union[str, Path]] = None
+) -> None:
+    '''
+    {"path": str | Path, "language": str, "track_name": str, "default": bool}
+    '''
+    output_path = Path(output_path)
+    if fonts_dir:
+        fonts_dir = Path(fonts_dir)
+    if chapters:
+        chapters = Path(chapters)
+
+    assert any(x is not None for x in (fonts_dir, videos, audios, subtitles, chapters)), "mux_mkv: At least one input must be provided."
+
+    def normalize_inputs(inputs):
+        if isinstance(inputs, dict):
+            return [inputs]
+        return inputs or []
+
+    videos = normalize_inputs(videos)
+    audios = normalize_inputs(audios)
+    subtitles = normalize_inputs(subtitles)
+
+    for track_list in (videos, audios, subtitles):
+        for track in track_list:
+            track["path"] = Path(track["path"]) # type: ignore
+
+    all_files = [track["path"] for track in videos + audios + subtitles] + ([chapters] if chapters else [])
+    for file in all_files:
+        if not file.exists(): # type: ignore
+            raise FileNotFoundError(f"Required file not found: {file}")
+
+    mkvmerge_cmd = ["mkvmerge", "-o", str(output_path)]
+
+    def process_tracks(tracks):
+        first_default_set = False
+        for i, track in enumerate(tracks):
+            if "language" in track:
+                mkvmerge_cmd.extend(["--language", f"0:{track['language']}"])
+            if "track_name" in track:
+                mkvmerge_cmd.extend(["--track-name", f"0:{track['track_name']}"])
+            
+            if track.get("default") is True:
+                mkvmerge_cmd.extend(["--default-track", "0:yes"])
+                first_default_set = True
+            elif track.get("default") is False:
+                mkvmerge_cmd.extend(["--default-track", "0:no"])
+            elif not first_default_set and i == 0:
+                mkvmerge_cmd.extend(["--default-track", "0:yes"])
+                first_default_set = True
+            else:
+                mkvmerge_cmd.extend(["--default-track", "0:no"])
+
+            mkvmerge_cmd.append(str(track["path"]))
+
+    process_tracks(videos)
+    process_tracks(audios)
+    process_tracks(subtitles)
+
+    if chapters:
+        mkvmerge_cmd.extend(["--chapters", str(chapters)])
+
+    result = subprocess.run(mkvmerge_cmd, capture_output=True, text=True)
+    if result.returncode != 0:
+        raise RuntimeError(f"Error executing mkvmerge:\n{result.stderr}")
+
+    if fonts_dir and fonts_dir.exists():
+        for font_ext in ["ttf", "otf"]:
+            for font_file in fonts_dir.glob(f"*.{font_ext}"):
+                font_cmd = [
+                    "mkvpropedit", str(output_path),
+                    "--attachment-mime-type", f"font/{font_ext}",
+                    "--add-attachment", str(font_file)
+                ]
+                font_result = subprocess.run(font_cmd, capture_output=True, text=True)
+                if font_result.returncode != 0:
+                    raise RuntimeError(f"Error adding font {font_file}:\n{font_result.stderr}")
+    
 
 # modified from rksfunc.BM3DWrapper()
 def Fast_BM3DWrapper(
@@ -208,6 +694,7 @@ def SynDeband(
         kill = clip.rgvs.RemoveGrain([20, 11]).rgvs.RemoveGrain([20, 11])
     elif not kill:
         kill = clip
+    assert isinstance(kill, vs.VideoNode)
     grain = core.std.MakeDiff(clip, kill)
     f3kdb_params = {
         'grainy': 0,
@@ -392,7 +879,8 @@ def rescale(
     exclude_common_mask: bool = True,
     scene_stable: bool = False,
     scene_descale_threshold_ratio: float = 0.5,
-    scenecut_threshold: Union[float, int] = 0.1
+    scenecut_threshold: Union[float, int] = 0.1,
+    opencl = True
 ) -> Union[
     vs.VideoNode,
     Tuple[vs.VideoNode, vs.VideoNode],
@@ -580,7 +1068,12 @@ def rescale(
     def _fft(clip: vs.VideoNode, grid: bool = True) -> vs.VideoNode:
         return core.fftspectrum.FFTSpectrum(clip=mvf.Depth(clip,8), grid=grid)
     
-    nnedi3 = functools.partial(core.nnedi3cl.NNEDI3CL, **nnedi3_args)
+    if hasattr(core, "nnedi3cl") and opencl:
+        nnedi3 = functools.partial(core.nnedi3cl.NNEDI3CL, **nnedi3_args)
+        nn2x = lambda nn2x: nnedi3(nnedi3(nn2x, dh=True), dw=True)
+    else:
+        nnedi3 = functools.partial(core.nnedi3.nnedi3, **nnedi3_args)
+        nn2x = lambda nn2x: nnedi3(nnedi3(nn2x, dh=True).std.Transpose(), dh=True).std.Transpose()
     
     upscaled_clips: List[vs.VideoNode] = []
     rescaled_clips: List[vs.VideoNode] = []
@@ -623,7 +1116,7 @@ def rescale(
             **extra_params.get('rparams', {})
         )
 
-        n2x = nnedi3(nnedi3(descaled, dh=True), dw=True)
+        n2x = nn2x(descaled)
         
         rescaled = SSIM_downsample(
             clip=n2x,
@@ -1280,7 +1773,7 @@ def is_stripe(clip: vs.VideoNode, threshold: Union[float, int] = 2, freq_range: 
     cache = [-1.0] * scene.num_frames
 
     ret = core.std.ModifyFrame(scene, [scene, scene], functools.partial(scene_fft, prefetch=prefetch, cache=cache))
-    ret = core.akarin.PropExpr([ret], lambda: {'_Stripe': f'x.ratio {threshold} >'})
+    ret = core.akarin.PropExpr([ret], lambda: {'_Stripe': f'x.ratio {threshold} >'}) # x.ratio > threshold: Stripe
     
     return ret
 
