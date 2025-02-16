@@ -1,5 +1,6 @@
 import functools
 import subprocess
+from token import OP
 from typing import List, Tuple, Union, Any, Callable, Optional, IO, Sequence, Dict
 from subprocess import Popen
 import vapoursynth as vs
@@ -92,11 +93,10 @@ def output(*args, debug=True):
             used_indices.add(_output_index)
 
 def encode_video(
-    filter: Callable,
+    filter_output: Union[vs.VideoNode, List[Union[vs.VideoNode, Tuple[vs.VideoNode, int]]]],
     encoder: Union[List[Popen], Popen],
-    filter_param: dict[str, Any] = {"":""},
     multi: bool = False
-) -> Any:
+) -> None:
 
     # copied from https://skyeysnow.com/forum.php?mod=viewthread&tid=38690
     def _y4m_header(clip: vs.VideoNode) -> str:
@@ -163,7 +163,7 @@ def encode_video(
                 clip_aligned = clip
             clips_aligned.append(vs.core.std.Interleave([clip_aligned] * num_clips))   
         clips_varfmt = vs.core.std.BlankClip(length=max_len * num_clips, varformat=True, varsize=True)
-        def _interleave(n: int, f: vs.VideoFrame):
+        def _interleave(n: int, f: vs.VideoFrame) -> vs.VideoNode:
             return clips_aligned[n % num_clips]
         interleaved = vs.core.std.FrameEval(clips_varfmt, _interleave, clips_aligned, clips)
 
@@ -191,8 +191,6 @@ def encode_video(
                         fileobj.write(plane)
                 if hasattr(fileobj, "flush"):
                     fileobj.flush()
-
-    filter_output = filter(**filter_param)
     
     if not multi:
         if isinstance(filter_output, vs.VideoNode):
@@ -207,7 +205,10 @@ def encode_video(
                     else:
                         raise TypeError("encode_video: Tuple must be (VideoNode, int)")
             if not output_clip:
-                output_clip = filter_output[0]
+                output_clip = filter_output[0] if isinstance (filter_output[0], vs.VideoNode) else None
+            if not output_clip:
+                raise ValueError("encode_video: Couldn't parse filter_output!")
+            
         
         assert output_clip.format.color_family == vs.YUV
 
@@ -216,6 +217,7 @@ def encode_video(
         encoder.wait() # type: ignore
     else:
         assert isinstance(encoder, List)
+        assert isinstance(filter_output, List)
         assert all(isinstance(item, vs.VideoNode) for item in filter_output)
         
         output_clips = [] * len(filter_output)
@@ -229,87 +231,204 @@ def encode_video(
             encoder[i].wait()
 
 def encode_audio(
-    input_file: str,
-    output_file: str,
+    input_file: Union[str, Path],
+    output_file: Union[str, Path],
     audio_track: int = 0,
     bitrate: Optional[str] = None,
-    overwrite: bool = True
-) -> None:
-
+    overwrite: bool = True,
+    copy: bool = False,
+) -> Path:
     import json
-    import os
-    if not os.path.exists(input_file):
-        raise FileNotFoundError(f"encode_audio: Input file not found: {input_file}")
-    if os.path.exists(output_file):
-        if overwrite: os.remove(output_file)
-        else: raise RuntimeError(f"encode_audio: Output file already exists! {output_file}")
-    if output_file.lower().endswith(".flac") and not bitrate is None:
-        raise ValueError("encode_audio: Don't set bitrate for flac file!")
-    if output_file.lower().endswith(".aac") and bitrate is None:
-        bitrate = "320k"
-        
     
+    input_path = Path(input_file)
+    output_path = Path(output_file)
+
+    if not input_path.exists():
+        raise FileNotFoundError(f"encode_audio: Input file not found: {input_path}")
+
+    if output_path.exists():
+        if overwrite:
+            output_path.unlink()
+        else:
+            raise RuntimeError(f"encode_audio: Output file already exists! {output_path}")
+
+    output_ext = output_path.suffix.lower()
+    if output_ext == ".flac" and bitrate is not None:
+        raise ValueError("encode_audio: Don't set bitrate for flac file!")
+
     probe_cmd = [
         'ffprobe',
         '-v', 'quiet',
         '-print_format', 'json',
         '-show_streams',
         '-select_streams', f'a:{audio_track}',
-        input_file
-    ]
-    
+        str(input_path)
+    ]    
+
     probe_result = subprocess.run(probe_cmd, capture_output=True, text=True)
     if probe_result.returncode != 0:
         raise RuntimeError(f"encode_audio: FFprobe failed: {probe_result.stderr}")
-    
+
     audio_info = json.loads(probe_result.stdout)
     if not audio_info.get('streams'):
         raise RuntimeError(f"encode_audio: No audio track {audio_track} found in file")
-    
+
     sample_fmt = audio_info['streams'][0]['sample_fmt']
     sample_rate = audio_info['streams'][0]['sample_rate']
-    
-    if output_file.lower().endswith(".flac"):
+        
+    if output_ext in {".aac", ".mp3"} and bitrate is None and copy == False:
+        bitrate = "320k"
+
+    if copy:
         process = subprocess.run([
             'ffmpeg',
-            '-i', input_file,
+            '-i', str(input_path),
             '-map', f'0:a:{audio_track}',
-            '-c:a', 'flac',
-            '-sample_fmt', sample_fmt,
-            '-ar', sample_rate,
-            '-compression_level', '12',
-            output_file
-        ], capture_output=True, text=True)
-    elif output_file.lower().endswith(".aac"):
-        assert isinstance(bitrate, str)
-        process = subprocess.run([
-            'ffmpeg',
-            '-i', input_file,
-            '-map', f'0:a:{audio_track}',
-            '-c:a', 'aac_at',
-            '-global_quality:a', '14',
-            '-aac_at_mode', '2',
-            '-b:a', bitrate,
-            '-sample_fmt', sample_fmt,
-            '-compression_level', '12',
-            output_file
+            '-c:a', 'copy',
+            str(output_path)
         ], capture_output=True, text=True)
     else:
-        raise ValueError("encode_audio: Unknown format: {format}")
-    
+        if output_ext == ".flac":
+            process = subprocess.run([
+                'ffmpeg',
+                '-i', str(input_path),
+                '-map', f'0:a:{audio_track}',
+                '-c:a', 'flac',
+                '-sample_fmt', sample_fmt,
+                '-ar', sample_rate,
+                '-compression_level', '12',
+                str(output_path)
+            ], capture_output=True, text=True)
+        elif output_ext == ".aac":
+            assert isinstance(bitrate, str)
+            process = subprocess.run([
+                'ffmpeg',
+                '-i', str(input_path),
+                '-map', f'0:a:{audio_track}',
+                '-c:a', 'aac_at',
+                '-global_quality:a', '14',
+                '-aac_at_mode', '2',
+                '-b:a', bitrate,
+                str(output_path)
+            ], capture_output=True, text=True)
+        else:
+            if bitrate:
+                process = subprocess.run([
+                    'ffmpeg',
+                    '-i', str(input_path),
+                    '-map', f'0:a:{audio_track}',
+                    '-b:a', bitrate,
+                    str(output_path)
+                ], capture_output=True, text=True)
+            else:
+                process = subprocess.run([
+                    'ffmpeg',
+                    '-i', str(input_path),
+                    '-map', f'0:a:{audio_track}',
+                    str(output_path)
+                ], capture_output=True, text=True)
+
     if process.returncode != 0:
         raise RuntimeError(f"encode_audio: FFmpeg failed: {process.stderr}")
 
+    return output_path
+
+def extract_audio_tracks(
+    m2ts_path: Union[str, Path],
+    output_dir: Optional[Union[str, Path]] = None,
+    target_format: str = "flac",
+    bitrate: Optional[str] = None,
+    copy_codecs: Optional[List[str]] = ['ac3', 'dts'],
+) -> List[Dict[str, Union[str, Path, bool]]]:
+    import json
+    
+    m2ts_path = Path(m2ts_path)
+    if copy_codecs is None:
+        copy_codecs = []
+    
+    if output_dir is None:
+        output_dir = m2ts_path.parent / f"{m2ts_path.stem}_audio"
+    else:
+        output_dir = Path(output_dir)
+    
+    cmd = [
+        "ffprobe",
+        "-v", "quiet",
+        "-print_format", "json",
+        "-show_streams",
+        "-select_streams", "a",
+        str(m2ts_path)
+    ]
+    
+    result = subprocess.run(cmd, capture_output=True, text=True)
+    if result.returncode != 0:
+        raise RuntimeError(f"ffprobe failed: {result.stderr}")
+    
+    streams = json.loads(result.stdout).get("streams", [])
+    
+    if not streams:
+        print("No audio tracks found!")
+        return []
+    
+    print(f"Found {len(streams)} audio tracks:")
+    for stream in streams:
+        default_str = " (Default)" if stream.get('disposition', {}).get('default') else ""
+        print(
+            f"Track {stream['index']}: {stream.get('codec_name', 'unknown')} "
+            f"{stream.get('channels', '?')}ch "
+            f"Language: {stream.get('tags', {}).get('language', 'unknown')}"
+            f"{default_str}"
+        )
+    
+    output_dir.mkdir(parents=True, exist_ok=True)
+    
+    extracted_tracks = []
+    for stream in streams:
+        track_num = stream['index']
+        codec_name = stream.get('codec_name', '').lower()
+        language = stream.get('tags', {}).get('language', 'und')
+        is_default = bool(stream.get('disposition', {}).get('default'))
+        
+        should_copy = codec_name in copy_codecs
+        
+        output_ext = codec_name if should_copy else target_format
+        
+        output_path = output_dir / f"track_{track_num}_{language}.{output_ext}"
+        
+        print(f"\nProcessing audio track {track_num} ({language})...")
+        try:
+            output_path = encode_audio(
+                input_file=m2ts_path,
+                output_file=output_path,
+                audio_track=track_num-1, # starts from 0
+                bitrate=bitrate,
+                overwrite=True,
+                copy=should_copy
+            )
+            
+            extracted_tracks.append({
+                "path": output_path,
+                "language": language,
+                "default": is_default
+            })
+            
+            print(f"Successfully extracted to: {output_path}")
+            
+        except Exception as e:
+            print(f"Failed to extract track {track_num}: {e}")
+    
+    return extracted_tracks
 
 def get_bd_chapter(
-    m2ts_or_mpls_path: str,
-    chapter_save_path: str,
+    m2ts_or_mpls_path: Union[str, Path],
+    chapter_save_path: Union[str, Path],
     target_clip: Optional[str] = None,
-    all: bool = False # True: return all mpls marks; False: return chapter
-) -> None:
-
-    import os
+    all: bool = False  # True: return all mpls marks; False: return chapter
+) -> Path:
     import struct
+    
+    m2ts_or_mpls_path = Path(m2ts_or_mpls_path)
+    chapter_save_path = Path(chapter_save_path)
 
     def _format_timestamp(seconds: float) -> str:
         hours = int(seconds // 3600)
@@ -319,9 +438,9 @@ def get_bd_chapter(
         milliseconds = int((seconds_remainder - whole_seconds) * 1000)
         return f"{hours:02d}:{minutes:02d}:{whole_seconds:02d}.{milliseconds:03d}"
 
-    def _process_mpls(mpls_path: str, target_clip: Optional[str] = None) -> Optional[List[float]]:
+    def _process_mpls(mpls_path: Path, target_clip: Optional[str] = None) -> Optional[List[float]]:
         try:
-            with open(mpls_path, 'rb') as f:
+            with mpls_path.open('rb') as f:
                 if f.read(4) != b'MPLS':
                     raise ValueError(f"get_bd_chapter: Invalid MPLS format in file: {mpls_path}")
                 
@@ -348,7 +467,7 @@ def get_bd_chapter(
                     clip_name = f.read(5).decode('utf-8', errors='ignore')
                     codec_id = f.read(4).decode('utf-8', errors='ignore')
                     
-                    f.read(3)  # skip reserved bytes
+                    f.read(3)  # reserved
                     stc_id = f.read(1)
                     in_time, = struct.unpack(">I", f.read(4))
                     out_time, = struct.unpack(">I", f.read(4))
@@ -415,49 +534,32 @@ def get_bd_chapter(
         except Exception as e:
             raise RuntimeError(f"get_bd_chapter: Error processing MPLS file: {str(e)}")
 
-    if not os.path.exists(m2ts_or_mpls_path):
+    if not m2ts_or_mpls_path.exists():
         raise FileNotFoundError(f"get_bd_chapter: Path does not exist: {m2ts_or_mpls_path}")
 
-    is_mpls = m2ts_or_mpls_path.lower().endswith('.mpls')
+    is_mpls = m2ts_or_mpls_path.suffix.lower() == '.mpls'
     
     if is_mpls:
-        if not target_clip:
-            if not all:
-                raise ValueError("get_bd_chapter: target_clip must be provided with mpls input if all is False!")
-            else:
-                chapters = _process_mpls(m2ts_or_mpls_path)
-        else:
-            if all: chapters = _process_mpls(m2ts_or_mpls_path)
-            else: chapters = _process_mpls(m2ts_or_mpls_path, target_clip)
+        if not target_clip and not all:
+            raise ValueError("get_bd_chapter: target_clip must be provided with MPLS input if all is False!")
+        chapters = _process_mpls(m2ts_or_mpls_path, target_clip) if not all else _process_mpls(m2ts_or_mpls_path)
     else:
-        bdmv_root = m2ts_or_mpls_path
-        found = False
-        while not found and bdmv_root:
-            parent_dir = os.path.dirname(bdmv_root)
-            if os.path.basename(parent_dir).upper() == "BDMV":
-                found = True
-                bdmv_root = os.path.dirname(parent_dir)
-            else:
-                bdmv_root = parent_dir
-
-        if not found:
+        bdmv_root = next((p.parent for p in m2ts_or_mpls_path.parents if p.name.upper() == "BDMV"), None)
+        if not bdmv_root:
             raise FileNotFoundError("get_bd_chapter: Could not find BDMV directory in path hierarchy")
 
-        target_clip = os.path.basename(m2ts_or_mpls_path).replace('.m2ts', '')
-        mpls_dir = os.path.join(bdmv_root, "BDMV", "PLAYLIST")
+        target_clip = m2ts_or_mpls_path.stem
+        mpls_dir = bdmv_root / "BDMV" / "PLAYLIST"
 
-        if not os.path.exists(mpls_dir):
+        if not mpls_dir.exists():
             raise FileNotFoundError(f"PLAYLIST directory not found: {mpls_dir}")
 
         chapters = None
-        for mpls_file in os.listdir(mpls_dir):
-            if not mpls_file.endswith('.mpls'):
-                continue
-            
+        for mpls_file in mpls_dir.glob("*.mpls"):
             try:
-                _process_mpls(os.path.join(mpls_dir, mpls_file), target_clip)
+                chapters = _process_mpls(mpls_file, target_clip=target_clip)
                 if chapters:
-                    if all: chapters = _process_mpls(os.path.join(mpls_dir, mpls_file))
+                    if all: chapters = _process_mpls(mpls_file)
                     break
             except (ValueError, RuntimeError):
                 continue
@@ -466,7 +568,7 @@ def get_bd_chapter(
         raise ValueError("get_bd_chapter: No chapters found in the Blu-ray disc")
 
     try:
-        with open(chapter_save_path, 'w', encoding='utf-8') as f:
+        with chapter_save_path.open('w', encoding='utf-8') as f:
             for i, time in enumerate(chapters, 1):
                 chapter_num = f"{i:02d}"
                 timestamp = _format_timestamp(time)
@@ -475,16 +577,191 @@ def get_bd_chapter(
     except IOError as e:
         raise IOError(f"get_bd_chapter: Failed to write chapter file: {str(e)}")
 
-def subset_fonts(ass_path: Union[List[str], str], fonts_path: str, output_directory: str):
-    if isinstance(ass_path, str): ass_path = [ass_path]
-    subtitle_command = ["assfonts"]
-    for path in ass_path:
-        subtitle_command += ["-i", path]
+    return chapter_save_path
+
+def get_mkv_chapter(mkv_path: Union[str, Path], output_path: Union[str, Path]) -> Path:
     
-    subtitle_command += ["-r", "-c", "-f", fonts_path, "-o", output_directory]
+    mkv_path = Path(mkv_path)
+    output_path = Path(output_path)
+
+    result = subprocess.run(
+        ["mkvextract", "chapters", str(mkv_path), "-s"],
+        capture_output=True, text=True
+    )
+
+    if result.returncode != 0:
+        raise RuntimeError(f"get_mkv_chapter: Error extracting chapters from '{mkv_path}': {result.stderr.strip()}\n")
+        
+
+    chapter_data = result.stdout
+    print(chapter_data)
+
+    output_path.write_text(chapter_data, encoding="utf-8")
+    return output_path
+
+def subset_fonts(
+    ass_path: Union[List[Union[str, Path]], str, Path], 
+    fonts_path: Union[str, Path], 
+    output_directory: Union[str, Path]
+) -> Path:
+    if isinstance(ass_path, (str, Path)):
+        ass_path = [ass_path]
+    
+    ass_paths = [Path(path) for path in ass_path]
+    fonts_path = Path(fonts_path)
+    output_directory = Path(output_directory)
+
+    subtitle_command = ["assfonts"]
+    for path in ass_paths:
+        subtitle_command += ["-i", str(path)]
+    
+    subtitle_command += ["-r", "-c", "-f", str(fonts_path), "-o", str(output_directory)]
+
     process = subprocess.run(subtitle_command, capture_output=True, text=True)
     if process.returncode != 0:
         raise RuntimeError(f"subset_fonts: assfonts failed: {process.stderr}")
+
+    return output_directory
+
+
+
+
+def extract_pgs_subtitles(
+    m2ts_path: Union[str, Path], 
+    output_dir: Optional[Union[str, Path]] = None
+) -> List[Dict[str, Union[str, Path, bool]]]:
+    import subprocess
+    import tempfile
+    import shutil
+    import re
+    
+    def _get_pgs_stream_info(m2ts_path: Path) -> List[Dict]:
+        cmd = ["tsmuxer", str(m2ts_path)]
+        result = subprocess.run(cmd, capture_output=True, text=True)
+        if result.returncode != 0:
+            raise RuntimeError(f"tsMuxer info failed: {result.stderr}")
+
+        streams = []
+        current_stream = None
+        
+        for line in result.stdout.split('\n'):
+            track_match = re.match(r'Track ID:\s+(\d+)', line)
+            if track_match:
+                if current_stream:
+                    streams.append(current_stream)
+                current_stream = {
+                    'track_id': int(track_match.group(1)),
+                    'default': False
+                }
+                continue
+                
+            if current_stream is None:
+                continue
+                
+            if 'Stream type:' in line and 'PGS' in line:
+                current_stream['type'] = 'PGS'
+                
+            lang_match = re.match(r'Stream lang:\s+(\w+)', line)
+            if lang_match:
+                current_stream['language'] = lang_match.group(1)
+                
+            if 'default' in line.lower():
+                current_stream['default'] = True
+                
+        if current_stream:
+            streams.append(current_stream)
+            
+        return [s for s in streams if s.get('type') == 'PGS']
+    m2ts_path = Path(m2ts_path)
+    
+    if output_dir is None:
+        output_dir = m2ts_path.parent / f"{m2ts_path.stem}_subs"
+    else:
+        output_dir = Path(output_dir)
+    
+    print(f"Analyzing {m2ts_path}...")
+    
+    pgs_streams = _get_pgs_stream_info(m2ts_path)
+    
+    if not pgs_streams:
+        print("No PGS subtitles found!")
+        return []
+    
+    print(f"Found {len(pgs_streams)} PGS subtitle streams:")
+    for stream in pgs_streams:
+        default_str = " (Default)" if stream.get('default') else ""
+        print(f"Track {stream['track_id']}: Language {stream.get('language', 'unknown')}{default_str}")
+    
+    with tempfile.TemporaryDirectory() as temp_dir:
+        temp_dir = Path(temp_dir)
+        print(f"Using temporary directory: {temp_dir}")
+        
+        meta_content = ["MUXOPT --no-pcr-on-video-pid --new-audio-pes --demux\n"]
+        for stream in pgs_streams:
+            meta_line = f"S_HDMV/PGS, \"{m2ts_path}\", track={stream['track_id']}\n"
+            meta_content.append(meta_line)
+            print(f"Adding to meta: {meta_line.strip()}")
+            
+        meta_file = temp_dir / "meta.txt"
+        meta_file.write_text("".join(meta_content))
+        print(f"Created meta file at: {meta_file}")
+        
+        output_dir.mkdir(parents=True, exist_ok=True)
+        print(f"Output directory: {output_dir}")
+        
+        print("\nRunning tsMuxeR...")
+        cmd = ["tsmuxer", str(meta_file), str(temp_dir)]
+        print(f"Command: {' '.join(cmd)}")
+        
+        process = subprocess.Popen(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            bufsize=1,
+            universal_newlines=True
+        )
+        
+        while True:
+            output = process.stdout.readline() # type: ignore
+            if output == '' and process.poll() is not None:
+                break
+            if output:
+                print(f"tsMuxeR: {output.strip()}")
+        
+        stdout, stderr = process.communicate()
+        if stdout:
+            print(f"tsMuxeR additional output: {stdout}")
+        if stderr:
+            print(f"tsMuxeR error output: {stderr}")
+            
+        if process.returncode != 0:
+            raise RuntimeError(f"tsMuxeR failed with return code {process.returncode}")
+        
+        print("\nExtracting subtitles...")
+        
+        subtitles = []
+        for stream in pgs_streams:
+            track_num = stream['track_id']
+            try:
+                sup_file = next(temp_dir.glob(f"*track_{track_num}.sup"))
+                
+                final_path = output_dir / f"track_{track_num}_{stream.get('language', 'und')}.sup"
+                shutil.move(str(sup_file), str(final_path))
+                
+                default_str = " (Default)" if stream.get('default') else ""
+                print(f"Extracted subtitle track {track_num} to {final_path}{default_str}")
+                
+                subtitles.append({
+                    "path": final_path,
+                    "language": stream.get('language', 'und'),
+                    "default": stream.get('default', False)
+                })
+            except StopIteration:
+                print(f"Warning: Could not find extracted subtitle for track {track_num}")
+    
+    print("\nExtraction completed!")
+    return subtitles
 
 def mux_mkv(
     output_path: Union[str, Path],
@@ -493,7 +770,7 @@ def mux_mkv(
     subtitles: Optional[Union[List[Dict[str, Union[str, Path, bool]]], Dict[str, Union[str, Path, bool]]]] = None,
     fonts_dir: Optional[Union[str, Path]] = None,
     chapters: Optional[Union[str, Path]] = None
-) -> None:
+) -> Path:
     '''
     {"path": str | Path, "language": str, "track_name": str, "default": bool}
     '''
@@ -521,11 +798,11 @@ def mux_mkv(
     all_files = [track["path"] for track in videos + audios + subtitles] + ([chapters] if chapters else [])
     for file in all_files:
         if not file.exists(): # type: ignore
-            raise FileNotFoundError(f"Required file not found: {file}")
+            raise FileNotFoundError(f"mux_mkv: Required file not found: {file}")
 
     mkvmerge_cmd = ["mkvmerge", "-o", str(output_path)]
 
-    def process_tracks(tracks):
+    def process_tracks(tracks) -> None:
         first_default_set = False
         for i, track in enumerate(tracks):
             if "language" in track:
@@ -555,7 +832,7 @@ def mux_mkv(
 
     result = subprocess.run(mkvmerge_cmd, capture_output=True, text=True)
     if result.returncode != 0:
-        raise RuntimeError(f"Error executing mkvmerge:\n{result.stderr}")
+        raise RuntimeError(f"mux_mkv: Error executing mkvmerge:\n{result.stderr}")
 
     if fonts_dir and fonts_dir.exists():
         for font_ext in ["ttf", "otf"]:
@@ -567,8 +844,9 @@ def mux_mkv(
                 ]
                 font_result = subprocess.run(font_cmd, capture_output=True, text=True)
                 if font_result.returncode != 0:
-                    raise RuntimeError(f"Error adding font {font_file}:\n{font_result.stderr}")
+                    raise RuntimeError(f"mux_mkv: Error adding font {font_file}:\n{font_result.stderr}")
     
+    return output_path
 
 # modified from rksfunc.BM3DWrapper()
 def Fast_BM3DWrapper(
