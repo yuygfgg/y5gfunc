@@ -2268,6 +2268,41 @@ def is_stripe(clip: vs.VideoNode, threshold: Union[float, int] = 2, freq_range: 
     
     return ret
 
+def get_oped_mask(clip: vs.VideoNode, ncop: vs.VideoNode, nced: vs.VideoNode, op_start: int, ed_start: int, threshold: int = 7) -> Tuple[vs.VideoNode, vs.VideoNode]:
+    from fvsfunc import rfs
+    
+    assert clip.format == ncop.format == nced.format
+    assert clip.format.color_family == vs.YUV
+    
+    op_end = op_start + ncop.num_frames
+    ed_end = ed_start + nced.num_frames
+    
+    assert 0 <= op_start <= op_end <= ed_start <= ed_end <= clip.num_frames
+    
+    if op_start != 0:
+        ncop = core.std.Trim(clip, first=0, last=op_start-1) + ncop + core.std.Trim(clip, first=op_end+1, last=clip.num_frames-1)
+    else:
+        ncop = ncop + core.std.Trim(clip, first=op_end, last=clip.num_frames-1)
+    
+    if ed_end != clip.num_frames - 1:
+        nced = core.std.Trim(clip, first=0, last=ed_start-1) + nced + core.std.Trim(clip, first=ed_end+1, last=clip.num_frames-1)
+    else:
+        nced = core.std.Trim(clip, first=0, last=ed_start-1) + nced
+    
+    nc = rfs(clip, ncop, f"[{op_start} {op_end}]")
+    nc = rfs(nc, nced, f"[{ed_start} {ed_end}]")
+    
+    thr = threshold / 255 * ((1 << clip.format.bits_per_sample) -1) if clip.format.sample_type == vs.INTEGER else threshold / 255
+    maximum = (1 << clip.format.bits_per_sample) -1 if clip.format.sample_type == vs.INTEGER else 1
+
+    diff = core.akarin.Expr([nc, clip], f"x y - abs {thr} < 0 {maximum} ?")
+    diff = vsutil.get_y(diff)
+    
+    diff = vsutil.iterate(diff, core.std.Maximum, 5)
+    diff = vsutil.iterate(diff, core.std.Minimum, 6)
+    
+    return nc, diff
+
 ##################################################################################################################################
 ##################################################################################################################################
 ##################################################################################################################################
