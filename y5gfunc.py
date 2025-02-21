@@ -256,8 +256,6 @@ def encode_audio(
         else:
             raise RuntimeError(f"encode_audio: Output file already exists! {output_path}")
     
-    if copy and delay != 0:
-        raise ValueError("encode_audio: Cannot apply delay using copy mode!")
     if copy and bitrate:
         raise ValueError("encode_audio: Cannot apply bitrate using copy mode!")
 
@@ -1061,6 +1059,110 @@ def mux_mkv(
     
     return output_path
 
+def create_minmax_expr(
+    clip: vs.VideoNode,
+    process_expr: str,
+    threshold_expr: str,
+    planes: Optional[Union[list[int], int]] = None,
+    threshold: Optional[float] = None,
+    coordinates: list[int] = [1, 1, 1, 1, 1, 1, 1, 1],
+    boundary: int = 0
+) -> vs.VideoNode:
+    if planes is None:
+        planes = list(range(clip.format.num_planes))
+    if isinstance(planes, int):
+        planes = [planes]
+    def _build_neighbor_expr(coordinates: list[int]) -> str:
+        NEIGHBOR_OFFSETS = [
+            (-1, -1), (0, -1), (1, -1),  # 1, 2, 3
+            (-1,  0),          (1,  0),  # 4  ,  5
+            (-1,  1), (0,  1), (1,  1),  # 6, 7, 8
+        ]
+        return " ".join(
+            f"x[{dx},{dy}]" 
+            for flag, (dx, dy) in zip(coordinates, NEIGHBOR_OFFSETS) 
+            if flag
+        )
+        
+    if len(coordinates) != 8:
+        raise ValueError("coordinates must contain exactly 8 elements.")
+
+    neighbor_expr = _build_neighbor_expr(coordinates)
+    expr = f"x[0,0] {' ' + neighbor_expr if neighbor_expr else ''} sort{sum(coordinates) + 1} {process_expr}"
+    
+    if threshold is not None:
+        expr += threshold_expr.format(threshold)
+
+    expressions = [
+        expr if (i in planes) else "x" 
+        for i in range(clip.format.num_planes)
+    ]
+
+    return core.akarin.Expr(clips=[clip], expr=expressions, boundary=boundary)
+
+def minimum(clip: vs.VideoNode, planes: Optional[Union[list[int], int]] = None, threshold: Optional[float] = None, coordinates: list[int] = [1, 1, 1, 1, 1, 1, 1, 1], boundary: int = 0, force_std=False) -> vs.VideoNode:
+    if force_std:
+        return core.std.Minimum(clip, planes, threshold, coordinates) # type: ignore
+    else:
+        return create_minmax_expr(clip, process_expr="min! drop{} min@".format(sum(coordinates)), threshold_expr=" x[0,0] {} - swap max", planes=planes, threshold=threshold, coordinates=coordinates, boundary=boundary)
+
+def maximum(clip: vs.VideoNode, planes: Optional[Union[list[int], int]] = None, threshold: Optional[float] = None, coordinates: list[int] = [1, 1, 1, 1, 1, 1, 1, 1], boundary: int = 0, force_std=False) -> vs.VideoNode:
+    if force_std:
+        return core.std.Maximum(clip, planes, threshold, coordinates) # type: ignore
+    else:
+        return create_minmax_expr(clip, process_expr="drop{}".format(sum(coordinates)), threshold_expr=" x[0,0] {} + swap min", planes=planes, threshold=threshold, coordinates=coordinates, boundary=boundary)
+
+def convolution(clip, matrix, bias=0.0, divisor=0.0, planes: Optional[Union[list[int], int]] = None, saturate=True, mode="s", force_std=False):
+    if planes is None:
+        planes = list(range(clip.format.num_planes))
+    if isinstance(planes, int):
+        planes = [planes]
+    
+    if mode != "s" or (len(matrix) != 9 and len(matrix) != 25) or force_std:
+        return core.std.Convolution(clip, matrix, bias, divisor, planes, saturate, mode)
+    
+    if len(matrix) == 9:
+        if abs(divisor) < 1e-9:
+            actual_divisor = sum(matrix) if abs(sum(matrix)) > 1e-9 else 1.0
+        else:
+            actual_divisor = divisor
+            
+        coeffs = [f"{c:.6f}" for c in matrix]
+        
+        expr_parts = []
+        
+        offsets = [(-1,-1), (0,-1), (1,-1), (-1,0), (0,0), (1,0), (-1,1), (0,1), (1,1)]
+        for i, (dx, dy) in enumerate(offsets):
+            expr_parts.append(f"x[{dx},{dy}] {coeffs[i]} *")
+            if i > 0:
+                expr_parts.append("+")
+        
+        expr_parts.append("sum!")
+        
+        expr_parts.append(f"sum@ {actual_divisor:.6f} / {bias:.6f} + val!")
+        
+        expr_parts.append("val@")
+        if saturate:
+            if clip.format.sample_type == vs.INTEGER:
+                peak = (1 << clip.format.bits_per_sample) - 1
+                expr_parts.append(f"0 {peak} clip")
+            else:
+                expr_parts.append("0 1.0 clip")
+        else:
+            expr_parts.append("abs")
+            if clip.format.sample_type == vs.INTEGER:
+                peak = (1 << clip.format.bits_per_sample) - 1
+                expr_parts.append(f"{peak} min")
+            else:
+                expr_parts.append("1.0 min")
+        
+        expr = " ".join(expr_parts)
+        expressions = [expr if i in planes else "x" for i in range(clip.format.num_planes)]
+        
+        return core.akarin.Expr(clip, expressions, boundary=0)
+    
+    return core.std.Convolution(clip, matrix, bias, divisor, planes, saturate, mode)
+
 # modified from rksfunc.BM3DWrapper()
 def Fast_BM3DWrapper(
     clip: vs.VideoNode,
@@ -1169,16 +1271,16 @@ def SynDeband(
 
         # copied from kagefunc.kirsch()
         def _kirsch(src: vs.VideoNode) -> vs.VideoNode:
-            kirsch1 = src.std.Convolution(matrix=[ 5,  5,  5, -3,  0, -3, -3, -3, -3], saturate=False)
-            kirsch2 = src.std.Convolution(matrix=[-3,  5,  5, -3,  0,  5, -3, -3, -3], saturate=False)
-            kirsch3 = src.std.Convolution(matrix=[-3, -3,  5, -3,  0,  5, -3, -3,  5], saturate=False)
-            kirsch4 = src.std.Convolution(matrix=[-3, -3, -3, -3,  0,  5, -3,  5,  5], saturate=False)
+            kirsch1 = convolution(src, matrix=[ 5,  5,  5, -3,  0, -3, -3, -3, -3], saturate=False)
+            kirsch2 = convolution(src, matrix=[-3,  5,  5, -3,  0,  5, -3, -3, -3], saturate=False)
+            kirsch3 = convolution(src, matrix=[-3, -3,  5, -3,  0,  5, -3, -3,  5], saturate=False)
+            kirsch4 = convolution(src, matrix=[-3, -3, -3, -3,  0,  5, -3,  5,  5], saturate=False)
             return core.akarin.Expr([kirsch1, kirsch2, kirsch3, kirsch4], 'x y max z max a max')
             
         luma = vsutil.get_y(src)
         max_value = 1 if src.format.sample_type == vs.FLOAT else (1 << vsutil.get_depth(src)) - 1
         ret = core.retinex.MSRCP(luma, sigma=[50, 200, 350], upper_thr=0.005)
-        tcanny = ret.tcanny.TCanny(mode=1, sigma=1).std.Minimum(coordinates=[1, 0, 1, 0, 0, 1, 0, 1])
+        tcanny = minimum(ret.tcanny.TCanny(mode=1, sigma=1), coordinates=[1, 0, 1, 0, 0, 1, 0, 1])
         return core.akarin.Expr([_kirsch(luma), tcanny], f'x y + {max_value} min')
         
     if kill is None:
@@ -1215,7 +1317,7 @@ def DBMask(clip: vs.VideoNode) -> vs.VideoNode:
     nrmaskb = core.tcanny.TCanny(nr8, sigma=1.3, t_h=6.5, op=2, planes=0)
     nrmaskg = core.tcanny.TCanny(nr8, sigma=1.1, t_h=5.0, op=2, planes=0)
     nrmask = core.akarin.Expr([nrmaskg, nrmaskb, nrmasks, nr8],["a 20 < 65535 a 48 < x 256 * a 96 < y 256 * z ? ? ?",""], vs.YUV420P16)
-    nrmask = core.std.Maximum(nrmask, 0).std.Maximum(0).std.Minimum(0)
+    nrmask = minimum(vsutil.iterate(nrmask, functools.partial(maximum, planes=[0]), 2), planes=[0])
     nrmask = core.rgvs.RemoveGrain(nrmask, [20, 0])
     return nrmask
 
@@ -1471,7 +1573,7 @@ def rescale(
     # modified from kegefunc._generate_descale_mask()
     def _generate_detail_mask(source: vs.VideoNode, upscaled: vs.VideoNode, detail_mask_threshold: float = detail_mask_threshold) -> vs.VideoNode:
         mask = core.akarin.Expr([source, upscaled], 'src0 src1 - abs').std.Binarize(threshold=detail_mask_threshold)
-        mask = vsutil.iterate(mask, core.std.Maximum, 3)
+        mask = vsutil.iterate(mask, maximum, 3)
         mask = vsutil.iterate(mask, core.std.Inflate, 3)
         return mask
 
@@ -1962,7 +2064,7 @@ def postfix2infix(expr: str) -> LiteralString:
             if boundary_suffix not in [None, ":c", ":m"]:
                 raise ValueError(f"postfix2infix: unknown boundary_suffix {boundary_suffix} at {i}th token {token}")
             boundary_type = "_c" if not boundary_suffix or boundary_suffix == ":c" else "_m"
-            push(f"{clip_identifier}.stat{boundary_type}({statX}, {statY}")
+            push(f"{clip_identifier}.stat{boundary_type}({statX}, {statY})")
             i += 1
             continue
 
@@ -2277,7 +2379,7 @@ def get_oped_mask(clip: vs.VideoNode, ncop: vs.VideoNode, nced: vs.VideoNode, op
     op_end = op_start + ncop.num_frames
     ed_end = ed_start + nced.num_frames
     
-    assert 0 <= op_start <= op_end <= ed_start <= ed_end <= clip.num_frames
+    assert 0 <= op_start <= op_end < ed_start <= ed_end < clip.num_frames
     
     if op_start != 0:
         ncop = core.std.Trim(clip, first=0, last=op_start-1) + ncop + core.std.Trim(clip, first=op_end+1, last=clip.num_frames-1)
@@ -2292,14 +2394,14 @@ def get_oped_mask(clip: vs.VideoNode, ncop: vs.VideoNode, nced: vs.VideoNode, op
     nc = rfs(clip, ncop, f"[{op_start} {op_end}]")
     nc = rfs(nc, nced, f"[{ed_start} {ed_end}]")
     
-    thr = threshold / 255 * ((1 << clip.format.bits_per_sample) -1) if clip.format.sample_type == vs.INTEGER else threshold / 255
-    maximum = (1 << clip.format.bits_per_sample) -1 if clip.format.sample_type == vs.INTEGER else 1
+    thr = threshold / 255 * ((1 << clip.format.bits_per_sample) - 1) if clip.format.sample_type == vs.INTEGER else threshold / 255
+    max = (1 << clip.format.bits_per_sample) - 1 if clip.format.sample_type == vs.INTEGER else 1
 
-    diff = core.akarin.Expr([nc, clip], f"x y - abs {thr} < 0 {maximum} ?")
+    diff = core.akarin.Expr([nc, clip], f"x y - abs {thr} < 0 {max} ?")
     diff = vsutil.get_y(diff)
     
-    diff = vsutil.iterate(diff, core.std.Maximum, 5)
-    diff = vsutil.iterate(diff, core.std.Minimum, 6)
+    diff = vsutil.iterate(diff, maximum, 5)
+    diff = vsutil.iterate(diff, minimum, 6)
     
     return nc, diff
 
