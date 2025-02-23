@@ -221,14 +221,17 @@ def encode_video(
     else:
         assert isinstance(encoder, List)
         assert isinstance(filter_output, List)
+        assert len(encoder) == len(filter_output)
         assert all(isinstance(item, vs.VideoNode) for item in filter_output)
         
-        output_clips = [] * len(filter_output)
+        output_clips = []
+        stdins = []
         for i, clip in enumerate(filter_output):
-            assert isinstance(clip, vs.VideoNode)
-            output_clips[i] = clip
+            output_clips.append(clip)
+            stdins.append(encoder[i].stdin)
         
-        _MIMO(output_clips, encoder) # type: ignore
+        _MIMO(output_clips, stdins) # type: ignore
+        
         for i, clip in enumerate(filter_output):
             encoder[i].communicate()
             encoder[i].wait()
