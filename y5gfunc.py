@@ -1124,7 +1124,7 @@ def convolution(clip, matrix, bias=0.0, divisor=0.0, planes: Optional[Union[list
     if mode != "s" or (len(matrix) != 9 and len(matrix) != 25) or force_std:
         return core.std.Convolution(clip, matrix, bias, divisor, planes, saturate, mode)
     
-    if len(matrix) == 9:
+    if len(matrix) == 9 or len(matrix) == 25:
         if abs(divisor) < 1e-9:
             actual_divisor = sum(matrix) if abs(sum(matrix)) > 1e-9 else 1.0
         else:
@@ -1134,17 +1134,18 @@ def convolution(clip, matrix, bias=0.0, divisor=0.0, planes: Optional[Union[list
         
         expr_parts = []
         
-        offsets = [(-1,-1), (0,-1), (1,-1), (-1,0), (0,0), (1,0), (-1,1), (0,1), (1,1)]
+        if len(matrix) == 9:
+            offsets = [(-1, -1), (0, -1), (1, -1), (-1, 0), (0, 0), (1, 0), (-1, 1), (0, 1), (1, 1)]
+        else:
+            offsets = [(-2, -2), (-2, -1), (-2, 0), (-2, 1), (-2, 2), (-1, -2), (-1, -1), (-1, 0), (-1, 1), (-1, 2), (0, -2), (0, -1), (0, 0), (0, 1), (0, 2), (1, -2), (1, -1), (1, 0), (1, 1), (1, 2), (2, -2), (2, -1), (2, 0), (2, 1), (2, 2)]
+        
         for i, (dx, dy) in enumerate(offsets):
             expr_parts.append(f"x[{dx},{dy}] {coeffs[i]} *")
             if i > 0:
                 expr_parts.append("+")
         
-        expr_parts.append("sum!")
+        expr_parts.append(f" {actual_divisor:.6f} / {bias:.6f} + ")
         
-        expr_parts.append(f"sum@ {actual_divisor:.6f} / {bias:.6f} + val!")
-        
-        expr_parts.append("val@")
         if saturate:
             if clip.format.sample_type == vs.INTEGER:
                 peak = (1 << clip.format.bits_per_sample) - 1
