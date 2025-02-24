@@ -1046,7 +1046,7 @@ def mux_mkv(
 
     result = subprocess.run(mkvmerge_cmd, capture_output=True, text=True)
     if result.returncode != 0:
-        raise RuntimeError(f"mux_mkv: Error executing mkvmerge:\n{result.stderr}")
+        raise RuntimeError(f"mux_mkv: Error executing mkvmerge:\n{result.stdout}")
 
     if fonts_dir and fonts_dir.exists():
         for font_ext in ["ttf", "otf"]:
@@ -1069,7 +1069,7 @@ def create_minmax_expr(
     planes: Optional[Union[list[int], int]] = None,
     threshold: Optional[float] = None,
     coordinates: list[int] = [1, 1, 1, 1, 1, 1, 1, 1],
-    boundary: int = 0
+    boundary: int = 1
 ) -> vs.VideoNode:
     if planes is None:
         planes = list(range(clip.format.num_planes))
@@ -1103,13 +1103,13 @@ def create_minmax_expr(
 
     return core.akarin.Expr(clips=[clip], expr=expressions, boundary=boundary)
 
-def minimum(clip: vs.VideoNode, planes: Optional[Union[list[int], int]] = None, threshold: Optional[float] = None, coordinates: list[int] = [1, 1, 1, 1, 1, 1, 1, 1], boundary: int = 0, force_std=False) -> vs.VideoNode:
+def minimum(clip: vs.VideoNode, planes: Optional[Union[list[int], int]] = None, threshold: Optional[float] = None, coordinates: list[int] = [1, 1, 1, 1, 1, 1, 1, 1], boundary: int = 1, force_std=False) -> vs.VideoNode:
     if force_std:
         return core.std.Minimum(clip, planes, threshold, coordinates) # type: ignore
     else:
         return create_minmax_expr(clip, process_expr="min! drop{} min@".format(sum(coordinates)), threshold_expr=" x[0,0] {} - swap max", planes=planes, threshold=threshold, coordinates=coordinates, boundary=boundary)
 
-def maximum(clip: vs.VideoNode, planes: Optional[Union[list[int], int]] = None, threshold: Optional[float] = None, coordinates: list[int] = [1, 1, 1, 1, 1, 1, 1, 1], boundary: int = 0, force_std=False) -> vs.VideoNode:
+def maximum(clip: vs.VideoNode, planes: Optional[Union[list[int], int]] = None, threshold: Optional[float] = None, coordinates: list[int] = [1, 1, 1, 1, 1, 1, 1, 1], boundary: int = 1, force_std=False) -> vs.VideoNode:
     if force_std:
         return core.std.Maximum(clip, planes, threshold, coordinates) # type: ignore
     else:
@@ -1162,7 +1162,7 @@ def convolution(clip, matrix, bias=0.0, divisor=0.0, planes: Optional[Union[list
         expr = " ".join(expr_parts)
         expressions = [expr if i in planes else "x" for i in range(clip.format.num_planes)]
         
-        return core.akarin.Expr(clip, expressions, boundary=0)
+        return core.akarin.Expr(clip, expressions, boundary=1)
     
     return core.std.Convolution(clip, matrix, bias, divisor, planes, saturate, mode)
 
@@ -2141,7 +2141,7 @@ def postfix2infix(expr: str) -> LiteralString:
             continue
 
         # Unary operators
-        if token in ('sin', 'cos', 'round', 'trunc', 'floor', 'bitnot', 'abs', 'not'):
+        if token in ('sin', 'cos', 'round', 'trunc', 'floor', 'bitnot', 'abs', 'sqrt', 'not'):
             a = pop()
             if token == 'not':
                 push(f"(!({a}))")
