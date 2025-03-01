@@ -1339,7 +1339,7 @@ def cambi_mask(
     assert callable(blur_func)
     
     if vsutil.get_depth(clip) > 10:
-        clip = vsutil.depth(clip, 10, dither="none")
+        clip = vsutil.depth(clip, 10, dither_type="none")
 
     scores = core.akarin.Cambi(clip, scores=True, **cambi_args)
     if merge_previous:
