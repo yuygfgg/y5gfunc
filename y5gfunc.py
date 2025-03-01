@@ -16,7 +16,10 @@ import json
 if sys.version_info >= (3, 11):
     from typing import LiteralString
 else:
-    LiteralString = str 
+    LiteralString = str
+
+from vsrgtools import removegrain, repair, clense
+
 
 _output_index = 1
 
@@ -1124,7 +1127,7 @@ def convolution(clip, matrix, bias=0.0, divisor=0.0, planes: Optional[Union[list
     if mode != "s" or (len(matrix) != 9 and len(matrix) != 25) or force_std:
         return core.std.Convolution(clip, matrix, bias, divisor, planes, saturate, mode)
     
-    if len(matrix) == 9 or len(matrix) == 25:
+    if len(matrix) == 9:
         if abs(divisor) < 1e-9:
             actual_divisor = sum(matrix) if abs(sum(matrix)) > 1e-9 else 1.0
         else:
@@ -1136,9 +1139,7 @@ def convolution(clip, matrix, bias=0.0, divisor=0.0, planes: Optional[Union[list
         
         if len(matrix) == 9:
             offsets = [(-1, -1), (0, -1), (1, -1), (-1, 0), (0, 0), (1, 0), (-1, 1), (0, 1), (1, 1)]
-        else:
-            offsets = [(-2, -2), (-2, -1), (-2, 0), (-2, 1), (-2, 2), (-1, -2), (-1, -1), (-1, 0), (-1, 1), (-1, 2), (0, -2), (0, -1), (0, 0), (0, 1), (0, 2), (1, -2), (1, -1), (1, 0), (1, 1), (1, 2), (2, -2), (2, -1), (2, 0), (2, 1), (2, 2)]
-        
+
         for i, (dx, dy) in enumerate(offsets):
             expr_parts.append(f"x[{dx},{dy}] {coeffs[i]} *")
             if i > 0:
@@ -1205,7 +1206,7 @@ def Fast_BM3DWrapper(
 
     half_width = clip.width // 2  # half width
     half_height = clip.height // 2  # half height
-    srcY_float, srcU_float, srcV_float = vsutil.split(clip.fmtc.bitdepth(bits=32))
+    srcY_float, srcU_float, srcV_float = vsutil.split(vsutil.depth(clip, 32))
 
     vbasic_y = bm3d.BM3Dv2(
         clip=srcY_float,
@@ -1221,7 +1222,7 @@ def Fast_BM3DWrapper(
         radius=radius_Y
     )
     
-    vyhalf = vfinal_y.resize.Spline36(half_width, half_height, src_left=-0.5)
+    vyhalf = vfinal_y.resize2.Spline36(half_width, half_height, src_left=-0.5)
     srchalf_444 = vsutil.join([vyhalf, srcU_float, srcV_float])
     srchalf_opp = _rgb2opp(mvf.ToRGB(input=srchalf_444, depth=32, matrix="709", sample=1))
 
@@ -1243,10 +1244,10 @@ def Fast_BM3DWrapper(
         zero_init=0
     )
 
-    vfinal_half = _opp2rgb(vfinal_half).resize.Spline36(format=vs.YUV444PS, matrix=1)
+    vfinal_half = _opp2rgb(vfinal_half).resize2.Spline36(format=vs.YUV444PS, matrix=1)
     _, vfinal_u, vfinal_v = vsutil.split(vfinal_half)
     vfinal = vsutil.join([vfinal_y, vfinal_u, vfinal_v])
-    return vfinal.fmtc.bitdepth(bits=16)
+    return vsutil.depth(vfinal, 16)
 
 # modified from rksfunc.SynDeband()
 def SynDeband(
@@ -1288,7 +1289,7 @@ def SynDeband(
         return core.akarin.Expr([_kirsch(luma), tcanny], f'x y + {max_value} min')
         
     if kill is None:
-        kill = clip.rgvs.RemoveGrain([20, 11]).rgvs.RemoveGrain([20, 11])
+        kill = vsutil.iterate(clip, functools.partial(removegrain, mode=[20, 11]), 2)
     elif not kill:
         kill = clip
     assert isinstance(kill, vs.VideoNode)
@@ -1316,13 +1317,13 @@ def SynDeband(
 
 # modified from LoliHouse: https://share.dmhy.org/topics/view/478666_LoliHouse_LoliHouse_1st_Anniversary_Announcement_and_Gift.html
 def DBMask(clip: vs.VideoNode) -> vs.VideoNode:
-    nr8: vs.VideoNode = mvf.Depth(clip, 8)
+    nr8: vs.VideoNode = vsutil.depth(clip, 8, dither_type='none')
     nrmasks = core.tcanny.TCanny(nr8, sigma=0.8, op=2, mode=1, planes=[0, 1, 2]).akarin.Expr(["x 7 < 0 65535 ?",""], vs.YUV420P16)
     nrmaskb = core.tcanny.TCanny(nr8, sigma=1.3, t_h=6.5, op=2, planes=0)
     nrmaskg = core.tcanny.TCanny(nr8, sigma=1.1, t_h=5.0, op=2, planes=0)
     nrmask = core.akarin.Expr([nrmaskg, nrmaskb, nrmasks, nr8],["a 20 < 65535 a 48 < x 256 * a 96 < y 256 * z ? ? ?",""], vs.YUV420P16)
     nrmask = minimum(vsutil.iterate(nrmask, functools.partial(maximum, planes=[0]), 2), planes=[0])
-    nrmask = core.rgvs.RemoveGrain(nrmask, [20, 0])
+    nrmask = removegrain(nrmask, [20, 0])
     return nrmask
 
 # modified from vardefunc.cambi_mask
@@ -1338,7 +1339,7 @@ def cambi_mask(
     assert callable(blur_func)
     
     if vsutil.get_depth(clip) > 10:
-        clip = mvf.Depth(clip, 10, dither="none")
+        clip = vsutil.depth(clip, 10, dither="none")
 
     scores = core.akarin.Cambi(clip, scores=True, **cambi_args)
     if merge_previous:
@@ -1348,7 +1349,7 @@ def cambi_mask(
         ]
         expr_parts = [f"src{i} {scale + 1} /" for i in range(scale + 1)]
         expr = " ".join(expr_parts) + " " + " ".join(["+"] * (scale))
-        deband_mask = core.akarin.Expr([core.resize.Bilinear(c, scores.width, scores.height) for c in cscores], expr)
+        deband_mask = core.akarin.Expr([core.resize2.Bilinear(c, scores.width, scores.height) for c in cscores], expr)
     else:
         deband_mask = blur_func(scores.std.PropToClip(f'CAMBI_SCALE{scale}').std.Deflate().std.Deflate())
 
@@ -1528,7 +1529,7 @@ def rescale(
     b = [b] if isinstance(b, (float, int)) else b
     c = [c] if isinstance(c, (float, int)) else c
     
-    clip = mvf.Depth(clip, 32)
+    clip = vsutil.depth(clip, 32)
     
     def scene_descale(n: int, f: List[vs.VideoFrame], cache: List[int], prefetch: vs.VideoNode, length: int, scene_descale_threshold_ratio: float = scene_descale_threshold_ratio) -> vs.VideoFrame:
         fout = f[0].copy()
@@ -1663,7 +1664,7 @@ def rescale(
         return final_clip
 
     def _fft(clip: vs.VideoNode, grid: bool = True) -> vs.VideoNode:
-        return core.fftspectrum.FFTSpectrum(clip=mvf.Depth(clip,8), grid=grid)
+        return core.fftspectrum.FFTSpectrum(clip=vsutil.depth(clip,8), grid=grid)
     
     if hasattr(core, "nnedi3cl") and opencl:
         nnedi3 = functools.partial(core.nnedi3cl.NNEDI3CL, **nnedi3_args)
@@ -1702,7 +1703,7 @@ def rescale(
             **extra_params.get('dparams', {})
         )
 
-        upscaled = getattr(core.resize, _get_resize_name(kernel_name))(
+        upscaled = getattr(core.resize2, _get_resize_name(kernel_name))(
             descaled,
             width=clip.width,
             height=clip.height,
@@ -1915,7 +1916,7 @@ def screen_shot(clip: vs.VideoNode, frames: Union[List[int], int], path: str, fi
     if isinstance(frames, int):
         frames = [frames]
         
-    clip = clip.resize.Spline36(format=vs.RGB24)
+    clip = clip.resize2.Spline36(format=vs.RGB24)
     clip = PickFrames(clip=clip, indices=frames)
     
     output_path = Path(path).resolve()
