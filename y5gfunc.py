@@ -1,10 +1,10 @@
 from dataclasses import dataclass, field
 from enum import Enum
 import functools
-from multiprocessing import Value
 import subprocess
-from typing import List, Literal, Tuple, Union, Any, Callable, Optional, IO, Sequence, Dict
+from typing import List, Tuple, Union, Any, Callable, Optional, IO, Sequence, Dict
 from subprocess import Popen
+from types import FrameType
 import vapoursynth as vs
 from vapoursynth import core
 import mvsfunc as mvf
@@ -18,32 +18,36 @@ if sys.version_info >= (3, 11):
 else:
     LiteralString = str
 
-from vsrgtools import removegrain, repair, clense
+from vsrgtools import removegrain
 
 
-_output_index = 1
+_output_index = 0
+used_indices = set()
 
-def reset_output_index(index=1):
+def reset_output_index(index: int = 0) -> None:
     global _output_index
     _output_index = index
 
-def output(*args, debug=True):
+def output(*args, debug=True) -> None:
     import inspect
+    from vspreview import set_output
     
-    def _get_variable_name(frame, clip):
+    def _get_variable_name(frame: FrameType, clip: vs.VideoNode) -> str:
         for var_name, var_val in frame.f_locals.items():
             if var_val is clip:
                 return var_name
-        return None
+        return "Unknown Variable"
 
-    def _add_text(clip, text, debug=debug) -> vs.VideoNode:
-        if not isinstance(clip, vs.VideoNode):
-            raise TypeError(f"_add_text expected a VideoNode, but got {type(clip)}")
+    def _add_text(clip: vs.VideoNode, text: str, debug: bool = debug) -> vs.VideoNode:
         return core.akarin.Text(clip, text) if debug else clip
     
+    if debug and __name__ == '__vapoursynth__':
+        raise ValueError("Don't set debug=True when encoding!")
+    
+    frame: FrameType = inspect.currentframe().f_back # type: ignore
+    
     global _output_index
-    frame = inspect.currentframe().f_back # type: ignore
-    used_indices = set()
+    global used_indices
     clips_to_process = []
 
     for arg in args:
@@ -76,26 +80,18 @@ def output(*args, debug=True):
         if index is not None:
             if index in used_indices:
                 raise ValueError(f"Output index {index} is already in use")
+            variable_name = _get_variable_name(frame, clip)
+            clip = _add_text(clip, f"{variable_name}")
+            set_output(clip, index, f'{index}: {variable_name}')
             used_indices.add(index)
-            if index != 0:
-                variable_name = _get_variable_name(frame, clip)
-                if variable_name:
-                    clip = _add_text(clip, f"{variable_name}")
-                else:
-                    clip = _add_text(clip, "Unknown Variable")
-            clip.set_output(index)
-
+            
     for clip, index in clips_to_process:
         if index is None:
             while _output_index in used_indices:
                 _output_index += 1
-            if _output_index != 0:
-                variable_name = _get_variable_name(frame, clip)
-                if variable_name:
-                    clip = _add_text(clip, f"{variable_name}")
-                else:
-                    clip = _add_text(clip, "Unknown Variable")
-            clip.set_output(_output_index)
+            variable_name = _get_variable_name(frame, clip)
+            clip = _add_text(clip, f"{variable_name}")            
+            set_output(clip, _output_index, f'{_output_index}: {variable_name}')
             used_indices.add(_output_index)
 
 def encode_video(
@@ -438,7 +434,7 @@ def get_language_by_trackid(m2ts_path: Path, ffprobe_id) -> str:
     
     try:
         tsmuxer_output = subprocess.check_output(['tsMuxeR', str(m2ts_path)], text=True)
-    except subprocess.CalledProcessError as e:
+    except subprocess.CalledProcessError:
         return "und"
     
     current_track = None
@@ -704,10 +700,10 @@ def get_bd_chapter(
                     item_start = f.tell()
                     
                     clip_name = f.read(5).decode('utf-8', errors='ignore')
-                    codec_id = f.read(4).decode('utf-8', errors='ignore')
+                    codec_id = f.read(4).decode('utf-8', errors='ignore')  # noqa: F841
                     
                     f.read(3)  # reserved
-                    stc_id = f.read(1)
+                    stc_id = f.read(1)  # noqa: F841
                     in_time, = struct.unpack(">I", f.read(4))
                     out_time, = struct.unpack(">I", f.read(4))
                     
@@ -798,7 +794,8 @@ def get_bd_chapter(
             try:
                 chapters = _process_mpls(mpls_file, target_clip=target_clip)
                 if chapters:
-                    if all: chapters = _process_mpls(mpls_file)
+                    if all:
+                        chapters = _process_mpls(mpls_file)
                     break
             except (ValueError, RuntimeError):
                 continue
@@ -1668,10 +1665,12 @@ def rescale(
     
     if hasattr(core, "nnedi3cl") and opencl:
         nnedi3 = functools.partial(core.nnedi3cl.NNEDI3CL, **nnedi3_args)
-        nn2x = lambda nn2x: nnedi3(nnedi3(nn2x, dh=True), dw=True)
+        def nn2x(nn2x) -> vs.VideoNode:
+            return nnedi3(nnedi3(nn2x, dh=True), dw=True)
     else:
         nnedi3 = functools.partial(core.nnedi3.nnedi3, **nnedi3_args)
-        nn2x = lambda nn2x: nnedi3(nnedi3(nn2x, dh=True).std.Transpose(), dh=True).std.Transpose()
+        def nn2x(nn2x) -> vs.VideoNode:
+            return nnedi3(nnedi3(nn2x, dh=True).std.Transpose(), dh=True).std.Transpose()
     
     upscaled_clips: List[vs.VideoNode] = []
     rescaled_clips: List[vs.VideoNode] = []
@@ -2366,7 +2365,7 @@ def is_stripe(clip: vs.VideoNode, threshold: Union[float, int] = 2, freq_range: 
     scene = core.misc.SCDetect(clip, threshold=scenecut_threshold)
     
     prefetch = core.std.BlankClip(clip)
-    prefetch = core.akarin.PropExpr([hor, ver, scene], lambda: {'hor': f'x.PlaneStatsAverage', 'ver': f'y.PlaneStatsAverage', '_SceneChangeNext': f'z._SceneChangeNext', '_SceneChangePrev': f'z._SceneChangePrev'})
+    prefetch = core.akarin.PropExpr([hor, ver, scene], lambda: {'hor': 'x.PlaneStatsAverage', 'ver': 'y.PlaneStatsAverage', '_SceneChangeNext': 'z._SceneChangeNext', '_SceneChangePrev': 'z._SceneChangePrev'})
 
     cache = [-1.0] * scene.num_frames
 
@@ -2409,23 +2408,7 @@ def get_oped_mask(clip: vs.VideoNode, ncop: vs.VideoNode, nced: vs.VideoNode, op
     diff = vsutil.iterate(diff, minimum, 6)
     
     return nc, diff
-
-##################################################################################################################################
-##################################################################################################################################
-##################################################################################################################################
-##################################################################################################################################
-##################################################################################################################################
-##################################################################################################################################
-##################################################################################################################################
-##################################################################################################################################
-##################################################################################################################################
-##################################################################################################################################
-##################################################################################################################################
-##################################################################################################################################
-##################################################################################################################################
-##################################################################################################################################
-##################################################################################################################################
-##################################################################################################################################
+    
 
 # copied from https://github.com/Artoriuz/glsl-chroma-from-luma-prediction/blob/main/CfL_Prediction.glsl
 cfl_shader = R'''
