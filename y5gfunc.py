@@ -2,7 +2,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 import functools
 import subprocess
-from typing import List, Tuple, Union, Any, Callable, Optional, IO, Sequence, Dict
+from typing import List, Literal, Tuple, Union, Any, Callable, Optional, IO, Sequence, Dict
 from subprocess import Popen
 from types import FrameType
 import vapoursynth as vs
@@ -28,7 +28,7 @@ def reset_output_index(index: int = 0) -> None:
     global _output_index
     _output_index = index
 
-def output(*args, debug=True) -> None:
+def output(*args, debug: bool = True) -> None:
     import inspect
     from vspreview import set_output
     
@@ -99,47 +99,47 @@ def encode_video(
     encoder: Union[List[Popen], Popen],
     multi: bool = False
 ) -> None:
-
-    # copied from https://skyeysnow.com/forum.php?mod=viewthread&tid=38690
-    def _y4m_header(clip: vs.VideoNode) -> str:
-        y4mformat = ""
-        if clip.format.color_family == vs.GRAY:
-            y4mformat = 'mono'
-            if clip.format.bits_per_sample > 8:
-                y4mformat = y4mformat + str(clip.format.bits_per_sample)
-        else: # YUV
-            if clip.format.subsampling_w == 1 and clip.format.subsampling_h == 1:
-                y4mformat = '420'
-            elif clip.format.subsampling_w == 1 and clip.format.subsampling_h == 0:
-                y4mformat = '422'
-            elif clip.format.subsampling_w == 0 and clip.format.subsampling_h == 0:
-                y4mformat = '444'
-            elif clip.format.subsampling_w == 2 and clip.format.subsampling_h == 2:
-                y4mformat = '410'
-            elif clip.format.subsampling_w == 2 and clip.format.subsampling_h == 0:
-                y4mformat = '411'
-            elif clip.format.subsampling_w == 0 and clip.format.subsampling_h == 1:
-                y4mformat = '440'
-            
-            if clip.format.bits_per_sample > 8:
-                y4mformat = y4mformat + 'p' + str(clip.format.bits_per_sample)
-
-        y4mformat = 'C' + y4mformat + ' '
-        data = 'YUV4MPEG2 {y4mformat}W{width} H{height} F{fps_num}:{fps_den} Ip A0:0 XLENGTH={length}\n'.format(
-            y4mformat=y4mformat,
-            width=clip.width,
-            height=clip.height,
-            fps_num=clip.fps_num,
-            fps_den=clip.fps_den,
-            length=len(clip)
-        )
-
-        return data
     
     # copied from https://skyeysnow.com/forum.php?mod=viewthread&tid=38690
     def _MIMO(clips: Sequence[vs.VideoNode], files: Sequence[IO]) -> None:
         ''' Multiple-Input-Multiple-Output
         '''
+
+        def _y4m_header(clip: vs.VideoNode) -> str:
+            y4mformat = ""
+            if clip.format.color_family == vs.GRAY:
+                y4mformat = 'mono'
+                if clip.format.bits_per_sample > 8:
+                    y4mformat = y4mformat + str(clip.format.bits_per_sample)
+            else: # YUV
+                if clip.format.subsampling_w == 1 and clip.format.subsampling_h == 1:
+                    y4mformat = '420'
+                elif clip.format.subsampling_w == 1 and clip.format.subsampling_h == 0:
+                    y4mformat = '422'
+                elif clip.format.subsampling_w == 0 and clip.format.subsampling_h == 0:
+                    y4mformat = '444'
+                elif clip.format.subsampling_w == 2 and clip.format.subsampling_h == 2:
+                    y4mformat = '410'
+                elif clip.format.subsampling_w == 2 and clip.format.subsampling_h == 0:
+                    y4mformat = '411'
+                elif clip.format.subsampling_w == 0 and clip.format.subsampling_h == 1:
+                    y4mformat = '440'
+                
+                if clip.format.bits_per_sample > 8:
+                    y4mformat = y4mformat + 'p' + str(clip.format.bits_per_sample)
+
+            y4mformat = 'C' + y4mformat + ' '
+            data = 'YUV4MPEG2 {y4mformat}W{width} H{height} F{fps_num}:{fps_den} Ip A0:0 XLENGTH={length}\n'.format(
+                y4mformat=y4mformat,
+                width=clip.width,
+                height=clip.height,
+                fps_num=clip.fps_num,
+                fps_den=clip.fps_den,
+                length=len(clip)
+            )
+
+            return data
+        
         # Checks
         num_clips = len(clips)
         num_files = len(files)
@@ -1258,8 +1258,8 @@ def SynDeband(
     mstr: int = 6000, 
     inflate: int = 2,
     include_mask: bool = False, 
-    kill: Union[vs.VideoNode, None] = None, 
-    bmask: Union[vs.VideoNode, None] = None,
+    kill: Optional[vs.VideoNode] = None, 
+    bmask: Optional[vs.VideoNode] = None,
     limit: bool = True,
     limit_thry: float = 0.12,
     limit_thrc: float = 0.1,
@@ -1271,7 +1271,7 @@ def SynDeband(
     # copied from kagefunc.retinex_edgemask()
     def _retinex_edgemask(src: vs.VideoNode) -> vs.VideoNode:
 
-        # copied from kagefunc.kirsch()
+        # modified from kagefunc.kirsch()
         def _kirsch(src: vs.VideoNode) -> vs.VideoNode:
             kirsch1 = convolution(src, matrix=[ 5,  5,  5, -3,  0, -3, -3, -3, -3], saturate=False)
             kirsch2 = convolution(src, matrix=[-3,  5,  5, -3,  0,  5, -3, -3, -3], saturate=False)
@@ -1289,6 +1289,7 @@ def SynDeband(
         kill = vsutil.iterate(clip, functools.partial(removegrain, mode=[20, 11]), 2)
     elif not kill:
         kill = clip
+    
     assert isinstance(kill, vs.VideoNode)
     grain = core.std.MakeDiff(clip, kill)
     f3kdb_params = {
@@ -1358,18 +1359,18 @@ def Descale(
     width: int,
     height: int,
     kernel: str,
-    custom_kernel: Union[Callable, None] = None,
+    custom_kernel: Optional[Callable] = None,
     taps: int = 3,
     b: Union[int, float] = 0.0,
     c: Union[int, float] = 0.5,
     blur: Union[int, float] = 1.0,
-    post_conv : Union[List[Union[float, int]], None] = None,
+    post_conv : Optional[List[Union[float, int]]] = None,
     src_left: Union[int, float] = 0.0,
     src_top: Union[int, float] = 0.0,
-    src_width: Union[int, float, None] = None,
-    src_height: Union[int, float, None] = None,
+    src_width: Optional[Union[int, float]] = None,
+    src_height: Optional[Union[int, float]] = None,
     border_handling: int = 0,
-    ignore_mask: Union[vs.VideoNode, None] = None,
+    ignore_mask: Optional[vs.VideoNode] = None,
     force: bool = False,
     force_h: bool = False,
     force_v: bool = False,
@@ -1444,17 +1445,14 @@ def Descale(
     assert isinstance(descaled, vs.VideoNode)
     
     return descaled
-    
-    
-    
 
 # inspired by https://skyeysnow.com/forum.php?mod=viewthread&tid=58390
 def rescale(
     clip: vs.VideoNode,
     descale_kernel: Union[str, List[str]] = "Debicubic",
     src_height: Union[Union[float, int], List[Union[float, int]]] = 720,
-    bw: Union[int, List[int], None] = None,
-    bh: Union[int, List[int], None] = None,
+    bw: Optional[Union[int, List[int]]] = None,
+    bh: Optional[Union[int, List[int]]]  = None,
     show_upscaled: bool = False,
     show_fft: bool = False,
     detail_mask_threshold: float = 0.05,
@@ -1928,7 +1926,7 @@ def screen_shot(clip: vs.VideoNode, frames: Union[List[int], int], path: str, fi
 # modified from https://github.com/DJATOM/VapourSynth-atomchtools/blob/34e16238291954206b3f7d5b704324dd6885b224/atomchtools.py#L370
 def TIVTC_VFR(
     source: vs.VideoNode,
-    clip2: Union[vs.VideoNode, None] = None,
+    clip2: Optional[vs.VideoNode] = None,
     tfmIn: Union[Path, str] = "matches.txt",
     tdecIn: Union[Path, str] = "metrics.txt",
     mkvOut: Union[Path, str] = "timecodes.txt",
@@ -2224,11 +2222,11 @@ def postfix2infix(expr: str) -> LiteralString:
 
 def encode_check(
     encoded: vs.VideoNode,
-    source: Union[vs.VideoNode, None] = None,
-    mode: str = "BOTH",
+    source: Optional[vs.VideoNode] = None,
+    mode: Literal["BOTH", "SSIM", "CAMBI"] = "BOTH",
     threshold_cambi: float = 5,
     threshold_ssim: float = 0.9,
-    return_type: str = "encoded"
+    return_type: Literal["encoded", "error", "both"] = "encoded"
 ) -> Union[
     vs.VideoNode,
     Tuple[vs.VideoNode, vs.VideoNode]
