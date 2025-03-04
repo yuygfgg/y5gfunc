@@ -1062,6 +1062,7 @@ def mux_mkv(
     
     return output_path
 
+# modified from https://github.com/OrangeChannel/acsuite/blob/e40f50354a2fc26f2a29bf3a2fe76b96b2983624/acsuite/__init__.py#L252
 def get_frame_timestamp(
     frame_num: int,
     clip: vs.VideoNode,
@@ -1099,7 +1100,7 @@ def get_frame_timestamp(
     elif precision == 'nanosecond':
         return f"{h:02.0f}:{m:02.0f}:{s:012.9f}"
 
-
+# modified from https://github.com/OrangeChannel/acsuite/blob/e40f50354a2fc26f2a29bf3a2fe76b96b2983624/acsuite/__init__.py#L305
 @functools.lru_cache
 def clip_to_timecodes(clip: vs.VideoNode, path: Optional[str] = None) -> Deque[float]:
     import collections
