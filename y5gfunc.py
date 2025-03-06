@@ -97,10 +97,40 @@ def output(*args, debug: bool = True) -> None:
             used_indices.add(_output_index)
 
 def encode_video(
-    filter_output: Union[vs.VideoNode, List[Union[vs.VideoNode, Tuple[vs.VideoNode, int]]]],
-    encoder: Union[List[Popen], Popen],
+    clip: Union[vs.VideoNode, List[Union[vs.VideoNode, Tuple[vs.VideoNode, int]]]],
+    encoder: Union[List[Popen], Popen, IO, None] = None,
     multi: bool = False
 ) -> None:
+    """
+    Encode one or multiple VapourSynth video nodes using external encoders or output directly to stdout.
+    
+    Args:
+        clip: A VapourSynth video node or a list of video nodes/tuples to encode.
+        encoder: External encoder process(es) created with subprocess.Popen, a file-like object,
+                or None to output to stdout.
+        multi: If True, handle multiple input clips and multiple encoders. If False, handle a single clip.
+    
+    Examples:
+        # Output to an external encoder
+        encoder = subprocess.Popen(['x264', '--demuxer', 'y4m', '-', '-o', 'output.mp4'], stdin=subprocess.PIPE)
+        encode_video(clip, encoder)
+        
+        # Output directly to stdout (like vspipe)
+        encode_video(clip, None)
+        # or
+        encode_video(clip, sys.stdout)
+        
+        # Output to a file
+        with open('output.y4m', 'wb') as f:
+            encode_video(clip, f)
+        
+        # Example with multiple encoders
+        encoders = [
+            subprocess.Popen(['x264', '--demuxer', 'y4m', '-', '-o', 'output1.mp4'], stdin=subprocess.PIPE),
+            subprocess.Popen(['x264', '--demuxer', 'y4m', '-', '-o', 'output2.mp4'], stdin=subprocess.PIPE)
+        ]
+        encode_video([clip1, clip2], encoders, multi=True)
+    """
     
     # copied from https://skyeysnow.com/forum.php?mod=viewthread&tid=38690
     def _MIMO(clips: Sequence[vs.VideoNode], files: Sequence[IO]) -> None:
@@ -197,45 +227,60 @@ def encode_video(
                     fileobj.flush()
     
     if not multi:
-        if isinstance(filter_output, vs.VideoNode):
-            output_clip = filter_output
-        elif isinstance(filter_output, list):
-            for item in filter_output:
+        output_clip = None
+        
+        if isinstance(clip, vs.VideoNode):
+            output_clip = clip
+        elif isinstance(clip, list):
+            for item in clip:
                 if isinstance(item, tuple):
                     clip, index = item
                     if isinstance(clip, vs.VideoNode) and isinstance(index, int):
-                            if index == 0:
-                                output_clip = clip
+                        if index == 0:
+                            output_clip = clip
                     else:
                         raise TypeError("encode_video: Tuple must be (VideoNode, int)")
             if not output_clip:
-                output_clip = filter_output[0] if isinstance (filter_output[0], vs.VideoNode) else None
+                output_clip = clip[0] if isinstance(clip[0], vs.VideoNode) else None
             if not output_clip:
-                raise ValueError("encode_video: Couldn't parse filter_output!")
+                raise ValueError("encode_video: Couldn't parse clip!")
             
+        assert output_clip.format.color_family == vs.YUV, "encode_video: All clips must be YUV color family"
+        assert output_clip.fps != 0, "encode_video: all clips must be CFR"
         
-        assert output_clip.format.color_family == vs.YUV
-
-        _MIMO([output_clip], [encoder.stdin]) # type: ignore
-        encoder.communicate() # type: ignore
-        encoder.wait() # type: ignore
+        # Allow direct output to stdout when encoder is None
+        if encoder is None:
+            _MIMO([output_clip], [sys.stdout])
+        elif hasattr(encoder, 'write') and callable(encoder.write):  # File-like object
+            _MIMO([output_clip], [encoder])
+        else:  # Subprocess.Popen object
+            _MIMO([output_clip], [encoder.stdin])  # type: ignore
+            encoder.communicate()  # type: ignore
+            encoder.wait()  # type: ignore
     else:
-        assert isinstance(encoder, List)
-        assert isinstance(filter_output, List)
-        assert len(encoder) == len(filter_output)
-        assert all(isinstance(item, vs.VideoNode) for item in filter_output)
+        assert isinstance(encoder, list), "encode_video: encoder must be a list when multi=True"
+        assert isinstance(clip, list), "encode_video: clip must be a list when multi=True"
+        assert len(encoder) == len(clip), "encode_video: encoder and clip must have the same length"
+        assert all(isinstance(item, vs.VideoNode) for item in clip), "encode_video: all items in clip must be VideoNodes"
+        assert all(clip.format.color_family == vs.YUV for clip in clip), "encode_video: all clips must be YUV color family"
+        assert all(clip.fps != 0 for clip in clip), "encode_video: all clips must be CFR"
         
         output_clips = []
         stdins = []
-        for i, clip in enumerate(filter_output):
+        for i, clip in enumerate(clip):
             output_clips.append(clip)
-            stdins.append(encoder[i].stdin)
+            if hasattr(encoder[i], 'write') and callable(encoder[i].write):  # File-like object
+                stdins.append(encoder[i])
+            else:  # Subprocess.Popen object
+                stdins.append(encoder[i].stdin)
         
-        _MIMO(output_clips, stdins) # type: ignore
+        _MIMO(output_clips, stdins)  # type: ignore
         
-        for i, clip in enumerate(filter_output):
-            encoder[i].communicate()
-            encoder[i].wait()
+        # Only call communicate and wait for Popen objects
+        for i, enc in enumerate(encoder):
+            if not hasattr(enc, 'write') or not callable(enc.write):  # Not a file-like object
+                enc.communicate()
+                enc.wait()
 
 def encode_audio(
     input_file: Union[str, Path],
