@@ -27,6 +27,8 @@ used_indices = set()
 def reset_output_index(index: int = 0) -> None:
     global _output_index
     _output_index = index
+    global used_indices
+    used_indices = set()
 
 def output(*args, debug: bool = True) -> None:
     import inspect
@@ -1233,6 +1235,16 @@ def convolution(clip, matrix, bias=0.0, divisor=0.0, planes: Optional[Union[list
         return core.akarin.Expr(clip, expressions, boundary=1)
     
     return core.std.Convolution(clip, matrix, bias, divisor, planes, saturate, mode)
+
+def wobbly_source(wob_path: Union[Path, str]) -> vs.VideoNode:
+    import vswobbly
+    wob = vswobbly.WobblyProcessor.from_file(
+        wob_path,
+        strategies=[vswobbly.DecombVinverseStrategy(), vswobbly.AdaptiveFixInterlacedFadesStrategy()]
+    )
+
+    clip = wob.apply()
+    return clip
 
 # modified from rksfunc.BM3DWrapper()
 def Fast_BM3DWrapper(
