@@ -1242,7 +1242,7 @@ def minimum(
     if force_std:
         return core.std.Minimum(clip, planes, threshold, coordinates) # type: ignore
     else:
-        return create_minmax_expr(clip, process_expr="min! drop{} min@".format(sum(coordinates)), threshold_expr=" x[0,0] {} - swap max", planes=planes, threshold=threshold, coordinates=coordinates, boundary=boundary)
+        return create_minmax_expr(clip, "min! drop{} min@".format(sum(coordinates)), " x[0,0] {} - swap max", planes, threshold, coordinates, boundary)
 
 def maximum(
     clip: vs.VideoNode,
@@ -1257,7 +1257,7 @@ def maximum(
     if force_std:
         return core.std.Maximum(clip, planes, threshold, coordinates) # type: ignore
     else:
-        return create_minmax_expr(clip, process_expr="drop{}".format(sum(coordinates)), threshold_expr=" x[0,0] {} + swap min", planes=planes, threshold=threshold, coordinates=coordinates, boundary=boundary)
+        return create_minmax_expr(clip, "drop{}".format(sum(coordinates)), " x[0,0] {} + swap min", planes, threshold, coordinates, boundary)
 
 # TODO: add exprs for other modes
 def convolution(
@@ -1329,7 +1329,7 @@ def load_source(
     timecodes_v2_path: Optional[Union[Path, str]] = None
 ) -> vs.VideoNode:
     
-    def _wobbly_source(wob_path: Union[Path, str]) -> vs.VideoNode:
+    def _wobbly_source(wob_path: Union[Path, str], timecodes_v2_path: Optional[Union[Path, str]] = None) -> vs.VideoNode:
         
         def _parse_wobbly(file_path: str) -> dict[str, Any]:
             with open(file_path, 'r', encoding='utf-8') as f:
@@ -1455,7 +1455,7 @@ def load_source(
     
     if file_path.suffix.lower() == ".wob":
         assert track == 0
-        clip = _wobbly_source(file_path)
+        clip = _wobbly_source(file_path, timecodes_v2_path)
     else:
         # modified from https://guides.vcb-s.com/basic-guide-10/#%E6%A3%80%E6%B5%8B%E6%98%AF%E5%90%A6%E4%B8%BA%E5%85%A8%E7%A8%8B-soft-pulldownpure-film
         a = _bestsource(file_path, rff=False)
@@ -1828,7 +1828,15 @@ def rescale(
     
     clip = vsutil.depth(clip, 32)
     
-    def scene_descale(n: int, f: list[vs.VideoFrame], cache: list[int], prefetch: vs.VideoNode, length: int, scene_descale_threshold_ratio: float = scene_descale_threshold_ratio) -> vs.VideoFrame:
+    def scene_descale(
+        n: int,
+        f: list[vs.VideoFrame],
+        cache: list[int],
+        prefetch: vs.VideoNode,
+        length: int,
+        scene_descale_threshold_ratio: float = scene_descale_threshold_ratio
+    ) -> vs.VideoFrame:
+    
         fout = f[0].copy()
         if n == 0 or n == prefetch.num_frames:
             fout.props['_SceneChangePrev'] = 1
@@ -2598,7 +2606,7 @@ def encode_check(
         return output
     
     print(output.num_frames)
-    for frame in output.frames():
+    for _ in output.frames():
         pass
     
     err = PickFrames(encoded, error_frames)
