@@ -1281,15 +1281,151 @@ def convolution(clip, matrix, bias=0.0, divisor=0.0, planes: Optional[Union[list
     
     return core.std.Convolution(clip, matrix, bias, divisor, planes, saturate, mode)
 
-def wobbly_source(wob_path: Union[Path, str]) -> vs.VideoNode:
-    import vswobbly
-    wob = vswobbly.WobblyProcessor.from_file(
-        wob_path,
-        strategies=[vswobbly.DecombVinverseStrategy(), vswobbly.AdaptiveFixInterlacedFadesStrategy()]
-    )
+def load_source(
+    file_path: Union[Path, str],
+    track: int = 0,
+    matrix_s: str = "709",
+    matrix_in_s: str = "709",
+    timecode_v2_path: Optional[Union[Path, str]] = None
+) -> vs.VideoNode:
+    
+    def _wobbly_source(wob_path: Union[Path, str]) -> vs.VideoNode:
+        
+        def _parse_wobbly(file_path: str) -> Dict[str, Any]:
+            with open(file_path, 'r', encoding='utf-8') as f:
+                try:
+                    return json.load(f)
+                except json.JSONDecodeError as e:
+                    raise RuntimeError(f"Error parsing Wobbly project: {e}")
 
-    clip = wob.apply()
-    return clip
+        def _get_num_frames(project: Dict[str, Any]) -> int:
+            num_frames: int = 0
+            
+            if 'trim' in project:
+                for trim in project['trim']:
+                    if isinstance(trim, list) and len(trim) >= 2:
+                        num_frames += trim[1] - trim[0] + 1
+            
+            return num_frames
+
+        def _get_decimation_info(project: Dict[str, Any]) -> Tuple[Dict[int, set[int]], List[Dict[str, int]]]:
+            decimated_frames: List[int] = project.get('decimated frames', [])
+            num_frames: int = _get_num_frames(project)
+            
+            decimated_by_cycle: Dict[int, set[int]] = {}
+            for frame in decimated_frames:
+                cycle: int = frame // 5
+                if cycle not in decimated_by_cycle:
+                    decimated_by_cycle[cycle] = set()
+                decimated_by_cycle[cycle].add(frame % 5)
+            
+            ranges: List[Dict[str, int]] = []
+            current_count: int = -1
+            current_start: int = 0
+            
+            for cycle in range((num_frames + 4) // 5):
+                count: int = len(decimated_by_cycle.get(cycle, set()))
+                if count != current_count:
+                    if current_count != -1:
+                        ranges.append({
+                            'start': current_start,
+                            'end': cycle * 5,
+                            'dropped': current_count
+                        })
+                    current_count = count
+                    current_start = cycle * 5
+            
+            if current_count != -1:
+                ranges.append({
+                    'start': current_start,
+                    'end': num_frames,
+                    'dropped': current_count
+                })
+            
+            return decimated_by_cycle, ranges
+
+        def _frame_number_after_decimation(frame: int, decimated_by_cycle: Dict[int, set[int]]) -> int:
+            if frame < 0:
+                return 0
+            
+            cycle: int = frame // 5
+            offset: int = frame % 5
+            
+            decimated_before: int = 0
+            for c in range(cycle):
+                decimated_before += len(decimated_by_cycle.get(c, set()))
+            
+            for o in range(offset):
+                if o in decimated_by_cycle.get(cycle, set()):
+                    decimated_before += 1
+            
+            return frame - decimated_before
+        
+        def _generate_timecodes_v2(project: Dict[str, Any]) -> str:
+            
+            decimated_by_cycle, ranges = _get_decimation_info(project)
+            
+            tc: str = "# timecode format v2\n"
+            
+            numerators: List[int] = [30000, 24000, 18000, 12000, 6000]
+            denominator: int = 1001
+            
+            total_frames = 0
+            for range_info in ranges:
+                start = range_info['start']
+                end = range_info['end']
+                total_frames += _frame_number_after_decimation(end - 1, decimated_by_cycle) - _frame_number_after_decimation(start, decimated_by_cycle) + 1
+            
+            current_frame = 0
+            current_time_ms = 0.0
+            
+            for range_info in ranges:
+                dropped = range_info['dropped']
+                fps = numerators[dropped] / denominator
+                frame_duration_ms = 1000.0 / fps
+                
+                start_frame = _frame_number_after_decimation(range_info['start'], decimated_by_cycle)
+                end_frame = _frame_number_after_decimation(range_info['end'] - 1, decimated_by_cycle)
+                
+                for _ in range(start_frame, end_frame + 1):
+                    tc += f"{current_time_ms:.3f}\n"
+                    current_time_ms += frame_duration_ms
+                    current_frame += 1
+            
+            return tc
+        
+        from vswobbly import WobblyProcessor, DecombVinverseStrategy, AdaptiveFixInterlacedFadesStrategy
+        
+        wob = WobblyProcessor.from_file(wob_path, strategies=[DecombVinverseStrategy(), AdaptiveFixInterlacedFadesStrategy()])
+        clip = wob.apply()
+        
+        timecodes: str = _generate_timecodes_v2(_parse_wobbly(str(wob_path)))
+        if timecode_v2_path:
+            with open(timecode_v2_path, "w", encoding="utf-8") as f:
+                f.write(timecodes)
+        
+        return clip
+
+    def _bestsource(file_path: Union[Path, str], track: int = 0, timecode_v2_path: Optional[Union[Path, str]] = None, variableformat: int = -1, rff: bool = False) -> vs.VideoNode:
+        return core.bs.VideoSource(file_path, track, variableformat, timecodes=timecode_v2_path, rff=rff)
+
+    file_path = Path(file_path)
+    
+    assert file_path.exists()
+    
+    if file_path.suffix.lower() == ".wob":
+        assert track == 0
+        clip = _wobbly_source(file_path)
+    else:
+        # modified from https://guides.vcb-s.com/basic-guide-10/#%E6%A3%80%E6%B5%8B%E6%98%AF%E5%90%A6%E4%B8%BA%E5%85%A8%E7%A8%8B-soft-pulldownpure-film
+        a = _bestsource(file_path, rff=False)
+        b = _bestsource(file_path, rff=True)
+        rff = False if abs(b.num_frames * 0.8 - a.num_frames) < 1 else True
+        
+        clip = _bestsource(file_path, track, timecode_v2_path, rff=rff)
+    
+    return clip.resize.Spline36(matrix_s=matrix_s, matrix_in_s=matrix_in_s)
+    
 
 # modified from rksfunc.BM3DWrapper()
 def Fast_BM3DWrapper(
