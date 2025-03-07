@@ -96,6 +96,8 @@ def output(*args, debug: bool = True) -> None:
             set_output(clip, _output_index, f'{_output_index}: {variable_name}')
             used_indices.add(_output_index)
 
+# TODO: add a function to get encoder params
+
 def encode_video(
     clip: Union[vs.VideoNode, List[Union[vs.VideoNode, Tuple[vs.VideoNode, int]]]],
     encoder: Union[List[Popen], Popen, IO, None] = None,
@@ -282,6 +284,7 @@ def encode_video(
                 enc.communicate()
                 enc.wait()
 
+# TODO: fix positive delay for lossy tracks with copy codec
 def encode_audio(
     input_file: Union[str, Path],
     output_file: Union[str, Path], 
@@ -1024,6 +1027,7 @@ def extract_pgs_subtitles(
     print("\nextract_pgs_subtitles: Extraction completed!")
     return subtitles
 
+# TODO: actually use "comment"; add timecode support
 def mux_mkv(
     output_path: Union[str, Path],
     videos: Optional[Union[List[Dict[str, Union[str, Path, bool]]], Dict[str, Union[str, Path, bool]]]] = None,
@@ -1114,12 +1118,12 @@ def get_frame_timestamp(
     frame_num: int,
     clip: vs.VideoNode,
     precision: Literal['second', 'millisecond', 'microsecond' ,'nanosecond'] = 'millisecond',
-    timecodes_file: Optional[str] = None
+    timecodes_v2_file: Optional[str] = None
 )-> str:
     import fractions
     
     assert frame_num >= 0
-    assert timecodes_file is None or Path(timecodes_file).exists()
+    assert timecodes_v2_file is None or Path(timecodes_v2_file).exists()
     
     if frame_num == 0:
         s = 0.0
@@ -1127,8 +1131,8 @@ def get_frame_timestamp(
         t = round(float(10 ** 9 * frame_num * clip.fps ** -1))
         s = t / 10 ** 9
     else:
-        if timecodes_file is not None:
-            timecodes = [float(x) / 1000 for x in open(timecodes_file, "r").read().splitlines()[1:]]
+        if timecodes_v2_file is not None:
+            timecodes = [float(x) / 1000 for x in open(timecodes_v2_file, "r").read().splitlines()[1:]]
             s = timecodes[frame_num]
         else:
             s = clip_to_timecodes(clip)[frame_num]
@@ -1147,6 +1151,7 @@ def get_frame_timestamp(
     elif precision == 'nanosecond':
         return f"{h:02.0f}:{m:02.0f}:{s:012.9f}"
 
+# TODO: use fps for CFR clips
 # modified from https://github.com/OrangeChannel/acsuite/blob/e40f50354a2fc26f2a29bf3a2fe76b96b2983624/acsuite/__init__.py#L305
 @functools.lru_cache
 def clip_to_timecodes(clip: vs.VideoNode, path: Optional[str] = None) -> Deque[float]:
@@ -1231,6 +1236,7 @@ def maximum(clip: vs.VideoNode, planes: Optional[Union[list[int], int]] = None, 
     else:
         return create_minmax_expr(clip, process_expr="drop{}".format(sum(coordinates)), threshold_expr=" x[0,0] {} + swap min", planes=planes, threshold=threshold, coordinates=coordinates, boundary=boundary)
 
+# TODO: add exprs for other modes
 def convolution(clip, matrix, bias=0.0, divisor=0.0, planes: Optional[Union[list[int], int]] = None, saturate=True, mode="s", force_std=False):
     if planes is None:
         planes = list(range(clip.format.num_planes))
@@ -1281,12 +1287,13 @@ def convolution(clip, matrix, bias=0.0, divisor=0.0, planes: Optional[Union[list
     
     return core.std.Convolution(clip, matrix, bias, divisor, planes, saturate, mode)
 
+# TODO: auto matrix handle
 def load_source(
     file_path: Union[Path, str],
     track: int = 0,
     matrix_s: str = "709",
     matrix_in_s: str = "709",
-    timecode_v2_path: Optional[Union[Path, str]] = None
+    timecodes_v2_path: Optional[Union[Path, str]] = None
 ) -> vs.VideoNode:
     
     def _wobbly_source(wob_path: Union[Path, str]) -> vs.VideoNode:
@@ -1400,14 +1407,14 @@ def load_source(
         clip = wob.apply()
         
         timecodes: str = _generate_timecodes_v2(_parse_wobbly(str(wob_path)))
-        if timecode_v2_path:
-            with open(timecode_v2_path, "w", encoding="utf-8") as f:
+        if timecodes_v2_path:
+            with open(timecodes_v2_path, "w", encoding="utf-8") as f:
                 f.write(timecodes)
         
         return clip
 
-    def _bestsource(file_path: Union[Path, str], track: int = 0, timecode_v2_path: Optional[Union[Path, str]] = None, variableformat: int = -1, rff: bool = False) -> vs.VideoNode:
-        return core.bs.VideoSource(file_path, track, variableformat, timecodes=timecode_v2_path, rff=rff)
+    def _bestsource(file_path: Union[Path, str], track: int = 0, timecodes_v2_path: Optional[Union[Path, str]] = None, variableformat: int = -1, rff: bool = False) -> vs.VideoNode:
+        return core.bs.VideoSource(file_path, track, variableformat, timecodes=timecodes_v2_path, rff=rff)
 
     file_path = Path(file_path)
     
@@ -1422,11 +1429,11 @@ def load_source(
         b = _bestsource(file_path, rff=True)
         rff = False if abs(b.num_frames * 0.8 - a.num_frames) < 1 else True
         
-        clip = _bestsource(file_path, track, timecode_v2_path, rff=rff)
+        clip = _bestsource(file_path, track, timecodes_v2_path, rff=rff)
     
     return clip.resize.Spline36(matrix_s=matrix_s, matrix_in_s=matrix_in_s)
     
-
+# TODO: add mvf.bm3d style presets
 # modified from rksfunc.BM3DWrapper()
 def Fast_BM3DWrapper(
     clip: vs.VideoNode,
@@ -1615,7 +1622,6 @@ def cambi_mask(
 
     return deband_mask.std.CopyFrameProps(scores)
 
-
 def Descale(
     src: vs.VideoNode,
     width: int,
@@ -1708,6 +1714,7 @@ def Descale(
     
     return descaled
 
+# TODO: use vs-jetpack Rescalers, handle asymmetrical descales
 # inspired by https://skyeysnow.com/forum.php?mod=viewthread&tid=58390
 def rescale(
     clip: vs.VideoNode,
@@ -2169,7 +2176,6 @@ def PickFrames(clip: vs.VideoNode, indices: List[int]) -> vs.VideoNode:
     
     return ret
 
-
 def screen_shot(clip: vs.VideoNode, frames: Union[List[int], int], path: str, file_name: str, overwrite: bool = True):
 
     if isinstance(frames, int):
@@ -2193,7 +2199,8 @@ def TIVTC_VFR(
     tdecIn: Union[Path, str] = "metrics.txt",
     mkvOut: Union[Path, str] = "timecodes.txt",
     tfm_args: dict = dict(),
-    tdecimate_args: dict = dict()
+    tdecimate_args: dict = dict(),
+    overwrite: bool = False
 ) -> vs.VideoNode:
     
     '''
@@ -2217,7 +2224,7 @@ def TIVTC_VFR(
     if tfmIn.exists() and tdecIn.exists():
         analyze = False
 
-    if clip2:
+    if clip2 and not overwrite:
         tfm_args.update(dict(clip2=clip2))
 
     if analyze:
