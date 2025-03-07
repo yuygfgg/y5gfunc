@@ -2,7 +2,8 @@ from dataclasses import dataclass, field
 from enum import Enum
 import functools
 import subprocess
-from typing import List, Literal, Tuple, Union, Any, Callable, Optional, IO, Sequence, Dict, Deque
+from typing import Literal, Union, Any, Callable, Optional, IO, Sequence
+from collections import deque
 from subprocess import Popen
 from types import FrameType
 import vapoursynth as vs
@@ -99,8 +100,8 @@ def output(*args, debug: bool = True) -> None:
 # TODO: add a function to get encoder params
 
 def encode_video(
-    clip: Union[vs.VideoNode, List[Union[vs.VideoNode, Tuple[vs.VideoNode, int]]]],
-    encoder: Union[List[Popen], Popen, IO, None] = None,
+    clip: Union[vs.VideoNode, list[Union[vs.VideoNode, tuple[vs.VideoNode, int]]]],
+    encoder: Union[list[Popen], Popen, IO, None] = None,
     multi: bool = False
 ) -> None:
     """
@@ -506,7 +507,7 @@ def extract_audio_tracks(
     input_path: Union[str, Path],
     output_dir: Optional[Union[str, Path]] = None,
     config: AudioConfig = AudioConfig()
-) -> List[Dict[str, Union[str, Path, bool]]]:
+) -> list[dict[str, Union[str, Path, bool]]]:
 
     input_path = Path(input_path)
     
@@ -723,14 +724,14 @@ def get_bd_chapter(
         milliseconds = int((seconds_remainder - whole_seconds) * 1000)
         return f"{hours:02d}:{minutes:02d}:{whole_seconds:02d}.{milliseconds:03d}"
 
-    def _process_mpls(mpls_path: Path, target_clip: Optional[str] = None) -> Optional[List[float]]:
+    def _process_mpls(mpls_path: Path, target_clip: Optional[str] = None) -> Optional[list[float]]:
         try:
             with mpls_path.open('rb') as f:
                 if f.read(4) != b'MPLS':
                     raise ValueError(f"get_bd_chapter: Invalid MPLS format in file: {mpls_path}")
                 
                 f.seek(0)
-                header: Dict[str, Any] = {}
+                header: dict[str, Any] = {}
                 header["TypeIndicator"] = f.read(4)
                 header["VersionNumber"] = f.read(4)
                 header["PlayListStartAddress"], = struct.unpack(">I", f.read(4))
@@ -886,7 +887,7 @@ def get_mkv_chapter(mkv_path: Union[str, Path], output_path: Union[str, Path]) -
     return output_path
 
 def subset_fonts(
-    ass_path: Union[List[Union[str, Path]], str, Path], 
+    ass_path: Union[list[Union[str, Path]], str, Path], 
     fonts_path: Union[str, Path], 
     output_directory: Union[str, Path]
 ) -> Path:
@@ -912,7 +913,7 @@ def subset_fonts(
 def extract_pgs_subtitles(
     m2ts_path: Union[str, Path], 
     output_dir: Optional[Union[str, Path]] = None
-) -> List[Dict[str, Union[str, Path, bool]]]:
+) -> list[dict[str, Union[str, Path, bool]]]:
     
     import tempfile
     import shutil
@@ -1027,17 +1028,16 @@ def extract_pgs_subtitles(
     print("\nextract_pgs_subtitles: Extraction completed!")
     return subtitles
 
-# TODO: actually use "comment"; add timecode support
 def mux_mkv(
     output_path: Union[str, Path],
-    videos: Optional[Union[List[Dict[str, Union[str, Path, bool]]], Dict[str, Union[str, Path, bool]]]] = None,
-    audios: Optional[Union[List[Dict[str, Union[str, Path, bool]]], Dict[str, Union[str, Path, bool]]]] = None,
-    subtitles: Optional[Union[List[Dict[str, Union[str, Path, bool]]], Dict[str, Union[str, Path, bool]]]] = None,
+    videos: Optional[Union[list[dict[str, Union[str, Path, bool]]], dict[str, Union[str, Path, bool]]]] = None,
+    audios: Optional[Union[list[dict[str, Union[str, Path, bool]]], dict[str, Union[str, Path, bool]]]] = None,
+    subtitles: Optional[Union[list[dict[str, Union[str, Path, bool]]], dict[str, Union[str, Path, bool]]]] = None,
     fonts_dir: Optional[Union[str, Path]] = None,
     chapters: Optional[Union[str, Path]] = None
 ) -> Path:
     '''
-    {"path": str | Path, "language": str, "track_name": str, "default": bool, "comment": bool}
+    {"path": str | Path, "language": str, "track_name": str, "default": bool, "comment": bool, "timecode": str | Path}
     '''
     output_path = Path(output_path)
     if fonts_dir:
@@ -1047,14 +1047,14 @@ def mux_mkv(
 
     assert any(x is not None for x in (fonts_dir, videos, audios, subtitles, chapters)), "mux_mkv: At least one input must be provided."
 
-    def normalize_inputs(inputs):
+    def _normalize_inputs(inputs):
         if isinstance(inputs, dict):
             return [inputs]
         return inputs or []
 
-    videos = normalize_inputs(videos)
-    audios = normalize_inputs(audios)
-    subtitles = normalize_inputs(subtitles)
+    videos = _normalize_inputs(videos)
+    audios = _normalize_inputs(audios)
+    subtitles = _normalize_inputs(subtitles)
 
     for track_list in (videos, audios, subtitles):
         for track in track_list:
@@ -1067,13 +1067,17 @@ def mux_mkv(
 
     mkvmerge_cmd = ["mkvmerge", "-o", str(output_path)]
 
-    def process_tracks(tracks) -> None:
+    def _process_tracks(tracks) -> None:
         first_default_set = False
         for i, track in enumerate(tracks):
             if "language" in track:
                 mkvmerge_cmd.extend(["--language", f"0:{track['language']}"])
             if "track_name" in track:
                 mkvmerge_cmd.extend(["--track-name", f"0:{track['track_name']}"])
+            if "comment" in track:
+                mkvmerge_cmd.extend(["--commentary-flag", "0:yes"])
+            if "timecode" in track:
+                mkvmerge_cmd.extend(["--timestamps", f"0:{str(track['timecode'])}"])
             
             if track.get("default") is True:
                 mkvmerge_cmd.extend(["--default-track", "0:yes"])
@@ -1088,9 +1092,9 @@ def mux_mkv(
 
             mkvmerge_cmd.append(str(track["path"]))
 
-    process_tracks(videos)
-    process_tracks(audios)
-    process_tracks(subtitles)
+    _process_tracks(videos)
+    _process_tracks(audios)
+    _process_tracks(subtitles)
 
     if chapters:
         mkvmerge_cmd.extend(["--chapters", str(chapters)])
@@ -1154,7 +1158,7 @@ def get_frame_timestamp(
 # TODO: use fps for CFR clips
 # modified from https://github.com/OrangeChannel/acsuite/blob/e40f50354a2fc26f2a29bf3a2fe76b96b2983624/acsuite/__init__.py#L305
 @functools.lru_cache
-def clip_to_timecodes(clip: vs.VideoNode, path: Optional[str] = None) -> Deque[float]:
+def clip_to_timecodes(clip: vs.VideoNode, path: Optional[str] = None) -> deque[float]:
     import collections
     import fractions
 
@@ -1224,20 +1228,49 @@ def create_minmax_expr(
 
     return core.akarin.Expr(clips=[clip], expr=expressions, boundary=boundary)
 
-def minimum(clip: vs.VideoNode, planes: Optional[Union[list[int], int]] = None, threshold: Optional[float] = None, coordinates: list[int] = [1, 1, 1, 1, 1, 1, 1, 1], boundary: int = 1, force_std=False) -> vs.VideoNode:
+def minimum(
+    clip: vs.VideoNode,
+    planes: Optional[Union[list[int], int]] = None,
+    threshold: Optional[float] = None,
+    coordinates: list[int] =   [1, 1, 1, 
+                                1,    1, 
+                                1, 1, 1],
+    boundary: int = 1,
+    force_std=False
+) -> vs.VideoNode:
+
     if force_std:
         return core.std.Minimum(clip, planes, threshold, coordinates) # type: ignore
     else:
         return create_minmax_expr(clip, process_expr="min! drop{} min@".format(sum(coordinates)), threshold_expr=" x[0,0] {} - swap max", planes=planes, threshold=threshold, coordinates=coordinates, boundary=boundary)
 
-def maximum(clip: vs.VideoNode, planes: Optional[Union[list[int], int]] = None, threshold: Optional[float] = None, coordinates: list[int] = [1, 1, 1, 1, 1, 1, 1, 1], boundary: int = 1, force_std=False) -> vs.VideoNode:
+def maximum(
+    clip: vs.VideoNode,
+    planes: Optional[Union[list[int], int]] = None,
+    threshold: Optional[float] = None,
+    coordinates: list[int] =   [1, 1, 1, 
+                                1,    1, 
+                                1, 1, 1],
+    boundary: int = 1,
+    force_std=False
+) -> vs.VideoNode:
     if force_std:
         return core.std.Maximum(clip, planes, threshold, coordinates) # type: ignore
     else:
         return create_minmax_expr(clip, process_expr="drop{}".format(sum(coordinates)), threshold_expr=" x[0,0] {} + swap min", planes=planes, threshold=threshold, coordinates=coordinates, boundary=boundary)
 
 # TODO: add exprs for other modes
-def convolution(clip, matrix, bias=0.0, divisor=0.0, planes: Optional[Union[list[int], int]] = None, saturate=True, mode="s", force_std=False):
+def convolution(
+    clip: vs.VideoNode,
+    matrix: list[int],
+    bias: float = 0.0,
+    divisor: float = 0.0,
+    planes: Optional[Union[list[int], int]] = None,
+    saturate: bool = True,
+    mode: str = "s",
+    force_std: bool = False
+) -> vs.VideoNode:
+
     if planes is None:
         planes = list(range(clip.format.num_planes))
     if isinstance(planes, int):
@@ -1298,14 +1331,14 @@ def load_source(
     
     def _wobbly_source(wob_path: Union[Path, str]) -> vs.VideoNode:
         
-        def _parse_wobbly(file_path: str) -> Dict[str, Any]:
+        def _parse_wobbly(file_path: str) -> dict[str, Any]:
             with open(file_path, 'r', encoding='utf-8') as f:
                 try:
                     return json.load(f)
                 except json.JSONDecodeError as e:
                     raise RuntimeError(f"Error parsing Wobbly project: {e}")
 
-        def _get_num_frames(project: Dict[str, Any]) -> int:
+        def _get_num_frames(project: dict[str, Any]) -> int:
             num_frames: int = 0
             
             if 'trim' in project:
@@ -1315,18 +1348,18 @@ def load_source(
             
             return num_frames
 
-        def _get_decimation_info(project: Dict[str, Any]) -> Tuple[Dict[int, set[int]], List[Dict[str, int]]]:
-            decimated_frames: List[int] = project.get('decimated frames', [])
+        def _get_decimation_info(project: dict[str, Any]) -> tuple[dict[int, set[int]], list[dict[str, int]]]:
+            decimated_frames: list[int] = project.get('decimated frames', [])
             num_frames: int = _get_num_frames(project)
             
-            decimated_by_cycle: Dict[int, set[int]] = {}
+            decimated_by_cycle: dict[int, set[int]] = {}
             for frame in decimated_frames:
                 cycle: int = frame // 5
                 if cycle not in decimated_by_cycle:
                     decimated_by_cycle[cycle] = set()
                 decimated_by_cycle[cycle].add(frame % 5)
             
-            ranges: List[Dict[str, int]] = []
+            ranges: list[dict[str, int]] = []
             current_count: int = -1
             current_start: int = 0
             
@@ -1351,7 +1384,7 @@ def load_source(
             
             return decimated_by_cycle, ranges
 
-        def _frame_number_after_decimation(frame: int, decimated_by_cycle: Dict[int, set[int]]) -> int:
+        def _frame_number_after_decimation(frame: int, decimated_by_cycle: dict[int, set[int]]) -> int:
             if frame < 0:
                 return 0
             
@@ -1368,13 +1401,13 @@ def load_source(
             
             return frame - decimated_before
         
-        def _generate_timecodes_v2(project: Dict[str, Any]) -> str:
+        def _generate_timecodes_v2(project: dict[str, Any]) -> str:
             
             decimated_by_cycle, ranges = _get_decimation_info(project)
             
             tc: str = "# timecode format v2\n"
             
-            numerators: List[int] = [30000, 24000, 18000, 12000, 6000]
+            numerators: list[int] = [30000, 24000, 18000, 12000, 6000]
             denominator: int = 1001
             
             total_frames = 0
@@ -1533,7 +1566,7 @@ def SynDeband(
     limit_thry: float = 0.12,
     limit_thrc: float = 0.1,
     limit_elast: float = 20,
-) -> Union[vs.VideoNode, Tuple[vs.VideoNode, vs.VideoNode]]:
+) -> Union[vs.VideoNode, tuple[vs.VideoNode, vs.VideoNode]]:
     
     assert clip.format.id == vs.YUV420P16
     
@@ -1632,7 +1665,7 @@ def Descale(
     b: Union[int, float] = 0.0,
     c: Union[int, float] = 0.5,
     blur: Union[int, float] = 1.0,
-    post_conv : Optional[List[Union[float, int]]] = None,
+    post_conv : Optional[list[Union[float, int]]] = None,
     src_left: Union[int, float] = 0.0,
     src_top: Union[int, float] = 0.0,
     src_width: Optional[Union[int, float]] = None,
@@ -1718,10 +1751,10 @@ def Descale(
 # inspired by https://skyeysnow.com/forum.php?mod=viewthread&tid=58390
 def rescale(
     clip: vs.VideoNode,
-    descale_kernel: Union[str, List[str]] = "Debicubic",
-    src_height: Union[Union[float, int], List[Union[float, int]]] = 720,
-    bw: Optional[Union[int, List[int]]] = None,
-    bh: Optional[Union[int, List[int]]]  = None,
+    descale_kernel: Union[str, list[str]] = "Debicubic",
+    src_height: Union[Union[float, int], list[Union[float, int]]] = 720,
+    bw: Optional[Union[int, list[int]]] = None,
+    bh: Optional[Union[int, list[int]]]  = None,
     show_upscaled: bool = False,
     show_fft: bool = False,
     detail_mask_threshold: float = 0.05,
@@ -1729,9 +1762,9 @@ def rescale(
     show_detail_mask: bool = False,
     show_common_mask: bool = False,
     nnedi3_args: dict = {'field': 1, 'nsize': 4, 'nns': 4, 'qual': 2},
-    taps: Union[int, List[int]] = 4,
-    b: Union[Union[float, int], List[Union[float, int]]] = 0.33,
-    c: Union[Union[float, int], List[Union[float, int]]] = 0.33,
+    taps: Union[int, list[int]] = 4,
+    b: Union[Union[float, int], list[Union[float, int]]] = 0.33,
+    c: Union[Union[float, int], list[Union[float, int]]] = 0.33,
     threshold_max: float = 0.007,
     threshold_min: float = -1,
     show_osd: bool = True,
@@ -1745,13 +1778,13 @@ def rescale(
     opencl = True
 ) -> Union[
     vs.VideoNode,
-    Tuple[vs.VideoNode, vs.VideoNode],
-    Tuple[vs.VideoNode, vs.VideoNode, vs.VideoNode],
-    Tuple[vs.VideoNode, vs.VideoNode, vs.VideoNode, vs.VideoNode],
-    Tuple[vs.VideoNode, vs.VideoNode, vs.VideoNode, vs.VideoNode, vs.VideoNode],
-    Tuple[vs.VideoNode, vs.VideoNode, vs.VideoNode, vs.VideoNode, vs.VideoNode, vs.VideoNode],
-    Tuple[vs.VideoNode, vs.VideoNode, vs.VideoNode, vs.VideoNode, vs.VideoNode, vs.VideoNode, vs.VideoNode],
-    Tuple[vs.VideoNode, vs.VideoNode, vs.VideoNode, vs.VideoNode, vs.VideoNode, vs.VideoNode, vs.VideoNode, vs.VideoNode]
+    tuple[vs.VideoNode, vs.VideoNode],
+    tuple[vs.VideoNode, vs.VideoNode, vs.VideoNode],
+    tuple[vs.VideoNode, vs.VideoNode, vs.VideoNode, vs.VideoNode],
+    tuple[vs.VideoNode, vs.VideoNode, vs.VideoNode, vs.VideoNode, vs.VideoNode],
+    tuple[vs.VideoNode, vs.VideoNode, vs.VideoNode, vs.VideoNode, vs.VideoNode, vs.VideoNode],
+    tuple[vs.VideoNode, vs.VideoNode, vs.VideoNode, vs.VideoNode, vs.VideoNode, vs.VideoNode, vs.VideoNode],
+    tuple[vs.VideoNode, vs.VideoNode, vs.VideoNode, vs.VideoNode, vs.VideoNode, vs.VideoNode, vs.VideoNode, vs.VideoNode]
 ]:
     
     '''
@@ -1795,7 +1828,7 @@ def rescale(
     
     clip = vsutil.depth(clip, 32)
     
-    def scene_descale(n: int, f: List[vs.VideoFrame], cache: List[int], prefetch: vs.VideoNode, length: int, scene_descale_threshold_ratio: float = scene_descale_threshold_ratio) -> vs.VideoFrame:
+    def scene_descale(n: int, f: list[vs.VideoFrame], cache: list[int], prefetch: vs.VideoNode, length: int, scene_descale_threshold_ratio: float = scene_descale_threshold_ratio) -> vs.VideoFrame:
         fout = f[0].copy()
         if n == 0 or n == prefetch.num_frames:
             fout.props['_SceneChangePrev'] = 1
@@ -1849,7 +1882,7 @@ def rescale(
     def _mergeuv(clipy: vs.VideoNode, clipuv: vs.VideoNode) -> vs.VideoNode:
         return core.std.ShufflePlanes([clipy, clipuv], [0, 1, 2], vs.YUV)
     
-    def _generate_common_mask(detail_mask_clips: List[vs.VideoNode]) -> vs.VideoNode:
+    def _generate_common_mask(detail_mask_clips: list[vs.VideoNode]) -> vs.VideoNode:
         load_expr = [f'src{i} * ' for i in range(len(detail_mask_clips))]
         merge_expr = ' '.join(load_expr)
         merge_expr = merge_expr[:4] + merge_expr[6:]
@@ -1857,9 +1890,9 @@ def rescale(
     
     def _select_per_frame(
         reference: vs.VideoNode,
-        upscaled_clips: List[vs.VideoNode],
-        candidate_clips: List[vs.VideoNode],
-        params_list: List[dict],
+        upscaled_clips: list[vs.VideoNode],
+        candidate_clips: list[vs.VideoNode],
+        params_list: list[dict],
         common_mask_clip: vs.VideoNode,
         threshold_max: float = threshold_max,
         threshold_min: float = threshold_min,
@@ -1939,10 +1972,10 @@ def rescale(
         def nn2x(nn2x) -> vs.VideoNode:
             return nnedi3(nnedi3(nn2x, dh=True).std.Transpose(), dh=True).std.Transpose()
     
-    upscaled_clips: List[vs.VideoNode] = []
-    rescaled_clips: List[vs.VideoNode] = []
-    detail_masks: List[vs.VideoNode] = []
-    params_list: List[dict] = []
+    upscaled_clips: list[vs.VideoNode] = []
+    rescaled_clips: list[vs.VideoNode] = []
+    detail_masks: list[vs.VideoNode] = []
+    params_list: list[dict] = []
     
     src_luma = vsutil.get_y(clip)
     
@@ -2163,7 +2196,7 @@ def ranger(start, end, step):
         raise ValueError("ranger: step must not be 0!")
     return [round(start + i * step, 10) for i in range(int((end - start) / step))]
 
-def PickFrames(clip: vs.VideoNode, indices: List[int]) -> vs.VideoNode:
+def PickFrames(clip: vs.VideoNode, indices: list[int]) -> vs.VideoNode:
     try: 
         ret = core.akarin.PickFrames(clip, indices=indices)
     except AttributeError:
@@ -2176,7 +2209,7 @@ def PickFrames(clip: vs.VideoNode, indices: List[int]) -> vs.VideoNode:
     
     return ret
 
-def screen_shot(clip: vs.VideoNode, frames: Union[List[int], int], path: str, file_name: str, overwrite: bool = True):
+def screen_shot(clip: vs.VideoNode, frames: Union[list[int], int], path: str, file_name: str, overwrite: bool = True):
 
     if isinstance(frames, int):
         frames = [frames]
@@ -2498,7 +2531,7 @@ def encode_check(
     return_type: Literal["encoded", "error", "both"] = "encoded"
 ) -> Union[
     vs.VideoNode,
-    Tuple[vs.VideoNode, vs.VideoNode]
+    tuple[vs.VideoNode, vs.VideoNode]
 ]:
     
     from muvsfunc import SSIM
@@ -2527,7 +2560,7 @@ def encode_check(
         cambi = cambi_mask(encoded)
     
     error_frames = []
-    def _chk(n: int, f: List[vs.VideoFrame], threshold_cambi: float, threshold_ssim: float, _enable_ssim: bool, _enable_cambi: bool, error_frames: List):
+    def _chk(n: int, f: list[vs.VideoFrame], threshold_cambi: float, threshold_ssim: float, _enable_ssim: bool, _enable_cambi: bool, error_frames: List):
         def print_red_bold(text):
             print("\033[1;31m" + text + "\033[0m")
             
@@ -2576,7 +2609,7 @@ def encode_check(
 
 # inspired by https://skyeysnow.com/forum.php?mod=redirect&goto=findpost&ptid=13824&pid=333218
 def is_stripe(clip: vs.VideoNode, threshold: Union[float, int] = 2, freq_range: Union[int, float] = 0.25, scenecut_threshold: Union[float, int] = 0.1) -> vs.VideoNode:
-    def scene_fft(n: int, f: List[vs.VideoFrame], cache: List[float], prefetch: vs.VideoNode) -> vs.VideoFrame:
+    def scene_fft(n: int, f: list[vs.VideoFrame], cache: list[float], prefetch: vs.VideoNode) -> vs.VideoFrame:
         fout = f[0].copy()
         if n == 0 or n == prefetch.num_frames:
             fout.props['_SceneChangePrev'] = 1
@@ -2641,7 +2674,7 @@ def is_stripe(clip: vs.VideoNode, threshold: Union[float, int] = 2, freq_range: 
     
     return ret
 
-def get_oped_mask(clip: vs.VideoNode, ncop: vs.VideoNode, nced: vs.VideoNode, op_start: int, ed_start: int, threshold: int = 7) -> Tuple[vs.VideoNode, vs.VideoNode]:
+def get_oped_mask(clip: vs.VideoNode, ncop: vs.VideoNode, nced: vs.VideoNode, op_start: int, ed_start: int, threshold: int = 7) -> tuple[vs.VideoNode, vs.VideoNode]:
     from fvsfunc import rfs
     
     assert clip.format == ncop.format == nced.format
