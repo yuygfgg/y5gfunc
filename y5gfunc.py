@@ -1291,7 +1291,9 @@ def convolution(
         expr_parts = []
         
         if len(matrix) == 9:
-            offsets = [(-1, -1), (0, -1), (1, -1), (-1, 0), (0, 0), (1, 0), (-1, 1), (0, 1), (1, 1)]
+            offsets =  [(-1, -1), (0, -1), (1, -1), 
+                        (-1, 0), (0, 0), (1, 0), 
+                        (-1, 1), (0, 1), (1, 1)]
 
         for i, (dx, dy) in enumerate(offsets):
             expr_parts.append(f"x[{dx},{dy}] {coeffs[i]} *")
@@ -1330,6 +1332,7 @@ def load_source(
     timecodes_v2_path: Optional[Union[Path, str]] = None
 ) -> vs.VideoNode:
     
+    # refer to https://github.com/yuygfgg/vswobbly/blob/main/WobblyParser.py for more clear code and timecode v1 support
     def _wobbly_source(
         wob_project_path: Union[str, Path], 
         timecodes_v2_path: Optional[Union[str, Path]] = None
@@ -1952,7 +1955,7 @@ def load_source(
                 with open(str(timecodes_v2_path), 'w', encoding='utf-8') as f:
                     f.write(timecodes)
             
-            def apply_frame_props(n: int, f: vs.VideoFrame) -> vs.VideoFrame:
+            def _apply_frame_props(n: int, f: vs.VideoFrame) -> vs.VideoFrame:
                 if n in frame_props:
                     fout = f.copy()
                     
@@ -1963,14 +1966,21 @@ def load_source(
                     return fout
                 return f
             
-            src = core.std.ModifyFrame(src, src, apply_frame_props)
+            src = core.std.ModifyFrame(src, src, _apply_frame_props)
         except Exception as e:
             raise RuntimeError(f"Error processing Wobbly project: {e}")
         
         return src
 
 
-    def _bestsource(file_path: Union[Path, str], track: int = 0, timecodes_v2_path: Optional[Union[Path, str]] = None, variableformat: int = -1, rff: bool = False) -> vs.VideoNode:
+    def _bestsource(
+        file_path: Union[Path, str],
+        track: int = 0,
+        timecodes_v2_path: Optional[Union[Path, str]] = None,
+        variableformat: int = -1,
+        rff: bool = False
+    ) -> vs.VideoNode:
+    
         if timecodes_v2_path:
             return core.bs.VideoSource(str(file_path), track, variableformat, timecodes=str(timecodes_v2_path), rff=rff)
         else:
@@ -2318,8 +2328,8 @@ def rescale(
     To rescale from multiple native resolution, use this func for every possible src_height, then choose the largest MaxDelta one.
     
     e.g. 
-    rescaled1, detail_mask1, osd1 = rescale(clip=srcorg, src_height=ranger(714.5, 715, 0.025)+[713, 714, 716, 717], bw=1920, bh=1080, descale_kernel="Debicubic", b=1/3, c=1/3, show_detail_mask=True) # type: ignore
-    rescaled2, detail_mask2, osd2 = rescale(clip=srcorg, src_height=ranger(955, 957,0.1)+[953, 954, 958], bw=1920, bh=1080, descale_kernel="Debicubic", b=1/3, c=1/3, show_detail_mask=True) # type: ignore
+    rescaled1, detail_mask1, osd1 = rescale(clip=srcorg, src_height=ranger(714.5, 715, 0.025)+[713, 714, 716, 717], bw=1920, bh=1080, descale_kernel="Debicubic", b=1/3, c=1/3, show_detail_mask=True)
+    rescaled2, detail_mask2, osd2 = rescale(clip=srcorg, src_height=ranger(955, 957,0.1)+[953, 954, 958], bw=1920, bh=1080, descale_kernel="Debicubic", b=1/3, c=1/3, show_detail_mask=True)
 
     select_expr = "src0.MaxDelta src0.Descaled * src1.MaxDelta src1.Descaled * argmax2"
 
@@ -3073,8 +3083,9 @@ def encode_check(
     
     assert 0 <= threshold_cambi <= 24
     assert 0 <= threshold_ssim <= 1
-    
     assert mode in ["BOTH", "SSIM", "CAMBI"]
+    assert return_type in ['encoded', 'error', 'both']
+
     if mode == "BOTH":
         enable_ssim = enable_cambi = True
     elif mode == "SSIM":
@@ -3085,36 +3096,36 @@ def encode_check(
         enable_cambi = True
     
     if enable_ssim:
-        assert encoded.format.id == source.format.id # type: ignore
-    
-    assert return_type in ['encoded', 'error', 'both']
-    
-    if enable_ssim:
-        ssim = SSIM(encoded, source) # type: ignore
+        assert source
+        assert encoded.format.id == source.format.id
+        ssim = SSIM(encoded, source)
+            
     if enable_cambi:
         cambi = cambi_mask(encoded)
     
     error_frames = []
-    def _chk(n: int, f: list[vs.VideoFrame], threshold_cambi: float, threshold_ssim: float, _enable_ssim: bool, _enable_cambi: bool, error_frames: list):
-        def print_red_bold(text):
+    def _chk(n: int, f: list[vs.VideoFrame]) -> vs.VideoFrame:
+        def print_red_bold(text) -> None:
             print("\033[1;31m" + text + "\033[0m")
             
         fout = f[0].copy()
         
         ssim_err = cambi_err = False
         
-        if _enable_ssim: 
+        if enable_ssim: 
             fout.props['PlaneSSIM'] = ssim_val = f[2].props['PlaneSSIM']
             fout.props['ssim_err'] = ssim_err = (1 if threshold_ssim > f[2].props['PlaneSSIM'] else 0) # type: ignore
         
-        if _enable_cambi: 
+        if enable_cambi: 
             fout.props['CAMBI'] = cambi_val = f[1].props['CAMBI'] 
             fout.props['cambi_err'] = cambi_err = (1 if threshold_cambi < f[1].props['CAMBI'] else 0) # type: ignore
         
-        if cambi_err and _enable_cambi:
-            print_red_bold(f"frame {n}: Banding detected! CAMBI: {cambi_val} \n    Note: banding threshold is {threshold_cambi}")
-        if ssim_err and _enable_ssim:
-            print_red_bold(f"frame {n}: Distortion detected! SSIM: {ssim_val} \n    Note: distortion threshold is {threshold_ssim}")
+        if cambi_err and enable_cambi:
+            print_red_bold (f"frame {n}: Banding detected! CAMBI: {cambi_val}"
+                            f"    Note: banding threshold is {threshold_cambi}")
+        if ssim_err and enable_ssim:
+            print_red_bold (f"frame {n}: Distortion detected! SSIM: {ssim_val}"
+                            f"    Note: distortion threshold is {threshold_ssim}")
         if not (cambi_err or ssim_err):
             print(f"Frame {n}: OK!")
         else:
@@ -3123,27 +3134,33 @@ def encode_check(
         return fout
 
     if enable_ssim and enable_cambi:
-        output = core.std.ModifyFrame(encoded, [encoded, cambi, ssim], functools.partial(_chk, threshold_cambi=threshold_cambi, threshold_ssim=threshold_ssim, _enable_ssim=enable_ssim, _enable_cambi=enable_cambi, error_frames=error_frames))
+        output = core.std.ModifyFrame(encoded, [encoded, cambi, ssim], _chk)
     elif enable_cambi:
-        output = core.std.ModifyFrame(encoded, [encoded, cambi, cambi], functools.partial(_chk, threshold_cambi=threshold_cambi, threshold_ssim=threshold_ssim, _enable_ssim=enable_ssim, _enable_cambi=enable_cambi, error_frames=error_frames))
+        output = core.std.ModifyFrame(encoded, [encoded, cambi, cambi], _chk)
     else:
-        output = core.std.ModifyFrame(encoded, [encoded, ssim, ssim], functools.partial(_chk, threshold_cambi=threshold_cambi, threshold_ssim=threshold_ssim, _enable_ssim=enable_ssim, _enable_cambi=enable_cambi, error_frames=error_frames))
+        output = core.std.ModifyFrame(encoded, [encoded, ssim, ssim], _chk)
     
     if return_type == "encoded": 
         return output
     
-    print(output.num_frames)
     for _ in output.frames():
         pass
     
     err = PickFrames(encoded, error_frames)
+
     if return_type == "both":
         return output, err
     else:
         return err
 
 # inspired by https://skyeysnow.com/forum.php?mod=redirect&goto=findpost&ptid=13824&pid=333218
-def is_stripe(clip: vs.VideoNode, threshold: Union[float, int] = 2, freq_range: Union[int, float] = 0.25, scenecut_threshold: Union[float, int] = 0.1) -> vs.VideoNode:
+def is_stripe(
+    clip: vs.VideoNode,
+    threshold: Union[float, int] = 2,
+    freq_range: Union[int, float] = 0.25,
+    scenecut_threshold: Union[float, int] = 0.1
+) -> vs.VideoNode:
+
     def scene_fft(n: int, f: list[vs.VideoFrame], cache: list[float], prefetch: vs.VideoNode) -> vs.VideoFrame:
         fout = f[0].copy()
         if n == 0 or n == prefetch.num_frames:
@@ -3209,7 +3226,15 @@ def is_stripe(clip: vs.VideoNode, threshold: Union[float, int] = 2, freq_range: 
     
     return ret
 
-def get_oped_mask(clip: vs.VideoNode, ncop: vs.VideoNode, nced: vs.VideoNode, op_start: int, ed_start: int, threshold: int = 7) -> tuple[vs.VideoNode, vs.VideoNode]:
+def get_oped_mask(
+    clip: vs.VideoNode,
+    ncop: vs.VideoNode,
+    nced: vs.VideoNode,
+    op_start: int,
+    ed_start: int,
+    threshold: int = 7
+) -> tuple[vs.VideoNode, vs.VideoNode]:
+
     from fvsfunc import rfs
     
     assert clip.format == ncop.format == nced.format
