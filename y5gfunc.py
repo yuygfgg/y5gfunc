@@ -247,15 +247,16 @@ def encode_video(
                 output_clip = clip[0] if isinstance(clip[0], vs.VideoNode) else None
             if not output_clip:
                 raise ValueError("encode_video: Couldn't parse clip!")
-            
+        
+        assert isinstance(output_clip, vs.VideoNode)
         assert output_clip.format.color_family == vs.YUV, "encode_video: All clips must be YUV color family"
         assert output_clip.fps != 0, "encode_video: all clips must be CFR"
         
         # Allow direct output to stdout when encoder is None
         if encoder is None:
             _MIMO([output_clip], [sys.stdout])
-        elif hasattr(encoder, 'write') and callable(encoder.write):  # File-like object
-            _MIMO([output_clip], [encoder])
+        elif hasattr(encoder, 'write') and callable(encoder.write):  # type: ignore # type: ignore # File-like object
+            _MIMO([output_clip], [encoder]) # type: ignore
         else:  # Subprocess.Popen object
             _MIMO([output_clip], [encoder.stdin])  # type: ignore
             encoder.communicate()  # type: ignore
@@ -265,14 +266,14 @@ def encode_video(
         assert isinstance(clip, list), "encode_video: clip must be a list when multi=True"
         assert len(encoder) == len(clip), "encode_video: encoder and clip must have the same length"
         assert all(isinstance(item, vs.VideoNode) for item in clip), "encode_video: all items in clip must be VideoNodes"
-        assert all(clip.format.color_family == vs.YUV for clip in clip), "encode_video: all clips must be YUV color family"
-        assert all(clip.fps != 0 for clip in clip), "encode_video: all clips must be CFR"
+        assert all(clip.format.color_family == vs.YUV for clip in clip), "encode_video: all clips must be YUV color family" # type: ignore
+        assert all(clip.fps != 0 for clip in clip), "encode_video: all clips must be CFR" # type: ignore
         
         output_clips = []
         stdins = []
-        for i, clip in enumerate(clip):
+        for i, clip in enumerate(clip): # type: ignore
             output_clips.append(clip)
-            if hasattr(encoder[i], 'write') and callable(encoder[i].write):  # File-like object
+            if hasattr(encoder[i], 'write') and callable(encoder[i].write):  # type: ignore # File-like object
                 stdins.append(encoder[i])
             else:  # Subprocess.Popen object
                 stdins.append(encoder[i].stdin)
@@ -281,7 +282,7 @@ def encode_video(
         
         # Only call communicate and wait for Popen objects
         for i, enc in enumerate(encoder):
-            if not hasattr(enc, 'write') or not callable(enc.write):  # Not a file-like object
+            if not hasattr(enc, 'write') or not callable(enc.write):  # type: ignore # Not a file-like object
                 enc.communicate()
                 enc.wait()
 
@@ -1166,13 +1167,13 @@ def clip_to_timecodes(clip: vs.VideoNode, path: Optional[str] = None) -> deque[f
     curr_time = fractions.Fraction()
     init_percentage = 0
 
-    with open(path, "w", encoding="utf-8") if path else None as file:
+    with open(path, "w", encoding="utf-8") if path else None as file: # type: ignore
         if file:
             file.write("# timecode format v2\n")
 
         for i, frame in enumerate(clip.frames()):
-            num: int = frame.props["_DurationNum"]
-            den: int = frame.props["_DurationDen"]
+            num: int = frame.props["_DurationNum"] # type: ignore
+            den: int = frame.props["_DurationDen"] # type: ignore
             curr_time += fractions.Fraction(num, den)
             timecode = float(curr_time)
             timecodes.append(timecode)
@@ -1329,42 +1330,174 @@ def load_source(
     timecodes_v2_path: Optional[Union[Path, str]] = None
 ) -> vs.VideoNode:
     
-    def _wobbly_source(wob_path: Union[Path, str], timecodes_v2_path: Optional[Union[Path, str]] = None) -> vs.VideoNode:
+    def _wobbly_source(
+        wob_project_path: Union[str, Path], 
+        timecodes_v2_path: Optional[Union[str, Path]] = None
+    ) -> vs.VideoNode:
         
-        def _parse_wobbly(file_path: str) -> dict[str, Any]:
-            with open(file_path, 'r', encoding='utf-8') as f:
-                try:
-                    return json.load(f)
-                except json.JSONDecodeError as e:
-                    raise RuntimeError(f"Error parsing Wobbly project: {e}")
-
-        def _get_num_frames(project: dict[str, Any]) -> int:
-            num_frames: int = 0
+        import os
+        
+        class WobblyKeys:
+            wobbly_version = "wobbly version"
+            project_format_version = "project format version"
+            input_file = "input file"
+            input_frame_rate = "input frame rate"
+            input_resolution = "input resolution"
+            trim = "trim"
+            source_filter = "source filter"
+            user_interface = "user interface"
+            vfm_parameters = "vfm parameters"
+            matches = "matches"
+            original_matches = "original matches"
+            sections = "sections"
+            presets = "presets"
+            frozen_frames = "frozen frames"
+            combed_frames = "combed frames"
+            interlaced_fades = "interlaced fades"
+            decimated_frames = "decimated frames"
+            custom_lists = "custom lists"
+            resize = "resize"
+            crop = "crop"
+            depth = "depth"
             
+            class VFMParameters:
+                order = "order"
+            
+            class Sections:
+                start = "start"
+                presets = "presets"
+            
+            class Presets:
+                name = "name"
+                contents = "contents"
+            
+            class CustomLists:
+                name = "name"
+                preset = "preset"
+                position = "position"
+                frames = "frames"
+            
+            class Resize:
+                width = "width"
+                height = "height"
+                filter = "filter"
+                enabled = "enabled"
+            
+            class Crop:
+                early = "early"
+                left = "left"
+                top = "top"
+                right = "right"
+                bottom = "bottom"
+                enabled = "enabled"
+            
+            class Depth:
+                bits = "bits"
+                float_samples = "float samples"
+                dither = "dither"
+                enabled = "enabled"
+                
+            class InterlacedFades:
+                frame = "frame"
+                field_difference = "field difference"
+        
+        def _apply_custom_lists(
+            src: vs.VideoNode, 
+            project: dict[str, Any], 
+            presets: dict[str, Callable[[vs.VideoNode], vs.VideoNode]], 
+            position: str, 
+            WobblyKeys: Any, 
+            frame_props: dict[int, dict], 
+            frame_mapping: dict[int, int]
+        ) -> tuple[vs.VideoNode, dict[int, dict], dict[int, int]]:
+            
+            custom_lists = [cl for cl in project.get(WobblyKeys.custom_lists, []) if cl.get(WobblyKeys.CustomLists.position) == position]
+            
+            if not custom_lists:
+                return src, frame_props, frame_mapping
+            
+            all_ranges: list[tuple[int, int, str, str]] = []
+            
+            for cl_info in custom_lists:
+                cl_name = cl_info.get(WobblyKeys.CustomLists.name)
+                cl_preset = cl_info.get(WobblyKeys.CustomLists.preset)
+                cl_frames = cl_info.get(WobblyKeys.CustomLists.frames, [])
+                
+                if not cl_preset or not cl_frames:
+                    continue
+                
+                if cl_preset not in presets:
+                    continue
+                
+                try:
+                    ranges: list[tuple[int, int]] = []
+                    for frame_range in cl_frames:
+                        if isinstance(frame_range, list) and len(frame_range) == 2:
+                            start, end = frame_range
+                            
+                            for frame in range(start, end+1):
+                                for n in frame_props:
+                                    if frame_mapping[n] == frame:
+                                        frame_props[n].update({
+                                            "WobblyCustomList": cl_name,
+                                            "WobblyCustomListPreset": cl_preset,
+                                            "WobblyCustomListPosition": position
+                                        })
+                            
+                            ranges.append((start, end))
+                            all_ranges.append((start, end, cl_name, cl_preset))
+                    
+                    ranges.sort()
+                    
+                    if ranges:
+                        marked_clips = []
+                        last_end = 0
+                        
+                        for range_start, range_end in ranges:
+                            if not (0 <= range_start <= range_end < src.num_frames):
+                                continue
+                            
+                            if range_start > last_end:
+                                marked_clips.append(src[last_end:range_start])
+                            
+                            list_clip = presets[cl_preset](src[range_start:range_end+1])
+                            marked_clips.append(list_clip)
+                            
+                            last_end = range_end + 1
+                        
+                        if last_end < src.num_frames:
+                            marked_clips.append(src[last_end:])
+                        
+                        if marked_clips:
+                            src = core.std.Splice(clips=marked_clips, mismatch=True)
+                except Exception as e:
+                    print(f"Warning: Error applying custom list '{cl_name}': {e}")
+            
+            return src, frame_props, frame_mapping
+
+
+        def _get_decimation_info(project: dict[str, Any]) -> tuple[dict[int, set[int]], list[dict[str, int]]]:
+            decimated_frames: list[int] = project.get('decimated frames', [])
+            
+            num_frames = 0
             if 'trim' in project:
                 for trim in project['trim']:
                     if isinstance(trim, list) and len(trim) >= 2:
                         num_frames += trim[1] - trim[0] + 1
             
-            return num_frames
-
-        def _get_decimation_info(project: dict[str, Any]) -> tuple[dict[int, set[int]], list[dict[str, int]]]:
-            decimated_frames: list[int] = project.get('decimated frames', [])
-            num_frames: int = _get_num_frames(project)
-            
             decimated_by_cycle: dict[int, set[int]] = {}
             for frame in decimated_frames:
-                cycle: int = frame // 5
+                cycle = frame // 5
                 if cycle not in decimated_by_cycle:
                     decimated_by_cycle[cycle] = set()
                 decimated_by_cycle[cycle].add(frame % 5)
             
             ranges: list[dict[str, int]] = []
-            current_count: int = -1
-            current_start: int = 0
+            current_count = -1
+            current_start = 0
             
             for cycle in range((num_frames + 4) // 5):
-                count: int = len(decimated_by_cycle.get(cycle, set()))
+                count = len(decimated_by_cycle.get(cycle, set()))
                 if count != current_count:
                     if current_count != -1:
                         ranges.append({
@@ -1384,14 +1517,15 @@ def load_source(
             
             return decimated_by_cycle, ranges
 
+
         def _frame_number_after_decimation(frame: int, decimated_by_cycle: dict[int, set[int]]) -> int:
             if frame < 0:
                 return 0
             
-            cycle: int = frame // 5
-            offset: int = frame % 5
+            cycle = frame // 5
+            offset = frame % 5
             
-            decimated_before: int = 0
+            decimated_before = 0
             for c in range(cycle):
                 decimated_before += len(decimated_by_cycle.get(c, set()))
             
@@ -1400,15 +1534,14 @@ def load_source(
                     decimated_before += 1
             
             return frame - decimated_before
-        
+
         def _generate_timecodes_v2(project: dict[str, Any]) -> str:
-            
             decimated_by_cycle, ranges = _get_decimation_info(project)
             
-            tc: str = "# timecode format v2\n"
+            tc = "# timecode format v2\n"
             
-            numerators: list[int] = [30000, 24000, 18000, 12000, 6000]
-            denominator: int = 1001
+            numerators = [30000, 24000, 18000, 12000, 6000]
+            denominator = 1001
             
             total_frames = 0
             for range_info in ranges:
@@ -1428,26 +1561,420 @@ def load_source(
                 end_frame = _frame_number_after_decimation(range_info['end'] - 1, decimated_by_cycle)
                 
                 for _ in range(start_frame, end_frame + 1):
-                    tc += f"{current_time_ms:.3f}\n"
+                    tc += f"{current_time_ms:.6f}\n"
                     current_time_ms += frame_duration_ms
                     current_frame += 1
             
             return tc
         
-        from vswobbly import WobblyProcessor, DecombVinverseStrategy, AdaptiveFixInterlacedFadesStrategy
+        try:
+            with open(wob_project_path, 'r', encoding='utf-8') as f:
+                project = json.load(f)
+        except Exception as e:
+            raise ValueError(f"Failed to read or parse Wobbly project file: {e}")
         
-        wob = WobblyProcessor.from_file(wob_path, strategies=[DecombVinverseStrategy(), AdaptiveFixInterlacedFadesStrategy()])
-        clip = wob.apply()
+        input_file = project.get(WobblyKeys.input_file)
+        source_filter = project.get(WobblyKeys.source_filter, "")
         
-        timecodes: str = _generate_timecodes_v2(_parse_wobbly(str(wob_path)))
-        if timecodes_v2_path:
-            with open(timecodes_v2_path, "w", encoding="utf-8") as f:
-                f.write(timecodes)
+        if not input_file:
+            raise ValueError("No input file specified in the project")
         
-        return clip
+        if not os.path.isabs(input_file):
+            wob_dir = os.path.dirname(os.path.abspath(str(wob_project_path)))
+            input_file = os.path.join(wob_dir, input_file)
+        
+        if not os.path.exists(input_file):
+            raise ValueError(f"Input file does not exist: {input_file}")
+
+        frame_props: dict[int, dict] = {}
+        
+        try:
+            if source_filter == "bs.VideoSource":
+                src = core.bs.VideoSource(input_file, rff=True, showprogress=False)
+            else:
+                filter_parts = source_filter.split('.')
+                plugin = getattr(core, filter_parts[0])
+                src = getattr(plugin, filter_parts[1])(input_file)
+        except Exception as e:
+            raise ValueError(f"Failed to load video: {e}")
+        
+        for n in range(src.num_frames):
+            frame_props[n] = {
+                "WobblyProject": os.path.basename(str(wob_project_path)),
+                "WobblyVersion": project.get(WobblyKeys.wobbly_version, ""),
+                "WobblySourceFilter": source_filter,
+                "WobblyCustomList": "",
+                "WobblyCustomListPreset": "",
+                "WobblyCustomListPosition": "",
+                "WobblySectionStart": -1,
+                "WobblySectionEnd": -1,
+                "WobblySectionPresets": "",
+                "WobblyMatch": ""
+            }
+
+        presets: dict[str, Callable[[vs.VideoNode], vs.VideoNode]] = {}
+        for preset_info in project.get(WobblyKeys.presets, []):
+            preset_name = preset_info.get(WobblyKeys.Presets.name)
+            preset_contents = preset_info.get(WobblyKeys.Presets.contents)
+            
+            if not preset_name or preset_contents is None:
+                continue
+            
+            try:
+                exec_globals = {'vs': vs, 'core': core, 'c': core}
+                exec(f"def preset_{preset_name}(clip):\n" + 
+                    "\n".join("    " + line for line in preset_contents.split('\n')) + 
+                    "\n    return clip", exec_globals)
+                
+                presets[preset_name] = exec_globals[f"preset_{preset_name}"]
+            except Exception as e:
+                print(f"Warning: Error creating preset '{preset_name}': {e}")
+        
+        frame_mapping: dict[int, int] = {}
+        for i in range(src.num_frames):
+            frame_mapping[i] = i
+        
+        try:
+            crop_info = project.get(WobblyKeys.crop, {})
+            if crop_info.get(WobblyKeys.Crop.enabled, False) and crop_info.get(WobblyKeys.Crop.early, False):
+                crop_props = {
+                    "WobblyCropEarly": True,
+                    "WobblyCropLeft": crop_info.get(WobblyKeys.Crop.left, 0),
+                    "WobblyCropTop": crop_info.get(WobblyKeys.Crop.top, 0),
+                    "WobblyCropRight": crop_info.get(WobblyKeys.Crop.right, 0),
+                    "WobblyCropBottom": crop_info.get(WobblyKeys.Crop.bottom, 0)
+                }
+                
+                for n in frame_props:
+                    frame_props[n].update(crop_props)
+                    
+                src = core.std.CropRel(
+                    clip=src,
+                    left=crop_info.get(WobblyKeys.Crop.left, 0),
+                    top=crop_info.get(WobblyKeys.Crop.top, 0),
+                    right=crop_info.get(WobblyKeys.Crop.right, 0),
+                    bottom=crop_info.get(WobblyKeys.Crop.bottom, 0)
+                )
+            
+            trim_list = project.get(WobblyKeys.trim, [])
+            if trim_list:
+                clips = []
+                new_frame_props: dict[int, dict] = {}
+                new_frame_idx = 0
+                
+                for trim in trim_list:
+                    first, last = trim
+                    if first <= last and first < src.num_frames and last < src.num_frames:
+                        segment = src[first:last+1]
+                        
+                        for i in range(first, last+1):
+                            if i in frame_props:
+                                props = frame_props[i].copy()
+                                props.update({
+                                    "WobblyTrimStart": first,
+                                    "WobblyTrimEnd": last
+                                })
+                                new_frame_props[new_frame_idx] = props
+                                frame_mapping[new_frame_idx] = i
+                                new_frame_idx += 1
+                        
+                        clips.append(segment)
+                
+                if clips:
+                    src = core.std.Splice(clips=clips)
+                    frame_props = new_frame_props
+            
+            src, frame_props, frame_mapping = _apply_custom_lists(
+                src, project, presets, "post source", WobblyKeys, frame_props, frame_mapping
+            )
+            
+            matches_list = project.get(WobblyKeys.matches)
+            original_matches_list = project.get(WobblyKeys.original_matches)
+            
+            matches = ""
+            if matches_list:
+                matches = "".join(matches_list)
+            elif original_matches_list:
+                matches = "".join(original_matches_list)
+            
+            if matches:
+                for n in frame_props:
+                    orig_frame = frame_mapping[n]
+                    if orig_frame < len(matches):
+                        frame_props[n]["WobblyMatch"] = matches[orig_frame]
+            
+            if hasattr(core, 'fh'):
+                if matches_list:
+                    vfm_params = project.get(WobblyKeys.vfm_parameters, {})
+                    order = vfm_params.get(WobblyKeys.VFMParameters.order, 1)
+                    src = core.fh.FieldHint(clip=src, tff=order, matches=matches)
+                elif original_matches_list:
+                    vfm_params = project.get(WobblyKeys.vfm_parameters, {})
+                    order = vfm_params.get(WobblyKeys.VFMParameters.order, 1)
+                    src = core.fh.FieldHint(clip=src, tff=order, matches=matches)
+            
+            src, frame_props, frame_mapping = _apply_custom_lists(
+                src, project, presets, "post field match", WobblyKeys, frame_props, frame_mapping
+            )
+            
+            sections_list = project.get(WobblyKeys.sections, [])
+            
+            if sections_list:
+                sorted_sections = sorted(sections_list, key=lambda s: s.get(WobblyKeys.Sections.start, 0))
+                
+                for i, section_info in enumerate(sorted_sections):
+                    start = section_info.get(WobblyKeys.Sections.start, 0)
+                    next_start = sorted_sections[i+1].get(WobblyKeys.Sections.start, src.num_frames) if i+1 < len(sorted_sections) else src.num_frames
+                    
+                    section_presets = section_info.get(WobblyKeys.Sections.presets, [])
+                    presets_str = ",".join(section_presets)
+                    
+                    for n in frame_props:
+                        orig_frame = frame_mapping[n]
+                        if start <= orig_frame < next_start:
+                            frame_props[n].update({
+                                "WobblySectionStart": start,
+                                "WobblySectionEnd": next_start-1,
+                                "WobblySectionPresets": presets_str
+                            })
+                
+                sections = []
+                new_frame_props: dict[int, dict] = {}
+                new_frame_idx = 0
+                
+                for i, section_info in enumerate(sorted_sections):
+                    start = section_info.get(WobblyKeys.Sections.start, 0)
+                    next_start = sorted_sections[i+1].get(WobblyKeys.Sections.start, src.num_frames) if i+1 < len(sorted_sections) else src.num_frames
+                    
+                    section_clip = src[start:next_start]
+                    for preset_name in section_info.get(WobblyKeys.Sections.presets, []):
+                        if preset_name in presets:
+                            section_clip = presets[preset_name](section_clip)
+                    
+                    for j in range(section_clip.num_frames):
+                        src_idx = start + j
+                        if src_idx < len(frame_mapping):
+                            orig_frame = frame_mapping[src_idx]
+                            if src_idx in frame_props:
+                                new_frame_props[new_frame_idx] = frame_props[src_idx].copy()
+                                frame_mapping[new_frame_idx] = orig_frame
+                                new_frame_idx += 1
+                    
+                    sections.append(section_clip)
+
+                if sections:
+                    src = core.std.Splice(clips=sections, mismatch=True)
+                    frame_props = new_frame_props
+            
+            combed_frames = set(project.get(WobblyKeys.combed_frames, []))
+            decimated_frames = set(project.get(WobblyKeys.decimated_frames, []))
+            
+            interlaced_fades = project.get(WobblyKeys.interlaced_fades, [])
+            fade_dict: dict[int, float] = {}
+            
+            if interlaced_fades:
+                for fade in interlaced_fades:
+                    frame = fade.get(WobblyKeys.InterlacedFades.frame)
+                    field_diff = fade.get(WobblyKeys.InterlacedFades.field_difference, 0)
+                    if frame is not None:
+                        fade_dict[frame] = field_diff
+            
+            orphan_fields: dict[int, dict[str, Any]] = {}
+            
+            if matches and sections_list:
+                sorted_sections = sorted(sections_list, key=lambda s: s.get(WobblyKeys.Sections.start, 0))
+                section_boundaries = [s.get(WobblyKeys.Sections.start, 0) for s in sorted_sections]
+                section_boundaries.append(src.num_frames)
+                
+                for i in range(len(section_boundaries) - 1):
+                    section_start = section_boundaries[i]
+                    section_end = section_boundaries[i+1] - 1
+                    
+                    if section_start < len(matches) and matches[section_start] == 'n':
+                        orphan_fields[section_start] = {'type': 'n', 'decimated': section_start in decimated_frames}
+                    
+                    if section_end < len(matches) and matches[section_end] == 'b':
+                        orphan_fields[section_end] = {'type': 'b', 'decimated': section_end in decimated_frames}
+            
+            for n in frame_props:
+                orig_frame = frame_mapping[n]
+                props = frame_props[n]
+                
+                if orig_frame in combed_frames:
+                    props["WobblyCombed"] = True
+                
+                if orig_frame in fade_dict:
+                    props["WobblyInterlacedFade"] = True
+                    props["WobblyFieldDifference"] = fade_dict[orig_frame]
+                
+                if orig_frame in orphan_fields:
+                    info = orphan_fields[orig_frame]
+                    props["WobblyOrphan"] = True
+                    props["WobblyOrphanType"] = info['type']
+                    props["WobblyOrphanDecimated"] = info['decimated']
+                
+                if orig_frame in decimated_frames:
+                    props["WobblyDecimated"] = True
+            
+            frozen_frames_list = project.get(WobblyKeys.frozen_frames, [])
+            if frozen_frames_list and hasattr(core.std, 'FreezeFrames'):
+                first_frames = []
+                last_frames = []
+                replacement_frames = []
+                
+                for ff_info in frozen_frames_list:
+                    if len(ff_info) == 3:
+                        first, last, replacement = ff_info
+                        if 0 <= first <= last < src.num_frames and 0 <= replacement < src.num_frames:
+                            first_frames.append(first)
+                            last_frames.append(last)
+                            replacement_frames.append(replacement)
+                            
+                            for i in range(first, last+1):
+                                if i in frame_props:
+                                    frame_props[i]["WobblyFrozenFrame"] = True
+                                    frame_props[i]["WobblyFrozenSource"] = replacement
+                
+                if first_frames:
+                    src = core.std.FreezeFrames(
+                        clip=src,
+                        first=first_frames,
+                        last=last_frames,
+                        replacement=replacement_frames
+                    )
+            
+            decimated_frames_list = project.get(WobblyKeys.decimated_frames, [])
+            if decimated_frames_list:
+                frames_to_delete = [f for f in decimated_frames_list if 0 <= f < src.num_frames]
+                
+                if frames_to_delete:
+                    new_frame_props: dict[int, dict] = {}
+                    new_idx = 0
+                    
+                    for n in range(src.num_frames):
+                        orig_frame = frame_mapping.get(n, n)
+                        
+                        if orig_frame not in frames_to_delete:
+                            if n in frame_props:
+                                new_frame_props[new_idx] = frame_props[n].copy()
+                                new_idx += 1
+                    
+                    src = core.std.DeleteFrames(clip=src, frames=frames_to_delete)
+                    frame_props = new_frame_props
+            
+            src, frame_props, frame_mapping = _apply_custom_lists(
+                src, project, presets, "post decimate", WobblyKeys, frame_props, frame_mapping
+            )
+            
+            if crop_info.get(WobblyKeys.Crop.enabled, False) and not crop_info.get(WobblyKeys.Crop.early, False):
+                crop_props = {
+                    "WobblyCropEarly": False,
+                    "WobblyCropLeft": crop_info.get(WobblyKeys.Crop.left, 0),
+                    "WobblyCropTop": crop_info.get(WobblyKeys.Crop.top, 0),
+                    "WobblyCropRight": crop_info.get(WobblyKeys.Crop.right, 0),
+                    "WobblyCropBottom": crop_info.get(WobblyKeys.Crop.bottom, 0)
+                }
+                
+                for n in frame_props:
+                    frame_props[n].update(crop_props)
+                    
+                src = core.std.CropRel(
+                    clip=src,
+                    left=crop_info.get(WobblyKeys.Crop.left, 0),
+                    top=crop_info.get(WobblyKeys.Crop.top, 0),
+                    right=crop_info.get(WobblyKeys.Crop.right, 0),
+                    bottom=crop_info.get(WobblyKeys.Crop.bottom, 0)
+                )
+            
+            resize_info = project.get(WobblyKeys.resize, {})
+            depth_info = project.get(WobblyKeys.depth, {})
+            
+            resize_enabled = resize_info.get(WobblyKeys.Resize.enabled, False)
+            depth_enabled = depth_info.get(WobblyKeys.Depth.enabled, False)
+            
+            if resize_enabled or depth_enabled:
+                resize_props: dict[str, Any] = {}
+                
+                resize_filter_name = resize_info.get(WobblyKeys.Resize.filter, "Bicubic")
+                if resize_filter_name:
+                    resize_filter_name = resize_filter_name[0].upper() + resize_filter_name[1:]
+                else:
+                    resize_filter_name = "Bicubic"
+                
+                if not hasattr(core.resize, resize_filter_name):
+                    resize_filter_name = "Bicubic"
+                
+                resize_args: dict[str, Any] = {}
+                if resize_enabled:
+                    resize_width = resize_info.get(WobblyKeys.Resize.width, src.width)
+                    resize_height = resize_info.get(WobblyKeys.Resize.height, src.height)
+                    resize_args["width"] = resize_width
+                    resize_args["height"] = resize_height
+                    
+                    resize_props.update({
+                        "WobblyResizeEnabled": True,
+                        "WobblyResizeWidth": resize_width,
+                        "WobblyResizeHeight": resize_height,
+                        "WobblyResizeFilter": resize_filter_name
+                    })
+                
+                if depth_enabled:
+                    bits = depth_info.get(WobblyKeys.Depth.bits, 8)
+                    float_samples = depth_info.get(WobblyKeys.Depth.float_samples, False)
+                    dither = depth_info.get(WobblyKeys.Depth.dither, "")
+                    sample_type = vs.FLOAT if float_samples else vs.INTEGER
+                    
+                    format_id = core.query_video_format(
+                        src.format.color_family,
+                        sample_type,
+                        bits,
+                        src.format.subsampling_w,
+                        src.format.subsampling_h
+                    ).id
+                    
+                    resize_args["format"] = format_id
+                    
+                    resize_props.update({
+                        "WobblyDepthEnabled": True,
+                        "WobblyDepthBits": bits,
+                        "WobblyDepthFloat": float_samples,
+                        "WobblyDepthDither": dither
+                    })
+                
+                for n in frame_props:
+                    frame_props[n].update(resize_props)
+                
+                resize_filter = getattr(core.resize, resize_filter_name)
+                src = resize_filter(clip=src, **resize_args)
+            
+            if timecodes_v2_path:
+                timecodes = _generate_timecodes_v2(project)
+                with open(str(timecodes_v2_path), 'w', encoding='utf-8') as f:
+                    f.write(timecodes)
+            
+            def apply_frame_props(n: int, f: vs.VideoFrame) -> vs.VideoFrame:
+                if n in frame_props:
+                    fout = f.copy()
+                    
+                    for key, value in frame_props[n].items():
+                        if value is not None:
+                            fout.props[key] = value
+                    
+                    return fout
+                return f
+            
+            src = core.std.ModifyFrame(src, src, apply_frame_props)
+        except Exception as e:
+            raise RuntimeError(f"Error processing Wobbly project: {e}")
+        
+        return src
+
 
     def _bestsource(file_path: Union[Path, str], track: int = 0, timecodes_v2_path: Optional[Union[Path, str]] = None, variableformat: int = -1, rff: bool = False) -> vs.VideoNode:
-        return core.bs.VideoSource(file_path, track, variableformat, timecodes=timecodes_v2_path, rff=rff)
+        if timecodes_v2_path:
+            return core.bs.VideoSource(str(file_path), track, variableformat, timecodes=str(timecodes_v2_path), rff=rff)
+        else:
+            return core.bs.VideoSource(str(file_path), track, variableformat, rff=rff)
 
     file_path = Path(file_path)
     
@@ -2206,7 +2733,7 @@ def ranger(start, end, step):
 
 def PickFrames(clip: vs.VideoNode, indices: list[int]) -> vs.VideoNode:
     try: 
-        ret = core.akarin.PickFrames(clip, indices=indices)
+        ret = core.akarin.PickFrames(clip, indices=indices) # type: ignore
     except AttributeError:
         try:
             ret = core.pickframes.PickFrames(clip, indices=indices)
@@ -2568,7 +3095,7 @@ def encode_check(
         cambi = cambi_mask(encoded)
     
     error_frames = []
-    def _chk(n: int, f: list[vs.VideoFrame], threshold_cambi: float, threshold_ssim: float, _enable_ssim: bool, _enable_cambi: bool, error_frames: List):
+    def _chk(n: int, f: list[vs.VideoFrame], threshold_cambi: float, threshold_ssim: float, _enable_ssim: bool, _enable_cambi: bool, error_frames: list):
         def print_red_bold(text):
             print("\033[1;31m" + text + "\033[0m")
             
