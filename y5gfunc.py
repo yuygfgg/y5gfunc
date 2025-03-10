@@ -1339,6 +1339,10 @@ def load_source(
     ) -> vs.VideoNode:
         
         import os
+        try:
+            import orjson
+        except Exception:
+            pass
         
         class WobblyKeys:
             wobbly_version = "wobbly version"
@@ -1572,7 +1576,10 @@ def load_source(
         
         try:
             with open(wob_project_path, 'r', encoding='utf-8') as f:
-                project = json.load(f)
+                try:
+                    project = orjson.loads(f.read())
+                except Exception:
+                    project = json.load(f)
         except Exception as e:
             raise ValueError(f"Failed to read or parse Wobbly project file: {e}")
         
