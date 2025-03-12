@@ -1915,7 +1915,7 @@ def rescale(
         return final_clip
 
     def _fft(clip: vs.VideoNode, grid: bool = True) -> vs.VideoNode:
-        return core.fftspectrum.FFTSpectrum(clip=vsutil.depth(clip,8), grid=grid)
+        return core.fftspectrum_rs.FFTSpectrum(clip=vsutil.depth(clip,8))
     
     if hasattr(core, "nnedi3cl") and opencl:
         nnedi3 = functools.partial(core.nnedi3cl.NNEDI3CL, **nnedi3_args)
@@ -2143,8 +2143,6 @@ def rescale(
                 else:
                     return final
 
-
-
 def ranger(start, end, step):
     if step == 0:
         raise ValueError("ranger: step must not be 0!")
@@ -2189,12 +2187,11 @@ def TIVTC_VFR(
     tdecimate_args: dict = dict(),
     overwrite: bool = False
 ) -> vs.VideoNode:
-    
     '''
     Convenient wrapper on tivtc to perform automatic vfr decimation with one function.
     '''
     
-    def _resolve_folder_path(path: Path):
+    def _resolve_folder_path(path: Path) -> None:
         if not path.parent.exists():
             path.parent.mkdir(parents=True)
 
@@ -2613,7 +2610,7 @@ def is_stripe(
     freq_drop_lr = int(clip.width * freq_drop_range)
     freq_drop_bt = int(clip.height * freq_drop_range)
     
-    fft = core.fftspectrum.FFTSpectrum(clip)
+    fft = core.fftspectrum_rs.FFTSpectrum(clip)
 
     left = core.std.Crop(fft, right=freq_drop_lr)
     right = core.std.Crop(fft, left=freq_drop_lr)
