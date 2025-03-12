@@ -20,6 +20,7 @@ else:
     LiteralString = str
 
 from vsrgtools import removegrain
+from vstools import scale_value, ColorRange, get_peak_value
 
 
 _output_index = 0
@@ -1302,19 +1303,14 @@ def convolution(
         
         expr_parts.append(f" {actual_divisor:.6f} / {bias:.6f} + ")
         
+        peak = get_peak_value(clip)
+
         if saturate:
-            if clip.format.sample_type == vs.INTEGER:
-                peak = (1 << clip.format.bits_per_sample) - 1
-                expr_parts.append(f"0 {peak} clip")
-            else:
-                expr_parts.append("0 1.0 clip")
+            expr_parts.append(f"0 {peak} clip")
         else:
             expr_parts.append("abs")
-            if clip.format.sample_type == vs.INTEGER:
-                peak = (1 << clip.format.bits_per_sample) - 1
-                expr_parts.append(f"{peak} min")
-            else:
-                expr_parts.append("1.0 min")
+            expr_parts.append(f"{peak} min")
+
         
         expr = " ".join(expr_parts)
         expressions = [expr if i in planes else "x" for i in range(clip.format.num_planes)]
@@ -1488,7 +1484,7 @@ def SynDeband(
             return core.akarin.Expr([kirsch1, kirsch2, kirsch3, kirsch4], 'x y max z max a max')
             
         luma = vsutil.get_y(src)
-        max_value = 1 if src.format.sample_type == vs.FLOAT else (1 << vsutil.get_depth(src)) - 1
+        max_value = get_peak_value(src, range_in=ColorRange.FULL)
         ret = core.retinex.MSRCP(luma, sigma=[50, 200, 350], upper_thr=0.005)
         tcanny = minimum(ret.tcanny.TCanny(mode=1, sigma=1), coordinates=[1, 0, 1, 0, 0, 1, 0, 1])
         return core.akarin.Expr([_kirsch(luma), tcanny], f'x y + {max_value} min')
@@ -2627,8 +2623,8 @@ def get_oped_mask(
     nc = rfs(clip, ncop, f"[{op_start} {op_end}]")
     nc = rfs(nc, nced, f"[{ed_start} {ed_end}]")
     
-    thr = threshold / 255 * ((1 << clip.format.bits_per_sample) - 1) if clip.format.sample_type == vs.INTEGER else threshold / 255
-    max = (1 << clip.format.bits_per_sample) - 1 if clip.format.sample_type == vs.INTEGER else 1
+    thr = scale_value(threshold, 8, clip, range_in=ColorRange.FULL, range_out=ColorRange.FULL)
+    max = get_peak_value(clip, range_in=ColorRange.FULL)
 
     diff = core.akarin.Expr([nc, clip], f"x y - abs {thr} < 0 {max} ?")
     diff = vsutil.get_y(diff)
