@@ -1377,14 +1377,14 @@ def Fast_BM3DWrapper(
     sigma_Y: Union[float, int] = 1.2,
     radius_Y: int = 1,
     delta_sigma_Y: Union[float, int] = 0.6,
-    preset_Y_basic: Literal["fast", "lc", "np", "high"] = "fast",
-    preset_Y_final: Literal["fast", "lc", "np", "high"] = "fast",
+    preset_Y_basic: Literal["fast", "lc", "np", "high", "magic"] = "fast",
+    preset_Y_final: Literal["fast", "lc", "np", "high", "magic"] = "fast",
     
     sigma_chroma: Union[float, int] = 2.4,
     radius_chroma: int = 0,
     delta_sigma_chroma: Union[float, int] = 1.2,
-    preset_chroma_basic: Literal["fast", "lc", "np", "high"] = "fast",
-    preset_chroma_final: Literal["fast", "lc", "np", "high"] = "fast",
+    preset_chroma_basic: Literal["fast", "lc", "np", "high", "magic"] = "fast",
+    preset_chroma_final: Literal["fast", "lc", "np", "high", "magic"] = "fast",
 ) -> vs.VideoNode:
 
     '''
@@ -1408,37 +1408,38 @@ def Fast_BM3DWrapper(
         rgb = core.std.RemoveFrameProps(rgb, 'BM3D_OPP')
         return rgb
 
-    half_width = clip.width // 2  # half width
-    half_height = clip.height // 2  # half height
-    srcY_float, srcU_float, srcV_float = vsutil.split(vsutil.depth(clip, 32))
-    
-    assert all(preset in ["fast", "lc", "np", "high"] for preset in [preset_Y_basic, preset_Y_final, preset_chroma_basic, preset_chroma_final])
+    assert all(preset in ["fast", "lc", "np", "high", "magic"] for preset in [preset_Y_basic, preset_Y_final, preset_chroma_basic, preset_chroma_final])
 
     # modified from https://github.com/HomeOfVapourSynthEvolution/VapourSynth-BM3D?tab=readme-ov-file#profile-default
+    # preset 'magic' is from rksfunc
     param_configs = {
         "basic": {
-            "fast": {"block_step": 8, "bm_range": 9, "ps_num": 2, "ps_range": 4},
-            "lc":   {"block_step": 6, "bm_range": 9, "ps_num": 2, "ps_range": 4},
-            "np":   {"block_step": 4, "bm_range": 16, "ps_num": 2, "ps_range": 5},
-            "high": {"block_step": 3, "bm_range": 16, "ps_num": 2, "ps_range": 7},
+            "fast":  {"block_step": 8, "bm_range": 9,  "ps_num": 2, "ps_range": 4},
+            "lc":    {"block_step": 6, "bm_range": 9,  "ps_num": 2, "ps_range": 4},
+            "np":    {"block_step": 4, "bm_range": 16, "ps_num": 2, "ps_range": 5},
+            "high":  {"block_step": 3, "bm_range": 16, "ps_num": 2, "ps_range": 7},
+            "magic": {"block_step": 3, "bm_range": 12, "ps_num": 2, "ps_range": 8},
         },
         "vbasic": {
-            "fast": {"block_step": 8, "bm_range": 7, "ps_num": 2, "ps_range": 4},
-            "lc":   {"block_step": 6, "bm_range": 9, "ps_num": 2, "ps_range": 4},
-            "np":   {"block_step": 4, "bm_range": 12, "ps_num": 2, "ps_range": 5},
-            "high": {"block_step": 3, "bm_range": 16, "ps_num": 2, "ps_range": 7},
+            "fast":  {"block_step": 8, "bm_range": 7,  "ps_num": 2, "ps_range": 4},
+            "lc":    {"block_step": 6, "bm_range": 9,  "ps_num": 2, "ps_range": 4},
+            "np":    {"block_step": 4, "bm_range": 12, "ps_num": 2, "ps_range": 5},
+            "high":  {"block_step": 3, "bm_range": 16, "ps_num": 2, "ps_range": 7},
+            "magic": {"block_step": 3, "bm_range": 12, "ps_num": 2, "ps_range": 8},
         },
         "final": {
-            "fast": {"block_step": 7, "bm_range": 9, "ps_num": 2, "ps_range": 5},
-            "lc":   {"block_step": 5, "bm_range": 9, "ps_num": 2, "ps_range": 5},
-            "np":   {"block_step": 3, "bm_range": 16, "ps_num": 2, "ps_range": 6},
-            "high": {"block_step": 2, "bm_range": 16, "ps_num": 2, "ps_range": 8},
+            "fast":  {"block_step": 7, "bm_range": 9,  "ps_num": 2, "ps_range": 5},
+            "lc":    {"block_step": 5, "bm_range": 9,  "ps_num": 2, "ps_range": 5},
+            "np":    {"block_step": 3, "bm_range": 16, "ps_num": 2, "ps_range": 6},
+            "high":  {"block_step": 2, "bm_range": 16, "ps_num": 2, "ps_range": 8},
+            "magic": {"block_step": 2, "bm_range": 8,  "ps_num": 2, "ps_range": 6},
         },
         "vfinal": {
-            "fast": {"block_step": 7, "bm_range": 7, "ps_num": 2, "ps_range": 5},
-            "lc":   {"block_step": 5, "bm_range": 9, "ps_num": 2, "ps_range": 5},
-            "np":   {"block_step": 3, "bm_range": 12, "ps_num": 2, "ps_range": 6},
-            "high": {"block_step": 2, "bm_range": 16, "ps_num": 2, "ps_range": 8},
+            "fast":  {"block_step": 7, "bm_range": 7,  "ps_num": 2, "ps_range": 5},
+            "lc":    {"block_step": 5, "bm_range": 9,  "ps_num": 2, "ps_range": 5},
+            "np":    {"block_step": 3, "bm_range": 12, "ps_num": 2, "ps_range": 6},
+            "high":  {"block_step": 2, "bm_range": 16, "ps_num": 2, "ps_range": 8},
+            "magic": {"block_step": 2, "bm_range": 8,  "ps_num": 2, "ps_range": 6},
         }
     }
 
@@ -1449,7 +1450,11 @@ def Fast_BM3DWrapper(
         "chroma_final": param_configs["vfinal" if radius_chroma > 0 else "final"][preset_chroma_final],
     }
 
-    vbasic_y = bm3d.BM3Dv2(
+    half_width = clip.width // 2  # half width
+    half_height = clip.height // 2  # half height
+    srcY_float, srcU_float, srcV_float = vsutil.split(vsutil.depth(clip, 32))
+
+    basic_y = bm3d.BM3Dv2(
         clip=srcY_float,
         ref=srcY_float,
         sigma=sigma_Y + delta_sigma_Y,
@@ -1457,19 +1462,19 @@ def Fast_BM3DWrapper(
         **params["y_basic"]
     )
 
-    vfinal_y = bm3d.BM3Dv2(
+    final_y = bm3d.BM3Dv2(
         clip=srcY_float,
-        ref=vbasic_y,
+        ref=basic_y,
         sigma=sigma_Y,
         radius=radius_Y,
         **params["y_final"]
     )
     
-    vyhalf = vfinal_y.resize2.Spline36(half_width, half_height, src_left=-0.5)
+    vyhalf = final_y.resize2.Spline36(half_width, half_height, src_left=-0.5)
     srchalf_444 = vsutil.join([vyhalf, srcU_float, srcV_float])
     srchalf_opp = _rgb2opp(mvf.ToRGB(input=srchalf_444, depth=32, matrix="709", sample=1))
 
-    vbasic_half = bm3d.BM3Dv2(
+    basic_half = bm3d.BM3Dv2(
         clip=srchalf_opp,
         ref=srchalf_opp,
         sigma=sigma_chroma + delta_sigma_chroma,
@@ -1479,9 +1484,9 @@ def Fast_BM3DWrapper(
         **params["chroma_basic"]
     )
 
-    vfinal_half = bm3d.BM3Dv2(
+    final_half = bm3d.BM3Dv2(
         clip=srchalf_opp,
-        ref=vbasic_half,
+        ref=basic_half,
         sigma=sigma_chroma,
         chroma=chroma,
         radius=radius_chroma,
@@ -1489,9 +1494,9 @@ def Fast_BM3DWrapper(
         **params["chroma_final"]
     )
 
-    vfinal_half = _opp2rgb(vfinal_half).resize2.Spline36(format=vs.YUV444PS, matrix=1)
-    _, vfinal_u, vfinal_v = vsutil.split(vfinal_half)
-    vfinal = vsutil.join([vfinal_y, vfinal_u, vfinal_v])
+    final_half = _opp2rgb(final_half).resize2.Spline36(format=vs.YUV444PS, matrix=1)
+    _, final_u, final_v = vsutil.split(final_half)
+    vfinal = vsutil.join([final_y, final_u, final_v])
     return vsutil.depth(vfinal, 16)
 
 # modified from rksfunc.SynDeband()
