@@ -1368,7 +1368,6 @@ def load_source(
     
     return clip.resize.Spline36(matrix_s=matrix_s, matrix_in_s=matrix_in_s)
     
-# TODO: add mvf.bm3d style presets
 # modified from rksfunc.BM3DWrapper()
 def Fast_BM3DWrapper(
     clip: vs.VideoNode,
@@ -1378,10 +1377,14 @@ def Fast_BM3DWrapper(
     sigma_Y: Union[float, int] = 1.2,
     radius_Y: int = 1,
     delta_sigma_Y: Union[float, int] = 0.6,
+    preset_Y_basic: Literal["fast", "lc", "np", "high"] = "fast",
+    preset_Y_final: Literal["fast", "lc", "np", "high"] = "fast",
     
     sigma_chroma: Union[float, int] = 2.4,
     radius_chroma: int = 0,
-    delta_sigma_chroma: Union[float, int] = 1.2
+    delta_sigma_chroma: Union[float, int] = 1.2,
+    preset_chroma_basic: Literal["fast", "lc", "np", "high"] = "fast",
+    preset_chroma_final: Literal["fast", "lc", "np", "high"] = "fast",
 ) -> vs.VideoNode:
 
     '''
@@ -1408,19 +1411,58 @@ def Fast_BM3DWrapper(
     half_width = clip.width // 2  # half width
     half_height = clip.height // 2  # half height
     srcY_float, srcU_float, srcV_float = vsutil.split(vsutil.depth(clip, 32))
+    
+    assert all(preset in ["fast", "lc", "np", "high"] for preset in [preset_Y_basic, preset_Y_final, preset_chroma_basic, preset_chroma_final])
+
+    # modified from https://github.com/HomeOfVapourSynthEvolution/VapourSynth-BM3D?tab=readme-ov-file#profile-default
+    param_configs = {
+        "basic": {
+            "fast": {"block_step": 8, "bm_range": 9, "ps_num": 2, "ps_range": 4},
+            "lc":   {"block_step": 6, "bm_range": 9, "ps_num": 2, "ps_range": 4},
+            "np":   {"block_step": 4, "bm_range": 16, "ps_num": 2, "ps_range": 5},
+            "high": {"block_step": 3, "bm_range": 16, "ps_num": 2, "ps_range": 7},
+        },
+        "vbasic": {
+            "fast": {"block_step": 8, "bm_range": 7, "ps_num": 2, "ps_range": 4},
+            "lc":   {"block_step": 6, "bm_range": 9, "ps_num": 2, "ps_range": 4},
+            "np":   {"block_step": 4, "bm_range": 12, "ps_num": 2, "ps_range": 5},
+            "high": {"block_step": 3, "bm_range": 16, "ps_num": 2, "ps_range": 7},
+        },
+        "final": {
+            "fast": {"block_step": 7, "bm_range": 9, "ps_num": 2, "ps_range": 5},
+            "lc":   {"block_step": 5, "bm_range": 9, "ps_num": 2, "ps_range": 5},
+            "np":   {"block_step": 3, "bm_range": 16, "ps_num": 2, "ps_range": 6},
+            "high": {"block_step": 2, "bm_range": 16, "ps_num": 2, "ps_range": 8},
+        },
+        "vfinal": {
+            "fast": {"block_step": 7, "bm_range": 7, "ps_num": 2, "ps_range": 5},
+            "lc":   {"block_step": 5, "bm_range": 9, "ps_num": 2, "ps_range": 5},
+            "np":   {"block_step": 3, "bm_range": 12, "ps_num": 2, "ps_range": 6},
+            "high": {"block_step": 2, "bm_range": 16, "ps_num": 2, "ps_range": 8},
+        }
+    }
+
+    params = {
+        "y_basic": param_configs["vbasic" if radius_Y > 0 else "basic"][preset_Y_basic],
+        "y_final": param_configs["vfinal" if radius_Y > 0 else "final"][preset_Y_final],
+        "chroma_basic": param_configs["vbasic" if radius_chroma > 0 else "basic"][preset_chroma_basic],
+        "chroma_final": param_configs["vfinal" if radius_chroma > 0 else "final"][preset_chroma_final],
+    }
 
     vbasic_y = bm3d.BM3Dv2(
         clip=srcY_float,
         ref=srcY_float,
         sigma=sigma_Y + delta_sigma_Y,
-        radius=radius_Y
+        radius=radius_Y,
+        **params["y_basic"]
     )
 
     vfinal_y = bm3d.BM3Dv2(
         clip=srcY_float,
         ref=vbasic_y,
         sigma=sigma_Y,
-        radius=radius_Y
+        radius=radius_Y,
+        **params["y_final"]
     )
     
     vyhalf = vfinal_y.resize2.Spline36(half_width, half_height, src_left=-0.5)
@@ -1433,7 +1475,8 @@ def Fast_BM3DWrapper(
         sigma=sigma_chroma + delta_sigma_chroma,
         chroma=chroma,
         radius=radius_chroma,
-        zero_init=0
+        zero_init=0,
+        **params["chroma_basic"]
     )
 
     vfinal_half = bm3d.BM3Dv2(
@@ -1442,7 +1485,8 @@ def Fast_BM3DWrapper(
         sigma=sigma_chroma,
         chroma=chroma,
         radius=radius_chroma,
-        zero_init=0
+        zero_init=0,
+        **params["chroma_final"]
     )
 
     vfinal_half = _opp2rgb(vfinal_half).resize2.Spline36(format=vs.YUV444PS, matrix=1)
