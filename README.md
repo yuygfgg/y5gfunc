@@ -1,2 +1,2 @@
 # y5gfunc
-Somewhere I paste my rubbish vapoursynth funcs
+Yuygfgg's collection for vapoursynth video filtering and encoding stuff, written by others and me.

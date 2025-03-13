@@ -1,5 +1,5 @@
 '''
-Yuygfgg's collection of functions for vapoursynth video filtering and encoding, written by me and others.
+Yuygfgg's collection for vapoursynth video filtering and encoding stuff, written by others and me.
 
 Functions:
     convolution,
@@ -20,15 +20,11 @@ Functions:
     reset_output_index,
     output,
     screen_shot,
-    WobblySource,
     load_source,
     get_frame_timestamp,
     clip_to_timecodes,
     encode_audio,
     extract_audio_tracks,
-    ProcessMode,
-    TrackConfig,
-    AudioConfig,
     get_bd_chapter,
     get_mkv_chapter,
     mux_mkv,
@@ -40,6 +36,12 @@ Functions:
     cfl_shader,
     ranger,
     PickFrames
+
+Classes:
+    WobblySource,
+    ProcessMode,
+    TrackConfig,
+    AudioConfig
 '''
 
 from .expr import convolution, maximum, minimum, postfix2infix
