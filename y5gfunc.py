@@ -201,7 +201,7 @@ def encode_video(
                 clip_aligned = clip
             clips_aligned.append(vs.core.std.Interleave([clip_aligned] * num_clips))   
         clips_varfmt = vs.core.std.BlankClip(length=max_len * num_clips, varformat=True, varsize=True)
-        interleaved = vs.core.std.FrameEval(clips_varfmt, lambda n: clips_aligned[n % num_clips], clips_aligned, clips)
+        interleaved = vs.core.std.FrameEval(clips_varfmt, lambda n, f: clips_aligned[n % num_clips], clips_aligned, clips)
 
         # Y4M header
         for n in range(num_clips):
