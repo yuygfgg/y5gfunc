@@ -4,6 +4,7 @@ from .ivtc import TIVTC_VFR
 from .masks import DBMask, get_oped_mask, cambi_mask, kirsch, retinex_edgemask
 from .rescale import rescale, Descale
 from .stripe import is_stripe
+from .morpho import convolution, maximum, minimum
 
 __all__ = [
     'SynDeband', 
@@ -16,5 +17,8 @@ __all__ = [
     'retinex_edgemask',
     'rescale',
     'Descale',
-    'is_stripe'
+    'is_stripe',
+    'convolution',
+    'maximum',
+    'minimum'
 ]

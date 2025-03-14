@@ -5,7 +5,7 @@ from typing import Callable, Any
 from vstools import scale_value, get_peak_value, ColorRange
 from vsrgtools import remove_grain
 import functools
-from ..expr import minimum, maximum, convolution
+from .morpho import minimum, maximum, convolution
 
 # modified from LoliHouse: https://share.dmhy.org/topics/view/478666_LoliHouse_LoliHouse_1st_Anniversary_Announcement_and_Gift.html
 def DBMask(clip: vs.VideoNode) -> vs.VideoNode:

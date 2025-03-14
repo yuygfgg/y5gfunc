@@ -1,11 +1,11 @@
-from .audio_config import AudioConfig, ProcessMode
+from .audio.audio_config import AudioConfig, ProcessMode
 from typing import Union, Optional
 from pathlib import Path
 import json
 import subprocess
 import platform
-from .utils import get_language_by_trackid
-from ..utils import resolve_path
+from ..utils import get_language_by_trackid
+from ...utils import resolve_path
 
 # TODO: fix positive delay for lossy tracks with copy codec
 def encode_audio(
