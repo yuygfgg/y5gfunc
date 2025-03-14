@@ -3,8 +3,8 @@ WobblySource class implementation.
 """
 
 import os
-from pathlib import Path
 from typing import Optional
+from ....utils import resolve_path
 
 import vapoursynth as vs
 
@@ -57,8 +57,8 @@ class WobblySource:
             timecode_output_path: Optional path for timecode output
             timecode_version: Timecode version, defaults to "v2"
         """
-        self.project_path = Path(wob_project_path)
-        self.timecode_path = Path(timecode_output_path) if timecode_output_path else None
+        self.project_path = resolve_path(wob_project_path)
+        self.timecode_path = resolve_path(timecode_output_path) if timecode_output_path else None
         self.timecode_version = timecode_version
         self.keys = WobblyKeys()
         

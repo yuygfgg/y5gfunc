@@ -3,6 +3,7 @@ import vapoursynth as vs
 from vapoursynth import core
 from ..filter import cambi_mask
 from ..utils import PickFrames
+
 def encode_check(
     encoded: vs.VideoNode,
     source: Optional[vs.VideoNode] = None,

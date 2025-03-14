@@ -1,4 +1,5 @@
-from .audio import encode_audio, extract_audio_tracks, ProcessMode, TrackConfig, AudioConfig
+from .audio import encode_audio, extract_audio_tracks
+from .audio_config import ProcessMode, TrackConfig ,AudioConfig
 from .chapter import get_bd_chapter, get_mkv_chapter
 from .mux import mux_mkv
 from .qc import encode_check

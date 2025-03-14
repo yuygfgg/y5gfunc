@@ -3,12 +3,13 @@ from vapoursynth import core
 from .wobbly import load_and_process
 from typing import Optional, Union
 from pathlib import Path
+from ..utils import resolve_path
 
 def _wobbly_source(
     wob_project_path: Union[str, Path], 
     timecodes_v2_path: Optional[Union[str, Path]] = None
 ) -> vs.VideoNode:
-                
+
     clip = load_and_process(wob_project_path, timecodes_v2_path, timecode_version="v2").std.SetFieldBased(False)
     return clip
 
@@ -34,7 +35,7 @@ def load_source(
     timecodes_v2_path: Optional[Union[Path, str]] = None
 ) -> vs.VideoNode:
 
-    file_path = Path(file_path)
+    file_path = resolve_path(file_path)
     
     assert file_path.exists()
     

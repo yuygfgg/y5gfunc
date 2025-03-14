@@ -3,6 +3,7 @@ from vapoursynth import core
 from pathlib import Path
 import time
 from typing import Union, Optional
+from ..utils import resolve_path
 
 # modified from https://github.com/DJATOM/VapourSynth-atomchtools/blob/34e16238291954206b3f7d5b704324dd6885b224/atomchtools.py#L370
 def TIVTC_VFR(
@@ -18,10 +19,6 @@ def TIVTC_VFR(
     '''
     Convenient wrapper on tivtc to perform automatic vfr decimation with one function.
     '''
-    
-    def _resolve_folder_path(path: Path) -> None:
-        if not path.parent.exists():
-            path.parent.mkdir(parents=True)
 
     analyze = True
 
@@ -29,9 +26,9 @@ def TIVTC_VFR(
     assert isinstance(tdecIn, (str, Path))
     assert isinstance(mkvOut, (str, Path))
     
-    tfmIn = Path(tfmIn).resolve()
-    tdecIn = Path(tdecIn).resolve()
-    mkvOut = Path(mkvOut).resolve()
+    tfmIn = resolve_path(tfmIn)
+    tdecIn = resolve_path(tdecIn)
+    mkvOut = resolve_path(mkvOut)
 
     if tfmIn.exists() and tdecIn.exists():
         analyze = False
@@ -40,9 +37,9 @@ def TIVTC_VFR(
         tfm_args.update(dict(clip2=clip2))
 
     if analyze:
-        _resolve_folder_path(tfmIn)
-        _resolve_folder_path(tdecIn)
-        _resolve_folder_path(mkvOut)
+        tfmIn = resolve_path(tfmIn)
+        tdecIn = resolve_path(tdecIn)
+        mkvOut = resolve_path(mkvOut)
         tfm_pass1_args = tfm_args.copy()
         tdecimate_pass1_args = tdecimate_args.copy()
         tfm_pass1_args.update(dict(output=str(tfmIn)))

@@ -3,6 +3,9 @@ from pathlib import Path
 import json
 import subprocess
 from .utils import get_language_by_trackid
+from ..utils import resolve_path
+import tempfile
+import shutil
 
 def subset_fonts(
     ass_path: Union[list[Union[str, Path]], str, Path], 
@@ -12,9 +15,9 @@ def subset_fonts(
     if isinstance(ass_path, (str, Path)):
         ass_path = [ass_path]
     
-    ass_paths = [Path(path) for path in ass_path]
-    fonts_path = Path(fonts_path)
-    output_directory = Path(output_directory)
+    ass_paths = [resolve_path(path) for path in ass_path]
+    fonts_path = resolve_path(fonts_path)
+    output_directory = resolve_path(output_directory)
 
     subtitle_command = ["assfonts"]
     for path in ass_paths:
@@ -32,16 +35,13 @@ def extract_pgs_subtitles(
     m2ts_path: Union[str, Path], 
     output_dir: Optional[Union[str, Path]] = None
 ) -> list[dict[str, Union[str, Path, bool]]]:
-    
-    import tempfile
-    import shutil
-    
-    m2ts_path = Path(m2ts_path)
+
+    m2ts_path = resolve_path(m2ts_path)
     
     if output_dir is None:
         output_dir = m2ts_path.parent / f"{m2ts_path.stem}_subs"
-    else:
-        output_dir = Path(output_dir)
+    
+    output_dir = resolve_path(output_dir)
     
     print(f"extract_pgs_subtitles: Analyzing {m2ts_path}...")
     
@@ -76,7 +76,7 @@ def extract_pgs_subtitles(
         print(f"Track {stream['track_id']}: Language {stream['language']}{default_str}")
     
     with tempfile.TemporaryDirectory() as temp_dir:
-        temp_dir = Path(temp_dir)
+        temp_dir = resolve_path(temp_dir)
         print(f"extract_pgs_subtitles: Using temporary directory: {temp_dir}")
         
         meta_content = ["MUXOPT --no-pcr-on-video-pid --new-audio-pes --demux\n"]

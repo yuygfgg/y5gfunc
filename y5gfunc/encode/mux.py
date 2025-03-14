@@ -1,6 +1,7 @@
 from typing import Union, Optional
 from pathlib import Path
 import subprocess
+from ..utils import resolve_path
 
 def mux_mkv(
     output_path: Union[str, Path],
@@ -13,11 +14,11 @@ def mux_mkv(
     '''
     {"path": str | Path, "language": str, "track_name": str, "default": bool, "comment": bool, "timecode": str | Path}
     '''
-    output_path = Path(output_path)
+    output_path = resolve_path(output_path)
     if fonts_dir:
-        fonts_dir = Path(fonts_dir)
+        fonts_dir = resolve_path(fonts_dir)
     if chapters:
-        chapters = Path(chapters)
+        chapters = resolve_path(chapters)
 
     assert any(x is not None for x in (fonts_dir, videos, audios, subtitles, chapters)), "mux_mkv: At least one input must be provided."
 
@@ -32,7 +33,7 @@ def mux_mkv(
 
     for track_list in (videos, audios, subtitles):
         for track in track_list:
-            track["path"] = Path(track["path"]) # type: ignore
+            track["path"] = resolve_path(track["path"]) # type: ignore
 
     all_files = [track["path"] for track in videos + audios + subtitles] + ([chapters] if chapters else [])
     for file in all_files:

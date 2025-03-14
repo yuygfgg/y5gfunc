@@ -1,8 +1,10 @@
 from collections import deque
 import vapoursynth as vs
 from typing import Literal, Optional
-from pathlib import Path
 import functools
+import fractions
+import collections
+from ..utils import resolve_path
 
 # modified from https://github.com/OrangeChannel/acsuite/blob/e40f50354a2fc26f2a29bf3a2fe76b96b2983624/acsuite/__init__.py#L252
 def get_frame_timestamp(
@@ -10,11 +12,9 @@ def get_frame_timestamp(
     clip: vs.VideoNode,
     precision: Literal['second', 'millisecond', 'microsecond' ,'nanosecond'] = 'millisecond',
     timecodes_v2_file: Optional[str] = None
-)-> str:
-    import fractions
-    
+)-> str:    
     assert frame_num >= 0
-    assert timecodes_v2_file is None or Path(timecodes_v2_file).exists()
+    assert timecodes_v2_file is None or resolve_path(timecodes_v2_file).exists()
     
     if frame_num == 0:
         s = 0.0
@@ -46,8 +46,8 @@ def get_frame_timestamp(
 # modified from https://github.com/OrangeChannel/acsuite/blob/e40f50354a2fc26f2a29bf3a2fe76b96b2983624/acsuite/__init__.py#L305
 @functools.lru_cache
 def clip_to_timecodes(clip: vs.VideoNode, path: Optional[str] = None) -> deque[float]:
-    import collections
-    import fractions
+    if path:
+        path = resolve_path(path) # type: ignore
 
     timecodes = collections.deque([0.0], maxlen=clip.num_frames + 1)
     curr_time = fractions.Fraction()

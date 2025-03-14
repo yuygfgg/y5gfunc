@@ -43,8 +43,7 @@ def _y4m_header(clip: vs.VideoNode) -> str:
 
 # copied from https://skyeysnow.com/forum.php?mod=viewthread&tid=38690
 def _MIMO(clips: Sequence[vs.VideoNode], files: Sequence[IO]) -> None:
-    ''' Multiple-Input-Multiple-Output
-    '''
+    ''' Multiple-Input-Multiple-Output'''
 
     # Checks
     num_clips = len(clips)

@@ -1,5 +1,6 @@
 import vapoursynth as vs
 from vapoursynth import core
+from pathlib import Path
 
 def ranger(start, end, step):
     if step == 0:
@@ -18,3 +19,11 @@ def PickFrames(clip: vs.VideoNode, indices: list[int]) -> vs.VideoNode:
             ret = new.std.FrameEval(lambda n: clip[indices[n]], None, clip) # type: ignore
     
     return ret
+
+def resolve_path(path: Path | str) -> Path:
+    path = resolve_path(path)
+    if path.suffix:
+        path.parent.mkdir(parents=True, exist_ok=True)
+    else:
+        path.mkdir(parents=True, exist_ok=True)
+    return path

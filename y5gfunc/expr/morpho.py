@@ -3,7 +3,6 @@ from vapoursynth import core
 from typing import Union, Optional
 from vstools import get_peak_value
 
-
 def _create_minmax_expr(
     clip: vs.VideoNode,
     process_expr: str,

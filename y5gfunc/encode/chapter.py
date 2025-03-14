@@ -1,6 +1,8 @@
 from typing import Union, Optional, Any
 from pathlib import Path
 import subprocess
+import struct
+from ..utils import resolve_path
 
 def get_bd_chapter(
     m2ts_or_mpls_path: Union[str, Path],
@@ -8,10 +10,9 @@ def get_bd_chapter(
     target_clip: Optional[str] = None,
     all: bool = False  # True: return all mpls marks; False: return chapter
 ) -> Path:
-    import struct
     
-    m2ts_or_mpls_path = Path(m2ts_or_mpls_path)
-    chapter_save_path = Path(chapter_save_path)
+    m2ts_or_mpls_path = resolve_path(m2ts_or_mpls_path)
+    chapter_save_path = resolve_path(chapter_save_path)
 
     def _format_timestamp(seconds: float) -> str:
         hours = int(seconds // 3600)
@@ -165,8 +166,8 @@ def get_bd_chapter(
 
 def get_mkv_chapter(mkv_path: Union[str, Path], output_path: Union[str, Path]) -> Path:
     
-    mkv_path = Path(mkv_path)
-    output_path = Path(output_path)
+    mkv_path = resolve_path(mkv_path)
+    output_path = resolve_path(output_path)
 
     result = subprocess.run(
         ["mkvextract", "chapters", str(mkv_path), "-s"],
@@ -178,7 +179,6 @@ def get_mkv_chapter(mkv_path: Union[str, Path], output_path: Union[str, Path]) -
         
 
     chapter_data = result.stdout
-    print(chapter_data)
 
     output_path.write_text(chapter_data, encoding="utf-8")
     return output_path
