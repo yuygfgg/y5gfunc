@@ -2,13 +2,12 @@
 Trim processor implementation.
 """
 
-from typing import Dict, List, Tuple, Any
+from typing import Dict, Tuple, Any
 
 import vapoursynth as vs
 
 from .base import BaseProcessor
 from ..types import ProjectData, FramePropertyMap, FrameMap, PresetDict, WobblyKeys
-from ..errors import WobblyProcessError
 from ..core.context import safe_processing
 
 core = vs.core
@@ -68,7 +67,7 @@ class TrimProcessor(BaseProcessor):
                                 "WobblyTrimStart": first,
                                 "WobblyTrimEnd": last
                             })
-                            new_frame_props[new_frame_idx] = props
+                            new_frame_props[new_frame_idx] = props # type: ignore
                             # Update mapping
                             frame_mapping[new_frame_idx] = i
                             new_frame_idx += 1
@@ -77,6 +76,6 @@ class TrimProcessor(BaseProcessor):
                     
             if segments:
                 clip = core.std.Splice(clips=segments)
-                frame_props = new_frame_props  # Update frame property map
+                frame_props = new_frame_props  # type: ignore # Update frame property map
                 
         return clip, frame_props, frame_mapping

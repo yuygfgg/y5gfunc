@@ -1,4 +1,4 @@
-from .audio.audio_config import AudioConfig, ProcessMode
+from .audio_config import AudioConfig, ProcessMode
 from typing import Union, Optional
 from pathlib import Path
 import json

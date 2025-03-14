@@ -8,7 +8,6 @@ import vapoursynth as vs
 
 from .base import BaseProcessor
 from ..types import ProjectData, FramePropertyMap, FrameMap, PresetDict, WobblyKeys
-from ..errors import WobblyProcessError
 from ..core.context import safe_processing
 
 core = vs.core

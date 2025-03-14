@@ -4,7 +4,7 @@ import vsutil
 from typing import Callable, Union, Optional
 import functools
 from ..utils import ranger
-from ..expr import maximum
+from .morpho import maximum
 
 # TODO: use vs-jetpack Rescalers, handle asymmetrical descales
 # inspired by https://skyeysnow.com/forum.php?mod=viewthread&tid=58390
