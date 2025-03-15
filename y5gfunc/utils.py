@@ -21,7 +21,7 @@ def PickFrames(clip: vs.VideoNode, indices: list[int]) -> vs.VideoNode:
     return ret
 
 def resolve_path(path: Path | str) -> Path:
-    path = resolve_path(path)
+    path = Path(path).resolve()
     if path.suffix:
         path.parent.mkdir(parents=True, exist_ok=True)
     else:
