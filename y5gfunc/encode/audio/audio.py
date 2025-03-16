@@ -227,27 +227,31 @@ def extract_audio_tracks(
         LOSSLESS_CODECS = {'truehd', 'flac', 'alac', 'mlp', 'pcm'}
         LOSSLESS_PROFILES = {'dts-hd ma'}
 
-        is_lossless = (
-            any(codec in codec_long_name for codec in LOSSLESS_CODECS) or
-            any(codec in codec_name for codec in LOSSLESS_CODECS) or
-            any(profile in LOSSLESS_PROFILES for profile in [profile])
-        )
+        is_lossless = any([
+            any(codec in codec_long_name for codec in LOSSLESS_CODECS),
+            any(codec in codec_name for codec in LOSSLESS_CODECS),
+            profile in LOSSLESS_PROFILES
+        ])
 
         is_core_track = False
         if codec_name == 'dts':
             base_id = stream.get('id', '').rsplit('.', 1)[0]
             for other_stream in streams:
-                if (other_stream['index'] != track_num and
-                    other_stream.get('id', '').startswith(base_id) and
-                    other_stream.get('profile', '').lower() == 'dts-hd ma'):
+                if all([
+                    other_stream['index'] != track_num,
+                    other_stream.get('id', '').startswith(base_id),
+                    other_stream.get('profile', '').lower() == 'dts-hd ma'
+                    ]):
                     is_core_track = True
                     break
         elif codec_name == 'ac3':
             base_id = stream.get('id', '').rsplit('.', 1)[0]
             for other_stream in streams:
-                if (other_stream['index'] != track_num and
-                    other_stream.get('codec_name', '').lower() == 'truehd' and
-                    other_stream.get('id', '').startswith(base_id)):
+                if all([
+                    other_stream['index'] != track_num,
+                    other_stream.get('codec_name', '').lower() == 'truehd',
+                    other_stream.get('id', '').startswith(base_id)
+                    ]):
                     is_core_track = True
                     break
 
