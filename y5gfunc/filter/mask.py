@@ -1,11 +1,13 @@
 from vstools import vs
 from vstools import core
 import vsutil
-from typing import Callable, Any
+from typing import Callable, Any, Optional, Union
 from vsrgtools import remove_grain
 import functools
 from .morpho import minimum, maximum, convolution
 from .utils import scale_value_full, get_peak_value_full
+from vstools import get_peak_value
+from ..expr import ex_planes
 
 # modified from LoliHouse: https://share.dmhy.org/topics/view/478666_LoliHouse_LoliHouse_1st_Anniversary_Announcement_and_Gift.html
 def DBMask(clip: vs.VideoNode) -> vs.VideoNode:
@@ -114,3 +116,57 @@ def generate_detail_mask(source: vs.VideoNode, upscaled: vs.VideoNode, threshold
     mask = vsutil.iterate(mask, maximum, 3)
     mask = vsutil.iterate(mask, core.std.Inflate, 3)
     return mask
+
+# modified from jvsfunc.comb_mask()
+def comb_mask(
+    clip: vs.VideoNode,
+    cthresh: int = 6,
+    mthresh: int = 9,
+    expand: bool = True,
+    metric: int = 0,
+    planes: Optional[Union[int, list[int]]] = None
+) -> vs.VideoNode:
+    """
+    Comb mask from TIVTC/TFM plugin.
+
+    :param src: Input clip.
+    :param cthresh: Spatial combing threshold.
+    :param mthresh: Motion adaptive threshold.
+    :param expand: Assume left and right pixels of combed pixel as combed too.
+    :param metric: Sets which spatial combing metric is used to detect combed pixels.
+                    Metric 0 is what TFM used previous to v0.9.12.0.
+                    Metric 1 is from Donald Graft's decomb.dll.
+    :param planes: Planes to process.
+    """
+    
+    cth_max = 65025 if metric else 255
+    if (cthresh > cth_max) or (cthresh < 0):
+        raise ValueError(f'comb_mask: cthresh must be between 0 and {cth_max} when metric = {metric}.')
+    if (mthresh > 255) or (mthresh < 0):
+        raise ValueError('comb_mask: mthresh must be between 0 and 255.')
+    if planes is None:
+        planes = list(range(clip.format.num_planes))
+    if isinstance(planes, int):
+        planes = [planes]
+
+    peak = get_peak_value(clip)
+    ex_m0 = [   f'x[0,-2] a! x[0,-1] b! x c! x[0,1] d! x[0,2] e! '
+                f'c@ b@ - d1! c@ d@ - d2! '
+                f'c@ 4 * a@ + e@ + b@ d@ + 3 * - abs fd! '
+                f'd1@ {cthresh} > d2@ {cthresh} > and '
+                f'd1@ -{cthresh} < d2@ -{cthresh} < and or '
+                f'fd@ {cthresh * 6} > and {peak} 0 ?']
+
+    ex_m1 = [f'x[0,-1] x - x[0,1] x - * {cthresh} > {peak} 0 ?']
+    ex_motion = [f'x y - abs {mthresh} > {peak} 0 ?']
+    ex_spatial = ex_m1 if metric else ex_m0
+
+    spatial_mask = clip.akarin.Expr(ex_planes(clip, ex_spatial, planes))
+    if (mthresh == 0):
+        return spatial_mask if not expand else maximum(spatial_mask, planes=planes, coordinates=[0, 0, 0, 1, 1, 0, 0, 0])
+
+    motion_mask = core.akarin.Expr([clip, clip[0] + clip], ex_planes(clip, ex_motion, planes))
+    motion_mask = maximum(motion_mask, planes=planes, coordinates=[0, 1, 0, 0, 0, 0, 1, 0])
+    comb_mask = core.akarin.Expr([spatial_mask, motion_mask], 'x y min')
+    
+    return comb_mask if not expand else maximum(comb_mask, planes=planes, coordinates=[0, 0, 0, 1, 1, 0, 0, 0])

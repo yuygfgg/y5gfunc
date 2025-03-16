@@ -1,3 +1,4 @@
+from typing import Union
 from vstools import vs
 from vstools import core
 from pathlib import Path
@@ -20,7 +21,7 @@ def PickFrames(clip: vs.VideoNode, indices: list[int]) -> vs.VideoNode:
     
     return ret
 
-def resolve_path(path: Path | str) -> Path:
+def resolve_path(path: Union[Path, str]) -> Path:
     path = Path(path).resolve()
     if path.suffix:
         path.parent.mkdir(parents=True, exist_ok=True)

@@ -2,10 +2,10 @@
 Yuygfgg's collection for vapoursynth video filtering and encoding stuff, written by others and me.
 '''
 
-from .expr import postfix2infix
+from .expr import postfix2infix, ex_planes
 from .filter import (
     SynDeband, Fast_BM3DWrapper, TIVTC_VFR, DBMask, get_oped_mask,
-    cambi_mask, kirsch, retinex_edgemask, rescale, Descale, rgb2opp, 
+    cambi_mask, kirsch, retinex_edgemask, comb_mask, rescale, Descale, rgb2opp, 
     opp2rgb, is_stripe, convolution, maximum, minimum, scale_value_full,
     get_peak_value_full
 )
@@ -25,6 +25,7 @@ __all__ = [
     'maximum',
     'minimum',
     'postfix2infix',
+    'ex_planes',
     'SynDeband', 
     'Fast_BM3DWrapper',
     'TIVTC_VFR',
@@ -33,6 +34,7 @@ __all__ = [
     'cambi_mask',
     'kirsch',
     'retinex_edgemask',
+    'comb_mask',
     'rescale',
     'Descale',
     'rgb2opp',

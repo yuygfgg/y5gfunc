@@ -1,7 +1,7 @@
 from .deband import SynDeband
 from .denoise import Fast_BM3DWrapper
 from .ivtc import TIVTC_VFR
-from .mask import DBMask, get_oped_mask, cambi_mask, kirsch, retinex_edgemask
+from .mask import DBMask, get_oped_mask, cambi_mask, kirsch, retinex_edgemask, comb_mask
 from .rescale import rescale
 from .resample import Descale, rgb2opp, opp2rgb
 from .stripe import is_stripe
@@ -17,6 +17,7 @@ __all__ = [
     'cambi_mask',
     'kirsch',
     'retinex_edgemask',
+    'comb_mask',
     'rescale',
     'Descale',
     'rgb2opp',
