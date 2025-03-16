@@ -92,7 +92,7 @@ def convolution(
     if isinstance(planes, int):
         planes = [planes]
     
-    if mode != "s" or (len(matrix) != 9 and len(matrix) != 25) or force_std:
+    if mode != "s" or len(matrix) != 9 or force_std:
         return core.std.Convolution(clip, matrix, bias, divisor, planes, saturate, mode)
     
     if len(matrix) == 9:
