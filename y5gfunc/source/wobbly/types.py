@@ -9,7 +9,7 @@ from typing import (
     Protocol, TypeVar
 )
 from pathlib import Path
-import vapoursynth as vs
+from vstools import vs
 
 
 # Generic type parameters

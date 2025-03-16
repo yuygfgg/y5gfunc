@@ -1,5 +1,5 @@
 from collections import deque
-import vapoursynth as vs
+from vstools import vs
 from typing import Literal, Optional
 import functools
 import fractions

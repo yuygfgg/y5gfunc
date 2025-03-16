@@ -3,7 +3,7 @@ Preset handling for Wobbly parser.
 """
 
 
-import vapoursynth as vs
+from vstools import vs
 
 from ..types import PresetDict, ProjectData, WobblyKeys
 from .context import safe_processing

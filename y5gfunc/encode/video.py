@@ -1,4 +1,4 @@
-import vapoursynth as vs
+from vstools import vs
 from typing import Union, Sequence, IO
 from subprocess import Popen
 import sys

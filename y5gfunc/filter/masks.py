@@ -1,5 +1,5 @@
-import vapoursynth as vs
-from vapoursynth import core
+from vstools import vs
+from vstools import core
 import vsutil
 from typing import Callable, Any
 from vstools import scale_value, get_peak_value, ColorRange

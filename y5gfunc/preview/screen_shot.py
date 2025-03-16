@@ -1,4 +1,4 @@
-import vapoursynth as vs
+from vstools import vs
 from pathlib import Path
 from typing import Union
 from ..utils import PickFrames, resolve_path

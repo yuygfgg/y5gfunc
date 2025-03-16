@@ -5,7 +5,7 @@ Video loading and source handling.
 import os
 from typing import Optional
 
-import vapoursynth as vs
+from vstools import vs
 
 from ..types import FramePropertyMap, VideoFormat
 from ..errors import WobblyProcessError, WobblyInputError

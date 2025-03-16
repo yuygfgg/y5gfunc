@@ -6,7 +6,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Protocol, Tuple
 
-import vapoursynth as vs
+from vstools import vs
 
 from ..types import FramePropertyMap, FrameMap, ProjectData, PresetDict
 

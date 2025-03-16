@@ -4,7 +4,7 @@ Resize and bit depth processor.
 
 from typing import Dict, Any, Tuple
 
-import vapoursynth as vs
+from vstools import vs
 
 from .base import BaseProcessor
 from ..types import ProjectData, FramePropertyMap, FrameMap, PresetDict, WobblyKeys, VideoFormat

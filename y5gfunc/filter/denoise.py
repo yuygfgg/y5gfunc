@@ -1,5 +1,5 @@
-import vapoursynth as vs
-from vapoursynth import core
+from vstools import vs
+from vstools import core
 import mvsfunc as mvf
 import vsutil
 from typing import Literal, Union
@@ -55,7 +55,7 @@ bm3d_presets = {
 # modified from rksfunc.BM3DWrapper()
 def Fast_BM3DWrapper(
     clip: vs.VideoNode,
-    bm3d=core.bm3dcpu,
+    bm3d=core.lazy.bm3dcpu,
     chroma: bool = True,
     
     sigma_Y: Union[float, int] = 1.2,

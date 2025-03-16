@@ -3,7 +3,7 @@ Custom list processor implementation.
 """
 
 from typing import List, Tuple
-import vapoursynth as vs
+from vstools import vs
 
 from .base import BaseProcessor
 from ..types import (

@@ -4,7 +4,7 @@ Trim processor implementation.
 
 from typing import Dict, Tuple, Any
 
-import vapoursynth as vs
+from vstools import vs
 
 from .base import BaseProcessor
 from ..types import ProjectData, FramePropertyMap, FrameMap, PresetDict, WobblyKeys

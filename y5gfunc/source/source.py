@@ -1,5 +1,5 @@
-import vapoursynth as vs
-from vapoursynth import core
+from vstools import vs
+from vstools import core
 from .wobbly import load_and_process
 from typing import Optional, Union
 from pathlib import Path

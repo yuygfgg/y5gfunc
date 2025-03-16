@@ -1,5 +1,5 @@
-import vapoursynth as vs
-from vapoursynth import core
+from vstools import vs
+from vstools import core
 from pathlib import Path
 
 def ranger(start, end, step):

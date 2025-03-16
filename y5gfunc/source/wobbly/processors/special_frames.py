@@ -4,7 +4,7 @@ Special frames processing (frozen frames, decimation).
 
 from typing import Dict, List, Set, Tuple, Any
 
-import vapoursynth as vs
+from vstools import vs
 
 from .base import BaseProcessor
 from ..types import ProjectData, FramePropertyMap, FrameMap, PresetDict, WobblyKeys

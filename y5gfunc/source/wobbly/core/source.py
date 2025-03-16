@@ -6,7 +6,7 @@ import os
 from typing import Optional
 from ....utils import resolve_path
 
-import vapoursynth as vs
+from vstools import vs
 
 from ..types import (
     WobblyKeys, PathLike, ProjectData, FrameMap, 
