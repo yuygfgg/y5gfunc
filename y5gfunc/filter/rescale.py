@@ -1,10 +1,10 @@
 from vstools import vs
 from vstools import core
 import vsutil
-from typing import Callable, Union, Optional
+from typing import Union, Optional
 import functools
 from ..utils import ranger
-from .morpho import maximum
+from .mask import generate_detail_mask
 
 # TODO: use vs-jetpack Rescalers, handle asymmetrical descales
 # inspired by https://skyeysnow.com/forum.php?mod=viewthread&tid=58390
@@ -138,13 +138,6 @@ def rescale(
         if descale_name.startswith('De'):
             return descale_name[2:].capitalize()
         return descale_name
-    
-    # modified from kegefunc._generate_descale_mask()
-    def _generate_detail_mask(source: vs.VideoNode, upscaled: vs.VideoNode, detail_mask_threshold: float = detail_mask_threshold) -> vs.VideoNode:
-        mask = core.akarin.Expr([source, upscaled], 'src0 src1 - abs').std.Binarize(threshold=detail_mask_threshold)
-        mask = vsutil.iterate(mask, maximum, 3)
-        mask = vsutil.iterate(mask, core.std.Inflate, 3)
-        return mask
 
     def _mergeuv(clipy: vs.VideoNode, clipuv: vs.VideoNode) -> vs.VideoNode:
         return core.std.ShufflePlanes([clipy, clipuv], [0, 1, 2], vs.YUV)
@@ -302,7 +295,7 @@ def rescale(
         rescaled_clips.append(rescaled)
         
         if use_detail_mask or show_detail_mask or exclude_common_mask:
-            detail_mask = _generate_detail_mask(src_luma, upscaled, detail_mask_threshold)
+            detail_mask = generate_detail_mask(src_luma, upscaled, detail_mask_threshold)
             detail_masks.append(detail_mask)
 
         params_list.append({
@@ -460,95 +453,3 @@ def rescale(
                     return final, src_fft, rescaled_fft
                 else:
                     return final
-                
-def Descale(
-    src: vs.VideoNode,
-    width: int,
-    height: int,
-    kernel: str,
-    custom_kernel: Optional[Callable] = None,
-    taps: int = 3,
-    b: Union[int, float] = 0.0,
-    c: Union[int, float] = 0.5,
-    blur: Union[int, float] = 1.0,
-    post_conv : Optional[list[Union[float, int]]] = None,
-    src_left: Union[int, float] = 0.0,
-    src_top: Union[int, float] = 0.0,
-    src_width: Optional[Union[int, float]] = None,
-    src_height: Optional[Union[int, float]] = None,
-    border_handling: int = 0,
-    ignore_mask: Optional[vs.VideoNode] = None,
-    force: bool = False,
-    force_h: bool = False,
-    force_v: bool = False,
-    opt: int = 0
-) -> vs.VideoNode:
-    
-    def _get_resize_name(kernal_name: str) -> str:
-        if kernal_name == 'Decustom':
-            return 'ScaleCustom'
-        if kernal_name.startswith('De'):
-            return kernal_name[2:].capitalize()
-        return kernal_name
-    
-    def _get_descaler_name(kernal_name: str) -> str:
-        if kernal_name == 'ScaleCustom':
-            return 'Decustom'
-        if kernal_name.startswith('De'):
-            return kernal_name
-        return 'De' + kernal_name[0].lower() + kernal_name[1:]
-    
-    assert width > 0 and height > 0
-    assert opt in [0, 1, 2]
-    assert isinstance(src, vs.VideoNode) and src.format.id == vs.GRAYS
-    
-    kernel = kernel.capitalize()
-    
-    if src_width is None:
-        src_width = width
-    if src_height is None:
-        src_height = height
-    
-    if width > src.width or height > src.height:
-        kernel = _get_resize_name(kernel)
-    else:
-        kernel = _get_descaler_name(kernel)
-    
-    descaler = getattr(core.descale, kernel)
-    assert callable(descaler)
-    extra_params: dict[str, dict[str, Union[float, int, Callable]]] = {}
-    if _get_descaler_name(kernel) == "Debicubic":
-        extra_params = {
-            'dparams': {'b': b, 'c': c},
-        }
-    elif _get_descaler_name(kernel) == "Delanczos":
-        extra_params = {
-            'dparams': {'taps': taps},
-        }
-    elif _get_descaler_name(kernel) == "Decustom":
-        assert callable(custom_kernel)
-        extra_params = {
-            'dparams': {'custom_kernel': custom_kernel},
-        }
-    descaled = descaler(
-        src=src,
-        width=width,
-        height=height,
-        blur=blur,
-        post_conv=post_conv,
-        src_left=src_left,
-        src_top=src_top,
-        src_width=src_width,
-        src_height=src_height,
-        border_handling=border_handling,
-        ignore_mask=ignore_mask,
-        force=force,
-        force_h=force_h,
-        force_v=force_v,
-        opt=opt,
-        **extra_params.get('dparams', {})
-    )
-    
-    assert isinstance(descaled, vs.VideoNode)
-    
-    return descaled

@@ -5,7 +5,7 @@ from typing import Union, Optional
 import functools
 import mvsfunc as mvf
 
-from .masks import retinex_edgemask
+from .mask import retinex_edgemask
 from vsrgtools import remove_grain
 
 # modified from rksfunc.SynDeband()
