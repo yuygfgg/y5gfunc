@@ -5,8 +5,9 @@ Yuygfgg's collection for vapoursynth video filtering and encoding stuff, written
 from .expr import postfix2infix
 from .filter import (
     SynDeband, Fast_BM3DWrapper, TIVTC_VFR, DBMask, get_oped_mask,
-    cambi_mask, kirsch, retinex_edgemask, rescale, Descale, is_stripe,
-    convolution, maximum, minimum
+    cambi_mask, kirsch, retinex_edgemask, rescale, Descale, rgb2opp, 
+    opp2rgb, is_stripe, convolution, maximum, minimum, scale_value_full,
+    get_peak_value_full
 )
 from .preview import reset_output_index, output, screen_shot
 from .source import WobblySource, load_source, get_frame_timestamp, clip_to_timecodes
@@ -34,6 +35,10 @@ __all__ = [
     'retinex_edgemask',
     'rescale',
     'Descale',
+    'rgb2opp',
+    'opp2rgb',
+    'scale_value_full',
+    'get_peak_value_full',
     'is_stripe',
     'reset_output_index',
     'output',

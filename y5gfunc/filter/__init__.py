@@ -6,6 +6,7 @@ from .rescale import rescale
 from .resample import Descale, rgb2opp, opp2rgb
 from .stripe import is_stripe
 from .morpho import convolution, maximum, minimum
+from .utils import scale_value_full, get_peak_value_full
 
 __all__ = [
     'SynDeband', 
@@ -23,5 +24,7 @@ __all__ = [
     'is_stripe',
     'convolution',
     'maximum',
-    'minimum'
+    'minimum',
+    'scale_value_full',
+    'get_peak_value_full'
 ]
