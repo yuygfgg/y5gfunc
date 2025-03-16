@@ -2,7 +2,6 @@ from vstools import vs
 from vstools import core
 from typing import Union
 import functools
-from ..utils import ranger
 
 # inspired by https://skyeysnow.com/forum.php?mod=redirect&goto=findpost&ptid=13824&pid=333218
 def is_stripe(
@@ -41,9 +40,7 @@ def is_stripe(
             
             ratio = ver_accum / hor_accum
             
-            i = scene_start
-            for i in ranger(scene_start, scene_start+scene_length, step=1): # write scene prop
-                cache[i] = ratio
+            cache[scene_start:scene_start+scene_length] = [ratio] * scene_length
         
         fout.props['ratio'] = cache[n]
         return fout

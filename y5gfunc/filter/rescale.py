@@ -3,7 +3,6 @@ from vstools import core
 import vsutil
 from typing import Union, Optional
 import functools
-from ..utils import ranger
 from .mask import generate_detail_mask
 
 # TODO: use vs-jetpack Rescalers, handle asymmetrical descales
@@ -127,9 +126,7 @@ def rescale(
 
             scene_min_index = max(enumerate(min_index_buffer), key=lambda x: x[1])[0] if num_descaled >= scene_descale_threshold_ratio * scene_length else length
             
-            i = scene_start
-            for i in ranger(scene_start, scene_start+scene_length, step=1): # write scene prop
-                cache[i] = scene_min_index
+            cache[scene_start:scene_start+scene_length] = [scene_min_index] * scene_length
 
         fout.props['SceneMinIndex'] = cache[n]
         return fout
