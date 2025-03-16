@@ -1,12 +1,11 @@
-from typing import Union
+from typing import List, Union
 from vstools import vs
 from vstools import core
 from pathlib import Path
 
-def ranger(start, end, step):
-    if step == 0:
-        raise ValueError("ranger: step must not be 0!")
-    return [round(start + i * step, 10) for i in range(int((end - start) / step))]
+def ranger(start: Union[int, float], end: Union[int, float], step: Union[int, float]) -> List[Union[int, float]]:
+    assert step != 0
+    return list(map(lambda i: round(start + i * step, 10), range(int((end - start) / step))))
 
 def PickFrames(clip: vs.VideoNode, indices: list[int]) -> vs.VideoNode:
     try: 
