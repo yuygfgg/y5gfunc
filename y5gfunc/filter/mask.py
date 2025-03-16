@@ -14,7 +14,7 @@ def DBMask(clip: vs.VideoNode) -> vs.VideoNode:
     nrmasks = core.tcanny.TCanny(clip, sigma=0.8, op=2, mode=1, planes=[0, 1, 2]).std.Binarize(scale_value_full(7, 8, clip), planes=[0])
     nrmaskb = core.tcanny.TCanny(clip, sigma=1.3, t_h=6.5, op=2, planes=0)
     nrmaskg = core.tcanny.TCanny(clip, sigma=1.1, t_h=5.0, op=2, planes=0)
-    nrmask = core.akarin.Expr([nrmaskg, nrmaskb, nrmasks, clip],[f"a {scale_value_full(20, 8, clip)} < {get_peak_value_full(clip)} a {scale_value_full(48, 8, clip)} < x {scale_value_full(256, 16, clip)} * a {scale_value_full(96, 8, clip)} < y {scale_value_full(256, 16, clip)} * z ? ? ?",""], clip.format.id)
+    nrmask = core.akarin.Expr([nrmaskg, nrmaskb, nrmasks, clip], [f"a {scale_value_full(20, 8, clip)} < {get_peak_value_full(clip)} a {scale_value_full(48, 8, clip)} < x {scale_value_full(256, 16, clip)} * a {scale_value_full(96, 8, clip)} < y {scale_value_full(256, 16, clip)} * z ? ? ?",""], clip.format.id)
     nrmask = minimum(vsutil.iterate(nrmask, functools.partial(maximum, planes=[0]), 2), planes=[0])
     nrmask = remove_grain(nrmask, [20, 0])
     nrmask = vsutil.get_y(nrmask) # first_plane=True in [LoliHouse] Anime_WebSource_deband_1080P_10bit_adcance.vpy: L33

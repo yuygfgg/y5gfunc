@@ -25,4 +25,4 @@ def get_language_by_trackid(m2ts_path: Path, ffprobe_id) -> str:
             track_langs[current_track] = lang
             current_track = None
             
-    return track_langs.get(track_id, 'und')
+    return track_langs.get(track_id, 'und') or 'und'
