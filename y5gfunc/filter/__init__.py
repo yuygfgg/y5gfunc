@@ -5,7 +5,7 @@ from .mask import DBMask, get_oped_mask, cambi_mask, kirsch, retinex_edgemask, c
 from .rescale import rescale
 from .resample import Descale, rgb2opp, opp2rgb
 from .stripe import is_stripe
-from .morpho import convolution, maximum, minimum
+from .morpho import convolution, maximum, minimum, inflate, deflate
 from .utils import scale_value_full, get_peak_value_full
 
 __all__ = [
@@ -26,6 +26,8 @@ __all__ = [
     'convolution',
     'maximum',
     'minimum',
+    'inflate',
+    'deflate',
     'scale_value_full',
     'get_peak_value_full'
 ]

@@ -4,7 +4,7 @@ import vsutil
 from typing import Callable, Any, Optional, Union
 from vsrgtools import remove_grain
 import functools
-from .morpho import minimum, maximum, convolution
+from .morpho import minimum, maximum, convolution, inflate, deflate
 from .utils import scale_value_full, get_peak_value_full
 from vstools import get_peak_value
 from ..expr import ex_planes
@@ -81,14 +81,14 @@ def cambi_mask(
     scores = core.akarin.Cambi(clip, scores=True, **cambi_args)
     if merge_previous:
         cscores = [
-            blur_func(scores.std.PropToClip(f'CAMBI_SCALE{i}').std.Deflate().std.Deflate())
+            blur_func(vsutil.iterate(scores.std.PropToClip(f'CAMBI_SCALE{i}'), deflate, 2))
             for i in range(scale + 1)
         ]
         expr_parts = [f"src{i} {scale + 1} /" for i in range(scale + 1)]
         expr = " ".join(expr_parts) + " " + " ".join(["+"] * (scale))
         deband_mask = core.akarin.Expr([core.resize2.Bilinear(c, scores.width, scores.height) for c in cscores], expr)
     else:
-        deband_mask = blur_func(scores.std.PropToClip(f'CAMBI_SCALE{scale}').std.Deflate().std.Deflate())
+        deband_mask = blur_func(vsutil.iterate(scores.std.PropToClip(f'CAMBI_SCALE{scale}'), deflate, 2))
 
     return deband_mask.std.CopyFrameProps(scores)
 
@@ -114,7 +114,7 @@ def generate_detail_mask(source: vs.VideoNode, upscaled: vs.VideoNode, threshold
     threshold = scale_value_full(threshold, 32, source)
     mask = core.akarin.Expr([source, upscaled], 'src0 src1 - abs').std.Binarize(threshold=threshold)
     mask = vsutil.iterate(mask, maximum, 3)
-    mask = vsutil.iterate(mask, core.std.Inflate, 3)
+    mask = vsutil.iterate(mask, inflate, 3)
     return mask
 
 # modified from jvsfunc.comb_mask()

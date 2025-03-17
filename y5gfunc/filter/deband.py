@@ -7,6 +7,7 @@ import mvsfunc as mvf
 
 from .mask import retinex_edgemask
 from vsrgtools import remove_grain
+from .morpho import inflate as _inflate # Fucking nameing conflict
 
 # modified from rksfunc.SynDeband()
 def SynDeband(
@@ -50,7 +51,7 @@ def SynDeband(
         f3k2 = mvf.LimitFilter(f3k2, kill, thr=limit_thry, thrc=limit_thrc, elast=limit_elast)
     if bmask is None:
         bmask = retinex_edgemask(kill).std.Binarize(mstr)
-        bmask = vsutil.iterate(bmask, core.std.Inflate, inflate)
+        bmask = vsutil.iterate(bmask, _inflate, inflate)
     deband = core.std.MaskedMerge(f3k2, kill, bmask)
     deband = core.std.MergeDiff(deband, grain)
     if include_mask:

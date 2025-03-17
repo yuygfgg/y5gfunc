@@ -3,6 +3,12 @@ from vstools import core
 from typing import Union, Optional
 from vstools import get_peak_value
 
+NEIGHBOR_OFFSETS =  [
+    (-1, -1), (0, -1), (1, -1),  # 1, 2, 3
+    (-1,  0),          (1,  0),  # 4  ,  5
+    (-1,  1), (0,  1), (1,  1),  # 6, 7, 8
+]
+
 def _create_minmax_expr(
     clip: vs.VideoNode,
     process_expr: str,
@@ -17,11 +23,6 @@ def _create_minmax_expr(
     if isinstance(planes, int):
         planes = [planes]
     def _build_neighbor_expr(coordinates: list[int]) -> str:
-        NEIGHBOR_OFFSETS = [
-            (-1, -1), (0, -1), (1, -1),  # 1, 2, 3
-            (-1,  0),          (1,  0),  # 4  ,  5
-            (-1,  1), (0,  1), (1,  1),  # 6, 7, 8
-        ]
         return " ".join(
             f"x[{dx},{dy}]" 
             for flag, (dx, dy) in zip(coordinates, NEIGHBOR_OFFSETS) 
@@ -132,3 +133,53 @@ def convolution(
         return core.akarin.Expr(clip, expressions, boundary=1)
     
     return core.std.Convolution(clip, matrix, bias, divisor, planes, saturate, mode)
+
+def inflate(clip: vs.VideoNode, planes: Optional[Union[list[int], int]] = None, threshold: Optional[float] = None, boundary: int = 1) -> vs.VideoNode:
+    if planes is None:
+        planes = list(range(clip.format.num_planes))
+    if isinstance(planes, int):
+        planes = [planes]
+    
+    expr_parts = []
+
+    for i, (dx, dy) in enumerate(NEIGHBOR_OFFSETS):
+        expr_parts.append(f"x[{dx},{dy}] 8 / ")
+        if i > 0:
+            expr_parts.append("+ ")
+    
+    expr_parts.append('x max')
+    if threshold:
+        expr_parts.append(f' x {threshold} + min')
+    expr = ''.join(expr_parts)
+    
+    expressions = [
+        expr if (i in planes) else "x" 
+        for i in range(clip.format.num_planes)
+    ]
+    
+    return core.akarin.Expr(clips=[clip], expr=expressions, boundary=boundary)
+
+def deflate(clip: vs.VideoNode, planes: Optional[Union[list[int], int]] = None, threshold: Optional[float] = None, boundary: int = 1) -> vs.VideoNode:
+    if planes is None:
+        planes = list(range(clip.format.num_planes))
+    if isinstance(planes, int):
+        planes = [planes]
+    
+    expr_parts = []
+
+    for i, (dx, dy) in enumerate(NEIGHBOR_OFFSETS):
+        expr_parts.append(f"x[{dx},{dy}] 8 / ")
+        if i > 0:
+            expr_parts.append("+")
+    
+    expr_parts.append('x min')
+    if threshold:
+        expr_parts.append(f' x {threshold} - max')
+    expr = ''.join(expr_parts)
+    
+    expressions = [
+        expr if (i in planes) else "x" 
+        for i in range(clip.format.num_planes)
+    ]
+    
+    return core.akarin.Expr(clips=[clip], expr=expressions, boundary=boundary)
