@@ -105,6 +105,7 @@ def encode_audio(
         stream = extracted_info['streams'][0]
         codec = stream['codec_name']
         sample_rate = stream['sample_rate']
+        sample_fmt = stream.get('sample_fmt')
         
         if 'channel_layout' in stream:
             channel_layout = stream['channel_layout'] 
@@ -136,12 +137,9 @@ def encode_audio(
             '-c:a', codec,
             '-b:a', audio_bitrate
         ]
-        
-        if output_ext == ".flac":
-            sample_fmt = stream.get('sample_fmt', 's16')
+        if sample_fmt:
             silence_cmd.extend([
-                '-sample_fmt', 's16' if '16' in sample_fmt else 's32',
-                '-compression_level', '12'
+                '-sample_fmt', sample_fmt
             ])
         
         silence_cmd.append(str(silence_file))
