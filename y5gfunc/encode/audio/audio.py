@@ -314,7 +314,7 @@ def extract_audio_tracks(
         language = get_language_by_trackid(m2ts_path=input_path, ffprobe_id=stream.get('id'))
         if language == 'und':
             if stream.get('tags'):
-                language = stream.get('tags', {}).get('language') # also try ffprobe
+                language = stream.get('tags', {}).get('language', 'und') # also try ffprobe
         stream['language'] = language
         print(
             f"Track {stream['index']}: {stream.get('codec_name', 'unknown')} "
