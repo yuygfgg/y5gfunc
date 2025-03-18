@@ -4,10 +4,12 @@ from pathlib import Path
 import json
 import subprocess
 import platform
+import tempfile
+import shutil
+from .utils import check_audio_stream_lossless
 from ..utils import get_language_by_trackid
 from ...utils import resolve_path
 
-# TODO: fix positive delay for lossy tracks with copy codec
 def encode_audio(
     input_file: Union[str, Path],
     output_file: Union[str, Path], 
@@ -54,9 +56,122 @@ def encode_audio(
     if not audio_info.get('streams'):
         raise RuntimeError(f"encode_audio: No audio track {audio_track} found in file")
 
+    input_stream = audio_info['streams'][0]
+    
+    input_is_lossless = check_audio_stream_lossless(input_stream)
+    
+    output_is_lossless = output_ext.lower() in ['.flac', '.wav', '.alac']
+    
     if output_ext in {".aac", ".mp3"} and bitrate is None and not copy:
         bitrate = "320k"
 
+    if delay > 0 and copy and not input_is_lossless and not output_is_lossless:
+        temp_dir = Path(tempfile.mkdtemp())
+        extracted_audio = temp_dir / f"extracted{output_ext}"
+        silence_file = temp_dir / f"silence{output_ext}"
+        concat_list = temp_dir / "concat.txt"
+        
+        extract_cmd = [
+            'ffmpeg',
+            '-i', str(input_path),
+            '-map', f'0:a:{audio_track}',
+            '-c:a', 'copy',
+            str(extracted_audio)
+        ]
+        
+        extract_process = subprocess.run(extract_cmd, capture_output=True, text=True)
+        if extract_process.returncode != 0:
+            shutil.rmtree(temp_dir)
+            raise RuntimeError(f"encode_audio: Failed to extract audio: {extract_process.stderr}\nCommand: {extract_cmd}")
+        
+        extract_probe_cmd = [
+            'ffprobe',
+            '-v', 'quiet',
+            '-print_format', 'json',
+            '-show_streams',
+            str(extracted_audio)
+        ]
+        
+        extract_probe_result = subprocess.run(extract_probe_cmd, capture_output=True, text=True)
+        if extract_probe_result.returncode != 0:
+            shutil.rmtree(temp_dir)
+            raise RuntimeError(f"encode_audio: FFprobe failed on extracted audio: {extract_probe_result.stderr}")
+        
+        extracted_info = json.loads(extract_probe_result.stdout)
+        if not extracted_info.get('streams'):
+            shutil.rmtree(temp_dir)
+            raise RuntimeError("encode_audio: No streams found in extracted audio")
+        
+        stream = extracted_info['streams'][0]
+        codec = stream['codec_name']
+        sample_rate = stream['sample_rate']
+        
+        if 'channel_layout' in stream:
+            channel_layout = stream['channel_layout'] 
+        else:
+            # Fallback based on channel count
+            channels = stream['channels']
+            if channels == 1:
+                channel_layout = 'mono'
+            elif channels == 2:
+                channel_layout = 'stereo'
+            elif channels == 6:
+                channel_layout = '5.1'
+            elif channels == 8:
+                channel_layout = '7.1'
+            else:
+                channel_layout = f"{channels}c"
+        
+        if 'bit_rate' in stream:
+            audio_bitrate = stream['bit_rate']
+        else:
+            audio_bitrate = '320k' if output_ext in {".aac", ".mp3"} else '192k'
+        
+        delay_sec = delay / 1000
+        silence_cmd = [
+            'ffmpeg', 
+            '-f', 'lavfi', 
+            '-i', f'anullsrc=channel_layout={channel_layout}:sample_rate={sample_rate}',
+            '-t', f'{delay_sec}',
+            '-c:a', codec,
+            '-b:a', audio_bitrate
+        ]
+        
+        if output_ext == ".flac":
+            sample_fmt = stream.get('sample_fmt', 's16')
+            silence_cmd.extend([
+                '-sample_fmt', 's16' if '16' in sample_fmt else 's32',
+                '-compression_level', '12'
+            ])
+        
+        silence_cmd.append(str(silence_file))
+        
+        silence_process = subprocess.run(silence_cmd, capture_output=True, text=True)
+        if silence_process.returncode != 0:
+            shutil.rmtree(temp_dir)
+            raise RuntimeError(f"encode_audio: Failed to generate silence: {silence_process.stderr}\nCommand: {silence_cmd}")
+        
+        with open(concat_list, 'w') as f:
+            f.write(f"file '{silence_file}'\n")
+            f.write(f"file '{extracted_audio}'\n")
+        
+        ffmpeg_cmd = [
+            'ffmpeg',
+            '-f', 'concat',
+            '-safe', '0',
+            '-i', str(concat_list),
+            '-c', 'copy',
+            str(output_path)
+        ]
+        
+        process = subprocess.run(ffmpeg_cmd, capture_output=True, text=True)
+        shutil.rmtree(temp_dir)
+        
+        if process.returncode != 0:
+            raise RuntimeError(f"encode_audio: FFmpeg concat failed: {process.stderr}\nCommand: {ffmpeg_cmd}")
+        
+        return output_path
+    
     ffmpeg_cmd = ['ffmpeg', '-i', str(input_path)]
     
     if delay != 0:
@@ -217,21 +332,12 @@ def extract_audio_tracks(
     for stream in streams:
         track_num = stream['index']
         codec_name = stream.get('codec_name', '').lower()
-        codec_long_name = stream.get('codec_long_name', '').lower()
-        profile = stream.get('profile', '').lower()
         language = stream['language']
         channels = int(stream.get('channels', 2))
         is_default = bool(stream.get('disposition', {}).get('default'))
         is_comment = bool(stream.get('disposition', {}).get('comment'))
-
-        LOSSLESS_CODECS = {'truehd', 'flac', 'alac', 'mlp', 'pcm'}
-        LOSSLESS_PROFILES = {'dts-hd ma'}
-
-        is_lossless = any([
-            any(codec in codec_long_name for codec in LOSSLESS_CODECS),
-            any(codec in codec_name for codec in LOSSLESS_CODECS),
-            profile in LOSSLESS_PROFILES
-        ])
+        
+        is_stream_lossless = check_audio_stream_lossless(stream)
 
         is_core_track = False
         if codec_name == 'dts':
@@ -268,7 +374,7 @@ def extract_audio_tracks(
 
         track_config = config.get_track_config(
             is_comment=is_comment,
-            is_lossless=is_lossless,
+            is_lossless=is_stream_lossless,
             channels=channels,
             bitrate=source_bitrate
         )
