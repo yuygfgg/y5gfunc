@@ -12,14 +12,12 @@ def is_constant(token: str) -> bool:
     Determine if the identifier token is built-in constants and source pixels.
     """
     constants_set = {'N', 'X', 'current_x', 'Y', 'current_y', 'width', 'current_width', 'height', 'current_height'}
-    print(token)
     if token in constants_set:
         return True
     if re.fullmatch(r'[a-zA-Z]', token):
         return True
     if re.fullmatch(r'src\d+', token):
         return True
-    print(0)
     return False
 
 def strip_outer_parentheses(expr: str) -> str:
