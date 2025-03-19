@@ -188,6 +188,13 @@ def convert_expr(expr: str, variables: set, functions: Dict[str, Tuple[List[str]
             rename_map = {}
             rename_map.update(param_map)
             rename_map.update(local_map)
+            param_assignments = []
+            for i, p in enumerate(params):
+                arg_orig = args[i].strip()
+                if is_constant(arg_orig):
+                    rename_map[p] = args_postfix[i]
+                else:
+                    param_assignments.append(f"{args_postfix[i]} {rename_map[p]}!")
             # ④ Perform rename substitution for each line in the function body
             new_lines = []
             for line in lines:
