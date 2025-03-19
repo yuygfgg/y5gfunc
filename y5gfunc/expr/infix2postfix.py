@@ -1,5 +1,6 @@
 import re
 import sys
+from typing import Optional
 if sys.version_info >= (3, 11):
     from typing import LiteralString, Dict, List, Tuple
 else:
@@ -38,6 +39,32 @@ def strip_outer_parentheses(expr: str) -> str:
         if count == 0 and i < len(expr) - 1:
             return expr
     return expr[1:-1]
+
+def match_full_function_call(expr: str) -> Optional[Tuple[str, str]]:
+    """
+    Attempts to match whether the entire expr is a complete function call (nested parentheses are supported).
+    Returns (func_name, args_str) if the match is successful; otherwise returns None.
+    """
+    expr = expr.strip()
+    m = re.match(r'(\w+)\s*\(', expr)
+    if not m:
+        return None
+    func_name = m.group(1)
+    start = m.end() - 1  # expr[start] should be '('
+    depth = 0
+    for i in range(start, len(expr)):
+        if expr[i] == '(':
+            depth += 1
+        elif expr[i] == ')':
+            depth -= 1
+            if depth == 0:
+                # If the matching right bracket is exactly at the end, the whole expression is considered to be a single function call.
+                if i == len(expr) - 1:
+                    args_str = expr[start+1:i]
+                    return func_name, args_str
+                else:
+                    return None
+    return None
 
 def infix2postfix(infix_code: str) -> LiteralString:
     """
@@ -122,10 +149,9 @@ def convert_expr(expr: str, variables: set, functions: Dict[str, Tuple[List[str]
         return constants[expr]
     
     # Determine if it's a function call form
-    func_call_match = re.match(r'(\w+)\s*\(([^)]*)\)', expr)
-    if func_call_match:
-        func_name = func_call_match.group(1)
-        args_str = func_call_match.group(2)
+    func_call_full = match_full_function_call(expr)
+    if func_call_full:
+        func_name, args_str = func_call_full
         args = parse_args(args_str)
         args_postfix = [convert_expr(arg, variables, functions) for arg in args]
         # Built-in function processing
