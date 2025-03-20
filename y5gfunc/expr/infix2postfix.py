@@ -64,10 +64,51 @@ def match_full_function_call(expr: str) -> Optional[Tuple[str, str]]:
                     return None
     return None
 
+def expand_loops(code: str) -> str:
+    """
+    Expand loops with a fixed number of cycles
+    """
+    pattern = re.compile(r'loop\s*\(\s*(\d+)\s*,\s*([a-zA-Z_]\w*)\s*\)\s*\{')
+    while True:
+        m = pattern.search(code)
+        if not m:
+            break
+        n = int(m.group(1))
+        var = m.group(2)
+        loop_start = m.start()
+        brace_start = m.end() - 1
+        count = 0
+        end_index = None
+        for i in range(brace_start, len(code)):
+            if code[i] == '{':
+                count += 1
+            elif code[i] == '}':
+                count -= 1
+                if count == 0:
+                    end_index = i
+                    break
+        if end_index is None:
+            raise SyntaxError("infix2postfix: Couldn't find matching '}' !")
+        block = code[brace_start+1:end_index]
+        # recursively expand loops
+        expanded_block = expand_loops(block)
+        unrolled = []
+        for k in range(n):
+            # replace the recurring variable
+            iter_block = re.sub(r'\b' + re.escape(var) + r'\b', str(k), expanded_block)
+            unrolled.append(iter_block)
+        unrolled_code = ' '.join(unrolled)
+        # replace the loop with expanded code
+        code = code[:loop_start] + unrolled_code + code[end_index+1:]
+    return code
+
 def infix2postfix(infix_code: str) -> LiteralString:
     """
     Convert infix expressions to postfix expressions, supporting function definitions and calls.
     """
+    # Preprocessing: unroll loops
+    infix_code = expand_loops(infix_code)
+
     # Preprocessing: extract function definitions
     functions = {}  # Format: {function_name: (parameter_list, function_body)}
     function_pattern = r'function\s+(\w+)\s*\(([^)]*)\)\s*\{([^{}]*((?:\{[^{}]*\})[^{}]*)*)\}'
