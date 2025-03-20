@@ -116,7 +116,7 @@ def convert_expr(expr: str, variables: set, functions: Dict[str, Tuple[List[str]
         - Numbers and constants are returned directly;
         - Built-in functions are converted directly: built-in binary functions support 'min', 'max', and the ternary function 'clamp';
         - Built-in unary functions support ['sin', 'cos', 'round', 'floor', 'abs', 'sqrt', 'trunc', 'bitnot', 'not'];
-        - Custom function calls rename all parameters and local variables (e.g., testinternala, testinternalb), and convert everything to postfix assignment sequences;
+        - Custom function calls rename all parameters and local variables (e.g., internaltesta, internaltestb), and convert everything to postfix assignment sequences;
         - Variable references (including renamed ones) are appended with '@' (but single letters and srcN are treated as constants, with no appending);
         - Assignment statements are converted to "expression variable!" format, with syntax checking to prevent assignment to constants.
     """
@@ -189,10 +189,10 @@ def convert_expr(expr: str, variables: set, functions: Dict[str, Tuple[List[str]
             params, body = functions[func_name]
             if len(args) != len(params):
                 raise ValueError(f"Function {func_name} requires {len(params)} parameters, but {len(args)} were provided.")
-            # ① Create rename mapping for all parameters, e.g., a -> {func_name}internala, b -> {func_name}internalb
-            param_map = { p: f"{func_name}internal{p}" for p in params }
+            # ① Create rename mapping for all parameters, e.g., a -> internal{func_name}a, b -> internal{func_name}b
+            param_map = { p: f"internal{func_name}{p}" for p in params }
             # ② Scan assignment statements in the function body (except return), collect local variables (non-parameters), 
-            # rename them to {func_name}internal variable form
+            # rename them to internal{func_name} variable form
             lines = [line.strip() for line in body.split('\n') if line.strip()]
             local_map = {}
             for line in lines:
@@ -204,9 +204,9 @@ def convert_expr(expr: str, variables: set, functions: Dict[str, Tuple[List[str]
                     # Syntax check: cannot assign to constants
                     if is_constant(var):
                         raise SyntaxError(f"Error: Cannot assign to constant '{var}'.")
-                    if var not in param_map and not var.startswith(f"{func_name}internal"):
+                    if var not in param_map and not var.startswith(f"internal{func_name}"):
                         if var not in local_map:
-                            local_map[var] = f"{func_name}internal{var}"
+                            local_map[var] = f"internal{func_name}{var}"
             # ③ Merge rename mappings
             rename_map = {}
             rename_map.update(param_map)
@@ -225,7 +225,7 @@ def convert_expr(expr: str, variables: set, functions: Dict[str, Tuple[List[str]
                 for old, new in rename_map.items():
                     new_line = re.sub(rf'\b{re.escape(old)}\b', new, new_line)
                 new_lines.append(new_line)
-            # ⑤ Generate parameter assignment tokens, e.g., "x@ testinternala!"
+            # ⑤ Generate parameter assignment tokens, e.g., "x@ internaltesta!"
             # Recalculate postfix expressions for each parameter
             args_postfix = [convert_expr(arg, variables, functions) for arg in args]
             param_assignments = [f"{args_postfix[i]} {rename_map[params[i]]}!" for i in range(len(params))]
