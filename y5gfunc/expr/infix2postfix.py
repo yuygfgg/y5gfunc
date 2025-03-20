@@ -150,6 +150,29 @@ def convert_expr(expr: str, variables: set, functions: Dict[str, Tuple[List[str]
     func_call_full = match_full_function_call(expr)
     if func_call_full:
         func_name, args_str = func_call_full
+        
+        # nth_N(sth)
+        m_nth = re.match(r'^nth_(\d+)$', func_name)
+        if m_nth:
+            K = int(m_nth.group(1))
+            args = parse_args(args_str)
+            M = len(args)
+            if M < K:
+                raise ValueError(f"nth_{K} requires at least {K} auguments，but only {M} provided!")
+            args_postfix = [convert_expr(arg, variables, functions) for arg in args]
+            sort_token = f"sort{M}"
+            drop_before = f"drop{K-1}" if (K-1) > 0 else ""
+            drop_after = f"drop{M-K}" if (M-K) > 0 else ""
+            tokens = []
+            tokens.append(" ".join(args_postfix))
+            tokens.append(sort_token)
+            if drop_before:
+                tokens.append(drop_before)
+            tokens.append("internalnthnth!")
+            if drop_after:
+                tokens.append(drop_after)
+            tokens.append("internalnthnth@")
+            return " ".join(tokens).strip()
         args = parse_args(args_str)
         args_postfix = [convert_expr(arg, variables, functions) for arg in args]
         # Built-in function processing
