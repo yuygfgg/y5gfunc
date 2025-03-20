@@ -1,15 +1,16 @@
 import re
 import sys
-from typing import Optional
 if sys.version_info >= (3, 11):
-    from typing import LiteralString, Dict, List, Tuple
+    from typing import LiteralString, Dict, List, Tuple, Optional
 else:
-    from typing import Dict, List, Tuple
+    from typing import Dict, List, Tuple, Optional
     LiteralString = str
 
 def is_constant(token: str) -> bool:
     """
-    Determine if the identifier token is built-in constants and source pixels.
+    Determine whether token is a built-in constant or source pixel.
+    Built-in constants include N, X, current_x, Y, current_y, width, current_width, height, current_height.
+    Single letters and identifiers like srcN are also considered constants.
     """
     constants_set = {'N', 'X', 'current_x', 'Y', 'current_y', 'width', 'current_width', 'height', 'current_height'}
     if token in constants_set:
@@ -22,7 +23,7 @@ def is_constant(token: str) -> bool:
 
 def strip_outer_parentheses(expr: str) -> str:
     """
-    If the entire expression is surrounded by a matching pair of parentheses, 
+    If the entire expression is surrounded by a matching pair of parentheses,
     remove the outer parentheses; otherwise return the original string.
     """
     if not expr.startswith('(') or not expr.endswith(')'):
@@ -33,14 +34,14 @@ def strip_outer_parentheses(expr: str) -> str:
             count += 1
         elif char == ')':
             count -= 1
-        # If count becomes zero before the end, the outer parentheses don't fully enclose the expression
+        # If the count becomes zero before the end, the parentheses don't fully enclose the expression
         if count == 0 and i < len(expr) - 1:
             return expr
     return expr[1:-1]
 
 def match_full_function_call(expr: str) -> Optional[Tuple[str, str]]:
     """
-    Attempts to match whether the entire expr is a complete function call (nested parentheses are supported).
+    Attempt to match whether the entire expr is a complete function call (supports nested parentheses).
     Returns (func_name, args_str) if the match is successful; otherwise returns None.
     """
     expr = expr.strip()
@@ -56,7 +57,6 @@ def match_full_function_call(expr: str) -> Optional[Tuple[str, str]]:
         elif expr[i] == ')':
             depth -= 1
             if depth == 0:
-                # If the matching right bracket is exactly at the end, the whole expression is considered to be a single function call.
                 if i == len(expr) - 1:
                     args_str = expr[start+1:i]
                     return func_name, args_str
@@ -66,7 +66,10 @@ def match_full_function_call(expr: str) -> Optional[Tuple[str, str]]:
 
 def expand_loops(code: str) -> str:
     """
-    Expand loops with a fixed number of cycles
+    Expands the loop syntax sugar for fixed number of iterations.
+    For example:
+        loop(2, i) { ... }
+    Will be expanded into two copies of the loop body, with i replaced by 0 and 1 respectively.
     """
     pattern = re.compile(r'loop\s*\(\s*(\d+)\s*,\s*([a-zA-Z_]\w*)\s*\)\s*\{')
     while True:
@@ -88,29 +91,29 @@ def expand_loops(code: str) -> str:
                     end_index = i
                     break
         if end_index is None:
-            raise SyntaxError("infix2postfix: Couldn't find matching '}' !")
+            raise SyntaxError("infix2postfix: Couldn't find matching '}'.")
         block = code[brace_start+1:end_index]
-        # recursively expand loops
+        # Recursively expand inner loops
         expanded_block = expand_loops(block)
         unrolled = []
         for k in range(n):
-            # replace the recurring variable
+            # Only replace standalone variable identifiers
             iter_block = re.sub(r'\b' + re.escape(var) + r'\b', str(k), expanded_block)
             unrolled.append(iter_block)
         unrolled_code = ' '.join(unrolled)
-        # replace the loop with expanded code
         code = code[:loop_start] + unrolled_code + code[end_index+1:]
     return code
 
 def infix2postfix(infix_code: str) -> LiteralString:
     """
-    Convert infix expressions to postfix expressions, supporting function definitions and calls.
+    Convert infix expressions to postfix expressions, supporting function definitions,
+    function calls, and built-in functions. Also supports nth_N and loop syntax sugar.
     """
-    # Preprocessing: unroll loops
+    # Preprocessing: expand loop syntax sugar
     infix_code = expand_loops(infix_code)
-
+    
     # Preprocessing: extract function definitions
-    functions = {}  # Format: {function_name: (parameter_list, function_body)}
+    functions: Dict[str, Tuple[List[str], str]] = {}
     function_pattern = r'function\s+(\w+)\s*\(([^)]*)\)\s*\{([^{}]*((?:\{[^{}]*\})[^{}]*)*)\}'
     cleaned_code = infix_code
     for match in re.finditer(function_pattern, infix_code):
@@ -129,11 +132,10 @@ def infix2postfix(infix_code: str) -> LiteralString:
         line = line.strip()
         if not line or line.startswith('#'):
             continue
-        # Global assignment: directly convert to "expression variable!" form
+        # If it's an assignment statement, convert to "expression variable!" format
         if '=' in line and not re.search(r'[<>!]=|==', line):
             var_name, expr = line.split('=', 1)
             var_name = var_name.strip()
-            # Basic syntax check: cannot assign to constants
             if is_constant(var_name):
                 raise SyntaxError(f"Error: Cannot assign to constant '{var_name}'.")
             expr = expr.strip()
@@ -143,23 +145,23 @@ def infix2postfix(infix_code: str) -> LiteralString:
         else:
             postfix_tokens.append(convert_expr(line, variables, functions))
     
-    # Remove all parentheses from the final result (no parentheses should appear in global postfix expressions)
     final_result = ' '.join(postfix_tokens)
     final_result = final_result.replace('(', '').replace(')', '')
     return final_result
 
 def convert_expr(expr: str, variables: set, functions: Dict[str, Tuple[List[str], str]]) -> str:
     """
-    Convert a single infix expression to postfix expression, supporting function calls, 
-    binary/ternary operations, etc.
+    Convert a single infix expression to postfix expression.
     
     Conversion rules:
         - Numbers and constants are returned directly;
-        - Built-in functions are converted directly: built-in binary functions support 'min', 'max', and the ternary function 'clamp';
-        - Built-in unary functions support ['sin', 'cos', 'round', 'floor', 'abs', 'sqrt', 'trunc', 'bitnot', 'not'];
-        - Custom function calls rename all parameters and local variables (e.g., internaltesta, internaltestb), and convert everything to postfix assignment sequences;
-        - Variable references (including renamed ones) are appended with '@' (but single letters and srcN are treated as constants, with no appending);
-        - Assignment statements are converted to "expression variable!" format, with syntax checking to prevent assignment to constants.
+        - Built-in functions are converted directly;
+        - Custom function calls rename all parameters and local variables, then convert to postfix assignment sequences;
+        - Variable references append '@' (but single letters and srcN are treated as constants, with no appending);
+        - Assignment statements are converted to "expression variable!" format;
+        - nth_N syntax sugar: e.g., nth_3(a, b, c, d) is converted to:
+            a_postfix b_postfix c_postfix d_postfix sort4 [drop2] nth! [drop1] nth@
+        (where drop2 and drop1 are added only if needed).
     """
     expr = expr.strip()
     
@@ -172,105 +174,100 @@ def convert_expr(expr: str, variables: set, functions: Dict[str, Tuple[List[str]
         r'[+\-]?(\d+(\.\d+)?([eE][+\-]?\d+)?)'
         r')$'
     )
-    # Return numbers directly
     if number_pattern.match(expr):
         return expr
     
-    # Constant mapping
-    constants = {
+    constants_map = {
         'current_frame_number': 'N',
         'current_x': 'X',
         'current_y': 'Y',
         'current_width': 'width',
         'current_height': 'height'
     }
-    if expr in constants:
-        return constants[expr]
+    if expr in constants_map:
+        return constants_map[expr]
     
-    # Determine if it's a function call form
     func_call_full = match_full_function_call(expr)
     if func_call_full:
         func_name, args_str = func_call_full
         
-        # nth_N(sth)
+        # Handle nth_N syntax sugar
         m_nth = re.match(r'^nth_(\d+)$', func_name)
         if m_nth:
-            K = int(m_nth.group(1))
+            N_val = int(m_nth.group(1))
             args = parse_args(args_str)
             M = len(args)
-            if M < K:
-                raise ValueError(f"nth_{K} requires at least {K} auguments，but only {M} provided!")
+            if M < N_val:
+                raise ValueError(f"nth_{N_val} requires at least {N_val} arguments, but only {M} were provided.")
             args_postfix = [convert_expr(arg, variables, functions) for arg in args]
             sort_token = f"sort{M}"
-            drop_before = f"drop{K-1}" if (K-1) > 0 else ""
-            drop_after = f"drop{M-K}" if (M-K) > 0 else ""
+            drop_before = f"drop{N_val-1}" if (N_val-1) > 0 else ""
+            drop_after = f"drop{M-N_val}" if (M-N_val) > 0 else ""
             tokens = []
             tokens.append(" ".join(args_postfix))
             tokens.append(sort_token)
             if drop_before:
                 tokens.append(drop_before)
-            tokens.append("internalnthnth!")
+            tokens.append("nth!")
             if drop_after:
                 tokens.append(drop_after)
-            tokens.append("internalnthnth@")
+            tokens.append("nth@")
             return " ".join(tokens).strip()
+        
         args = parse_args(args_str)
         args_postfix = [convert_expr(arg, variables, functions) for arg in args]
-        # Built-in function processing
+        # Handle built-in binary functions: min, max
         if func_name in ['min', 'max'] and len(args) == 2:
             return f"{args_postfix[0]} {args_postfix[1]} {func_name}"
+        # Handle built-in ternary function: clamp
         elif func_name == 'clamp' and len(args) == 3:
             return f"{args_postfix[0]} {args_postfix[1]} {args_postfix[2]} clamp"
         else:
             builtin_unary = ['sin', 'cos', 'round', 'floor', 'abs', 'sqrt', 'trunc', 'bitnot', 'not']
             if func_name in builtin_unary and len(args) == 1:
                 return f"{args_postfix[0]} {func_name}"
-
+        # Handle custom function calls
         if func_name in functions:
             params, body = functions[func_name]
             if len(args) != len(params):
                 raise ValueError(f"Function {func_name} requires {len(params)} parameters, but {len(args)} were provided.")
-            # ① Create rename mapping for all parameters, e.g., a -> internal{func_name}a, b -> internal{func_name}b
+            # Create rename mapping for parameters (e.g., a -> internalfuncnamea)
             param_map = { p: f"internal{func_name}{p}" for p in params }
-            # ② Scan assignment statements in the function body (except return), collect local variables (non-parameters), 
-            # rename them to internal{func_name} variable form
             lines = [line.strip() for line in body.split('\n') if line.strip()]
             local_map = {}
+            # Scan body for assignments to collect local variables
             for line in lines:
                 if line.startswith('return'):
                     continue
-                m = re.match(r'^([a-zA-Z_]\w*)\s*=\s*(.+)$', line)
-                if m:
-                    var = m.group(1)
-                    # Syntax check: cannot assign to constants
+                m_line = re.match(r'^([a-zA-Z_]\w*)\s*=\s*(.+)$', line)
+                if m_line:
+                    var = m_line.group(1)
                     if is_constant(var):
                         raise SyntaxError(f"Error: Cannot assign to constant '{var}'.")
                     if var not in param_map and not var.startswith(f"internal{func_name}"):
                         if var not in local_map:
                             local_map[var] = f"internal{func_name}{var}"
-            # ③ Merge rename mappings
+            # Merge rename mappings
             rename_map = {}
             rename_map.update(param_map)
             rename_map.update(local_map)
+            # Generate parameter assignments
             param_assignments = []
             for i, p in enumerate(params):
                 arg_orig = args[i].strip()
                 if is_constant(arg_orig):
+                    # For constants, directly replace in the rename map without generating assignment
                     rename_map[p] = args_postfix[i]
                 else:
                     param_assignments.append(f"{args_postfix[i]} {rename_map[p]}!")
-            # ④ Perform rename substitution for each line in the function body
+            # Apply rename substitution to each line in function body
             new_lines = []
             for line in lines:
                 new_line = line
                 for old, new in rename_map.items():
                     new_line = re.sub(rf'\b{re.escape(old)}\b', new, new_line)
                 new_lines.append(new_line)
-            # ⑤ Generate parameter assignment tokens, e.g., "x@ internaltesta!"
-            # Recalculate postfix expressions for each parameter
-            args_postfix = [convert_expr(arg, variables, functions) for arg in args]
-            param_assignments = [f"{args_postfix[i]} {rename_map[params[i]]}!" for i in range(len(params))]
-            # ⑥ Convert each line in the function body to postfix tokens in sequence
+            # Generate tokens for function body
             function_tokens = []
             for line in new_lines:
                 if line.startswith('return'):
@@ -279,7 +276,6 @@ def convert_expr(expr: str, variables: set, functions: Dict[str, Tuple[List[str]
                 elif '=' in line and not re.search(r'[<>!]=|==', line):
                     var_name, expr_line = line.split('=', 1)
                     var_name = var_name.strip()
-                    # Check function internal assignment: cannot assign to constants
                     if is_constant(var_name):
                         raise SyntaxError(f"Error: Cannot assign to constant '{var_name}'.")
                     expr_line = expr_line.strip()
@@ -287,67 +283,67 @@ def convert_expr(expr: str, variables: set, functions: Dict[str, Tuple[List[str]
                 else:
                     function_tokens.append(convert_expr(line, variables, functions))
             return ' '.join(param_assignments + function_tokens)
-        
-    # Strip outer parentheses
+    
+    # Try stripping outer parentheses
     stripped = strip_outer_parentheses(expr)
     if stripped != expr:
         return convert_expr(stripped, variables, functions)
     
-    # Process static relative pixel access: y[n,n]
-    static_relative_pixel_match = re.match(r'(\w+)\[(-?\d+),\s*(-?\d+)\](:m)?', expr)
-    if static_relative_pixel_match:
-        clip = static_relative_pixel_match.group(1)
-        x_val = static_relative_pixel_match.group(2)
-        y_val = static_relative_pixel_match.group(3)
-        suffix = static_relative_pixel_match.group(4) or ""
-        return f"{clip}[{x_val},{y_val}]{suffix}"
+    # Handle static relative pixel access, like x[1,2]
+    m_static = re.match(r'^(\w+)\[(-?\d+),\s*(-?\d+)\](\:\w)?$', expr)
+    if m_static:
+        clip = m_static.group(1)
+        statX = m_static.group(2)
+        statY = m_static.group(3)
+        suffix = m_static.group(4) or ""
+        return f"{clip}[{statX},{statY}]{suffix}"
     
-    # Process dynamic pixel access: clip.dyn(expr, expr)
-    dyn_match = re.match(r'(\w+)\.dyn\((.+),\s*(.+)\)', expr)
-    if dyn_match:
-        clip = dyn_match.group(1)
-        x_expr = convert_expr(dyn_match.group(2), variables, functions)
-        y_expr = convert_expr(dyn_match.group(3), variables, functions)
+    # Handle dynamic pixel access, like clip.dyn(expr, expr)
+    m_dyn = re.match(r'^(\w+)\.dyn\((.+),\s*(.+)\)$', expr)
+    if m_dyn:
+        clip = m_dyn.group(1)
+        x_expr = convert_expr(m_dyn.group(2), variables, functions)
+        y_expr = convert_expr(m_dyn.group(3), variables, functions)
         return f"{x_expr} {y_expr} {clip}[]"
     
-    # Process ternary operator: condition ? true_expr : false_expr
-    ternary_match = re.search(r'(.+?)\s*\?\s*(.+?)\s*:\s*(.+)', expr)
-    if ternary_match:
-        condition = convert_expr(ternary_match.group(1), variables, functions)
-        true_expr = convert_expr(ternary_match.group(2), variables, functions)
-        false_expr = convert_expr(ternary_match.group(3), variables, functions)
-        return f"{condition} {true_expr} {false_expr} ?"
+    # Handle ternary operator: condition ? true_expr : false_expr
+    m_ternary = re.search(r'(.+?)\s*\?\s*(.+?)\s*:\s*(.+)', expr)
+    if m_ternary:
+        cond = convert_expr(m_ternary.group(1), variables, functions)
+        true_expr = convert_expr(m_ternary.group(2), variables, functions)
+        false_expr = convert_expr(m_ternary.group(3), variables, functions)
+        return f"{cond} {true_expr} {false_expr} ?"
     
-    # Process binary operators (from lowest to highest precedence)
+    # Handle binary operators (from lowest to highest precedence)
     operators = [
         ('||', 'or'), ('&&', 'and'),
         ('==', '='), ('!=', '!='), 
         ('<=', '<='), ('>=', '>='), ('<', '<'), ('>', '>'),
         ('+', '+'), ('-', '-'),
         ('*', '*'), ('/', '/'), ('%', '%'),
+        ('**', 'pow'),
+        ('&', 'bitand'), ('|', 'bitor'), ('^', 'bitxor')
     ]
     for op_str, postfix_op in operators:
         left, right = find_binary_op(expr, op_str)
         if left is not None and right is not None:
             left_postfix = convert_expr(left, variables, functions)
             right_postfix = convert_expr(right, variables, functions)
-            # If left and right parts are single identifiers but don't end with '@', add it if it's not a constant.
+            # For single identifiers, add '@' if not already ending with it (unless it's a constant)
             if re.fullmatch(r'[a-zA-Z_]\w*', left.strip()) and not left_postfix.strip().endswith('@'):
-                left_postfix = left_postfix.strip() + '@' if not is_constant(left_postfix) else left_postfix.strip()
+                left_postfix = left_postfix.strip() + ('@' if not is_constant(left_postfix) else '')
             if re.fullmatch(r'[a-zA-Z_]\w*', right.strip()) and not right_postfix.strip().endswith('@'):
-                right_postfix = right_postfix.strip() + '@' if not is_constant(right_postfix) else right_postfix.strip()
+                right_postfix = right_postfix.strip() + ('@' if not is_constant(right_postfix) else '')
             return f"{left_postfix} {right_postfix} {postfix_op}"
     
-    # Process unary operator '!'
+    # Handle unary operator '!'
     if expr.startswith('!'):
         operand = convert_expr(expr[1:], variables, functions)
         return f"{operand} not"
     
-    # Processing for identifiers:
-    # If it's a constant, return directly (no '@' appended)
+    # For identifiers: return directly if constant, otherwise append '@'
     if is_constant(expr):
         return expr
-    # Otherwise, if expr fully matches an identifier, append '@' (if not already appended)
     if re.fullmatch(r'[a-zA-Z_]\w*', expr):
         return expr if expr.endswith('@') else expr + '@'
     
@@ -355,30 +351,28 @@ def convert_expr(expr: str, variables: set, functions: Dict[str, Tuple[List[str]
 
 def find_binary_op(expr: str, op: str):
     """
-    Find the outermost binary operator op in expr, and split it into left and right expressions.
+    Find the last occurrence of the binary operator op at the outermost level (parentheses level 0) in expr,
+    and return the left and right subexpressions (with whitespace removed).
     """
-    if op not in expr:
+    level = 0
+    op_index = -1
+    for i in range(len(expr)):
+        c = expr[i]
+        if c == '(':
+            level += 1
+        elif c == ')':
+            level -= 1
+        if level == 0 and expr[i:i+len(op)] == op:
+            op_index = i
+    if op_index == -1:
         return None, None
-    paren_level = 0
-    # Scan from right to left
-    for i in range(len(expr) - len(op), -1, -1):
-        if expr[i:i+len(op)] == op and paren_level == 0:
-            is_valid = True
-            if i > 0 and expr[i-1].isalnum():
-                is_valid = False
-            if i+len(op) < len(expr) and expr[i+len(op)].isalnum():
-                is_valid = False
-            if is_valid:
-                return expr[:i].strip(), expr[i+len(op):].strip()
-        if expr[i] == ')':
-            paren_level += 1
-        elif expr[i] == '(':
-            paren_level -= 1
-    return None, None
+    left = expr[:op_index].strip()
+    right = expr[op_index+len(op):].strip()
+    return left, right
 
 def parse_args(args_str: str) -> List[str]:
     """
-    Argument parser.
+    Argument parser that supports commas inside array indices.
     """
     args = []
     current = []
