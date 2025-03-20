@@ -284,7 +284,6 @@ def convert_expr(expr: str, variables: set, functions: Dict[str, Tuple[List[str]
         ('<=', '<='), ('>=', '>='), ('<', '<'), ('>', '>'),
         ('+', '+'), ('-', '-'),
         ('*', '*'), ('/', '/'), ('%', '%'),
-        ('**', 'pow')
     ]
     for op_str, postfix_op in operators:
         left, right = find_binary_op(expr, op_str)
