@@ -92,8 +92,8 @@ def postfix2infix(expr: str) -> LiteralString:
             continue
 
         # Variable operations
-        var_store_match = re.match(r'^([a-zA-Z]\w*)\!$', token)
-        var_load_match = re.match(r'^([a-zA-Z]\w*)\@$', token)
+        var_store_match = re.match(r'^([a-zA-Z_]\w*)\!$', token)
+        var_load_match = re.match(r'^([a-zA-Z_]\w*)\@$', token)
         if var_store_match:
             var_name = var_store_match.group(1)
             val = pop()
