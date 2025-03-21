@@ -28,7 +28,7 @@ class SyntaxError(Exception):
 def is_clip(token: str) -> bool:
     """
     Determine whether token is a source clip.
-    (Standard expression: single letter; or akarin.Expr: srcN)
+    (std.Expr: single letter; or akarin.Expr: srcN)
     """
     if re.fullmatch(r"[a-zA-Z]", token):
         return True
@@ -39,7 +39,7 @@ def is_clip(token: str) -> bool:
 
 def is_constant(token: str) -> bool:
     """
-    Check if token is a built-in constant.
+    Check if the token is a built-in constant.
     """
     constants_set = {
         "N",
@@ -61,7 +61,7 @@ def is_constant(token: str) -> bool:
 
 def strip_outer_parentheses(expr: str) -> str:
     """
-    Remove the outer parentheses if the entire expression is enclosed.
+    Remove outer parentheses if the entire expression is enclosed.
     """
     if not expr.startswith("(") or not expr.endswith(")"):
         return expr
@@ -86,7 +86,7 @@ def match_full_function_call(expr: str) -> Optional[Tuple[str, str]]:
     if not m:
         return None
     func_name = m.group(1)
-    start = m.end() - 1  # Position of '('
+    start = m.end() - 1  # position of '('
     depth = 0
     for i in range(start, len(expr)):
         if expr[i] == "(":
@@ -106,14 +106,14 @@ def extract_function_info(
     internal_var: str, current_function: Optional[str] = None
 ) -> Tuple[Optional[str], Optional[str]]:
     """
-    Given a renamed internal variable (e.g. internalFuncArg),
+    Given a renamed internal variable (e.g. __internal_funcname_varname),
     extract the original function name and variable name.
     """
     if current_function is not None and internal_var.startswith(
-        "internal" + current_function
+        f"__internal_{current_function}_"
     ):
-        return current_function, internal_var[len("internal" + current_function) :]
-    match = re.match(r"internal([a-zA-Z_]\w*?)([a-zA-Z_]\w+)$", internal_var)
+        return current_function, internal_var[len(f"__internal_{current_function}_") :]
+    match = re.match(r"__internal_([a-zA-Z_]\w*)_([a-zA-Z_]\w+)$", internal_var)
     if match:
         return match.group(1), match.group(2)
     return None, None
@@ -130,10 +130,7 @@ def expand_loops(code: str, base_line: int = 1) -> str:
 
         <unrolled code for i=0>;<unrolled code for i=1>
 
-    The unrolled fragments are joined with semicolons so that no extra newlines are added.
-    To preserve the original line count, we count the newline characters in the replaced block (the loop statement and matching braces)
-    and distribute the newline placeholders evenly before and after the unrolled code.
-    The base_line parameter indicates the starting line number for the code block.
+    Newlines in the original loop block are preserved.
     """
     pattern = re.compile(r"loop\s*\(\s*(\d+)\s*,\s*([a-zA-Z_]\w*)\s*\)\s*\{")
     while True:
@@ -143,7 +140,7 @@ def expand_loops(code: str, base_line: int = 1) -> str:
         n = int(m.group(1))
         var = m.group(2)
         loop_start_index = m.start()
-        # Compute the line number by counting newlines before this match
+        # Calculate the line number by counting newlines before this match
         line_num = base_line + code[:loop_start_index].count("\n")
         brace_start = m.end() - 1
         count = 0
@@ -157,19 +154,19 @@ def expand_loops(code: str, base_line: int = 1) -> str:
                     end_index = i
                     break
         if end_index is None:
-            raise SyntaxError("Couldn't find matching '}'.", line_num)
+            raise SyntaxError("Could not find matching '}'.", line_num)
         # The block inside the loop braces
         block = code[brace_start + 1 : end_index]
         block_base_line = base_line + code[: brace_start + 1].count("\n")
         expanded_block = expand_loops(block, block_base_line)
         unrolled = []
         for k in range(n):
-            # Replace only the standalone occurrences of the iteration variable
+            # Replace only standalone occurrences of the iteration variable
             iter_block = re.sub(r"\b" + re.escape(var) + r"\b", str(k), expanded_block)
             unrolled.append(iter_block)
         # Join unrolled fragments using semicolons.
         unrolled_code = "".join(map(lambda s: s.strip() + ";", unrolled)).strip(";")
-        # To preserve line numbers, count the newline characters in the original loop construct.
+        # Preserve the original newline count
         original_block = code[m.start() : end_index + 1]
         newline_placeholder = "\n" * original_block.count("\n")
         replacement = unrolled_code + newline_placeholder
@@ -183,16 +180,14 @@ def find_duplicate_functions(code: str):
     """
     pattern = re.compile(r"\bfunction\s+(\w+)\s*\(.*?\)")
     function_lines = {}
-
     lines = code.split("\n")
-
     for line_num, line in enumerate(lines, start=1):
         match = pattern.search(line)
         if match:
             func_name = match.group(1)
             if func_name in function_lines:
                 raise SyntaxError(
-                    f"Duplicated function '{func_name}' defined at line {function_lines[func_name]} and {line_num}",
+                    f"Duplicated function '{func_name}' defined at lines {function_lines[func_name]} and {line_num}",
                     line_num=line_num,
                 )
             function_lines[func_name] = line_num
@@ -201,6 +196,11 @@ def find_duplicate_functions(code: str):
 def compute_stack_effect(
     postfix_expr: str, line_num: Optional[int] = None, func_name: Optional[str] = None
 ) -> int:
+    """
+    Compute the net stack effect of a postfix expression.
+    Supports built-in operators, dropN (which removes N items), and sortN (which reorders
+    the top N items without changing the stack count).
+    """
     tokens = postfix_expr.split()
     op_arity = {
         "+": 2,
@@ -221,7 +221,6 @@ def compute_stack_effect(
         "bitxor": 2,
         "min": 2,
         "max": 2,
-        "dyn": 3,
         "clamp": 3,
         "?": 3,
         "not": 1,
@@ -238,21 +237,52 @@ def compute_stack_effect(
     for i, token in enumerate(tokens):
         if token.endswith("!"):
             if not stack:
-                raise SyntaxError("Stack underflow in assignment")
+                raise SyntaxError("Stack underflow in assignment", line_num, func_name)
             stack.pop()
-        elif token.endswith("[]"):
+            continue
+        elif token.endswith("[]"):  # dynamic access operator
             if len(stack) < 2:
                 raise SyntaxError(
-                    f"Stack underflow for {i}th operator {token}", line_num, func_name
+                    f"Stack underflow for operator {token} at token index {i}",
+                    line_num,
+                    func_name,
                 )
             stack.pop()
             stack.pop()
             stack.append(1)
-        elif token in op_arity:
+            continue
+
+        # Support dropN operator (default is drop1)
+        m_drop = re.fullmatch(r"drop(\d*)", token)
+        if m_drop:
+            n_str = m_drop.group(1)
+            n = int(n_str) if n_str != "" else 1
+            if len(stack) < n:
+                raise SyntaxError(
+                    f"Stack underflow for operator {token}", line_num, func_name
+                )
+            for _ in range(n):
+                stack.pop()
+            continue
+
+        # Support sortN operator: reorder top N items without changing the stack count.
+        m_sort = re.fullmatch(r"sort(\d+)", token)
+        if m_sort:
+            n = int(m_sort.group(1))
+            if len(stack) < n:
+                raise SyntaxError(
+                    f"Stack underflow for operator {token}", line_num, func_name
+                )
+            # Sorting reorders items but does not change the stack count.
+            continue
+
+        if token in op_arity:
             arity = op_arity[token]
             if len(stack) < arity:
                 raise SyntaxError(
-                    f"Stack underflow for {i}th operator {token}", line_num, func_name
+                    f"Stack underflow for operator {token} at token index {i}",
+                    line_num,
+                    func_name,
                 )
             for _ in range(arity):
                 stack.pop()
@@ -264,30 +294,29 @@ def compute_stack_effect(
 
 def infix2postfix(infix_code: str) -> LiteralString:
     """
-    Convert infix expressions to postfix expressions, supporting function definitions,
-    function calls, and built-in functions. Also supports nth_N and loop syntax sugar.
-
-    Note: User input is not allowed to contain semicolons; if a semicolon is detected, it is rejected.
+    Convert infix expressions to postfix expressions.
+    Supports function definitions, function calls, built-in functions, nth_N operator, and loop syntax sugar.
+    User input code must not contain semicolons.
     """
     # Reject user input that contains semicolons.
     if ";" in infix_code:
         raise SyntaxError(
-            "User input code cannot contain semicolon. Use newlines instead."
+            "User input code cannot contain semicolons. Use newlines instead."
         )
 
-    # Check for duplicated function definition.
+    # Check for duplicate function definitions.
     find_duplicate_functions(infix_code)
 
     # Expand loops; the top-level code begins at line 1.
     expanded_code = expand_loops(infix_code, base_line=1)
 
-    # Extract function definitions while preserving the line count.
+    # Extract function definitions while preserving line numbers.
     functions: Dict[str, Tuple[List[str], str, int]] = {}
     function_pattern = (
         r"function\s+(\w+)\s*\(([^)]*)\)\s*\{([^{}]*(?:\{[^{}]*\}[^{}]*)*)\}"
     )
 
-    # Replace the matched function definitions with the same number of newlines as they occupied.
+    # Replace matched function definitions with the same number of newlines as they occupied.
     def replace_function(match: re.Match) -> str:
         func_name = match.group(1)
         params_str = match.group(2)
@@ -296,18 +325,17 @@ def infix2postfix(infix_code: str) -> LiteralString:
         line_num = 1 + expanded_code[:func_start_index].count("\n")
         params = [p.strip() for p in params_str.split(",") if p.strip()]
         for param in params:
-            if param.startswith("internal"):
+            if param.startswith("__internal_"):
                 raise SyntaxError(
-                    f"Parameter name '{param}' cannot start with 'internal' (reserved prefix)",
+                    f"Parameter name '{param}' cannot start with '__internal_' (reserved prefix)",
                     line_num,
                 )
         functions[func_name] = (params, body, line_num)
-        # Return a string that contains the same number of newlines as the original function definition.
         return "\n" * match.group(0).count("\n")
 
     cleaned_code = re.sub(function_pattern, replace_function, expanded_code)
 
-    # Process global code by splitting on physical newlines only.
+    # Process global code by splitting on physical newlines.
     global_statements = []
     for i, line in enumerate(cleaned_code.splitlines(), start=1):
         if line.strip():
@@ -317,16 +345,16 @@ def infix2postfix(infix_code: str) -> LiteralString:
     postfix_tokens = []
 
     for stmt, line_num in global_statements:
-        # Ignore comment lines.
+        # Skip comment lines.
         if stmt.startswith("#"):
             continue
-        # Process assignment statements (ensuring no conflict with '==' or '<=' etc.)
+        # Process assignment statements.
         if "=" in stmt and not re.search(r"[<>!]=|==", stmt):
             var_name, expr = stmt.split("=", 1)
             var_name = var_name.strip()
-            if var_name.startswith("internal"):
+            if var_name.startswith("__internal_"):
                 raise SyntaxError(
-                    f"Variable name '{var_name}' cannot start with 'internal' (reserved prefix)",
+                    f"Variable name '{var_name}' cannot start with '__internal_' (reserved prefix)",
                     line_num,
                 )
             if is_constant(var_name):
@@ -356,7 +384,7 @@ def validate_static_relative_pixel_indices(
     expr: str, line_num: int, function_name: Optional[str] = None
 ) -> None:
     """
-    Validate that static relative pixel access indices are numeric constants.
+    Validate that the static relative pixel access indices are numeric constants.
     """
     static_relative_pixel_indices = re.finditer(r"\w+\[(.*?)\]", expr)
     for match in static_relative_pixel_indices:
@@ -378,12 +406,11 @@ def check_variable_usage(
     local_vars: Optional[Set[str]] = None,
 ) -> None:
     """
-    Check if all variables in the expression are defined.
+    Check that all variables in the expression have been defined.
     """
     expr_no_funcs = re.sub(r"\w+\([^)]*\)", "", expr)
     expr_no_stat_rels = re.sub(r"\[[^\]]*\]", "", expr_no_funcs)
     identifiers = re.finditer(r"\b([a-zA-Z_]\w*)\b", expr_no_stat_rels)
-
     for match in identifiers:
         var_name = match.group(1)
         if (
@@ -392,7 +419,7 @@ def check_variable_usage(
             or (local_vars is not None and var_name in local_vars)
         ):
             continue
-        if var_name.startswith("internal"):
+        if var_name.startswith("__internal_"):
             func_name_extracted, orig_var = extract_function_info(
                 var_name, function_name
             )
@@ -418,8 +445,8 @@ def convert_expr(
     local_vars: Optional[Set[str]] = None,
 ) -> str:
     """
-    Convert a single infix expression to a postfix expression,
-    supporting operators, function calls, and custom function definitions.
+    Convert a single infix expression to a postfix expression.
+    Supports binary and unary operators, function calls, and custom function definitions.
     """
     expr = expr.strip()
     # Check variable usage and validate static relative pixel indices.
@@ -480,10 +507,10 @@ def convert_expr(
             tokens.append(sort_token)
             if drop_before:
                 tokens.append(drop_before)
-            tokens.append("internalnthtmp!")
+            tokens.append("__internal_nth_tmp!")
             if drop_after:
                 tokens.append(drop_after)
-            tokens.append("internalnthtmp@")
+            tokens.append("__internal_nth_tmp@")
             return " ".join(tokens).strip()
 
         args = parse_args(args_str)
@@ -511,7 +538,7 @@ def convert_expr(
             ]
             if func_name in builtin_unary and len(args) == 1:
                 return f"{args_postfix[0]} {func_name}"
-        # Handling custom function calls.
+        # Handle custom function calls.
         if func_name in functions:
             params, body, func_line_num = functions[func_name]
             if len(args) != len(params):
@@ -520,7 +547,8 @@ def convert_expr(
                     line_num,
                     current_function,
                 )
-            param_map = {p: f"internal{func_name}{p}" for p in params}
+            # Rename parameters using the new naming scheme: __internal_<funcname>_<varname>
+            param_map = {p: f"__internal_{func_name}_{p}" for p in params}
             body_lines = [line.strip() for line in body.split("\n") if line.strip()]
             local_map = {}
             for body_line in body_lines:
@@ -529,9 +557,9 @@ def convert_expr(
                 m_line = re.match(r"^([a-zA-Z_]\w*)\s*=\s*(.+)$", body_line)
                 if m_line:
                     var = m_line.group(1)
-                    if var.startswith("internal"):
+                    if var.startswith("__internal_"):
                         raise SyntaxError(
-                            f"Variable name '{var}' cannot start with 'internal' (reserved prefix)",
+                            f"Variable name '{var}' cannot start with '__internal_' (reserved prefix)",
                             func_line_num,
                             func_name,
                         )
@@ -542,10 +570,10 @@ def convert_expr(
                             func_name,
                         )
                     if var not in param_map and not var.startswith(
-                        f"internal{func_name}"
+                        f"__internal_{func_name}_"
                     ):
                         if var not in local_map:
-                            local_map[var] = f"internal{func_name}{var}"
+                            local_map[var] = f"__internal_{func_name}_{var}"
             rename_map = {}
             rename_map.update(param_map)
             rename_map.update(local_map)
@@ -561,7 +589,7 @@ def convert_expr(
             for line_text in body_lines:
                 new_line = line_text
                 for old, new in rename_map.items():
-                    new_line = re.sub(rf"\b{re.escape(old)}\b", new, new_line)
+                    new_line = re.sub(rf"(?<!\w){re.escape(old)}(?!\w)", new, new_line)
                 new_lines.append(new_line)
             function_tokens = []
             return_count = 0
@@ -580,7 +608,7 @@ def convert_expr(
                             new_local_vars,
                         )
                     )
-                # If a semicolon is present in the assignment statement, split and process separately.
+                # Process assignment statements with possible semicolons.
                 elif "=" in body_line and not re.search(r"[<>!]=|==", body_line):
                     if ";" in body_line:
                         tokens_list = []
@@ -597,8 +625,6 @@ def convert_expr(
                                         effective_line_num,
                                         func_name,
                                     )
-                                expr_line = expr_line.strip()
-                                # I don't know how to handle 'a = a...' in check_variable_usage(), so do it here
                                 if var_name not in new_local_vars and re.search(
                                     r"\b" + re.escape(var_name) + r"\b", expr_line
                                 ):
@@ -636,8 +662,6 @@ def convert_expr(
                                 effective_line_num,
                                 func_name,
                             )
-                        expr_line = expr_line.strip()
-                        # I don't know how to handle 'a = a...' in check_variable_usage(), so do it here
                         if var_name not in new_local_vars and re.search(
                             r"\b" + re.escape(var_name) + r"\b", expr_line
                         ):
@@ -665,16 +689,15 @@ def convert_expr(
                     )
             if return_count == 0 or return_count > 1:
                 raise SyntaxError(
-                    f"Function {func_name} must return exactly one value! Got {return_count}",
+                    f"Function {func_name} must return exactly one value, got {return_count}",
                     func_line_num,
                     func_name,
                 )
-
             result_expr = " ".join(param_assignments + function_tokens)
             net_effect = compute_stack_effect(result_expr, line_num, func_name)
             if net_effect != 1:
                 raise SyntaxError(
-                    f"The return value stack of function {func_name} is unbalanced, expecting 1 return value but it got {net_effect}.",
+                    f"The return value stack of function {func_name} is unbalanced; expected 1 but got {net_effect}.",
                     func_line_num,
                     func_name,
                 )
@@ -804,8 +827,7 @@ def convert_expr(
 
 def find_binary_op(expr: str, op: str):
     """
-    Find the last occurrence of the binary operator op at the outer level
-    and return the left and right parts of the expression.
+    Find the last occurrence of the binary operator op at the outer level and return the left and right parts.
     """
     level = 0
     op_index = -1
@@ -826,7 +848,7 @@ def find_binary_op(expr: str, op: str):
 
 def parse_args(args_str: str) -> List[str]:
     """
-    Parse function call arguments.
+    Parse the arguments of a function call.
     """
     args = []
     current = []
