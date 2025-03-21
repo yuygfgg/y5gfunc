@@ -325,6 +325,11 @@ def infix2postfix(infix_code: str) -> LiteralString:
         func_start_index = match.start()
         line_num = 1 + expanded_code[:func_start_index].count("\n")
         params = [p.strip() for p in params_str.split(",") if p.strip()]
+        if is_builtin_function(func_name):
+            raise SyntaxError(
+                f"Function name '{func_name}' conflicts with built-in functions!",
+                line_num,
+            )
         for param in params:
             if param.startswith("__internal_"):
                 raise SyntaxError(
@@ -494,6 +499,12 @@ def convert_expr(
                     line_num,
                     current_function,
                 )
+            if N_val < 1:
+                raise SyntaxError(
+                    f"nth_{N_val} is not supported!",
+                    line_num,
+                    current_function,
+                )
             args_postfix = [
                 convert_expr(
                     arg, variables, functions, line_num, current_function, local_vars
@@ -551,15 +562,17 @@ def convert_expr(
             # Rename parameters： __internal_<funcname>_<varname>
             param_map = {p: f"__internal_{func_name}_{p}" for p in params}
             body_lines = [line.strip() for line in body.split("\n") if line.strip()]
-            
-            return_indices = [i for i, line in enumerate(body_lines) if line.startswith("return")]
+
+            return_indices = [
+                i for i, line in enumerate(body_lines) if line.startswith("return")
+            ]
             if return_indices and return_indices[0] != len(body_lines) - 1:
                 raise SyntaxError(
                     f"Return statement must be the last line in function '{func_name}'",
                     func_line_num + return_indices[0] + 1,
                     func_name,
                 )
-            
+
             local_map = {}
             for body_line in body_lines:
                 if body_line.startswith("return"):
@@ -898,7 +911,7 @@ def is_builtin_function(func_name: str) -> bool:
     ]
     builtin_binary = ["min", "max"]
     builtin_ternary = ["clamp"]
-    if re.match(r"^nth_\d+$", func_name):
+    if any(re.match(r, func_name) for r in [f"^{prefix}\\d+$" for prefix in ["nth_", "sort", "dup", "drop", "swap"]]):
         return True
     return (
         func_name in builtin_unary
