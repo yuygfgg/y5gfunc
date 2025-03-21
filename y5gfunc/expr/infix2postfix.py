@@ -319,39 +319,41 @@ def infix2postfix(infix_code: str) -> LiteralString:
     expanded_code = expand_loops(infix_code, base_line=1)
 
     global_vars_for_functions = {}
-    lines = expanded_code.split('\n')
+    lines = expanded_code.split("\n")
     modified_lines = []
-    
+
     function_lines = {}
     for i, line in enumerate(lines):
         func_match = re.match(r"function\s+(\w+)", line.strip())
         if func_match:
             func_name = func_match.group(1)
             function_lines[i] = func_name
-    
+
     i = 0
     while i < len(lines):
         line = lines[i].strip()
-        global_var_match = re.match(r'<global<([a-zA-Z_]\w*)>>', line)
-        
+        global_var_match = re.match(r"<global<([a-zA-Z_]\w*)>>", line)
+
         if global_var_match:
             global_var = global_var_match.group(1)
             j = i + 1
-            while j < len(lines) and re.match(r'<global<([a-zA-Z_]\w*)>>', lines[j].strip()):
+            while j < len(lines) and re.match(
+                r"<global<([a-zA-Z_]\w*)>>", lines[j].strip()
+            ):
                 j += 1
-                
+
             if j < len(lines) and j in function_lines:
                 func_name = function_lines[j]
                 if func_name not in global_vars_for_functions:
                     global_vars_for_functions[func_name] = set()
                 global_vars_for_functions[func_name].add(global_var)
-                
+
             modified_lines.append("# " + lines[i])
         else:
             modified_lines.append(lines[i])
         i += 1
-    
-    expanded_code = '\n'.join(modified_lines)
+
+    expanded_code = "\n".join(modified_lines)
 
     # Extract function definitions while preserving line numbers.
     functions: Dict[str, Tuple[List[str], str, int, Set[str]]] = {}
@@ -365,8 +367,8 @@ def infix2postfix(infix_code: str) -> LiteralString:
         params_str = match.group(2)
         body = match.group(3)
         func_start_index = match.start()
-        line_num = 1 + expanded_code[:func_start_index].count('\n')
-        params = [p.strip() for p in params_str.split(',') if p.strip()]
+        line_num = 1 + expanded_code[:func_start_index].count("\n")
+        params = [p.strip() for p in params_str.split(",") if p.strip()]
         if is_builtin_function(func_name):
             raise SyntaxError(
                 f"Function name '{func_name}' conflicts with built-in functions!",
@@ -465,10 +467,10 @@ def check_variable_usage(
     identifiers = re.finditer(r"\b([a-zA-Z_]\w*)\b", expr_no_stat_rels)
     for match in identifiers:
         var_name = match.group(1)
-        if (
-            is_constant(var_name)
-            or var_name in variables
-            or (local_vars is not None and var_name in local_vars)
+        # Only check local variables in functions
+        if is_constant(var_name) or (
+            (local_vars is not None and var_name in local_vars)
+            or (local_vars is None and var_name in variables)
         ):
             continue
         if var_name.startswith("__internal_"):
@@ -643,15 +645,19 @@ def convert_expr(
                             func_name,
                         )
                     # Only rename & map local variables
-                    if var not in param_map and not var.startswith(
-                        f"__internal_{func_name}_"
-                    ) and var not in global_vars:
+                    if (
+                        var not in param_map
+                        and not var.startswith(f"__internal_{func_name}_")
+                        and var not in global_vars
+                    ):
                         local_map[var] = f"__internal_{func_name}_{var}"
 
             rename_map = {}
             rename_map.update(param_map)
             rename_map.update(local_map)
-            new_local_vars = set(param_map.keys()).union(set(local_map.keys())).union(global_vars)
+            new_local_vars = (
+                set(param_map.keys()).union(set(local_map.keys())).union(global_vars)
+            )
             param_assignments = []
             for i, p in enumerate(params):
                 arg_orig = args[i].strip()
@@ -665,7 +671,9 @@ def convert_expr(
                 new_line = line_text
                 for old, new in rename_map.items():
                     if old not in global_vars:
-                        new_line = re.sub(rf"(?<!\w){re.escape(old)}(?!\w)", new, new_line)
+                        new_line = re.sub(
+                            rf"(?<!\w){re.escape(old)}(?!\w)", new, new_line
+                        )
                 new_lines.append(new_line)
             function_tokens = []
             return_count = 0
