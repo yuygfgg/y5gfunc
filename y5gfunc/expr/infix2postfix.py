@@ -318,10 +318,17 @@ def infix2postfix(infix_code: str) -> LiteralString:
     # Expand loops; the top-level code begins at line 1.
     expanded_code = expand_loops(infix_code, base_line=1)
 
+    # Process global declarations.
+    # Support declaration of multiple globals in one line: <global<var1><var2>...>
+    # Also record for functions if global declaration appears immediately before function definition.
+    declared_globals: Dict[
+        str, int
+    ] = {}  # mapping global variable -> declaration line number
     global_vars_for_functions = {}
     lines = expanded_code.split("\n")
     modified_lines = []
 
+    # Build a mapping from line number to function name for function declarations.
     function_lines = {}
     for i, line in enumerate(lines):
         func_match = re.match(r"function\s+(\w+)", line.strip())
@@ -332,36 +339,55 @@ def infix2postfix(infix_code: str) -> LiteralString:
     i = 0
     while i < len(lines):
         line = lines[i].strip()
-        global_var_match = re.match(r"<global<([a-zA-Z_]\w*)>>", line)
-
-        if global_var_match:
-            global_var = global_var_match.group(1)
+        # Look for global declaration syntax: e.g., <global<var1><var2>...>
+        global_decl_match = re.match(r"^<global((?:<[a-zA-Z_]\w*>)+)>$", line)
+        if global_decl_match:
+            # Extract all global variable names from this line.
+            globals_list = re.findall(r"<([a-zA-Z_]\w*)>", global_decl_match.group(1))
+            for gv in globals_list:
+                if gv not in declared_globals:
+                    declared_globals[gv] = i + 1  # store line number (1-indexed)
+            # Group consecutive global declaration lines.
             j = i + 1
-            while j < len(lines) and re.match(
-                r"<global<([a-zA-Z_]\w*)>>", lines[j].strip()
-            ):
-                j += 1
-
-            if j < len(lines) and j in function_lines:
-                func_name = function_lines[j]
-                if func_name not in global_vars_for_functions:
-                    global_vars_for_functions[func_name] = set()
-                global_vars_for_functions[func_name].add(global_var)
-
-            modified_lines.append("# " + lines[i])
+            while j < len(lines):
+                next_line = lines[j].strip()
+                next_decl_match = re.match(
+                    r"^<global((?:<[a-zA-Z_]\w*>)+)>$", next_line
+                )
+                if next_decl_match:
+                    extra_globals = re.findall(
+                        r"<([a-zA-Z_]\w*)>", next_decl_match.group(1)
+                    )
+                    for gv in extra_globals:
+                        if gv not in declared_globals:
+                            declared_globals[gv] = j + 1
+                    j += 1
+                else:
+                    break
+            # If the next non-global line is a function definition, apply these globals for that function.
+            if j < len(lines):
+                func_match = re.match(r"^function\s+(\w+)", lines[j])
+                if func_match:
+                    func_name = func_match.group(1)
+                    if func_name not in global_vars_for_functions:
+                        global_vars_for_functions[func_name] = set()
+                    global_vars_for_functions[func_name].update(globals_list)
+            # Comment out the global declaration lines.
+            for k in range(i, j):
+                modified_lines.append("# " + lines[k])
+            i = j
         else:
             modified_lines.append(lines[i])
-        i += 1
+            i += 1
 
     expanded_code = "\n".join(modified_lines)
 
-    # Extract function definitions while preserving line numbers.
+    # Replace function definitions with newlines to preserve line numbers.
     functions: Dict[str, Tuple[List[str], str, int, Set[str]]] = {}
     function_pattern = (
         r"function\s+(\w+)\s*\(([^)]*)\)\s*\{([^{}]*(?:\{[^{}]*\}[^{}]*)*)\}"
     )
 
-    # Replace matched function definitions with the same number of newlines as they occupied.
     def replace_function(match: re.Match) -> str:
         func_name = match.group(1)
         params_str = match.group(2)
@@ -380,7 +406,7 @@ def infix2postfix(infix_code: str) -> LiteralString:
                     f"Parameter name '{param}' cannot start with '__internal_' (reserved prefix)",
                     line_num,
                 )
-        # Global vars of the function
+        # Get globals declared for this function if any.
         global_vars = global_vars_for_functions.get(func_name, set())
         functions[func_name] = (params, body, line_num, global_vars)
         return "\n" * match.group(0).count("\n")
@@ -393,7 +419,7 @@ def infix2postfix(infix_code: str) -> LiteralString:
         if line.strip():
             global_statements.append((line.strip(), i))
 
-    variables: Set[str] = set()  # Global variables
+    variables: Set[str] = set()  # Global variables defined via assignment
     postfix_tokens = []
 
     for stmt, line_num in global_statements:
@@ -426,6 +452,13 @@ def infix2postfix(infix_code: str) -> LiteralString:
             if compute_stack_effect(expr_postfix, line_num) != 0:
                 raise SyntaxError(f"Unused global expression: {stmt}", line_num)
             postfix_tokens.append(expr_postfix)
+
+    # Check that all declared global variables are defined.
+    for gv, decl_line in declared_globals.items():
+        if gv not in variables:
+            raise SyntaxError(
+                f"Global variable '{gv}' declared but not defined.", decl_line
+            )
 
     final_result = " ".join(postfix_tokens)
     final_result = final_result.replace("(", "").replace(")", "")
@@ -461,13 +494,13 @@ def check_variable_usage(
 ) -> None:
     """
     Check that all variables in the expression have been defined.
+    In function scope, if local_vars is provided, only local variables are checked.
     """
     expr_no_funcs = re.sub(r"\w+\([^)]*\)", "", expr)
     expr_no_stat_rels = re.sub(r"\[[^\]]*\]", "", expr_no_funcs)
     identifiers = re.finditer(r"\b([a-zA-Z_]\w*)\b", expr_no_stat_rels)
     for match in identifiers:
         var_name = match.group(1)
-        # Only check local variables in functions
         if is_constant(var_name) or (
             (local_vars is not None and var_name in local_vars)
             or (local_vars is None and var_name in variables)
@@ -607,7 +640,7 @@ def convert_expr(
                     line_num,
                     current_function,
                 )
-            # Rename parameters： __internal_<funcname>_<varname>
+            # Rename parameters: __internal_<funcname>_<varname>
             param_map = {p: f"__internal_{func_name}_{p}" for p in params}
             body_lines = [line.strip() for line in body.split("\n")]
             body_lines_strip = [
@@ -975,9 +1008,9 @@ def is_builtin_function(func_name: str) -> bool:
     if any(
         re.match(r, func_name)
         for r in [
-            rf"^{prefix}\d+$" for prefix in ["nth_", "sort", "dup", "drop", "swap"]
+            rf"^{prefix}\d+$" for prefix in ["nth_", "sort", "dup", "drop", "swap"] # Only nth_N is literally 'built-in' but we consider stack Ops built-in as well, for no reason. Might be removed.
         ]
-    ):  # Only nth_N is literally 'built-in' but we consider stack Ops built-in as well, for no reason. Might be removed.
+    ):
         return True
     return (
         func_name in builtin_unary
