@@ -175,6 +175,23 @@ def expand_loops(code: str, base_line: int = 1) -> str:
         code = code[: m.start()] + replacement + code[end_index + 1 :]
     return code
 
+def find_duplicate_functions(code: str):
+    '''
+    Check if any duplicate function is defined.
+    '''
+    pattern = re.compile(r'\bfunction\s+(\w+)\s*\(.*?\)')
+    function_lines = {}
+
+    lines = code.split('\n')
+
+    for line_num, line in enumerate(lines, start=1):
+        match = pattern.search(line)
+        if match:
+            func_name = match.group(1)
+            if func_name in function_lines:
+                raise SyntaxError(f"Duplicated function '{func_name}' defined at line {function_lines[func_name]} and {line_num}", line_num=line_num)
+            function_lines[func_name] = line_num
+
 
 def infix2postfix(infix_code: str) -> LiteralString:
     """
@@ -188,8 +205,11 @@ def infix2postfix(infix_code: str) -> LiteralString:
         raise SyntaxError(
             "User input code cannot contain semicolon. Use newlines instead."
         )
+    
+    # Check for duplicated function definition.
+    find_duplicate_functions(infix_code)
 
-    # First, expand loops; the top-level code begins at line 1.
+    # Expand loops; the top-level code begins at line 1.
     expanded_code = expand_loops(infix_code, base_line=1)
 
     # Extract function definitions while preserving the line count.
