@@ -131,6 +131,7 @@ def expand_loops(code: str, base_line: int = 1) -> str:
         <unrolled code for i=0>;<unrolled code for i=1>
 
     Newlines in the original loop block are preserved.
+    Only replaces variables in <var> format, not standalone variables.
     """
     pattern = re.compile(r"loop\s*\(\s*(\d+)\s*,\s*([a-zA-Z_]\w*)\s*\)\s*\{")
     while True:
@@ -161,8 +162,8 @@ def expand_loops(code: str, base_line: int = 1) -> str:
         expanded_block = expand_loops(block, block_base_line)
         unrolled = []
         for k in range(n):
-            # Replace only standalone occurrences of the iteration variable
-            iter_block = re.sub(r"\b" + re.escape(var) + r"\b", str(k), expanded_block)
+            # Replace only variables in <var> format, not standalone variables
+            iter_block = re.sub(r"<" + re.escape(var) + r">", str(k), expanded_block)
             unrolled.append(iter_block)
         # Join unrolled fragments using semicolons.
         unrolled_code = "".join(map(lambda s: s.strip() + ";", unrolled)).strip(";")
@@ -547,9 +548,18 @@ def convert_expr(
                     line_num,
                     current_function,
                 )
-            # Rename parameters using the new naming scheme: __internal_<funcname>_<varname>
+            # Rename parameters： __internal_<funcname>_<varname>
             param_map = {p: f"__internal_{func_name}_{p}" for p in params}
             body_lines = [line.strip() for line in body.split("\n") if line.strip()]
+            
+            return_indices = [i for i, line in enumerate(body_lines) if line.startswith("return")]
+            if return_indices and return_indices[0] != len(body_lines) - 1:
+                raise SyntaxError(
+                    f"Return statement must be the last line in function '{func_name}'",
+                    func_line_num + return_indices[0] + 1,
+                    func_name,
+                )
+            
             local_map = {}
             for body_line in body_lines:
                 if body_line.startswith("return"):
