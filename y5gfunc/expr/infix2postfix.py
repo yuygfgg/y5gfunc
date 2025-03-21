@@ -317,11 +317,44 @@ def infix2postfix(infix_code: str) -> LiteralString:
 
     # Expand loops; the top-level code begins at line 1.
     expanded_code = expand_loops(infix_code, base_line=1)
-    # for i, line in enumerate(expanded_code.split('\n')):
-    #     print(f"{i+1} {line}")
+
+    global_vars_for_functions = {}
+    lines = expanded_code.split('\n')
+    modified_lines = []
+    
+    function_lines = {}
+    for i, line in enumerate(lines):
+        func_match = re.match(r"function\s+(\w+)", line.strip())
+        if func_match:
+            func_name = func_match.group(1)
+            function_lines[i] = func_name
+    
+    i = 0
+    while i < len(lines):
+        line = lines[i].strip()
+        global_var_match = re.match(r'<global<([a-zA-Z_]\w*)>>', line)
+        
+        if global_var_match:
+            global_var = global_var_match.group(1)
+            j = i + 1
+            while j < len(lines) and re.match(r'<global<([a-zA-Z_]\w*)>>', lines[j].strip()):
+                j += 1
+                
+            if j < len(lines) and j in function_lines:
+                func_name = function_lines[j]
+                if func_name not in global_vars_for_functions:
+                    global_vars_for_functions[func_name] = set()
+                global_vars_for_functions[func_name].add(global_var)
+                
+            modified_lines.append("# " + lines[i])
+        else:
+            modified_lines.append(lines[i])
+        i += 1
+    
+    expanded_code = '\n'.join(modified_lines)
 
     # Extract function definitions while preserving line numbers.
-    functions: Dict[str, Tuple[List[str], str, int]] = {}
+    functions: Dict[str, Tuple[List[str], str, int, Set[str]]] = {}
     function_pattern = (
         r"function\s+(\w+)\s*\(([^)]*)\)\s*\{([^{}]*(?:\{[^{}]*\}[^{}]*)*)\}"
     )
@@ -332,8 +365,8 @@ def infix2postfix(infix_code: str) -> LiteralString:
         params_str = match.group(2)
         body = match.group(3)
         func_start_index = match.start()
-        line_num = 1 + expanded_code[:func_start_index].count("\n")
-        params = [p.strip() for p in params_str.split(",") if p.strip()]
+        line_num = 1 + expanded_code[:func_start_index].count('\n')
+        params = [p.strip() for p in params_str.split(',') if p.strip()]
         if is_builtin_function(func_name):
             raise SyntaxError(
                 f"Function name '{func_name}' conflicts with built-in functions!",
@@ -345,7 +378,9 @@ def infix2postfix(infix_code: str) -> LiteralString:
                     f"Parameter name '{param}' cannot start with '__internal_' (reserved prefix)",
                     line_num,
                 )
-        functions[func_name] = (params, body, line_num)
+        # Global vars of the function
+        global_vars = global_vars_for_functions.get(func_name, set())
+        functions[func_name] = (params, body, line_num, global_vars)
         return "\n" * match.group(0).count("\n")
 
     cleaned_code = re.sub(function_pattern, replace_function, expanded_code)
@@ -456,7 +491,7 @@ def check_variable_usage(
 def convert_expr(
     expr: str,
     variables: Set[str],
-    functions: Dict[str, Tuple[List[str], str, int]],
+    functions: Dict[str, Tuple[List[str], str, int, Set[str]]],
     line_num: int,
     current_function: Optional[str] = None,
     local_vars: Optional[Set[str]] = None,
@@ -563,7 +598,7 @@ def convert_expr(
                 return f"{args_postfix[0]} {func_name}"
         # Handle custom function calls.
         if func_name in functions:
-            params, body, func_line_num = functions[func_name]
+            params, body, func_line_num, global_vars = functions[func_name]
             if len(args) != len(params):
                 raise SyntaxError(
                     f"Function {func_name} requires {len(params)} parameters, but {len(args)} were provided.",
@@ -607,28 +642,30 @@ def convert_expr(
                             func_line_num + offset,
                             func_name,
                         )
+                    # Only rename & map local variables
                     if var not in param_map and not var.startswith(
                         f"__internal_{func_name}_"
-                    ):
-                        if var not in local_map:
-                            local_map[var] = f"__internal_{func_name}_{var}"
+                    ) and var not in global_vars:
+                        local_map[var] = f"__internal_{func_name}_{var}"
 
             rename_map = {}
             rename_map.update(param_map)
             rename_map.update(local_map)
-            new_local_vars = set(param_map.keys()).union(set(local_map.keys()))
+            new_local_vars = set(param_map.keys()).union(set(local_map.keys())).union(global_vars)
             param_assignments = []
             for i, p in enumerate(params):
                 arg_orig = args[i].strip()
                 if is_constant(arg_orig):
                     rename_map[p] = args_postfix[i]
                 else:
-                    param_assignments.append(f"{args_postfix[i]} {rename_map[p]}!")
+                    if p not in global_vars:
+                        param_assignments.append(f"{args_postfix[i]} {rename_map[p]}!")
             new_lines = []
             for line_text in body_lines:
                 new_line = line_text
                 for old, new in rename_map.items():
-                    new_line = re.sub(rf"(?<!\w){re.escape(old)}(?!\w)", new, new_line)
+                    if old not in global_vars:
+                        new_line = re.sub(rf"(?<!\w){re.escape(old)}(?!\w)", new, new_line)
                 new_lines.append(new_line)
             function_tokens = []
             return_count = 0
