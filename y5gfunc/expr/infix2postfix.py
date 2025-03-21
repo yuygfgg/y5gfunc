@@ -143,6 +143,8 @@ def expand_loops(code: str, base_line: int = 1) -> str:
         loop_start_index = m.start()
         # Calculate the line number by counting newlines before this match
         line_num = base_line + code[:loop_start_index].count("\n")
+        if n < 1:
+            raise SyntaxError("Loop count {n} is not validated! Expected integer >= 1, got {n}!", line_num)
         brace_start = m.end() - 1
         count = 0
         end_index = None
@@ -169,8 +171,8 @@ def expand_loops(code: str, base_line: int = 1) -> str:
         unrolled_code = "".join(map(lambda s: s.strip() + ";", unrolled)).strip(";")
         # Preserve the original newline count
         original_block = code[m.start() : end_index + 1]
-        newline_placeholder = "\n" * original_block.count("\n")
-        replacement = unrolled_code + newline_placeholder
+        newline_placeholder_half = "\n" * (original_block.count("\n") // 2)
+        replacement = newline_placeholder_half + unrolled_code + newline_placeholder_half
         code = code[: m.start()] + replacement + code[end_index + 1 :]
     return code
 
@@ -296,7 +298,7 @@ def compute_stack_effect(
 def infix2postfix(infix_code: str) -> LiteralString:
     """
     Convert infix expressions to postfix expressions.
-    Supports function definitions, function calls, built-in functions, nth_N operator, and loop syntax sugar.
+    Supports function definitions, function calls, built-in functions, nth_N operator (Nth smallest, N starts from 1), and loop syntax sugar.
     User input code must not contain semicolons.
     """
     # Reject user input that contains semicolons.
@@ -310,6 +312,8 @@ def infix2postfix(infix_code: str) -> LiteralString:
 
     # Expand loops; the top-level code begins at line 1.
     expanded_code = expand_loops(infix_code, base_line=1)
+    # for i, line in enumerate(expanded_code.split('\n')):
+    #     print(f"{i+1} {line}")
 
     # Extract function definitions while preserving line numbers.
     functions: Dict[str, Tuple[List[str], str, int]] = {}
@@ -419,6 +423,8 @@ def check_variable_usage(
     identifiers = re.finditer(r"\b([a-zA-Z_]\w*)\b", expr_no_stat_rels)
     for match in identifiers:
         var_name = match.group(1)
+        print(var_name)
+        print(var_name in variables)
         if (
             is_constant(var_name)
             or var_name in variables
@@ -561,20 +567,20 @@ def convert_expr(
                 )
             # Rename parameters： __internal_<funcname>_<varname>
             param_map = {p: f"__internal_{func_name}_{p}" for p in params}
-            body_lines = [line.strip() for line in body.split("\n") if line.strip()]
-
+            body_lines = [line.strip() for line in body.split("\n")]
+            body_lines_strip = [line.strip() for line in body.split("\n") if line.strip()]
             return_indices = [
-                i for i, line in enumerate(body_lines) if line.startswith("return")
+                i for i, line in enumerate(body_lines_strip) if line.startswith("return")
             ]
-            if return_indices and return_indices[0] != len(body_lines) - 1:
+            if return_indices and return_indices[0] != len(body_lines_strip) - 1:
                 raise SyntaxError(
                     f"Return statement must be the last line in function '{func_name}'",
-                    func_line_num + return_indices[0] + 1,
+                    func_line_num,
                     func_name,
                 )
 
             local_map = {}
-            for body_line in body_lines:
+            for offset, body_line in enumerate(body_lines):
                 if body_line.startswith("return"):
                     continue
                 m_line = re.match(r"^([a-zA-Z_]\w*)\s*=\s*(.+)$", body_line)
@@ -583,13 +589,13 @@ def convert_expr(
                     if var.startswith("__internal_"):
                         raise SyntaxError(
                             f"Variable name '{var}' cannot start with '__internal_' (reserved prefix)",
-                            func_line_num,
+                            func_line_num + offset,
                             func_name,
                         )
                     if is_constant(var):
                         raise SyntaxError(
                             f"Cannot assign to constant '{var}'.",
-                            func_line_num,
+                            func_line_num + offset,
                             func_name,
                         )
                     if var not in param_map and not var.startswith(
@@ -597,6 +603,7 @@ def convert_expr(
                     ):
                         if var not in local_map:
                             local_map[var] = f"__internal_{func_name}_{var}"
+            
             rename_map = {}
             rename_map.update(param_map)
             rename_map.update(local_map)
@@ -617,7 +624,7 @@ def convert_expr(
             function_tokens = []
             return_count = 0
             for offset, body_line in enumerate(new_lines):
-                effective_line_num = func_line_num + offset + 1
+                effective_line_num = func_line_num + offset
                 if body_line.startswith("return"):
                     return_count += 1
                     ret_expr = body_line[len("return") :].strip().rstrip(";")
@@ -911,7 +918,7 @@ def is_builtin_function(func_name: str) -> bool:
     ]
     builtin_binary = ["min", "max"]
     builtin_ternary = ["clamp"]
-    if any(re.match(r, func_name) for r in [f"^{prefix}\\d+$" for prefix in ["nth_", "sort", "dup", "drop", "swap"]]):
+    if any(re.match(r, func_name) for r in [rf"^{prefix}\d+$" for prefix in ["nth_", "sort", "dup", "drop", "swap"]]): # Only nth_N is literally 'built-in' but we consider stack Ops built-in as well, for no reason. Might be removed.
         return True
     return (
         func_name in builtin_unary
