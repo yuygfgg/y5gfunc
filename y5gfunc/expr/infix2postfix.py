@@ -5,6 +5,7 @@ if sys.version_info >= (3, 11):
     from typing import LiteralString, Dict, List, Tuple, Optional, Set
 else:
     from typing import Dict, List, Tuple, Optional, Set
+
     LiteralString = str
 
 
@@ -131,7 +132,7 @@ def expand_loops(code: str, base_line: int = 1) -> str:
 
     The unrolled fragments are joined with semicolons so that no extra newlines are added.
     To preserve the original line count, we count the newline characters in the replaced block (the loop statement and matching braces)
-    and append that many newline characters as placeholders.
+    and distribute the newline placeholders evenly before and after the unrolled code.
     The base_line parameter indicates the starting line number for the code block.
     """
     pattern = re.compile(r"loop\s*\(\s*(\d+)\s*,\s*([a-zA-Z_]\w*)\s*\)\s*\{")
@@ -175,22 +176,90 @@ def expand_loops(code: str, base_line: int = 1) -> str:
         code = code[: m.start()] + replacement + code[end_index + 1 :]
     return code
 
+
 def find_duplicate_functions(code: str):
-    '''
+    """
     Check if any duplicate function is defined.
-    '''
-    pattern = re.compile(r'\bfunction\s+(\w+)\s*\(.*?\)')
+    """
+    pattern = re.compile(r"\bfunction\s+(\w+)\s*\(.*?\)")
     function_lines = {}
 
-    lines = code.split('\n')
+    lines = code.split("\n")
 
     for line_num, line in enumerate(lines, start=1):
         match = pattern.search(line)
         if match:
             func_name = match.group(1)
             if func_name in function_lines:
-                raise SyntaxError(f"Duplicated function '{func_name}' defined at line {function_lines[func_name]} and {line_num}", line_num=line_num)
+                raise SyntaxError(
+                    f"Duplicated function '{func_name}' defined at line {function_lines[func_name]} and {line_num}",
+                    line_num=line_num,
+                )
             function_lines[func_name] = line_num
+
+
+def compute_stack_effect(
+    postfix_expr: str, line_num: Optional[int] = None, func_name: Optional[str] = None
+) -> int:
+    tokens = postfix_expr.split()
+    op_arity = {
+        "+": 2,
+        "-": 2,
+        "*": 2,
+        "/": 2,
+        "%": 2,
+        "pow": 2,
+        "and": 2,
+        "or": 2,
+        "=": 2,
+        "<": 2,
+        ">": 2,
+        "<=": 2,
+        ">=": 2,
+        "bitand": 2,
+        "bitor": 2,
+        "bitxor": 2,
+        "min": 2,
+        "max": 2,
+        "dyn": 3,
+        "clamp": 3,
+        "?": 3,
+        "not": 1,
+        "sin": 1,
+        "cos": 1,
+        "round": 1,
+        "floor": 1,
+        "abs": 1,
+        "sqrt": 1,
+        "trunc": 1,
+        "bitnot": 1,
+    }
+    stack = []
+    for i, token in enumerate(tokens):
+        if token.endswith("!"):
+            if not stack:
+                raise SyntaxError("Stack underflow in assignment")
+            stack.pop()
+        elif token.endswith("[]"):
+            if len(stack) < 2:
+                raise SyntaxError(
+                    f"Stack underflow for {i}th operator {token}", line_num, func_name
+                )
+            stack.pop()
+            stack.pop()
+            stack.append(1)
+        elif token in op_arity:
+            arity = op_arity[token]
+            if len(stack) < arity:
+                raise SyntaxError(
+                    f"Stack underflow for {i}th operator {token}", line_num, func_name
+                )
+            for _ in range(arity):
+                stack.pop()
+            stack.append(1)
+        else:
+            stack.append(1)
+    return len(stack)
 
 
 def infix2postfix(infix_code: str) -> LiteralString:
@@ -205,7 +274,7 @@ def infix2postfix(infix_code: str) -> LiteralString:
         raise SyntaxError(
             "User input code cannot contain semicolon. Use newlines instead."
         )
-    
+
     # Check for duplicated function definition.
     find_duplicate_functions(infix_code)
 
@@ -263,20 +332,24 @@ def infix2postfix(infix_code: str) -> LiteralString:
             if is_constant(var_name):
                 raise SyntaxError(f"Cannot assign to constant '{var_name}'.", line_num)
             expr = expr.strip()
-            # I don't know how to handle 'a = a...' in check_variable_usage(), so do it here
             if var_name not in variables and re.search(
                 r"\b" + re.escape(var_name) + r"\b", expr
             ):
-                raise SyntaxError(f"Variable '{var_name}' used before definition")
+                raise SyntaxError(
+                    f"Variable '{var_name}' used before definition", line_num
+                )
             variables.add(var_name)
             expr_postfix = convert_expr(expr, variables, functions, line_num)
             postfix_tokens.append(f"{expr_postfix} {var_name}!")
         else:
-            postfix_tokens.append(convert_expr(stmt, variables, functions, line_num))
+            expr_postfix = convert_expr(stmt, variables, functions, line_num)
+            if compute_stack_effect(expr_postfix, line_num) != 0:
+                raise SyntaxError(f"Unused global expression: {stmt}", line_num)
+            postfix_tokens.append(expr_postfix)
 
     final_result = " ".join(postfix_tokens)
     final_result = final_result.replace("(", "").replace(")", "")
-    return final_result
+    return final_result + " RESULT@"
 
 
 def validate_static_relative_pixel_indices(
@@ -491,9 +564,11 @@ def convert_expr(
                     new_line = re.sub(rf"\b{re.escape(old)}\b", new, new_line)
                 new_lines.append(new_line)
             function_tokens = []
+            return_count = 0
             for offset, body_line in enumerate(new_lines):
                 effective_line_num = func_line_num + offset + 1
                 if body_line.startswith("return"):
+                    return_count += 1
                     ret_expr = body_line[len("return") :].strip().rstrip(";")
                     function_tokens.append(
                         convert_expr(
@@ -508,7 +583,7 @@ def convert_expr(
                 # If a semicolon is present in the assignment statement, split and process separately.
                 elif "=" in body_line and not re.search(r"[<>!]=|==", body_line):
                     if ";" in body_line:
-                        tokens = []
+                        tokens_list = []
                         for sub in body_line.split(";"):
                             sub = sub.strip()
                             if not sub:
@@ -537,11 +612,11 @@ def convert_expr(
                                     )
                                 if var_name not in new_local_vars:
                                     new_local_vars.add(var_name)
-                                tokens.append(
+                                tokens_list.append(
                                     f"{convert_expr(expr_line, variables, functions, effective_line_num, func_name, new_local_vars)} {var_name}!"
                                 )
                             else:
-                                tokens.append(
+                                tokens_list.append(
                                     convert_expr(
                                         sub,
                                         variables,
@@ -551,7 +626,7 @@ def convert_expr(
                                         new_local_vars,
                                     )
                                 )
-                        function_tokens.append(" ".join(tokens))
+                        function_tokens.append(" ".join(tokens_list))
                     else:
                         var_name, expr_line = body_line.split("=", 1)
                         var_name = var_name.strip()
@@ -588,7 +663,22 @@ def convert_expr(
                             new_local_vars,
                         )
                     )
-            return " ".join(param_assignments + function_tokens)
+            if return_count == 0 or return_count > 1:
+                raise SyntaxError(
+                    f"Function {func_name} must return exactly one value! Got {return_count}",
+                    func_line_num,
+                    func_name,
+                )
+
+            result_expr = " ".join(param_assignments + function_tokens)
+            net_effect = compute_stack_effect(result_expr, line_num, func_name)
+            if net_effect != 1:
+                raise SyntaxError(
+                    f"The return value stack of function {func_name} is unbalanced, expecting 1 return value but it got {net_effect}.",
+                    func_line_num,
+                    func_name,
+                )
+            return result_expr
 
     stripped = strip_outer_parentheses(expr)
     if stripped != expr:
