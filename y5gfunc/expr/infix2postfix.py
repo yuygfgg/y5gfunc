@@ -144,7 +144,10 @@ def expand_loops(code: str, base_line: int = 1) -> str:
         # Calculate the line number by counting newlines before this match
         line_num = base_line + code[:loop_start_index].count("\n")
         if n < 1:
-            raise SyntaxError("Loop count {n} is not validated! Expected integer >= 1, got {n}!", line_num)
+            raise SyntaxError(
+                "Loop count {n} is not validated! Expected integer >= 1, got {n}!",
+                line_num,
+            )
         brace_start = m.end() - 1
         count = 0
         end_index = None
@@ -172,7 +175,9 @@ def expand_loops(code: str, base_line: int = 1) -> str:
         # Preserve the original newline count
         original_block = code[m.start() : end_index + 1]
         newline_placeholder_half = "\n" * (original_block.count("\n") // 2)
-        replacement = newline_placeholder_half + unrolled_code + newline_placeholder_half
+        replacement = (
+            newline_placeholder_half + unrolled_code + newline_placeholder_half
+        )
         code = code[: m.start()] + replacement + code[end_index + 1 :]
     return code
 
@@ -423,8 +428,6 @@ def check_variable_usage(
     identifiers = re.finditer(r"\b([a-zA-Z_]\w*)\b", expr_no_stat_rels)
     for match in identifiers:
         var_name = match.group(1)
-        print(var_name)
-        print(var_name in variables)
         if (
             is_constant(var_name)
             or var_name in variables
@@ -568,9 +571,13 @@ def convert_expr(
             # Rename parameters： __internal_<funcname>_<varname>
             param_map = {p: f"__internal_{func_name}_{p}" for p in params}
             body_lines = [line.strip() for line in body.split("\n")]
-            body_lines_strip = [line.strip() for line in body.split("\n") if line.strip()]
+            body_lines_strip = [
+                line.strip() for line in body.split("\n") if line.strip()
+            ]
             return_indices = [
-                i for i, line in enumerate(body_lines_strip) if line.startswith("return")
+                i
+                for i, line in enumerate(body_lines_strip)
+                if line.startswith("return")
             ]
             if return_indices and return_indices[0] != len(body_lines_strip) - 1:
                 raise SyntaxError(
@@ -603,7 +610,7 @@ def convert_expr(
                     ):
                         if var not in local_map:
                             local_map[var] = f"__internal_{func_name}_{var}"
-            
+
             rename_map = {}
             rename_map.update(param_map)
             rename_map.update(local_map)
@@ -918,7 +925,12 @@ def is_builtin_function(func_name: str) -> bool:
     ]
     builtin_binary = ["min", "max"]
     builtin_ternary = ["clamp"]
-    if any(re.match(r, func_name) for r in [rf"^{prefix}\d+$" for prefix in ["nth_", "sort", "dup", "drop", "swap"]]): # Only nth_N is literally 'built-in' but we consider stack Ops built-in as well, for no reason. Might be removed.
+    if any(
+        re.match(r, func_name)
+        for r in [
+            rf"^{prefix}\d+$" for prefix in ["nth_", "sort", "dup", "drop", "swap"]
+        ]
+    ):  # Only nth_N is literally 'built-in' but we consider stack Ops built-in as well, for no reason. Might be removed.
         return True
     return (
         func_name in builtin_unary
