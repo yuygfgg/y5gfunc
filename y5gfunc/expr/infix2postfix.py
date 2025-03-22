@@ -323,7 +323,7 @@ def infix2postfix(infix_code: str) -> LiteralString:
     # Also record for functions if global declaration appears immediately before function definition.
     declared_globals: Dict[
         str, int
-    ] = {}  # mapping global variable -> declaration line number
+    ] = {}  # mapping: global variable -> declaration line number
     global_vars_for_functions = {}
     lines = expanded_code.split("\n")
     modified_lines = []
@@ -346,7 +346,9 @@ def infix2postfix(infix_code: str) -> LiteralString:
             globals_list = re.findall(r"<([a-zA-Z_]\w*)>", global_decl_match.group(1))
             for gv in globals_list:
                 if gv not in declared_globals:
-                    declared_globals[gv] = i + 1  # store line number (1-indexed)
+                    declared_globals[gv] = (
+                        i + 1
+                    )  # store declaration line number (1-indexed)
             # Group consecutive global declaration lines.
             j = i + 1
             while j < len(lines):
@@ -419,13 +421,18 @@ def infix2postfix(infix_code: str) -> LiteralString:
         if line.strip():
             global_statements.append((line.strip(), i))
 
-    variables: Set[str] = set()  # Global variables defined via assignment
+    # Record global assignments with line numbers.
+    global_assignments: Dict[str, int] = {}
+    # current_globals holds the set of global variables defined so far (by assignment).
+    current_globals: Set[str] = set()
     postfix_tokens = []
 
+    # Process global statements in order and check function call global dependencies.
     for stmt, line_num in global_statements:
         # Skip comment lines.
         if stmt.startswith("#"):
             continue
+
         # Process assignment statements.
         if "=" in stmt and not re.search(r"[<>!]=|==", stmt):
             var_name, expr = stmt.split("=", 1)
@@ -438,24 +445,52 @@ def infix2postfix(infix_code: str) -> LiteralString:
             if is_constant(var_name):
                 raise SyntaxError(f"Cannot assign to constant '{var_name}'.", line_num)
             expr = expr.strip()
-            if var_name not in variables and re.search(
+            # If the right-hand side is a function call, check that its global dependencies are defined.
+            m_call = re.match(r"^(\w+)\s*\(", expr)
+            if m_call:
+                func_name = m_call.group(1)
+                if func_name in functions:
+                    for gv in functions[func_name][3]:
+                        if gv not in current_globals:
+                            raise SyntaxError(
+                                f"Global variable '{gv}' used in function '{func_name}' is not defined before its first call.",
+                                line_num,
+                                func_name,
+                            )
+            # Check self-reference in definition.
+            if var_name not in current_globals and re.search(
                 r"\b" + re.escape(var_name) + r"\b", expr
             ):
                 raise SyntaxError(
                     f"Variable '{var_name}' used before definition", line_num
                 )
-            variables.add(var_name)
-            expr_postfix = convert_expr(expr, variables, functions, line_num)
-            postfix_tokens.append(f"{expr_postfix} {var_name}!")
+            # Record the assignment (only record the first assignment).
+            if var_name not in global_assignments:
+                global_assignments[var_name] = line_num
+            current_globals.add(var_name)
+            postfix_expr = convert_expr(expr, current_globals, functions, line_num)
+            postfix_tokens.append(f"{postfix_expr} {var_name}!")
         else:
-            expr_postfix = convert_expr(stmt, variables, functions, line_num)
-            if compute_stack_effect(expr_postfix, line_num) != 0:
+            # For standalone expression statements, check if they directly call a function.
+            m_call = re.match(r"^(\w+)\s*\(", stmt)
+            if m_call:
+                func_name = m_call.group(1)
+                if func_name in functions:
+                    for gv in functions[func_name][3]:
+                        if gv not in current_globals:
+                            raise SyntaxError(
+                                f"Global variable '{gv}' used in function '{func_name}' is not defined before its first call.",
+                                line_num,
+                                func_name,
+                            )
+            postfix_expr = convert_expr(stmt, current_globals, functions, line_num)
+            if compute_stack_effect(postfix_expr, line_num) != 0:
                 raise SyntaxError(f"Unused global expression: {stmt}", line_num)
-            postfix_tokens.append(expr_postfix)
+            postfix_tokens.append(postfix_expr)
 
     # Check that all declared global variables are defined.
     for gv, decl_line in declared_globals.items():
-        if gv not in variables:
+        if gv not in global_assignments:
             raise SyntaxError(
                 f"Global variable '{gv}' declared but not defined.", decl_line
             )
@@ -1008,7 +1043,14 @@ def is_builtin_function(func_name: str) -> bool:
     if any(
         re.match(r, func_name)
         for r in [
-            rf"^{prefix}\d+$" for prefix in ["nth_", "sort", "dup", "drop", "swap"] # Only nth_N is literally 'built-in' but we consider stack Ops built-in as well, for no reason. Might be removed.
+            rf"^{prefix}\d+$"
+            for prefix in [
+                "nth_",
+                "sort",
+                "dup",
+                "drop",
+                "swap",
+            ]  # Only nth_N is literally 'built-in' but we consider stack Ops built-in as well, for no reason. Might be removed.
         ]
     ):
         return True
