@@ -1,12 +1,7 @@
 import re
-import sys
+from .optimize import optimize_akarin_expr
 
-if sys.version_info >= (3, 11):
-    from typing import LiteralString, Dict, List, Tuple, Optional, Set
-else:
-    from typing import Dict, List, Tuple, Optional, Set
-
-    LiteralString = str
+from typing import Dict, List, Tuple, Optional, Set
 
 
 class SyntaxError(Exception):
@@ -300,7 +295,7 @@ def compute_stack_effect(
     return len(stack)
 
 
-def infix2postfix(infix_code: str) -> LiteralString:
+def infix2postfix(infix_code: str) -> str:
     """
     Convert infix expressions to postfix expressions.
     Supports function definitions, function calls, built-in functions, nth_N operator (Nth smallest, N starts from 1), and loop syntax sugar.
@@ -499,7 +494,9 @@ def infix2postfix(infix_code: str) -> LiteralString:
     final_result = final_result.replace("(", "").replace(")", "")
     if "RESULT!" not in final_result:
         raise SyntaxError("Final result must be assigned to variable 'RESULT!")
-    return final_result + " RESULT@"
+    ret = final_result + " RESULT@"
+    optimized = optimize_akarin_expr(ret)
+    return optimized
 
 
 def validate_static_relative_pixel_indices(

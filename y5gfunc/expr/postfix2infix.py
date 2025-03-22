@@ -78,7 +78,7 @@ def postfix2infix(expr: str) -> LiteralString:
             continue
 
         # Static relative pixel access
-        m = re.match(r'^([a-zA-Z]\w*)\[\-?(\d+)\,\-?(\d+)\](\:\w)?$', token)
+        m = re.match(r'^([a-zA-Z]\w*)\[\s*(-?\d+)\s*,\s*(-?\d+)\s*\](\:\w+)?$', token)
         if m:
             clip_identifier = m.group(1)
             statX = int(m.group(2))
