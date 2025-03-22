@@ -1,7 +1,7 @@
 import re
 from .optimize import optimize_akarin_expr
 
-from typing import Dict, List, Tuple, Optional, Set
+from typing import Optional
 
 
 class SyntaxError(Exception):
@@ -71,7 +71,7 @@ def strip_outer_parentheses(expr: str) -> str:
     return expr[1:-1]
 
 
-def match_full_function_call(expr: str) -> Optional[Tuple[str, str]]:
+def match_full_function_call(expr: str) -> Optional[tuple[str, str]]:
     """
     Try to match a complete function call with proper nesting.
     Returns (func_name, args_str) if matched; otherwise returns None.
@@ -99,7 +99,7 @@ def match_full_function_call(expr: str) -> Optional[Tuple[str, str]]:
 
 def extract_function_info(
     internal_var: str, current_function: Optional[str] = None
-) -> Tuple[Optional[str], Optional[str]]:
+) -> tuple[Optional[str], Optional[str]]:
     """
     Given a renamed internal variable (e.g. __internal_funcname_varname),
     extract the original function name and variable name.
@@ -316,7 +316,7 @@ def infix2postfix(infix_code: str) -> str:
     # Process global declarations.
     # Support declaration of multiple globals in one line: <global<var1><var2>...>
     # Also record for functions if global declaration appears immediately before function definition.
-    declared_globals: Dict[
+    declared_globals: dict[
         str, int
     ] = {}  # mapping: global variable -> declaration line number
     global_vars_for_functions = {}
@@ -380,7 +380,7 @@ def infix2postfix(infix_code: str) -> str:
     expanded_code = "\n".join(modified_lines)
 
     # Replace function definitions with newlines to preserve line numbers.
-    functions: Dict[str, Tuple[List[str], str, int, Set[str]]] = {}
+    functions: dict[str, tuple[list[str], str, int, set[str]]] = {}
     function_pattern = (
         r"function\s+(\w+)\s*\(([^)]*)\)\s*\{([^{}]*(?:\{[^{}]*\}[^{}]*)*)\}"
     )
@@ -417,9 +417,9 @@ def infix2postfix(infix_code: str) -> str:
             global_statements.append((line.strip(), i))
 
     # Record global assignments with line numbers.
-    global_assignments: Dict[str, int] = {}
+    global_assignments: dict[str, int] = {}
     # current_globals holds the set of global variables defined so far (by assignment).
-    current_globals: Set[str] = set()
+    current_globals: set[str] = set()
     postfix_tokens = []
 
     # Process global statements in order and check function call global dependencies.
@@ -494,8 +494,8 @@ def infix2postfix(infix_code: str) -> str:
     final_result = final_result.replace("(", "").replace(")", "")
     if "RESULT!" not in final_result:
         raise SyntaxError("Final result must be assigned to variable 'RESULT!")
-    ret = final_result + " RESULT@"
-    optimized = optimize_akarin_expr(ret)
+    
+    optimized = optimize_akarin_expr(final_result + " RESULT@")
     return optimized
 
 
@@ -519,10 +519,10 @@ def validate_static_relative_pixel_indices(
 
 def check_variable_usage(
     expr: str,
-    variables: Set[str],
+    variables: set[str],
     line_num: int,
     function_name: Optional[str] = None,
-    local_vars: Optional[Set[str]] = None,
+    local_vars: Optional[set[str]] = None,
 ) -> None:
     """
     Check that all variables in the expression have been defined.
@@ -557,11 +557,11 @@ def check_variable_usage(
 
 def convert_expr(
     expr: str,
-    variables: Set[str],
-    functions: Dict[str, Tuple[List[str], str, int, Set[str]]],
+    variables: set[str],
+    functions: dict[str, tuple[list[str], str, int, set[str]]],
     line_num: int,
     current_function: Optional[str] = None,
-    local_vars: Optional[Set[str]] = None,
+    local_vars: Optional[set[str]] = None,
 ) -> str:
     """
     Convert a single infix expression to a postfix expression.
@@ -995,7 +995,7 @@ def find_binary_op(expr: str, op: str):
     return left, right
 
 
-def parse_args(args_str: str) -> List[str]:
+def parse_args(args_str: str) -> list[str]:
     """
     Parse the arguments of a function call.
     """
