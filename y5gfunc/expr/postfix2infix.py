@@ -127,9 +127,9 @@ def postfix2infix(expr: str) -> LiteralString:
         if sort_match:
             num = int(sort_match.group(1))
             items = pop(num)
-            sorted_items_expr = f"sort({', '.join(items)})"
+            sorted_items_expr = f"nth_{{}}({', '.join(items)})"
             for idx in range(len(items)):
-                push(f"{sorted_items_expr}[{idx}]")
+                push(sorted_items_expr.format(idx))
             i += 1
             continue
 
