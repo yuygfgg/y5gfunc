@@ -597,8 +597,7 @@ def convert_expr(
         r"[+\-]?(\d+(\.\d+)?([eE][+\-]?\d+)?)"
         r")$"
     )
-    
-    
+
     if expr.startswith("-"):
         if number_pattern.match(expr):
             return expr
@@ -606,7 +605,7 @@ def convert_expr(
             expr[1:], variables, functions, line_num, current_function, local_vars
         )
         return f"{operand} -1 *"
-    
+
     if number_pattern.match(expr):
         return expr
 
@@ -1058,14 +1057,14 @@ def find_binary_op(expr: str, op: str):
         elif c == ")":
             level -= 1
         if level == 0 and expr[i : i + len(op)] == op:
-            left_valid = (i == 0) or (expr[i-1] in ' (,\t')
-            right_valid = (i + len(op) == len(expr)) or (expr[i + len(op)] in ' )\t,')
+            left_valid = (i == 0) or (expr[i - 1] in " (,\t")
+            right_valid = (i + len(op) == len(expr)) or (expr[i + len(op)] in " )\t,")
             if left_valid and right_valid:
                 op_index = i
     if op_index == -1:
         return None, None
     left = expr[:op_index].strip()
-    right = expr[op_index + len(op):].strip()
+    right = expr[op_index + len(op) :].strip()
     return left, right
 
 
