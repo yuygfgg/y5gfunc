@@ -92,10 +92,7 @@ def postfix2infix(expr: str) -> LiteralString:
                 raise ValueError(
                     f"postfix2infix: unknown boundary_suffix {boundary_suffix} at {i}th token {token}"
                 )
-            boundary_type = (
-                "_c" if not boundary_suffix or boundary_suffix == ":c" else "_m"
-            )
-            push(f"{clip_identifier}.stat{boundary_type}({statX}, {statY})")
+            push(f"{clip_identifier}[{statX},{statY}]{boundary_suffix or ""}")
             i += 1
             continue
 
