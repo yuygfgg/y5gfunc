@@ -7,7 +7,7 @@ from typing import Optional
 class SyntaxError(Exception):
     """Custom syntax error class with line information"""
 
-    def __init__(self, message, line_num=None, function_name=None):
+    def __init__(self, message: str, line_num: Optional[int] = None, function_name: Optional[str]=None):
         self.line_num = line_num
         self.function_name = function_name
         if function_name and line_num is not None:
@@ -160,7 +160,7 @@ def expand_loops(code: str, base_line: int = 1) -> str:
         block = code[brace_start + 1 : end_index]
         block_base_line = base_line + code[: brace_start + 1].count("\n")
         expanded_block = expand_loops(block, block_base_line)
-        unrolled = []
+        unrolled: list[str] = []
         for k in range(n):
             # Replace only variables in <var> format, not standalone variables
             iter_block = re.sub(r"<" + re.escape(var) + r">", str(k), expanded_block)
@@ -201,8 +201,6 @@ def compute_stack_effect(
 ) -> int:
     """
     Compute the net stack effect of a postfix expression.
-    Supports built-in operators, dropN (which removes N items), and sortN (which reorders
-    the top N items without changing the stack count).
     """
     tokens = postfix_expr.split()
     op_arity = {
@@ -236,7 +234,7 @@ def compute_stack_effect(
         "trunc": 1,
         "bitnot": 1,
     }
-    stack = []
+    stack: list[int] = []
     for i, token in enumerate(tokens):
         if token.endswith("!"):
             if not stack:
@@ -255,7 +253,7 @@ def compute_stack_effect(
             stack.append(1)
             continue
 
-        # Support dropN operator (default is drop1)
+        # dropN operator (default is drop1)
         m_drop = re.fullmatch(r"drop(\d*)", token)
         if m_drop:
             n_str = m_drop.group(1)
@@ -268,7 +266,7 @@ def compute_stack_effect(
                 stack.pop()
             continue
 
-        # Support sortN operator: reorder top N items without changing the stack count.
+        # sortN operator: reorder top N items without changing the stack count.
         m_sort = re.fullmatch(r"sort(\d+)", token)
         if m_sort:
             n = int(m_sort.group(1))
@@ -298,8 +296,6 @@ def compute_stack_effect(
 def infix2postfix(infix_code: str) -> str:
     """
     Convert infix expressions to postfix expressions.
-    Supports function definitions, function calls, built-in functions, nth_N operator (Nth smallest, N starts from 1), and loop syntax sugar.
-    User input code must not contain semicolons.
     """
     # Reject user input that contains semicolons.
     if ";" in infix_code:
@@ -314,14 +310,14 @@ def infix2postfix(infix_code: str) -> str:
     expanded_code = expand_loops(infix_code, base_line=1)
 
     # Process global declarations.
-    # Support declaration of multiple globals in one line: <global<var1><var2>...>
+    # global declaration syntax: <global<var1><var2>...>
     # Also record for functions if global declaration appears immediately before function definition.
     declared_globals: dict[
         str, int
     ] = {}  # mapping: global variable -> declaration line number
-    global_vars_for_functions = {}
+    global_vars_for_functions: dict[str, set[str]] = {}
     lines = expanded_code.split("\n")
-    modified_lines = []
+    modified_lines: list[str] = []
 
     # Build a mapping from line number to function name for function declarations.
     function_lines = {}
@@ -334,7 +330,7 @@ def infix2postfix(infix_code: str) -> str:
     i = 0
     while i < len(lines):
         line = lines[i].strip()
-        # Look for global declaration syntax: e.g., <global<var1><var2>...>
+
         global_decl_match = re.match(r"^<global((?:<[a-zA-Z_]\w*>)+)>$", line)
         if global_decl_match:
             # Extract all global variable names from this line.
@@ -344,31 +340,20 @@ def infix2postfix(infix_code: str) -> str:
                     declared_globals[gv] = (
                         i + 1
                     )  # store declaration line number (1-indexed)
-            # Group consecutive global declaration lines.
             j = i + 1
-            while j < len(lines):
-                next_line = lines[j].strip()
-                next_decl_match = re.match(
-                    r"^<global((?:<[a-zA-Z_]\w*>)+)>$", next_line
-                )
-                if next_decl_match:
-                    extra_globals = re.findall(
-                        r"<([a-zA-Z_]\w*)>", next_decl_match.group(1)
-                    )
-                    for gv in extra_globals:
-                        if gv not in declared_globals:
-                            declared_globals[gv] = j + 1
-                    j += 1
-                else:
-                    break
             # If the next non-global line is a function definition, apply these globals for that function.
             if j < len(lines):
                 func_match = re.match(r"^function\s+(\w+)", lines[j])
                 if func_match:
-                    func_name = func_match.group(1)
+                    func_name: str = func_match.group(1)
                     if func_name not in global_vars_for_functions:
-                        global_vars_for_functions[func_name] = set()
+                        global_vars_for_functions[func_name] = set("")
                     global_vars_for_functions[func_name].update(globals_list)
+                else:
+                    raise SyntaxError(
+                        "Global declaration must be followed by a function definition.",
+                        i + 1,
+                    )  # 1-indexed
             # Comment out the global declaration lines.
             for k in range(i, j):
                 modified_lines.append("# " + lines[k])
@@ -385,7 +370,7 @@ def infix2postfix(infix_code: str) -> str:
         r"function\s+(\w+)\s*\(([^)]*)\)\s*\{([^{}]*(?:\{[^{}]*\}[^{}]*)*)\}"
     )
 
-    def replace_function(match: re.Match) -> str:
+    def replace_function(match: re.Match[str]) -> str:
         func_name = match.group(1)
         params_str = match.group(2)
         body = match.group(3)
@@ -411,7 +396,7 @@ def infix2postfix(infix_code: str) -> str:
     cleaned_code = re.sub(function_pattern, replace_function, expanded_code)
 
     # Process global code by splitting on physical newlines.
-    global_statements = []
+    global_statements: list[tuple[str, int]] = []
     for i, line in enumerate(cleaned_code.splitlines(), start=1):
         if line.strip():
             global_statements.append((line.strip(), i))
@@ -420,7 +405,7 @@ def infix2postfix(infix_code: str) -> str:
     global_assignments: dict[str, int] = {}
     # current_globals holds the set of global variables defined so far (by assignment).
     current_globals: set[str] = set()
-    postfix_tokens = []
+    postfix_tokens: list[str] = []
 
     # Process global statements in order and check function call global dependencies.
     for stmt, line_num in global_statements:
@@ -652,7 +637,7 @@ def convert_expr(
             sort_token = f"sort{M}"
             drop_before = f"drop{N_val-1}" if (N_val - 1) > 0 else ""
             drop_after = f"drop{M-N_val}" if (M - N_val) > 0 else ""
-            tokens = []
+            tokens: list[str] = []
             tokens.append(" ".join(args_postfix))
             tokens.append(sort_token)
             if drop_before:
@@ -773,7 +758,7 @@ def convert_expr(
                     func_name,
                 )
 
-            local_map = {}
+            local_map: dict[str, str] = {}
             for offset, body_line in enumerate(body_lines):
                 if body_line.startswith("return"):
                     continue
@@ -800,13 +785,13 @@ def convert_expr(
                     ):
                         local_map[var] = f"__internal_{func_name}_{var}"
 
-            rename_map = {}
+            rename_map: dict[str, str] = {}
             rename_map.update(param_map)
             rename_map.update(local_map)
             new_local_vars = (
                 set(param_map.keys()).union(set(local_map.keys())).union(global_vars)
             )
-            param_assignments = []
+            param_assignments: list[str] = []
             for i, p in enumerate(params):
                 arg_orig = args[i].strip()
                 if is_constant(arg_orig):
@@ -814,7 +799,7 @@ def convert_expr(
                 else:
                     if p not in global_vars:
                         param_assignments.append(f"{args_postfix[i]} {rename_map[p]}!")
-            new_lines = []
+            new_lines: list[str] = []
             for line_text in body_lines:
                 new_line = line_text
                 for old, new in rename_map.items():
@@ -823,13 +808,19 @@ def convert_expr(
                             rf"(?<!\w){re.escape(old)}(?!\w)", new, new_line
                         )
                 new_lines.append(new_line)
-            function_tokens = []
+            function_tokens: list[str] = []
             return_count = 0
             for offset, body_line in enumerate(new_lines):
                 effective_line_num = func_line_num + offset
-                if body_line.startswith("return"):
+                if body_line.startswith("return"): # Return does nothing, but it looks better to have one.
                     return_count += 1
-                    ret_expr = body_line[len("return") :].strip().rstrip(";")
+                    ret_expr = body_line[len("return") :].strip()
+                    if ";" in ret_expr: # I don't think it will happen, but still check it.
+                        raise SyntaxError(
+                            "Return statement must not contain ';'.",
+                            effective_line_num,
+                            func_name,
+                        )
                     function_tokens.append(
                         convert_expr(
                             ret_expr,
@@ -843,7 +834,7 @@ def convert_expr(
                 # Process assignment statements with possible semicolons.
                 elif "=" in body_line and not re.search(r"[<>!]=|==", body_line):
                     if ";" in body_line:
-                        tokens_list = []
+                        tokens_list: list[str] = []
                         for sub in body_line.split(";"):
                             sub = sub.strip()
                             if not sub:
@@ -1072,8 +1063,8 @@ def parse_args(args_str: str) -> list[str]:
     """
     Parse the arguments of a function call.
     """
-    args = []
-    current = []
+    args: list[str] = []
+    current: list[str] = []
     bracket_depth = 0
     square_bracket_depth = 0
     for c in args_str + ",":
