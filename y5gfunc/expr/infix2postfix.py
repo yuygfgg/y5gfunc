@@ -494,7 +494,7 @@ def infix2postfix(infix_code: str) -> str:
     final_result = final_result.replace("(", "").replace(")", "")
     if "RESULT!" not in final_result:
         raise SyntaxError("Final result must be assigned to variable 'RESULT!")
-    
+
     optimized = optimize_akarin_expr(final_result + " RESULT@")
     return optimized
 
@@ -530,7 +530,7 @@ def check_variable_usage(
     """
     expr_no_funcs = re.sub(r"\w+\([^)]*\)", "", expr)
     expr_no_stat_rels = re.sub(r"\[[^\]]*\]", "", expr_no_funcs)
-    identifiers = re.finditer(r"\b([a-zA-Z_]\w*)\b", expr_no_stat_rels)
+    identifiers = re.finditer(r"\b([a-zA-Z_]\w*)\b(?!\s*\()", expr_no_stat_rels)
     for match in identifiers:
         var_name = match.group(1)
         if is_constant(var_name) or (
@@ -568,6 +568,22 @@ def convert_expr(
     Supports binary and unary operators, function calls, and custom function definitions.
     """
     expr = expr.strip()
+
+    m_str = re.match(r"^str\(([^)]+)\)$", expr)
+    if m_str:
+        args = parse_args(m_str.group(1))
+        if len(args) != 1:
+            raise SyntaxError(
+                f"str() requires 1 arguments, but {len(args)} were provided.",
+                line_num,
+                current_function,
+            )
+        if not re.match(r"\b([a-zA-Z_]\w*)\b", args[0]):
+            raise SyntaxError(
+                f"Unsupported string content '{args[0]}'", line_num, current_function
+            )
+        return f"{args[0]}"
+
     # Check variable usage and validate static relative pixel indices.
     check_variable_usage(expr, variables, line_num, current_function, local_vars)
     validate_static_relative_pixel_indices(expr, line_num, current_function)
@@ -645,9 +661,61 @@ def convert_expr(
             )
             for arg in args
         ]
-        if func_name in ["min", "max"] and len(args) == 2:
+
+        if func_name == "dyn":
+            if len(args) != 3:
+                raise SyntaxError(
+                    f"Built-in function {func_name} requires 3 arguments, but {len(args)} were provided.",
+                    line_num,
+                    current_function,
+                )
+            if not is_clip(args[0]):
+                raise SyntaxError(
+                    f"{args[0]} is not a source clip.", line_num, current_function
+                )
+            return f"{args_postfix[1]} {args_postfix[2]} {args[0]}[]"
+
+        if func_name == "get_prop":
+            if len(args) != 2:
+                raise SyntaxError(
+                    f"Built-in function {func_name} requires 2 arguments, but {len(args)} were provided.",
+                    line_num,
+                    current_function,
+                )
+            if not is_clip(args[0]):
+                raise SyntaxError(
+                    f"{args[0]} is not a source clip.", line_num, current_function
+                )
+            return f"{args_postfix[0]}.{args_postfix[1]}"
+
+        if func_name == "get_prop_safe":
+            if len(args) != 2:
+                raise SyntaxError(
+                    f"Built-in function {func_name} requires 2 arguments, but {len(args)} were provided.",
+                    line_num,
+                    current_function,
+                )
+            if not is_clip(args[0]):
+                raise SyntaxError(
+                    f"{args[0]} is not a source clip.", line_num, current_function
+                )
+            return f"{args_postfix[0]}.{args_postfix[1]} __internal_get_prop_safe_tmp! __internal_get_prop_safe_tmp@"  # Ensure 0 is returned if prop doesn't exist.
+
+        if func_name in ["min", "max"]:
+            if len(args) != 2:
+                raise SyntaxError(
+                    f"Built-in function {func_name} requires 2 arguments, but {len(args)} were provided.",
+                    line_num,
+                    current_function,
+                )
             return f"{args_postfix[0]} {args_postfix[1]} {func_name}"
-        elif func_name == "clamp" and len(args) == 3:
+        elif func_name == "clamp":
+            if len(args) != 3:
+                raise SyntaxError(
+                    f"Built-in function {func_name} requires 2 arguments, but {len(args)} were provided.",
+                    line_num,
+                    current_function,
+                )
             return f"{args_postfix[0]} {args_postfix[1]} {args_postfix[2]} clamp"
         else:
             builtin_unary = [
@@ -661,7 +729,13 @@ def convert_expr(
                 "bitnot",
                 "not",
             ]
-            if func_name in builtin_unary and len(args) == 1:
+            if func_name in builtin_unary:
+                if len(args) != 1:
+                    raise SyntaxError(
+                        f"Built-in function {func_name} requires 1 arguments, but {len(args)} were provided.",
+                        line_num,
+                        current_function,
+                    )
                 return f"{args_postfix[0]} {func_name}"
         # Handle custom function calls.
         if func_name in functions:
@@ -877,19 +951,6 @@ def convert_expr(
             )
         return f"{clip}[{statX},{statY}]{suffix}"
 
-    m_dyn = re.match(r"^(\w+)\.dyn\((.+),\s*(.+)\)$", expr)
-    if m_dyn:
-        clip = m_dyn.group(1)
-        if not is_clip(clip):
-            raise SyntaxError(f"'{clip}' is not a clip!", line_num, current_function)
-        x_expr = convert_expr(
-            m_dyn.group(2), variables, functions, line_num, current_function, local_vars
-        )
-        y_expr = convert_expr(
-            m_dyn.group(3), variables, functions, line_num, current_function, local_vars
-        )
-        return f"{x_expr} {y_expr} {clip}[]"
-
     m_ternary = re.search(r"(.+?)\s*\?\s*(.+?)\s*:\s*(.+)", expr)
     if m_ternary:
         cond = convert_expr(
@@ -1034,9 +1095,10 @@ def is_builtin_function(func_name: str) -> bool:
         "trunc",
         "bitnot",
         "not",
+        "str",
     ]
-    builtin_binary = ["min", "max"]
-    builtin_ternary = ["clamp"]
+    builtin_binary = ["min", "max", "get_prop", "get_prop_safe"]
+    builtin_ternary = ["clamp", "dyn"]
     if any(
         re.match(r, func_name)
         for r in [
