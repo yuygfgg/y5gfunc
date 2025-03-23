@@ -77,7 +77,7 @@ def postfix2infix(expr: str) -> LiteralString:
             clip_identifier = token[:-2]
             absY = pop()
             absX = pop()
-            push(f"{clip_identifier}.dyn({absX}, {absY})")
+            push(f"dyn({clip_identifier}({absX}, {absY}))")
             i += 1
             continue
 
