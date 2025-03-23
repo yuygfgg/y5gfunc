@@ -412,7 +412,9 @@ def infix2postfix(infix_code: str) -> str:
         # Skip comment lines.
         if stmt.startswith("#"):
             continue
-
+        # Skip empty line
+        if len(stmt.rstrip(";")) == 0:
+            continue
         # Process assignment statements.
         if "=" in stmt and not re.search(r"[<>!]=|==", stmt):
             var_name, expr = stmt.split("=", 1)
