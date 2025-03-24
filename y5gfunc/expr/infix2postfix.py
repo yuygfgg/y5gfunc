@@ -1,6 +1,6 @@
 import re
+from functools import reduce
 from .optimize import optimize_akarin_expr
-
 from typing import Optional
 
 
@@ -389,6 +389,14 @@ def infix2postfix(infix_code: str) -> str:
         func_start_index = match.start()
         line_num = 1 + expanded_code[:func_start_index].count("\n")
         params = [p.strip() for p in params_str.split(",") if p.strip()]
+        
+        try:
+            dup1, dup2, dupc = reduce(lambda a, i: a if a[1] is not None else ({**a[0], i[1]: i[0]} if i[1] not in a[0] else a[0], (a[0][i[1]], i[0], i[1]) if i[1] in a[0] else None), enumerate(params), ({}, None))[1] # type: ignore
+            if any([dup1, dup2, dupc]): # type: ignore
+                raise SyntaxError(f"{dup1}th argument and {dup2}th argument '{dupc}' duplicated in function definition.", line_num) # type: ignore
+        except TypeError or UnboundLocalError:
+            pass
+        
         if is_builtin_function(func_name):
             raise SyntaxError(
                 f"Function name '{func_name}' conflicts with built-in functions!",
