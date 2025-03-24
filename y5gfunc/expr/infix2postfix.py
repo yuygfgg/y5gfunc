@@ -343,17 +343,29 @@ def infix2postfix(infix_code: str) -> str:
             j = i + 1
             # If the next non-global line is a function definition, apply these globals for that function.
             if j < len(lines):
-                func_match = re.match(r"^function\s+(\w+)", lines[j])
-                if func_match:
-                    func_name: str = func_match.group(1)
+                function_def_pattern = (
+                    r"function\s+(\w+)\s*\(([^)]*)\)\s*\{"
+                )
+                function_match = re.match(function_def_pattern, lines[j])
+                if function_match:
+                    func_name = function_match.group(1)
+                    args = function_match.group(2)
                     if func_name not in global_vars_for_functions:
                         global_vars_for_functions[func_name] = set("")
                     global_vars_for_functions[func_name].update(globals_list)
+                    function_params = parse_args(args)
+                    if any(global_var in function_params for global_var in globals_list):
+                        raise SyntaxError("Function param must not duplicate with global declarations.", j)
                 else:
                     raise SyntaxError(
                         "Global declaration must be followed by a function definition.",
-                        i + 1,
-                    )  # 1-indexed
+                        j,
+                    )
+            else:
+                raise SyntaxError(
+                    "Global declaration must not be at the last line of code.",
+                    j,
+                )
             # Comment out the global declaration lines.
             for k in range(i, j):
                 modified_lines.append("# " + lines[k])
