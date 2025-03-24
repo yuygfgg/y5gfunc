@@ -7,7 +7,12 @@ from typing import Optional
 class SyntaxError(Exception):
     """Custom syntax error class with line information"""
 
-    def __init__(self, message: str, line_num: Optional[int] = None, function_name: Optional[str]=None):
+    def __init__(
+        self,
+        message: str,
+        line_num: Optional[int] = None,
+        function_name: Optional[str] = None,
+    ):
         self.line_num = line_num
         self.function_name = function_name
         if function_name and line_num is not None:
@@ -343,9 +348,7 @@ def infix2postfix(infix_code: str) -> str:
             j = i + 1
             # If the next non-global line is a function definition, apply these globals for that function.
             if j < len(lines):
-                function_def_pattern = (
-                    r"function\s+(\w+)\s*\(([^)]*)\)\s*\{"
-                )
+                function_def_pattern = r"function\s+(\w+)\s*\(([^)]*)\)\s*\{"
                 function_match = re.match(function_def_pattern, lines[j])
                 if function_match:
                     func_name = function_match.group(1)
@@ -354,8 +357,13 @@ def infix2postfix(infix_code: str) -> str:
                         global_vars_for_functions[func_name] = set("")
                     global_vars_for_functions[func_name].update(globals_list)
                     function_params = parse_args(args)
-                    if any(global_var in function_params for global_var in globals_list):
-                        raise SyntaxError("Function param must not duplicate with global declarations.", j)
+                    if any(
+                        global_var in function_params for global_var in globals_list
+                    ):
+                        raise SyntaxError(
+                            "Function param must not duplicate with global declarations.",
+                            j,
+                        )
                 else:
                     raise SyntaxError(
                         "Global declaration must be followed by a function definition.",
@@ -389,14 +397,26 @@ def infix2postfix(infix_code: str) -> str:
         func_start_index = match.start()
         line_num = 1 + expanded_code[:func_start_index].count("\n")
         params = [p.strip() for p in params_str.split(",") if p.strip()]
-        
+
         try:
-            dup1, dup2, dupc = reduce(lambda a, i: a if a[1] is not None else ({**a[0], i[1]: i[0]} if i[1] not in a[0] else a[0], (a[0][i[1]], i[0], i[1]) if i[1] in a[0] else None), enumerate(params), ({}, None))[1] # type: ignore
-            if any([dup1, dup2, dupc]): # type: ignore
-                raise SyntaxError(f"{dup1}th argument and {dup2}th argument '{dupc}' duplicated in function definition.", line_num) # type: ignore
+            dup1, dup2, dupc = reduce(  # type: ignore
+                lambda a, i: a  # type: ignore
+                if a[1] is not None  # type: ignore
+                else (
+                    {**a[0], i[1]: i[0]} if i[1] not in a[0] else a[0],  # type: ignore
+                    (a[0][i[1]], i[0], i[1]) if i[1] in a[0] else None,  # type: ignore
+                ),
+                enumerate(params),
+                ({}, None),  # type: ignore
+            )[1]  # type: ignore
+            if any([dup1, dup2, dupc]):  # type: ignore
+                raise SyntaxError(
+                    f"{dup1}th argument and {dup2}th argument '{dupc}' duplicated in function definition.",
+                    line_num,
+                )  # type: ignore
         except TypeError or UnboundLocalError:
             pass
-        
+
         if is_builtin_function(func_name):
             raise SyntaxError(
                 f"Function name '{func_name}' conflicts with built-in functions!",
@@ -834,10 +854,14 @@ def convert_expr(
             return_count = 0
             for offset, body_line in enumerate(new_lines):
                 effective_line_num = func_line_num + offset
-                if body_line.startswith("return"): # Return does nothing, but it looks better to have one.
+                if body_line.startswith(
+                    "return"
+                ):  # Return does nothing, but it looks better to have one.
                     return_count += 1
                     ret_expr = body_line[len("return") :].strip()
-                    if ";" in ret_expr: # I don't think it will happen, but still check it.
+                    if (
+                        ";" in ret_expr
+                    ):  # I don't think it will happen, but still check it.
                         raise SyntaxError(
                             "Return statement must not contain ';'.",
                             effective_line_num,
