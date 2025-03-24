@@ -145,7 +145,7 @@ def expand_loops(code: str, base_line: int = 1) -> str:
         line_num = base_line + code[:loop_start_index].count("\n")
         if n < 1:
             raise SyntaxError(
-                "Loop count {n} is not validated! Expected integer >= 1, got {n}!",
+                f"Loop count {n} is not validated! Expected integer >= 1, got {n}!",
                 line_num,
             )
         brace_start = m.end() - 1
@@ -408,13 +408,13 @@ def infix2postfix(infix_code: str) -> str:
                 ),
                 enumerate(params),
                 ({}, None),  # type: ignore
-            )[1]  # type: ignore
+            )[1]
             if any([dup1, dup2, dupc]):  # type: ignore
                 raise SyntaxError(
                     f"{dup1}th argument and {dup2}th argument '{dupc}' duplicated in function definition.",
                     line_num,
-                )  # type: ignore
-        except TypeError or UnboundLocalError:
+                )
+        except (TypeError, UnboundLocalError):
             pass
 
         if is_builtin_function(func_name):
@@ -520,7 +520,7 @@ def infix2postfix(infix_code: str) -> str:
     final_result = " ".join(postfix_tokens)
     final_result = final_result.replace("(", "").replace(")", "")
     if "RESULT!" not in final_result:
-        raise SyntaxError("Final result must be assigned to variable 'RESULT!")
+        raise SyntaxError("Final result must be assigned to variable 'RESULT!'")
 
     optimized = optimize_akarin_expr(final_result + " RESULT@")
     return optimized
@@ -748,7 +748,7 @@ def convert_expr(
         elif func_name == "clamp":
             if len(args) != 3:
                 raise SyntaxError(
-                    f"Built-in function {func_name} requires 2 arguments, but {len(args)} were provided.",
+                    f"Built-in function {func_name} requires 3 arguments, but {len(args)} were provided.",
                     line_num,
                     current_function,
                 )
@@ -1028,21 +1028,21 @@ def convert_expr(
     operators = [
         ("||", "or"),
         ("&&", "and"),
+        ("|", "bitor"),
+        ("^", "bitxor"),
+        ("&", "bitand"),
+        ("<", "<"),
+        ("<=", "<="),
+        (">", ">"),
+        (">=", ">="),
         ("==", "="),
         ("!=", "!="),
-        ("<=", "<="),
-        (">=", ">="),
-        ("<", "<"),
-        (">", ">"),
         ("+", "+"),
         ("-", "-"),
         ("*", "*"),
         ("/", "/"),
         ("%", "%"),
         ("**", "pow"),
-        ("&", "bitand"),
-        ("|", "bitor"),
-        ("^", "bitxor"),
     ]
     for op_str, postfix_op in operators:
         left, right = find_binary_op(expr, op_str)
