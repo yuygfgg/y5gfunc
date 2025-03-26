@@ -1,3 +1,4 @@
+from ctypes import Union
 from typing import Callable
 from vstools import core
 from vstools import vs
@@ -20,6 +21,7 @@ def histogram_correlation(hist1: np.ndarray, hist2: np.ndarray) -> float:
         return 0
     return numerator / denominator
 
+# TODO: make scd_koala online
 # modified from https://github.com/KwaiVGI/Koala-36M/blob/main/trainsition_detect/VideoTransitionAnalyzer.py and https://github.com/Breakthrough/PySceneDetect/pull/459
 def scd_koala(
     clip: vs.VideoNode,
@@ -40,15 +42,17 @@ def scd_koala(
     edges = edge_func(small_gray)
     
     combined_edges = core.akarin.Expr([small_gray, edges], expr="x y max")
+    prev_edge_clip = combined_edges.std.DuplicateFrames(0).std.Trim(first=0, length=num_frames)
+    ssim_result = muvsfunc.SSIM(prev_edge_clip, combined_edges)
     
     scores = []
-    
-    for n in range(1, num_frames):
-        prev_frame = resized_clip.get_frame(n-1)
-        curr_frame = resized_clip.get_frame(n)
-        
-        prev_array = np.dstack([np.array(prev_frame[p]) for p in range(prev_frame.format.num_planes)])
-        curr_array = np.dstack([np.array(curr_frame[p]) for p in range(curr_frame.format.num_planes)])
+
+    for n, curr_frame in enumerate(resized_clip.frames()):
+        if n == 0:
+            prev_frame = curr_frame
+            continue
+        prev_array = np.dstack([np.array(prev_frame[p]) for p in range(prev_frame.format.num_planes)]) # type: ignore
+        curr_array = np.dstack([np.array(curr_frame[p]) for p in range(curr_frame.format.num_planes)]) # type: ignore
         
         prev_hist = []
         curr_hist = []
@@ -66,15 +70,12 @@ def scd_koala(
         
         delta_histogram = histogram_correlation(np.array(prev_hist), np.array(curr_hist))
         
-        prev_edge_clip = core.std.Trim(combined_edges, first=n-1, length=1)
-        curr_edge_clip = core.std.Trim(combined_edges, first=n, length=1)
-        
-        ssim_result = muvsfunc.SSIM(prev_edge_clip, curr_edge_clip)
-        ssim_frame = ssim_result.get_frame(0)
+        ssim_frame = ssim_result.get_frame(n)
         delta_edges = ssim_frame.props.get("PlaneSSIM", 0)
         
         score = 4.61480465 * delta_histogram + 3.75211168 * delta_edges - 5.485968377115124 # type: ignore
         scores.append(score)
+        prev_frame = curr_frame
     
     cut_found = [score < 0.0 for score in scores]
     cut_found.append(True)
