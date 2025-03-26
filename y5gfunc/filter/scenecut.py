@@ -112,6 +112,5 @@ def scd_koala(
         return fout
     
     marked_clip = core.std.ModifyFrame(clip, clip, partial(set_scenecut_prop, scene_cuts=scene_cuts))
-    print(scene_cuts)
     
     return marked_clip
