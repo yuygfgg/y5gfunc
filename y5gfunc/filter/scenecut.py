@@ -1,4 +1,4 @@
-from ctypes import Union
+import gc
 from typing import Callable
 from vstools import core
 from vstools import vs
@@ -29,7 +29,7 @@ def scd_koala(
     filter_size: int = 3,
     window_size: int = 8,
     deviation: float = 3.0,
-    edge_func: Callable[[vs.VideoNode], vs.VideoNode] = partial(muvsfunc.AnimeMask, shift=-1)
+    edge_func: Callable[[vs.VideoNode], vs.VideoNode] = partial(muvsfunc.AnimeMask, mode=-1)
 ) -> vs.VideoNode:
 
     num_frames = clip.num_frames
@@ -87,8 +87,11 @@ def scd_koala(
         if i >= window_size and filtered[i] < float(filter_size) / float(filter_size + 1):
             window = filtered[i - window_size : i]
             threshold = np.mean(window) - (deviation * np.std(window))
+            print(f"filtered[{i}]: {filtered[i]}, threshold: {threshold}")
             if filtered[i] < threshold:
                 cut_found[i] = True
+    
+    # gc.collect()
     
     scene_cuts = []
     last_cut = 0
@@ -112,5 +115,6 @@ def scd_koala(
         return fout
     
     marked_clip = core.std.ModifyFrame(clip, clip, partial(set_scenecut_prop, scene_cuts=scene_cuts))
+    print(scene_cuts)
     
     return marked_clip
