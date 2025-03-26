@@ -1,4 +1,3 @@
-import functools
 from typing import Callable
 from vstools import core
 from vstools import vs
@@ -28,7 +27,7 @@ def scd_koala(
     filter_size: int = 3,
     window_size: int = 8,
     deviation: float = 3.0,
-    edge_func: Callable[[vs.VideoNode], vs.VideoNode] = functools.partial(muvsfunc.AnimeMask, shift=-1)
+    edge_func: Callable[[vs.VideoNode], vs.VideoNode] = partial(muvsfunc.AnimeMask, shift=-1)
 ) -> vs.VideoNode:
 
     num_frames = clip.num_frames
