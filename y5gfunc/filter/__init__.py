@@ -6,6 +6,7 @@ from .rescale import rescale
 from .resample import Descale, rgb2opp, opp2rgb
 from .stripe import is_stripe
 from .morpho import convolution, maximum, minimum, inflate, deflate
+from .scenecut import scd_koala
 from .utils import scale_value_full, get_peak_value_full
 
 __all__ = [
@@ -28,6 +29,7 @@ __all__ = [
     'minimum',
     'inflate',
     'deflate',
+    'scd_koala',
     'scale_value_full',
     'get_peak_value_full'
 ]

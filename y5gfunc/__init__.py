@@ -6,8 +6,8 @@ from .expr import postfix2infix, infix2postfix, optimize_akarin_expr, ex_planes
 from .filter import (
     SynDeband, Fast_BM3DWrapper, TIVTC_VFR, DBMask, get_oped_mask,
     cambi_mask, kirsch, retinex_edgemask, comb_mask, rescale, Descale, rgb2opp, 
-    opp2rgb, is_stripe, convolution, maximum, minimum, inflate, deflate, scale_value_full,
-    get_peak_value_full
+    opp2rgb, is_stripe, convolution, maximum, minimum, inflate, deflate, scd_koala, 
+    scale_value_full, get_peak_value_full
 )
 from .preview import reset_output_index, output, screen_shot
 from .source import WobblySource, load_source, get_frame_timestamp, clip_to_timecodes
@@ -27,6 +27,7 @@ __all__ = [
     'minimum',
     'inflate',
     'deflate',
+    'scd_koala',
     'postfix2infix',
     'infix2postfix',
     'optimize_akarin_expr',
