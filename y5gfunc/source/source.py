@@ -50,4 +50,4 @@ def load_source(
         
         clip = _bestsource(file_path, track, timecodes_v2_path, rff=rff)
     
-    return clip.resize.Spline36(matrix_s=matrix_s, matrix_in_s=matrix_in_s)
+    return clip.resize2.Spline36(matrix_s=matrix_s, matrix_in_s=matrix_in_s)
