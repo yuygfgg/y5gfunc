@@ -1,4 +1,3 @@
-import gc
 from typing import Callable
 from vstools import core
 from vstools import vs
@@ -25,7 +24,7 @@ def histogram_correlation(hist1: np.ndarray, hist2: np.ndarray) -> float:
 # modified from https://github.com/KwaiVGI/Koala-36M/blob/main/trainsition_detect/VideoTransitionAnalyzer.py and https://github.com/Breakthrough/PySceneDetect/pull/459
 def scd_koala(
     clip: vs.VideoNode,
-    min_scene_len: int = 24,
+    min_scene_len: int = 12,
     filter_size: int = 3,
     window_size: int = 8,
     deviation: float = 3.0,
@@ -87,11 +86,9 @@ def scd_koala(
         if i >= window_size and filtered[i] < float(filter_size) / float(filter_size + 1):
             window = filtered[i - window_size : i]
             threshold = np.mean(window) - (deviation * np.std(window))
-            print(f"filtered[{i}]: {filtered[i]}, threshold: {threshold}")
             if filtered[i] < threshold:
                 cut_found[i] = True
     
-    # gc.collect()
     
     scene_cuts = []
     last_cut = 0
@@ -115,6 +112,5 @@ def scd_koala(
         return fout
     
     marked_clip = core.std.ModifyFrame(clip, clip, partial(set_scenecut_prop, scene_cuts=scene_cuts))
-    print(scene_cuts)
     
     return marked_clip
