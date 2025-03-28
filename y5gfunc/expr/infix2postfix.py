@@ -306,7 +306,7 @@ def infix2postfix(infix_code: str) -> str:
     ## General Format
 
     - **Input Structure:**
-    The source code is written as plain text with one statement per line. Uer input must not contain semicolons (they are reserved for internal use, for example when unrolling loops).
+    The source code is written as plain text with one statement per line. User input must not contain semicolons (they are reserved for internal use, for example when unrolling loops).
 
     - **Whitespace:**
     Whitespace (spaces and newlines) is used to separate tokens and statements. Extra spaces are generally ignored.
