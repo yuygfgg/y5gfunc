@@ -868,14 +868,6 @@ def convert_expr(
         r")$"
     )
 
-    if expr.startswith("-"):
-        if number_pattern.match(expr):
-            return expr
-        operand = convert_expr(
-            expr[1:], variables, functions, line_num, current_function, local_vars
-        )
-        return f"{operand} -1 *"
-
     if number_pattern.match(expr):
         return expr
 
@@ -885,7 +877,7 @@ def convert_expr(
         "current_y": "Y",
         "current_width": "width",
         "current_height": "height",
-        "pi": "pi"
+        "pi": "pi",
     }
     if expr in constants_map:
         return constants_map[expr]
@@ -1316,6 +1308,12 @@ def convert_expr(
             expr[1:], variables, functions, line_num, current_function, local_vars
         )
         return f"{operand} not"
+
+    if expr.startswith("-"):
+        operand = convert_expr(
+            expr[1:], variables, functions, line_num, current_function, local_vars
+        )
+        return f"{operand} -1 *"
 
     if is_constant(expr):
         return expr
