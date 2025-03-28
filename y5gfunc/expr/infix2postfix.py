@@ -299,169 +299,250 @@ def compute_stack_effect(
 
 
 def infix2postfix(infix_code: str) -> str:
-    R'''
-    # Convert infix expressions to postfix expressions.
+    R"""
+    Convert infix expressions to postfix expressions.
 
     ## General Format
 
-    ### Input Structure
-    - Source code is written as plain text with one statement per line
-    - User input must not contain semicolons (reserved for internal use, e.g., loop unrolling)
+    - **Input Structure:**
+    The source code is written as plain text with one statement per line. Uer input must not contain semicolons (they are reserved for internal use, for example when unrolling loops).
 
-    ### Whitespace Handling
-    - Whitespace (spaces/newlines) separates tokens and statements
-    - Extra spaces are ignored except when required for token separation
+    - **Whitespace:**
+    Whitespace (spaces and newlines) is used to separate tokens and statements. Extra spaces are generally ignored.
 
     ---
 
     ## Lexical Elements
 
-    ### Identifiers
-    - **Format:** `[a-zA-Z_]\w*`
-    - **Prohibited:**
-    - Identifiers starting with reserved prefix `__internal_`
-    - Redefinition of built-in constants
+    ### Identifiers and Literals
 
-    ### Literals
+    - **Identifiers (Variable and Function Names):**
+    - Must start with a letter or an underscore and can be composed of letters, digits, and underscores (matching `[a-zA-Z_]\w*`).
+    - Identifiers starting with the reserved prefix `__internal_` are not allowed in user code (they are used internally for parameter renaming and temporary variables).
+    - Some names are “built-in constants” (see below) and cannot be reassigned.
 
-    #### Built-in Constants
-    - Reserved identifiers:
-    ```python
-    N, X, current_x, Y, current_y, width, current_width, height, current_height
-    ```
-    - Special patterns:
-    - Single-letter tokens (e.g., `a`, `b`)
-    - `src` followed by digits (e.g., `src1`, `src42`)
+    - **Built-in Constants:**
+    The language defines the following reserved identifiers: (Refer to std.Expr and akarin.Expr documents for more information)
+    - `N`, `X`, `current_x`, `Y`, `current_y`, `width`, `current_width`, `height`, `current_height`
+    In addition, any token that is a single letter (e.g. `a`, `b`) or a string matching `src` followed by digits (e.g. `src1`, `src42`) is considered a source clip.
 
-    #### Numeric Literals
-    - **Decimal:** 
-    - Integers: `123`, `-42`
-    - Floating-point: `3.14`, `-0.5` (supports scientific notation)
-    - **Hexadecimal:** `0x[0-9a-fA-F]+` (with optional p-exponent)
-    - **Octal:** `0[0-7]+`
+    - **Numeric Literals:**
+    The language supports:  (Refer to akarin.Expr documents for more information)
+    - **Decimal numbers:** Integers (e.g. `123`, `-42`) and floating‑point numbers (e.g. `3.14`, `-0.5` with optional scientific notation).
+    - **Hexadecimal numbers:** Starting with `0x` followed by hexadecimal digits (optionally with a fractional part and a “p‑exponent”).
+    - **Octal numbers:** A leading zero followed by octal digits (e.g. `0755`).
 
     ---
 
     ## Operators
 
     ### Binary Operators
-    | Category             | Operators                            |      Postfix Conversion     |
-    |----------------------|--------------------------------------|-----------------------------|
-    | Logical              | `||`, `&&`                           | `or`, `and`                 |
-    | Bitwise              | `&`, `|`, `^`                        | `bitand`, `bitor`, `bitxor` |
-    | Relational           | `<`, `>`, `<=`, `>=`                 | (unchanged)                 |
-    | Equality             | `==`, `!=`                           | `=`, `!=`                   |
-    | Arithmetic           | `+`, `-`, `*`, `/`, `%`              | (unchanged)                 |
-    | Exponentiation       | `**`                                 | `pow`                       |
+
+    Expressions may contain binary operators that, when converted, yield corresponding postfix tokens. The supported binary operators include:
+
+    - **Logical Operators:**
+    - `||` (logical OR; converted to `or`)
+    - `&&` (logical AND; converted to `and`)
+    
+    - **Bitwise Operators:**
+        - `&` (bitwise AND; converted to `bitand`)
+        - `|` (bitwise OR; converted to `bitor`)
+        - `^` (bitwise XOR; converted to `bitxor`)
+
+    - **Equality and Relational Operators:**
+    - `==` (equality, converted to `=` in postfix)
+    - `!=` (inequality)
+    - Relational: `<`, `>`, `<=`, `>=`
+
+    - **Arithmetic Operators:**
+    - `+` (addition)
+    - `-` (subtraction)
+    - `*` (multiplication)
+    - `/` (division)
+    - `%` (modulus)
+    - `**` (exponentiation; converted to `pow`)
+
+    When parsing an infix expression, the algorithm searches for a binary operator at the outer level (i.e. not inside any nested parentheses) and—depending on its position—splits the expression into left and right operands. The order in which the operator candidates are considered effectively defines the operator precedence.
 
     ### Unary Operators
-    - **Negation:** `-` (prefix for literals, otherwise `-1 * expr`)
-    - **Logical NOT:** `!` → `not` in postfix
+
+    - **Negation:**
+    A minus sign (`-`) may be used to denote negative numeric literals; if used before an expression that is not a literal number, it is interpreted as multiplying the operand by -1.
+
+    - **Logical NOT:**
+    An exclamation mark (`!`) is used as a unary operator for logical NOT. For example, `!expr` is converted to postfix by appending the operator `not` to the processed operand.
 
     ### Ternary Operator
-    - **Syntax:** `condition ? true_expr : false_expr`
-    - **Conversion:** Processed as three postfix expressions followed by `?`
+
+    - **Conditional Expression:**
+    The language supports a ternary operator with the syntax:
+    ```
+    condition ? true_expression : false_expression
+    ```
+    The operator first evaluates the condition; then based on its result, it selects either the true or false branch. In the conversion process, the three expressions are translated to a corresponding postfix form followed by a `?` token.
 
     ---
 
     ## Grouping
-    - Parentheses `()` override default precedence
-    - Outer parentheses in complete expressions are removed during conversion
+
+    - **Parentheses:**
+    Parentheses `(` and `)` can be used to override the default evaluation order. If an entire expression is wrapped in parentheses, the outer pair is stripped prior to further conversion.
 
     ---
 
-    ## Function Handling
+    ## Function Calls and Built-in Functions
 
-    ### Built-in Functions
-    | Arity   | Examples                              | Special Notes                       |
-    |---------|---------------------------------------|-------------------------------------|
-    | Unary   | `sin(x)`, `round(x)`, `bitnot(x)`     | `str(x)` for property conversion    |
-    | Binary  | `min(a,b)`, `get_prop(clip,prop)`     | Source clip restrictions            |
-    | Ternary | `clamp(a,b,c)`, `dyn(a,b,c)`          | Static access optimization          |
-    | Variadic| `nth_<N>(args...)`                    | Returns Nth smallest value          |
+    ### General Function Call Syntax
 
-    ### Custom Functions
-    ```python
-    def functionName(param1, param2,...) {
-        # Function body
+    - **Invocation:**
+    Functions are called using the usual form:
+    ```
+    functionName(arg1, arg2, …)
+    ```
+    The argument list must be properly parenthesized and can contain nested expressions. The arguments are parsed by taking into account nested parentheses and brackets.
+
+    - **Builtin Function Examples:**
+    Some functions are specially handled and have fixed argument counts:
+
+    - **Unary Functions:**
+        `sin(x)`, `cos(x)`, `round(x)`, `floor(x)`, `abs(x)`, `sqrt(x)`, `trunc(x)`, `bitnot(x)`, `not(x)`, `str(x)`
+        > **Note:** `str(x)` acts like "x" or 'x' in python, and is only used in get_prop* functions (see below).
+
+    - **Binary Functions:**
+        `min(a, b)`, `max(a, b)`, `get_prop(clip, prop)`, `get_prop_safe(clip, prop)`
+        For the `get_prop*` functions, the first argument must be a valid source clip.
+        `get_prop_safe` ensures returns are numbers, while `get_prop` returns a `nan` if fetching a non-exist prop.
+
+    - **Ternary Functions:**
+        `clamp(a, b, c)`, `dyn(a, b, c)`
+        Again, in the case of `dyn` the first argument must be a valid source clip.
+        In addidion, an extra optimizing will be performed to convert dynamic access (`dyn`) to static access (see below) if possible for potentially higher performance.
+
+    - **Special Pattern – nth_N Functions:**
+        Function names matching the pattern `nth_<number>` (for example, `nth_2`) are supported. They require at least N arguments and returns the Nth smallest of the arguments (e.g. `nth_1(a, b, c, d)` returns the smallest one of `a`, `b`, `c` and `d`).
+
+    ### Custom Function Definitions
+
+    - **Syntax:**
+    Functions are defined as follows:
+    ```
+    function functionName(param1, param2, …) {
+        // function body
         return expression
     }
     ```
-    - **Requirements:**
-    - Unique parameter names (no `__internal_` prefix)
-    - Exactly one return statement as final non-empty line
-    - No nested function definitions
+    - **Requirements and Checks:**
+    - The parameter names must be unique, and none may begin with the reserved prefix `__internal_`.
+    - The function body may span several lines. It can contain assignment statements and expression evaluations.
+    - There must be exactly one return statement, and it must be the last (non-empty) statement in the function body.
+    - Defining functions inside another function is not currently supported.
 
     ---
 
-    ## Loop Constructs
-    ```python
+    ## Loop Constructs (Syntax Sugar)
+
+    - **Loop Declaration:**
+    The language provides a loop construct that is syntactic sugar for unrolling repeated code. The syntax is:
+    ```
     loop(n, i) {
-        # Body containing <i> placeholders
+        // loop body
+        ... (statements possibly containing <i>) ...
     }
     ```
-    - **Constraints:**
-    - `n`: Integer literal ≥ 1
-    - `i`: Valid identifier
-    - **Unrolling:** `<i>` replaced with iteration index (0..n-1)
-    - **Implementation:** Converted to semicolon-separated statements
+    - `n` is a literal integer (must be at least 1) indicating the number of iterations.
+    - `i` is an identifier used for the loop variable.
+
+    - **Loop Variable Substitution:**
+    Within the loop body, any occurrence of `<i>` (i.e. the loop variable enclosed between angle brackets) is replaced by the iteration index (starting at 0 up to n‑1). The unrolled code is then concatenated—internally separated by semicolons—to form equivalent sequential code.
 
     ---
 
-    ## Variables & Assignments
+    ## Global Declarations and Assignments
 
     ### Global Declarations
-    ```python
-    <global<var1><var2>...>
+
+    - **Syntax:**
+    Global variables may be declared on a dedicated line with the format:
     ```
-    - Must precede associated function definition
-
-    ### Assignment Rules
-    - **Syntax:** `variable = expression`
-    - **Prohibited:** Reassignment of built-in constants
-    - **Postfix Marking:** `!` appended to variable name
-    - **Usage:** Variables must be defined before use
-
-    ---
-
-    ## Special Access Patterns
-    ```python
-    clip[statX, statY][:m|c]  # Static pixel access
+    <global<var1><var2>…>
     ```
-    - **Requirements:**
-    - `statX`, `statY`: Integer literals
-    - `clip`: Valid source clip identifier
+    This declaration must immediately precede a function definition, and the declared names are recorded as global variables associated with that function.
+
+    ### Assignment Statements
+
+    - **Global Assignments:**
+    A top-level assignment statement uses the syntax:
+    ```
+    variable = expression
+    ```
+    The left-hand side (`variable`) must not be a built-in constant or otherwise reserved. The expression on the right-hand side is converted to its postfix form. Internally, the assignment is marked by appending an exclamation mark (`!`) to indicate that the result is stored in that variable.
+
+    - **Variable Usage Rules:**
+    Variables must be defined (assigned) before they are referenced in expressions. Otherwise, a syntax error will be raised.
 
     ---
 
-    ## Operator Precedence
-    Precedence order (highest to lowest):
-    1. Parentheses
-    2. Exponentiation (`**`)
-    3. Unary operators (`-`, `!`)
-    4. Multiplicative (`*`, `/`, `%`)
-    5. Additive (`+`, `-`)
-    6. Relational (`<`, `<=`, `>`, `>=`)
-    7. Equality (`==`, `!=`)
-    8. Bitwise (`&`, `|`, `^`)
-    9. Logical AND (`&&`)
-    10. Logical OR (`||`)
-    11. Ternary operator (`?:`)
+    ## Special Constructs
+
+    ### Static Relative Pixel Access
+
+    - **Syntax:**
+    For accessing a pixel value relative to a source clip, the expression can take the following form:
+    ```
+    clip[statX, statY]
+    ```
+    where:
+    - `clip` is a valid source clip,
+    - `statX` and `statY` are integer literals specifying the x and y offsets, and
+    - An optional suffix (`:m` or `:c`) may follow the closing bracket.
+
+    - **Validation:**
+    The indices must be numeric constants (no expressions allowed inside the brackets).
 
     ---
 
-    ## Validation & Error Checking
-    - **Syntax Prohibitions:**
-    - Semicolon usage in input
-    - Reserved name prefixes (`__internal_`)
-    - Invalid identifier patterns
-    - **Structural Requirements:**
-    - Global variable pre-declaration
-    - Function return statement position
-    - Loop iteration count validation
-    - Argument count matching for functions
-    - Parenthesis/bracket balancing
-    '''
+    ## Operator Precedence and Expression Parsing
+
+    - **Precedence Determination:**
+    When converting infix to postfix, the parser searches the expression (tracking parenthesis nesting) for a binary operator at the outer level. The operators are considered in the following order (which effectively sets their precedence):
+
+    1. Logical OR: `||`
+    2. Logical AND: `&&`
+    3. Bitwise Operators: `&`, `|`, `^`
+    4. Relational: `<`, `<=`, `>`, `>=`
+    5. Equality: `==`
+    6. Inequality: `!=`
+    7. Addition and Subtraction: `+`, `-`
+    8. Multiplication, Division, and Modulus: `*`, `/`, `%`
+    9. Exponentiation: `**`
+
+    The conversion function finds the **last occurrence** of an operator at the outer level for splitting the expression. Parentheses can be used to override this behavior.
+
+    - **Ternary Operator:**
+    The ternary operator (`? :`) is detected after other operators have been processed.
+
+    ---
+
+    ## Error Checks and Restrictions
+
+    - **Semicolon Usage:**
+    The input may not contain semicolons.
+
+    - **Naming Restrictions:**
+    Variables, function names, and parameters must not use reserved names (such as built-in constants or names beginning with `__internal_`).
+
+    - **Global Dependencies:**
+    For functions that use global variables (declared using the `<global<...>>` syntax), the globals must be defined before any function call that depends on them.
+
+    - **Function Return:**
+    Each function definition must have exactly one return statement, and that return must be the last statement in the function.
+
+    - **Loop Validation:**
+    The loop count in a `loop(n, i)` construct must be an integer greater than or equal to 1.
+
+    - **Argument Counts:**
+    Function calls (both built-in and custom) check that the exact number of required arguments is provided; otherwise, a syntax error is raised.
+    """
 
     # Reject user input that contains semicolons.
     if ";" in infix_code:
