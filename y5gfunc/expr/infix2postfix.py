@@ -51,6 +51,7 @@ def is_constant(token: str) -> bool:
         "current_width",
         "height",
         "current_height",
+        "pi"
     }
     if token in constants_set:
         return True
@@ -323,7 +324,7 @@ def infix2postfix(infix_code: str) -> str:
 
     - **Built-in Constants:**
     The language defines the following reserved identifiers: (Refer to std.Expr and akarin.Expr documents for more information)
-    - `N`, `X`, `current_x`, `Y`, `current_y`, `width`, `current_width`, `height`, `current_height`
+    - `N`, `X`, `current_x`, `Y`, `current_y`, `width`, `current_width`, `height`, `current_height`, `pi`
     In addition, any token that is a single letter (e.g. `a`, `b`) or a string matching `src` followed by digits (e.g. `src1`, `src42`) is considered a source clip.
 
     - **Numeric Literals:**
@@ -884,6 +885,7 @@ def convert_expr(
         "current_y": "Y",
         "current_width": "width",
         "current_height": "height",
+        "pi": "pi"
     }
     if expr in constants_map:
         return constants_map[expr]
