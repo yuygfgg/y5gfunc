@@ -7,7 +7,7 @@ from .resample import Descale, rgb2opp, opp2rgb
 from .stripe import is_stripe
 from .morpho import convolution, maximum, minimum, inflate, deflate
 from .scenecut import scd_koala
-from .utils import scale_value_full, get_peak_value_full
+from .utils import scale_value_full, get_peak_value_full, is_optimized_cpu
 
 __all__ = [
     'SynDeband', 
@@ -31,5 +31,6 @@ __all__ = [
     'deflate',
     'scd_koala',
     'scale_value_full',
-    'get_peak_value_full'
+    'get_peak_value_full',
+    'is_optimized_cpu'
 ]

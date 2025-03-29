@@ -2,6 +2,7 @@ from vstools import vs
 from vstools import core
 from typing import Union, Optional
 from vstools import get_peak_value
+from .utils import is_optimized_cpu
 
 NEIGHBOR_OFFSETS =  [
     (-1, -1), (0, -1), (1, -1),  # 1, 2, 3
@@ -53,10 +54,10 @@ def minimum(
                                 1,    1, 
                                 1, 1, 1],
     boundary: int = 1,
-    force_std=False
+    use_std: bool = is_optimized_cpu()
 ) -> vs.VideoNode:
 
-    if force_std:
+    if use_std:
         return core.std.Minimum(clip, planes, threshold, coordinates) # type: ignore
     else:
         return _create_minmax_expr(clip, "min! drop{} min@".format(sum(coordinates)), " x[0,0] {} - swap max", planes, threshold, coordinates, boundary)
@@ -69,9 +70,9 @@ def maximum(
                                 1,    1, 
                                 1, 1, 1],
     boundary: int = 1,
-    force_std=False
+    use_std: bool = is_optimized_cpu()
 ) -> vs.VideoNode:
-    if force_std:
+    if use_std:
         return core.std.Maximum(clip, planes, threshold, coordinates) # type: ignore
     else:
         return _create_minmax_expr(clip, "drop{}".format(sum(coordinates)), " x[0,0] {} + swap min", planes, threshold, coordinates, boundary)
@@ -85,7 +86,7 @@ def convolution(
     planes: Optional[Union[list[int], int]] = None,
     saturate: bool = True,
     mode: str = "s",
-    force_std: bool = False
+    use_std: bool = is_optimized_cpu()
 ) -> vs.VideoNode:
 
     if planes is None:
@@ -93,7 +94,7 @@ def convolution(
     if isinstance(planes, int):
         planes = [planes]
     
-    if mode != "s" or len(matrix) != 9 or force_std:
+    if mode != "s" or len(matrix) != 9 or use_std:
         return core.std.Convolution(clip, matrix, bias, divisor, planes, saturate, mode)
     
     if len(matrix) == 9:
@@ -134,11 +135,21 @@ def convolution(
     
     return core.std.Convolution(clip, matrix, bias, divisor, planes, saturate, mode)
 
-def inflate(clip: vs.VideoNode, planes: Optional[Union[list[int], int]] = None, threshold: Optional[float] = None, boundary: int = 1) -> vs.VideoNode:
+def inflate(
+    clip: vs.VideoNode,
+    planes: Optional[Union[list[int], int]] = None,
+    threshold: Optional[float] = None,
+    boundary: int = 1,
+    use_std: bool = is_optimized_cpu()
+) -> vs.VideoNode:
+
     if planes is None:
         planes = list(range(clip.format.num_planes))
     if isinstance(planes, int):
         planes = [planes]
+    
+    if use_std:
+        return core.std.Inflate(clip, planes, threshold) # type: ignore
     
     expr_parts = []
 
@@ -159,11 +170,21 @@ def inflate(clip: vs.VideoNode, planes: Optional[Union[list[int], int]] = None, 
     
     return core.akarin.Expr(clips=[clip], expr=expressions, boundary=boundary)
 
-def deflate(clip: vs.VideoNode, planes: Optional[Union[list[int], int]] = None, threshold: Optional[float] = None, boundary: int = 1) -> vs.VideoNode:
+def deflate(
+    clip: vs.VideoNode,
+    planes: Optional[Union[list[int], int]] = None,
+    threshold: Optional[float] = None,
+    boundary: int = 1, 
+    use_std: bool = is_optimized_cpu()
+) -> vs.VideoNode:
+
     if planes is None:
         planes = list(range(clip.format.num_planes))
     if isinstance(planes, int):
         planes = [planes]
+        
+    if use_std:
+        return core.std.Deflate(clip, planes, threshold) # type: ignore
     
     expr_parts = []
 

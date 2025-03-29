@@ -3,6 +3,7 @@ from vstools import core
 import vsutil
 from typing import Callable, Any, Optional, Union
 from vsrgtools import remove_grain
+from vsmasktools import retinex
 import functools
 from .morpho import minimum, maximum, convolution, inflate, deflate
 from .utils import scale_value_full, get_peak_value_full
@@ -104,7 +105,7 @@ def kirsch(src: vs.VideoNode) -> vs.VideoNode:
 def retinex_edgemask(src: vs.VideoNode) -> vs.VideoNode:
     luma = vsutil.get_y(src)
     max_value = get_peak_value_full(src)
-    ret = core.retinex.MSRCP(luma, sigma=[50, 200, 350], upper_thr=0.005)
+    ret = retinex(luma, sigma=[50, 200, 350], upper_thr=0.005)
     tcanny = minimum(ret.tcanny.TCanny(mode=1, sigma=1), coordinates=[1, 0, 1, 0, 0, 1, 0, 1])
     return core.akarin.Expr([kirsch(luma), tcanny], f'x y + {max_value} min')
 
