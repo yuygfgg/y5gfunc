@@ -379,6 +379,7 @@ def extract_audio_tracks(
 
         if track_config.mode == ProcessMode.DROP:
             print(f"extract_audio_tracks: Dropping track {track_num}")
+            continue
         if track_config.mode == ProcessMode.COPY:
             output_ext = codec_name
             should_copy = True
