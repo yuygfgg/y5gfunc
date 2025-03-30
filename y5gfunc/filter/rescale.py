@@ -359,12 +359,13 @@ def rescale(
         "|--------|------------------------|------------|-----------|-----------|-----------|--------|--------|--------|\n"
     )
 
-    for i in range(len(upscaled_clips)):
+    for i, upscaled in enumerate(upscaled_clips):
         format_string += (
             f"| {i:04}   | {{Diff{i}}}  | {{Kernel{i}}}  | {{SrcHeight{i}}}   | "
             f"{{Bw{i}}} | {{Bh{i}}} |"
             f"{{B{i}}}   | {{C{i}}}   | {{Taps{i}}}   |\n"
         )
+        upscaled_clips[i] = upscaled.text.Text(str(params_list[i]))
     osd_clip = core.akarin.Text(final, format_string)
 
     if show_fft:
@@ -376,41 +377,41 @@ def rescale(
         if show_common_mask:
             if show_osd:
                 if show_detail_mask and show_fft:
-                    return final, upscaled, detail_mask, common_mask_clip, src_fft, rescaled_fft, osd_clip
+                    return final, upscaled_clips, detail_mask, common_mask_clip, src_fft, rescaled_fft, osd_clip
                 elif show_detail_mask:
-                    return final, upscaled, detail_mask, common_mask_clip, osd_clip
+                    return final, upscaled_clips, detail_mask, common_mask_clip, osd_clip
                 elif show_fft:
-                    return final, upscaled, common_mask_clip, src_fft, rescaled_fft, osd_clip
+                    return final, upscaled_clips, common_mask_clip, src_fft, rescaled_fft, osd_clip
                 else:
-                    return final, upscaled, common_mask_clip, osd_clip
+                    return final, upscaled_clips, common_mask_clip, osd_clip
             else:
                 if show_detail_mask and show_fft:
-                    return final, upscaled, detail_mask, common_mask_clip, src_fft, rescaled_fft
+                    return final, upscaled_clips, detail_mask, common_mask_clip, src_fft, rescaled_fft
                 elif show_detail_mask:
-                    return final, upscaled, detail_mask, common_mask_clip
+                    return final, upscaled_clips, detail_mask, common_mask_clip
                 elif show_fft:
-                    return final, upscaled, common_mask_clip, src_fft, rescaled_fft
+                    return final, upscaled_clips, common_mask_clip, src_fft, rescaled_fft
                 else:
-                    return final, upscaled, common_mask_clip
+                    return final, upscaled_clips, common_mask_clip
         else:
             if show_osd:
                 if show_detail_mask and show_fft:
-                    return final, upscaled, detail_mask, src_fft, rescaled_fft, osd_clip
+                    return final, upscaled_clips, detail_mask, src_fft, rescaled_fft, osd_clip
                 elif show_detail_mask:
-                    return final, upscaled, detail_mask, osd_clip
+                    return final, upscaled_clips, detail_mask, osd_clip
                 elif show_fft:
-                    return final, upscaled, src_fft, rescaled_fft, osd_clip
+                    return final, upscaled_clips, src_fft, rescaled_fft, osd_clip
                 else:
-                    return final, upscaled, osd_clip
+                    return final, upscaled_clips, osd_clip
             else:
                 if show_detail_mask and show_fft:
-                    return final, upscaled, detail_mask, src_fft, rescaled_fft
+                    return final, upscaled_clips, detail_mask, src_fft, rescaled_fft
                 elif show_detail_mask:
-                    return final, upscaled, detail_mask
+                    return final, upscaled_clips, detail_mask
                 elif show_fft:
-                    return final, upscaled, src_fft, rescaled_fft
+                    return final, upscaled_clips, src_fft, rescaled_fft
                 else:
-                    return final, upscaled
+                    return final, upscaled_clips
     else:
         if show_common_mask:
             if show_osd:
