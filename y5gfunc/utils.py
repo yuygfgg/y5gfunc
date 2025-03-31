@@ -11,12 +11,9 @@ def PickFrames(clip: vs.VideoNode, indices: list[int]) -> vs.VideoNode:
     try: 
         ret = core.akarin.PickFrames(clip, indices=indices) # type: ignore
     except AttributeError:
-        try:
-            ret = core.pickframes.PickFrames(clip, indices=indices)
-        except AttributeError:
-            # modified from https://github.com/AkarinVS/vapoursynth-plugin/issues/26#issuecomment-1951230729
-            new = clip.std.BlankClip(length=len(indices))
-            ret = new.std.FrameEval(lambda n: clip[indices[n]], None, clip) # type: ignore
+        # modified from https://github.com/AkarinVS/vapoursynth-plugin/issues/26#issuecomment-1951230729
+        new = clip.std.BlankClip(length=len(indices))
+        ret = new.std.FrameEval(lambda n: clip[indices[n]], None, clip) # type: ignore
     
     return ret
 
