@@ -240,6 +240,7 @@ def compute_stack_effect(
         "trunc": 1,
         "bitnot": 1,
     }
+        
     stack: list[int] = []
     for i, token in enumerate(tokens):
         if token.endswith("!"):
@@ -699,7 +700,7 @@ def infix2postfix(infix_code: str) -> str:
         if len(stmt.rstrip(";")) == 0:
             continue
         # Process assignment statements.
-        if "=" in stmt and not re.search(r"[<>!]=|==", stmt):
+        if re.search(r"(?<![<>!])=(?![=])", stmt):
             var_name, expr = stmt.split("=", 1)
             var_name = var_name.strip()
             if var_name.startswith("__internal_"):

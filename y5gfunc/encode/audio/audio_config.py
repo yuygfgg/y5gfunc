@@ -56,13 +56,15 @@ class AudioConfig:
     
     lossy_threshold: int = 512 # Kbps
     
-    def get_track_config(self, 
-                        is_comment: bool,
-                        is_lossless: bool,
-                        channels: int,
-                        bitrate: Optional[int] = None,
-                        is_special: bool = False
+    def get_track_config(
+        self, 
+        is_comment: bool,
+        is_lossless: bool,
+        channels: int,
+        bitrate: Optional[int] = None,
+        is_special: bool = False
     ) -> TrackConfig:
+
         if is_special:
             return self.main_special
             

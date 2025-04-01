@@ -19,6 +19,7 @@ def _create_minmax_expr(
     coordinates: list[int] = [1, 1, 1, 1, 1, 1, 1, 1],
     boundary: int = 1
 ) -> vs.VideoNode:
+
     if planes is None:
         planes = list(range(clip.format.num_planes))
     if isinstance(planes, int):
@@ -72,6 +73,7 @@ def maximum(
     boundary: int = 1,
     use_std: bool = is_optimized_cpu()
 ) -> vs.VideoNode:
+
     if use_std:
         return core.std.Maximum(clip, planes, threshold, coordinates) # type: ignore
     else:

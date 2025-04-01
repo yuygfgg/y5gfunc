@@ -50,6 +50,7 @@ def scd_koala(
         if n == 0:
             prev_frame = curr_frame
             continue
+        
         prev_array = np.dstack([np.array(prev_frame[p]) for p in range(prev_frame.format.num_planes)]) # type: ignore
         curr_array = np.dstack([np.array(curr_frame[p]) for p in range(curr_frame.format.num_planes)]) # type: ignore
         
@@ -88,7 +89,6 @@ def scd_koala(
             threshold = np.mean(window) - (deviation * np.std(window))
             if filtered[i] < threshold:
                 cut_found[i] = True
-    
     
     scene_cuts = []
     last_cut = 0
