@@ -7,7 +7,7 @@ from .resample import Descale, rgb2opp, opp2rgb
 from .stripe import is_stripe
 from .morpho import convolution, maximum, minimum, inflate, deflate
 from .scenecut import scd_koala
-from .paint import draw_line
+from .paint import draw_line, draw_circle, draw_ellipse
 from .utils import scale_value_full, get_peak_value_full, is_optimized_cpu
 
 __all__ = [
@@ -32,6 +32,8 @@ __all__ = [
     'deflate',
     'scd_koala',
     'draw_line',
+    'draw_circle',
+    'draw_ellipse',
     'scale_value_full',
     'get_peak_value_full',
     'is_optimized_cpu'
