@@ -3,10 +3,7 @@ from vstools import vs
 from ..expr import infix2postfix
 
 
-def draw_line(clip: vs.VideoNode, sx: int, sy: int, ex: int, ey: int, thickness: float, color: float, factor: float = 1.0) -> vs.VideoNode: 
-    assert all(0 <= coord <= clip.height for coord in [sy, ey])
-    assert all(0 <= coord <= clip.width for coord in [sx, ex])
-    assert 0 < factor <= 1
+def draw_line(clip: vs.VideoNode, sx: str, sy: str, ex: str, ey: str, thickness: str, color: str, factor: str = "1.0") -> vs.VideoNode: 
     assert clip.format.num_planes == 1
     
     expr = infix2postfix(f'''
@@ -33,10 +30,7 @@ def draw_line(clip: vs.VideoNode, sx: int, sy: int, ex: int, ey: int, thickness:
     
     return clip.akarin.Expr(expr)
 
-def draw_circle(clip: vs.VideoNode, cx: int, cy: int, radius: float, thickness: float, color: float, factor: float = 1.0) -> vs.VideoNode:
-    assert 0 <= cx <= clip.width
-    assert 0 <= cy <= clip.height
-    assert 0 < factor <= 1
+def draw_circle(clip: vs.VideoNode, cx: str, cy: str, radius: str, thickness: str, color: str, factor: str = "1.0") -> vs.VideoNode:
     assert clip.format.num_planes == 1
 
     expr = infix2postfix(f'''
@@ -57,17 +51,8 @@ def draw_circle(clip: vs.VideoNode, cx: int, cy: int, radius: float, thickness: 
 
     return clip.akarin.Expr(expr)
 
-def draw_ellipse(clip: vs.VideoNode, f1x: int, f1y: int, f2x: int, f2y: int, ellipse_sum: float, thickness: float, color: float, factor: float = 1.0) -> vs.VideoNode:
-    assert 0 <= f1x <= clip.width
-    assert 0 <= f1y <= clip.height
-    assert 0 <= f2x <= clip.width
-    assert 0 <= f2y <= clip.height
-    assert thickness > 0
-    assert 0 < factor <= 1
+def draw_ellipse(clip: vs.VideoNode, f1x: str, f1y: str, f2x: str, f2y: str, ellipse_sum: str, thickness: str, color: str, factor: str = "1.0") -> vs.VideoNode:
     assert clip.format.num_planes == 1
-    
-    foci_distance = ((f2x - f1x) ** 2 + (f2y - f1y) ** 2) ** 0.5
-    assert ellipse_sum > foci_distance
     
     expr = infix2postfix(f'''
             f1x = {f1x}
@@ -95,23 +80,21 @@ def draw_ellipse(clip: vs.VideoNode, f1x: int, f1y: int, f2x: int, f2y: int, ell
 
 def draw_bezier_curve(
     clip: vs.VideoNode,
-    controlPoint0X: int,
-    controlPoint0Y: int,
-    controlPoint1X: int,
-    controlPoint1Y: int,
-    controlPoint2X: int,
-    controlPoint2Y: int,
-    controlPoint3X: int,
-    controlPoint3Y: int,
-    thickness: float,
-    color: float,
+    controlPoint0X: str,
+    controlPoint0Y: str,
+    controlPoint1X: str,
+    controlPoint1Y: str,
+    controlPoint2X: str,
+    controlPoint2Y: str,
+    controlPoint3X: str,
+    controlPoint3Y: str,
+    thickness: str,
+    color: str,
     sample_count: int,
-    factor: float = 1.0
+    factor: str = "1.0"
 ) -> vs.VideoNode:
 
     assert sample_count >= 2
-    assert 0 < factor <= 1
-    assert thickness > 0
     assert clip.format.num_planes == 1
 
     expression_lines = []
