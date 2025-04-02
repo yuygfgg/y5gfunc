@@ -160,10 +160,8 @@ def draw_bezier_curve(
         )
         segment_distance_expressions.append(f"segmentDistance_{segment_index}")
     
-    min_expression = segment_distance_expressions[0]
-    for idx in range(1, len(segment_distance_expressions)):
-        min_expression = f"min({min_expression}, {segment_distance_expressions[idx]})"
-    expression_lines.append(f"finalMinDistance = {min_expression}")
+    distance_arguments = ", ".join(segment_distance_expressions)
+    expression_lines.append(f"finalMinDistance = nth_1({distance_arguments})")
     
     expression_lines.append("doDraw = finalMinDistance <= halfThickness")
     expression_lines.append("RESULT = doDraw ? ((1 - factor) * src0 + factor * color) : src0")
