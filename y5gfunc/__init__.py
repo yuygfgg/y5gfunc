@@ -6,7 +6,7 @@ from .expr import postfix2infix, infix2postfix, optimize_akarin_expr, ex_planes
 from .filter import (
     SynDeband, Fast_BM3DWrapper, TIVTC_VFR, DBMask, get_oped_mask,
     cambi_mask, kirsch, retinex_edgemask, comb_mask, rescale, Descale, rgb2opp, 
-    opp2rgb, is_stripe, convolution, maximum, minimum, inflate, deflate, scd_koala, 
+    opp2rgb, is_stripe, convolution, maximum, minimum, inflate, deflate, scd_koala, draw_line,
     scale_value_full, get_peak_value_full, is_optimized_cpu
 )
 from .preview import reset_output_index, output, screen_shot
@@ -45,6 +45,7 @@ __all__ = [
     'Descale',
     'rgb2opp',
     'opp2rgb',
+    'draw_line',
     'scale_value_full',
     'get_peak_value_full',
     'is_optimized_cpu',
