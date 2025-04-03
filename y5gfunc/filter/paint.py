@@ -17,7 +17,7 @@ def draw_line(clip: vs.VideoNode, sx: str, sy: str, ex: str, ey: str, thickness:
             dx = ex - sx
             dy = ey - sy
             L2 = (ex - sx) * dx + dy * dy
-            half_thickness = thickness / 2.0
+            half_thickness = thickness / 2
             half_thickness_sq = half_thickness * half_thickness
             tt = ((X - sx) * dx + (Y - sy) * dy) / L2
             tt = clamp(tt, 0, 1)
@@ -40,13 +40,13 @@ def draw_circle(clip: vs.VideoNode, cx: str, cy: str, radius: str, thickness: st
             thickness = {thickness}
             color = {color}
             factor = {factor}
-            half_thickness = thickness / 2.0
+            half_thickness = thickness / 2
             dx = X - cx
             dy = Y - cy
             distance_sq = dx * dx + dy * dy
             radius_minus_half = radius - half_thickness
             lower_sq = radius_minus_half * radius_minus_half
-            lower_sq = lower_sq < 0.0 ? 0.0 : lower_sq
+            lower_sq = max(lower_sq, 0)
             upper_sq = (radius + half_thickness) * (radius + half_thickness)
             do = distance_sq >= lower_sq && distance_sq <= upper_sq
             RESULT = do ? ((1 - factor) * src0 + factor * color) : src0
@@ -66,13 +66,13 @@ def draw_ellipse(clip: vs.VideoNode, f1x: str, f1y: str, f2x: str, f2y: str, ell
             thickness = {thickness}
             color = {color}
             factor = {factor}
-            cx = (f1x + f2x) / 2.0
-            cy = (f1y + f2y) / 2.0
-            aa = ellipse_sum / 2.0
+            cx = (f1x + f2x) / 2
+            cy = (f1y + f2y) / 2
+            aa = ellipse_sum / 2
             a2 = aa * aa
             dx = f2x - f1x
             dy = f2y - f1y
-            c2 = (dx * dx + dy * dy) / 4.0
+            c2 = (dx * dx + dy * dy) / 4
             b2 = a2 - c2
             value = ((X - cx) * (X - cx)) / a2 + ((Y - cy) * (Y - cy)) / b2
             norm_thresh = thickness / ellipse_sum
@@ -94,7 +94,7 @@ def draw_bezier_curve(
     controlPoint3Y: str,
     thickness: str,
     color: str,
-    sample_count: int,
+    sample_count: int = 100,
     factor: str = "1.0"
 ) -> vs.VideoNode:
 
