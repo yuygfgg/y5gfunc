@@ -98,7 +98,7 @@ def draw_bezier_curve(
     assert clip.format.num_planes == 1
 
     expression_lines = []
-    
+
     expression_lines.append(f"controlPoint0X = {controlPoint0X}")
     expression_lines.append(f"controlPoint0Y = {controlPoint0Y}")
     expression_lines.append(f"controlPoint1X = {controlPoint1X}")
@@ -111,59 +111,62 @@ def draw_bezier_curve(
     expression_lines.append(f"color = {color}")
     expression_lines.append(f"factor = {factor}")
     expression_lines.append("halfThickness = thickness / 2.0")
+    expression_lines.append("halfThicknessSquared = halfThickness * halfThickness")
     
     total_samples = sample_count
     for sample_index in range(total_samples):
-        parameter_t = sample_index / (total_samples - 1)
-        expression_lines.append(f"parameterT_{sample_index} = {parameter_t}")
+        t_value = sample_index / (total_samples - 1)
+        expression_lines.append(f"parameterT_{sample_index} = {t_value}")
         expression_lines.append(f"oneMinusT_{sample_index} = 1 - parameterT_{sample_index}")
+        expression_lines.append(f"oneMinusT_squared_{sample_index} = oneMinusT_{sample_index} * oneMinusT_{sample_index}")
+        expression_lines.append(f"oneMinusT_cubed_{sample_index} = oneMinusT_squared_{sample_index} * oneMinusT_{sample_index}")
+        expression_lines.append(f"parameterT_squared_{sample_index} = parameterT_{sample_index} * parameterT_{sample_index}")
+        expression_lines.append(f"parameterT_cubed_{sample_index} = parameterT_squared_{sample_index} * parameterT_{sample_index}")
         expression_lines.append(
-            f"bezierX_{sample_index} = (oneMinusT_{sample_index} ** 3) * controlPoint0X + "
-            f"3 * (oneMinusT_{sample_index} ** 2) * parameterT_{sample_index} * controlPoint1X + "
-            f"3 * oneMinusT_{sample_index} * (parameterT_{sample_index} ** 2) * controlPoint2X + "
-            f"(parameterT_{sample_index} ** 3) * controlPoint3X"
+            f"bezierX_{sample_index} = oneMinusT_cubed_{sample_index} * controlPoint0X + "
+            f"3 * oneMinusT_squared_{sample_index} * parameterT_{sample_index} * controlPoint1X + "
+            f"3 * oneMinusT_{sample_index} * parameterT_squared_{sample_index} * controlPoint2X + "
+            f"parameterT_cubed_{sample_index} * controlPoint3X"
         )
         expression_lines.append(
-            f"bezierY_{sample_index} = (oneMinusT_{sample_index} ** 3) * controlPoint0Y + "
-            f"3 * (oneMinusT_{sample_index} ** 2) * parameterT_{sample_index} * controlPoint1Y + "
-            f"3 * oneMinusT_{sample_index} * (parameterT_{sample_index} ** 2) * controlPoint2Y + "
-            f"(parameterT_{sample_index} ** 3) * controlPoint3Y"
+            f"bezierY_{sample_index} = oneMinusT_cubed_{sample_index} * controlPoint0Y + "
+            f"3 * oneMinusT_squared_{sample_index} * parameterT_{sample_index} * controlPoint1Y + "
+            f"3 * oneMinusT_{sample_index} * parameterT_squared_{sample_index} * controlPoint2Y + "
+            f"parameterT_cubed_{sample_index} * controlPoint3Y"
         )
     
-    segment_distance_expressions = []
-    for segment_index in range(total_samples - 1):
+    segment_distance_squared_expressions = []
+    for seg_index in range(total_samples - 1):
         expression_lines.append(
-            f"deltaX_{segment_index} = bezierX_{segment_index+1} - bezierX_{segment_index}"
+            f"deltaX_{seg_index} = bezierX_{seg_index+1} - bezierX_{seg_index}"
         )
         expression_lines.append(
-            f"deltaY_{segment_index} = bezierY_{segment_index+1} - bezierY_{segment_index}"
+            f"deltaY_{seg_index} = bezierY_{seg_index+1} - bezierY_{seg_index}"
         )
         expression_lines.append(
-            f"segmentLengthSquared_{segment_index} = (deltaX_{segment_index} ** 2) + (deltaY_{segment_index} ** 2)"
+            f"segmentLengthSquared_{seg_index} = deltaX_{seg_index} * deltaX_{seg_index} + deltaY_{seg_index} * deltaY_{seg_index}"
         )
         expression_lines.append(
-            f"tSegment_{segment_index} = ((X - bezierX_{segment_index}) * deltaX_{segment_index} + "
-            f"(Y - bezierY_{segment_index}) * deltaY_{segment_index}) / segmentLengthSquared_{segment_index}"
+            f"tSegment_{seg_index} = ((X - bezierX_{seg_index}) * deltaX_{seg_index} + (Y - bezierY_{seg_index}) * deltaY_{seg_index}) / segmentLengthSquared_{seg_index}"
         )
         expression_lines.append(
-            f"tClamped_{segment_index} = clamp(tSegment_{segment_index}, 0, 1)"
+            f"tClamped_{seg_index} = clamp(tSegment_{seg_index}, 0, 1)"
         )
         expression_lines.append(
-            f"projectionX_{segment_index} = bezierX_{segment_index} + tClamped_{segment_index} * deltaX_{segment_index}"
+            f"projectionX_{seg_index} = bezierX_{seg_index} + tClamped_{seg_index} * deltaX_{seg_index}"
         )
         expression_lines.append(
-            f"projectionY_{segment_index} = bezierY_{segment_index} + tClamped_{segment_index} * deltaY_{segment_index}"
+            f"projectionY_{seg_index} = bezierY_{seg_index} + tClamped_{seg_index} * deltaY_{seg_index}"
         )
         expression_lines.append(
-            f"segmentDistance_{segment_index} = sqrt((X - projectionX_{segment_index}) ** 2 + "
-            f"(Y - projectionY_{segment_index}) ** 2)"
+            f"distanceSquared_{seg_index} = (X - projectionX_{seg_index}) * (X - projectionX_{seg_index}) + (Y - projectionY_{seg_index}) * (Y - projectionY_{seg_index})"
         )
-        segment_distance_expressions.append(f"segmentDistance_{segment_index}")
+        segment_distance_squared_expressions.append(f"distanceSquared_{seg_index}")
     
-    distance_arguments = ", ".join(segment_distance_expressions)
-    expression_lines.append(f"finalMinDistance = nth_1({distance_arguments})")
+    distance_arguments = ", ".join(segment_distance_squared_expressions)
+    expression_lines.append(f"finalMinDistanceSquared = nth_1({distance_arguments})")
     
-    expression_lines.append("doDraw = finalMinDistance <= halfThickness")
+    expression_lines.append("doDraw = finalMinDistanceSquared <= halfThicknessSquared")
     expression_lines.append("RESULT = doDraw ? ((1 - factor) * src0 + factor * color) : src0")
     
     full_expression = "\n".join(expression_lines)
