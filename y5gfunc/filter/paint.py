@@ -180,16 +180,14 @@ def draw_bezier_curve(
 
 def draw_mandelbrot_zoomer(
     clip: vs.VideoNode,
-    centerX: float,
-    centerY: float,
-    initialZoom: float = 0.005,
-    zoomSpeed: float = 0.002,
+    centerX: str,
+    centerY: str,
+    initialZoom: str = "0.005",
+    zoomSpeed: str = "0.002",
     maxIter: int = 50,
     escapeRadius: float = 2.0
 ) -> vs.VideoNode:
 
-    assert initialZoom > 0
-    assert zoomSpeed >= 0
     assert maxIter >= 1
     assert escapeRadius > 0
     assert clip.format.id == vs.GRAYS
