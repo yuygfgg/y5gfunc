@@ -994,6 +994,8 @@ def convert_expr(
             builtin_unary = [
                 "sin",
                 "cos",
+                "log",
+                "exp",
                 "round",
                 "floor",
                 "abs",
@@ -1380,6 +1382,8 @@ def is_builtin_function(func_name: str) -> bool:
     builtin_unary = [
         "sin",
         "cos",
+        "log",
+        "exp",
         "round",
         "floor",
         "abs",

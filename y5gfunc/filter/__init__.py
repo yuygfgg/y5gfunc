@@ -7,7 +7,7 @@ from .resample import Descale, rgb2opp, opp2rgb
 from .stripe import is_stripe
 from .morpho import convolution, maximum, minimum, inflate, deflate
 from .scenecut import scd_koala
-from .paint import draw_line, draw_circle, draw_ellipse, draw_bezier_curve
+from .paint import draw_line, draw_circle, draw_ellipse, draw_bezier_curve, draw_mandelbrot_zoomer
 from .utils import scale_value_full, get_peak_value_full, is_optimized_cpu
 
 __all__ = [
@@ -35,6 +35,7 @@ __all__ = [
     'draw_circle',
     'draw_ellipse',
     'draw_bezier_curve',
+    'draw_mandelbrot_zoomer',
     'scale_value_full',
     'get_peak_value_full',
     'is_optimized_cpu'

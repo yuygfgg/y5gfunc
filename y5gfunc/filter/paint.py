@@ -177,3 +177,53 @@ def draw_bezier_curve(
     
     converted_expression = infix2postfix(full_expression)
     return clip.akarin.Expr(converted_expression)
+
+def draw_mandelbrot_zoomer(
+    clip: vs.VideoNode,
+    centerX: float,
+    centerY: float,
+    initialZoom: float = 0.005,
+    zoomSpeed: float = 0.002,
+    maxIter: int = 50,
+    escapeRadius: float = 2.0
+) -> vs.VideoNode:
+
+    assert initialZoom > 0
+    assert zoomSpeed >= 0
+    assert maxIter >= 1
+    assert escapeRadius > 0
+    assert clip.format.id == vs.GRAYS
+    
+    expr_lines = []
+    expr_lines.append(f"centerX = {centerX}")
+    expr_lines.append(f"centerY = {centerY}")
+    expr_lines.append(f"initialZoom = {initialZoom}")
+    expr_lines.append(f"zoomSpeed = {zoomSpeed}")
+    expr_lines.append(f"maxIter = {maxIter}")
+    expr_lines.append("scale = initialZoom * exp(-zoomSpeed * N)")
+    expr_lines.append("c_re = (X - centerX) * scale")
+    expr_lines.append("c_im = (Y - centerY) * scale")
+    
+    expr_lines.append("z_re_0 = 0")
+    expr_lines.append("z_im_0 = 0")
+
+    for i in range(1, maxIter + 1):
+        prev = i - 1
+        expr_lines.append(f"z_re_{i} = (z_re_{prev} * z_re_{prev} - z_im_{prev} * z_im_{prev} + c_re)")
+        expr_lines.append(f"z_im_{i} = (2 * z_re_{prev} * z_im_{prev} + c_im)")
+        expr_lines.append(f"r2_{i} = (z_re_{i} * z_re_{i} + z_im_{i} * z_im_{i})")
+    
+    escapeSq = escapeRadius * escapeRadius
+    expr_lines.append(f"escapeSq = {escapeSq}")
+
+    iter_expr = str(maxIter)
+    for i in range(maxIter, 0, -1):
+        iter_expr = f"(r2_{i} > escapeSq ? {i} : {iter_expr})"
+    expr_lines.append("iterResult = " + iter_expr)
+    
+    expr_lines.append("RESULT = iterResult / maxIter")
+    
+    full_expr = "\n".join(expr_lines)
+    
+    converted_expr = infix2postfix(full_expr)
+    return clip.akarin.Expr(converted_expr)
