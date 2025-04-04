@@ -592,7 +592,7 @@ def infix2postfix(infix_code: str) -> str:
             j = i + 1
             # If the next non-global line is a function definition, apply these globals for that function.
             if j < len(lines):
-                function_def_pattern = r"function\s+(\w+)\s*\(([^)]*)\)\s*\{"
+                function_def_pattern = r"^\s*function\s+(\w+)\s*\(([^)]*)\)\s*\{"
                 function_match = re.match(function_def_pattern, lines[j])
                 if function_match:
                     func_name = function_match.group(1)
