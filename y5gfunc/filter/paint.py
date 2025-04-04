@@ -1,5 +1,3 @@
-import math
-from vstools import core
 from vstools import vs
 from ..expr import infix2postfix
 import sys
