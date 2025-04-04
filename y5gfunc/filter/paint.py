@@ -16,9 +16,9 @@ def draw_line(clip: vs.VideoNode, sx: str, sy: str, ex: str, ey: str, thickness:
             factor = {factor}
             dx = ex - sx
             dy = ey - sy
-            L2 = (ex - sx) * dx + dy * dy
+            L2 = (ex - sx) * dx + dy ** 2
             half_thickness = thickness / 2
-            half_thickness_sq = half_thickness * half_thickness
+            half_thickness_sq = half_thickness ** 2
             tt = ((X - sx) * dx + (Y - sy) * dy) / L2
             tt = clamp(tt, 0, 1)
             proj_x = sx + tt * dx
@@ -43,11 +43,11 @@ def draw_circle(clip: vs.VideoNode, cx: str, cy: str, radius: str, thickness: st
             half_thickness = thickness / 2
             dx = X - cx
             dy = Y - cy
-            distance_sq = dx * dx + dy * dy
+            distance_sq = dx ** 2 + dy ** 2
             radius_minus_half = radius - half_thickness
-            lower_sq = radius_minus_half * radius_minus_half
+            lower_sq = radius_minus_half ** 2
             lower_sq = max(lower_sq, 0)
-            upper_sq = (radius + half_thickness) * (radius + half_thickness)
+            upper_sq = (radius + half_thickness) ** 2
             do = distance_sq >= lower_sq && distance_sq <= upper_sq
             RESULT = do ? ((1 - factor) * src0 + factor * color) : src0
             ''')
@@ -72,9 +72,9 @@ def draw_ellipse(clip: vs.VideoNode, f1x: str, f1y: str, f2x: str, f2y: str, ell
             a2 = aa * aa
             dx = f2x - f1x
             dy = f2y - f1y
-            c2 = (dx * dx + dy * dy) / 4
+            c2 = (dx ** 2 + dy ** 2) / 4
             b2 = a2 - c2
-            value = ((X - cx) * (X - cx)) / a2 + ((Y - cy) * (Y - cy)) / b2
+            value = ((X - cx) ** 2) / a2 + ((Y - cy) ** 2) / b2
             norm_thresh = thickness / ellipse_sum
             do = abs(value - 1) <= norm_thresh
             RESULT = do ? ((1 - factor) * src0 + factor * color) : src0
@@ -115,15 +115,15 @@ def draw_bezier_curve(
     expr_lines.append(f"color = {color}")
     expr_lines.append(f"factor = {factor}")
     expr_lines.append("halfThickness = thickness / 2")
-    expr_lines.append("halfThicknessSquared = halfThickness * halfThickness")
+    expr_lines.append("halfThicknessSquared = halfThickness ** 2")
     
     total_samples = sample_count
     for sample_index in range(total_samples):
         t_value = sample_index / (total_samples - 1)
         expr_lines.append(f"parameterT_{sample_index} = {t_value}")
         expr_lines.append(f"oneMinusT_{sample_index} = 1 - parameterT_{sample_index}")
-        expr_lines.append(f"oneMinusT_squared_{sample_index} = oneMinusT_{sample_index} * oneMinusT_{sample_index}")
-        expr_lines.append(f"oneMinusT_cubed_{sample_index} = oneMinusT_squared_{sample_index} * oneMinusT_{sample_index}")
+        expr_lines.append(f"oneMinusT_squared_{sample_index} = oneMinusT_{sample_index} ** 2")
+        expr_lines.append(f"oneMinusT_cubed_{sample_index} = oneMinusT_{sample_index} ** 3")
         expr_lines.append(f"parameterT_squared_{sample_index} = parameterT_{sample_index} * parameterT_{sample_index}")
         expr_lines.append(f"parameterT_cubed_{sample_index} = parameterT_squared_{sample_index} * parameterT_{sample_index}")
         expr_lines.append(
@@ -148,7 +148,7 @@ def draw_bezier_curve(
         expr_lines.append(f"tClamped_{seg_index} = clamp(tSegment_{seg_index}, 0, 1)")
         expr_lines.append(f"projectionX_{seg_index} = bezierX_{seg_index} + tClamped_{seg_index} * deltaX_{seg_index}")
         expr_lines.append(f"projectionY_{seg_index} = bezierY_{seg_index} + tClamped_{seg_index} * deltaY_{seg_index}" )
-        expr_lines.append(f"distanceSquared_{seg_index} = (X - projectionX_{seg_index}) * (X - projectionX_{seg_index}) + (Y - projectionY_{seg_index}) * (Y - projectionY_{seg_index})")
+        expr_lines.append(f"distanceSquared_{seg_index} = (X - projectionX_{seg_index}) ** 2 + (Y - projectionY_{seg_index}) ** 2)")
         segment_distance_squared_expressions.append(f"distanceSquared_{seg_index}")
     
     distance_arguments = ", ".join(segment_distance_squared_expressions)
@@ -392,7 +392,7 @@ def draw_3d_cube(
             finalMinDistanceSquared = nth_1(d0, d1, d2, d3, d4, d5, d6, d7, d8, d9, d10, d11)
             
             halfThickness = thickness / 2
-            halfThicknessSq = halfThickness * halfThickness
+            halfThicknessSq = halfThickness ** 2
             doDraw = finalMinDistanceSquared <= halfThicknessSq
             
             RESULT = doDraw ? ((1 - factor) * src0 + factor * color) : src0
