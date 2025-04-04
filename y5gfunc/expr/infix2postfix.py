@@ -239,7 +239,8 @@ def compute_stack_effect(
 def infix2postfix(infix_code: str) -> str:
     R"""
     Convert infix expressions to postfix expressions.
-
+    Refer to ..filter/paint.py for examples.
+    
     ## General Format
 
     - **Input Structure:**
@@ -348,7 +349,7 @@ def infix2postfix(infix_code: str) -> str:
 
     - **Binary Functions:**
         `min(a, b)`, `max(a, b)`, `get_prop(clip, prop)`, `get_prop_safe(clip, prop)`
-        For the `get_prop*` functions, the first argument must be a valid source clip.
+        For the `get_prop*` functions, the first argument must be a valid source clip, and the second argument must be a string. (e.g. To get frame prop 'abc' from src0, call get_prop(_safe)(src0, str(abc)))
         `get_prop_safe` ensures returns are numbers, while `get_prop` returns a `nan` if fetching a non-exist prop.
 
     - **Ternary Functions:**
