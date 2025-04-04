@@ -119,70 +119,6 @@ def extract_function_info(
         return match.group(1), match.group(2)
     return None, None
 
-
-def expand_loops(code: str, base_line: int = 1) -> str:
-    """
-    Expand the loop syntax sugar.
-    For example, the following:
-
-        loop(2, i) { ... }
-
-    is expanded into:
-
-        <unrolled code for i=0>;<unrolled code for i=1>
-
-    Newlines in the original loop block are preserved.
-    Only replaces variables in <var> format, not standalone variables.
-    """
-    pattern = re.compile(r"loop\s*\(\s*(\d+)\s*,\s*([a-zA-Z_]\w*)\s*\)\s*\{")
-    while True:
-        m = pattern.search(code)
-        if not m:
-            break
-        n = int(m.group(1))
-        var = m.group(2)
-        loop_start_index = m.start()
-        # Calculate the line number by counting newlines before this match
-        line_num = base_line + code[:loop_start_index].count("\n")
-        if n < 1:
-            raise SyntaxError(
-                f"Loop count {n} is not validated! Expected integer >= 1, got {n}!",
-                line_num,
-            )
-        brace_start = m.end() - 1
-        count = 0
-        end_index = None
-        for i in range(brace_start, len(code)):
-            if code[i] == "{":
-                count += 1
-            elif code[i] == "}":
-                count -= 1
-                if count == 0:
-                    end_index = i
-                    break
-        if end_index is None:
-            raise SyntaxError("Could not find matching '}'.", line_num)
-        # The block inside the loop braces
-        block = code[brace_start + 1 : end_index]
-        block_base_line = base_line + code[: brace_start + 1].count("\n")
-        expanded_block = expand_loops(block, block_base_line)
-        unrolled: list[str] = []
-        for k in range(n):
-            # Replace only variables in <var> format, not standalone variables
-            iter_block = re.sub(r"<" + re.escape(var) + r">", str(k), expanded_block)
-            unrolled.append(iter_block)
-        # Join unrolled fragments using semicolons.
-        unrolled_code = "".join(map(lambda s: s.strip() + ";", unrolled)).strip(";")
-        # Preserve the original newline count
-        original_block = code[m.start() : end_index + 1]
-        newline_placeholder_half = "\n" * (original_block.count("\n") // 2)
-        replacement = (
-            newline_placeholder_half + unrolled_code + newline_placeholder_half
-        )
-        code = code[: m.start()] + replacement + code[end_index + 1 :]
-    return code
-
-
 def find_duplicate_functions(code: str):
     """
     Check if any duplicate function is defined.
@@ -307,7 +243,7 @@ def infix2postfix(infix_code: str) -> str:
     ## General Format
 
     - **Input Structure:**
-    The source code is written as plain text with one statement per line. User input must not contain semicolons (they are reserved for internal use, for example when unrolling loops).
+    The source code is written as plain text with one statement per line. User input must not contain semicolons.
 
     - **Whitespace:**
     Whitespace (spaces and newlines) is used to separate tokens and statements. Extra spaces are generally ignored.
@@ -441,24 +377,6 @@ def infix2postfix(infix_code: str) -> str:
 
     ---
 
-    ## Loop Constructs (Syntax Sugar)
-
-    - **Loop Declaration:**
-    The language provides a loop construct that is syntactic sugar for unrolling repeated code. The syntax is:
-    ```
-    loop(n, i) {
-        // loop body
-        ... (statements possibly containing <i>) ...
-    }
-    ```
-    - `n` is a literal integer (must be at least 1) indicating the number of iterations.
-    - `i` is an identifier used for the loop variable.
-
-    - **Loop Variable Substitution:**
-    Within the loop body, any occurrence of `<i>` (i.e. the loop variable enclosed between angle brackets) is replaced by the iteration index (starting at 0 up to n‑1). The unrolled code is then concatenated—internally separated by semicolons—to form equivalent sequential code.
-
-    ---
-
     ## Global Declarations and Assignments
 
     ### Global Declarations
@@ -539,9 +457,6 @@ def infix2postfix(infix_code: str) -> str:
     - **Function Return:**
     Each function definition must have exactly one return statement, and that return must be the last statement in the function.
 
-    - **Loop Validation:**
-    The loop count in a `loop(n, i)` construct must be an integer greater than or equal to 1.
-
     - **Argument Counts:**
     Function calls (both built-in and custom) check that the exact number of required arguments is provided; otherwise, a syntax error is raised.
     """
@@ -555,9 +470,6 @@ def infix2postfix(infix_code: str) -> str:
     # Check for duplicate function definitions.
     find_duplicate_functions(infix_code)
 
-    # Expand loops; the top-level code begins at line 1.
-    expanded_code = expand_loops(infix_code, base_line=1)
-
     # Process global declarations.
     # global declaration syntax: <global<var1><var2>...>
     # Also record for functions if global declaration appears immediately before function definition.
@@ -565,7 +477,7 @@ def infix2postfix(infix_code: str) -> str:
         str, int
     ] = {}  # mapping: global variable -> declaration line number
     global_vars_for_functions: dict[str, set[str]] = {}
-    lines = expanded_code.split("\n")
+    lines = infix_code.split("\n")
     modified_lines: list[str] = []
 
     # Build a mapping from line number to function name for function declarations.
@@ -695,9 +607,6 @@ def infix2postfix(infix_code: str) -> str:
     for stmt, line_num in global_statements:
         # Skip comment lines.
         if stmt.startswith("#"):
-            continue
-        # Skip empty line
-        if len(stmt.rstrip(";")) == 0:
             continue
         # Process assignment statements.
         if re.search(r"(?<![<>!])=(?![=])", stmt):
@@ -1098,14 +1007,6 @@ def convert_expr(
                 ):  # Return does nothing, but it looks better to have one.
                     return_count += 1
                     ret_expr = body_line[len("return") :].strip()
-                    if (
-                        ";" in ret_expr
-                    ):  # I don't think it will happen, but still check it.
-                        raise SyntaxError(
-                            "Return statement must not contain ';'.",
-                            effective_line_num,
-                            func_name,
-                        )
                     function_tokens.append(
                         convert_expr(
                             ret_expr,
@@ -1118,72 +1019,28 @@ def convert_expr(
                     )
                 # Process assignment statements with possible semicolons.
                 elif "=" in body_line and not re.search(r"[<>!]=|==", body_line):
-                    if ";" in body_line:
-                        tokens_list: list[str] = []
-                        for sub in body_line.split(";"):
-                            sub = sub.strip()
-                            if not sub:
-                                continue
-                            if "=" in sub and not re.search(r"[<>!]=|==", sub):
-                                var_name, expr_line = sub.split("=", 1)
-                                var_name = var_name.strip()
-                                if is_constant(var_name):
-                                    raise SyntaxError(
-                                        f"Cannot assign to constant '{var_name}'.",
-                                        effective_line_num,
-                                        func_name,
-                                    )
-                                if var_name not in new_local_vars and re.search(
-                                    r"\b" + re.escape(var_name) + r"\b", expr_line
-                                ):
-                                    _, orig_var = extract_function_info(
-                                        var_name, func_name
-                                    )
-                                    raise SyntaxError(
-                                        f"Variable '{orig_var}' used before definition",
-                                        effective_line_num,
-                                        func_name,
-                                    )
-                                if var_name not in new_local_vars:
-                                    new_local_vars.add(var_name)
-                                tokens_list.append(
-                                    f"{convert_expr(expr_line, variables, functions, effective_line_num, func_name, new_local_vars)} {var_name}!"
-                                )
-                            else:
-                                tokens_list.append(
-                                    convert_expr(
-                                        sub,
-                                        variables,
-                                        functions,
-                                        effective_line_num,
-                                        func_name,
-                                        new_local_vars,
-                                    )
-                                )
-                        function_tokens.append(" ".join(tokens_list))
-                    else:
-                        var_name, expr_line = body_line.split("=", 1)
-                        var_name = var_name.strip()
-                        if is_constant(var_name):
-                            raise SyntaxError(
-                                f"Cannot assign to constant '{var_name}'.",
-                                effective_line_num,
-                                func_name,
-                            )
-                        if var_name not in new_local_vars and re.search(
-                            r"\b" + re.escape(var_name) + r"\b", expr_line
-                        ):
-                            _, orig_var = extract_function_info(var_name, func_name)
-                            raise SyntaxError(
-                                f"Variable '{orig_var}' used before definition",
-                                effective_line_num,
-                                func_name,
-                            )
-                        if var_name not in new_local_vars:
-                            new_local_vars.add(var_name)
-                        function_tokens.append(
-                            f"{convert_expr(expr_line, variables, functions, effective_line_num, func_name, new_local_vars)} {var_name}!"
+                    var_name, expr_line = body_line.split("=", 1)
+                    var_name = var_name.strip()
+                    if is_constant(var_name):
+                        raise SyntaxError(
+                            f"Cannot assign to constant '{var_name}'.",
+                            effective_line_num,
+                            func_name,
                         )
+                    if var_name not in new_local_vars and re.search(
+                        r"\b" + re.escape(var_name) + r"\b", expr_line
+                    ):
+                        _, orig_var = extract_function_info(var_name, func_name)
+                        raise SyntaxError(
+                            f"Variable '{orig_var}' used before definition",
+                            effective_line_num,
+                            func_name,
+                        )
+                    if var_name not in new_local_vars:
+                        new_local_vars.add(var_name)
+                    function_tokens.append(
+                        f"{convert_expr(expr_line, variables, functions, effective_line_num, func_name, new_local_vars)} {var_name}!"
+                    )
                 else:
                     function_tokens.append(
                         convert_expr(
