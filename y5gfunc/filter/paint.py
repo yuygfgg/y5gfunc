@@ -511,7 +511,8 @@ def render_triangle_scene(
         expr_lines.append(f"E2_{f_idx} = (X - projX_{c_idx}) * (projY_{a_idx} - projY_{c_idx}) - (Y - projY_{c_idx}) * (projX_{a_idx} - projX_{c_idx})")
         expr_lines.append(f"inside_pos_{f_idx} = E0_{f_idx} >= 0 && E1_{f_idx} >= 0 && E2_{f_idx} >= 0")
         expr_lines.append(f"inside_neg_{f_idx} = E0_{f_idx} <= 0 && E1_{f_idx} <= 0 && E2_{f_idx} <= 0")
-        expr_lines.append(f"inside_{f_idx} = inside_pos_{f_idx} || inside_neg_{f_idx}")
+        expr_lines.append(f"valid_{f_idx} = (cam_z_{a_idx} < huge) && (cam_z_{b_idx} < huge) && (cam_z_{c_idx} < huge)")
+        expr_lines.append(f"inside_{f_idx} = (inside_pos_{f_idx} || inside_neg_{f_idx}) && valid_{f_idx}")
 
         expr_lines.append(f"area_{f_idx} = (projX_{b_idx} - projX_{a_idx}) * (projY_{c_idx} - projY_{a_idx}) - (projX_{c_idx} - projX_{a_idx}) * (projY_{b_idx} - projY_{a_idx})")
         expr_lines.append(f"alpha_{f_idx} = ((projX_{b_idx} - X) * (projY_{c_idx} - Y) - (projX_{c_idx} - X) * (projY_{b_idx} - Y)) / area_{f_idx}")
