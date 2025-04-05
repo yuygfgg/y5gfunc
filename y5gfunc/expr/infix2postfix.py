@@ -1046,7 +1046,7 @@ def convert_expr(
                         )
                     )
                 # Process assignment statements.
-                elif " = " in body_line and not assign_pattern.match(body_line):
+                elif " = " in body_line and not assignment_pattern.search(body_line):
                     var_name, expr_line = body_line.split("=", 1)
                     var_name = var_name.strip()
                     if is_constant(var_name):
