@@ -2,6 +2,16 @@ import re
 from typing import Optional, Union, Any
 import math
 
+token_pattern = re.compile(r"(\w+)\[\s*(-?\d+)\s*,\s*(-?\d+)\s*\](?::(?:c|m))?")
+split_pattern = re.compile(r"\s+")
+number_patterns = [re.compile(pattern) for pattern in [
+    r"^0x[0-9A-Fa-f]+(\.[0-9A-Fa-f]+(p[+\-]?\d+)?)?$",  # Hexadecimal
+    r"^0[0-7]+$",  # Octal
+    r"^[+\-]?(\d+(\.\d+)?([eE][+\-]?\d+)?)$",  # Decimal and scientific notation
+]]
+hex_pattern = re.compile(r"^0x")
+hex_parts_pattern = re.compile(r"^(0x[0-9A-Fa-f]+)(?:\.([0-9A-Fa-f]+))?(?:p([+\-]?\d+))?$")
+octal_pattern = re.compile(r"^0[0-7]")
 
 def optimize_akarin_expr(expr: str) -> str:
     """Optimize akarin.Expr expressions:
@@ -31,36 +41,27 @@ def tokenize_expr(expr: str) -> list[str]:
     """Convert expression string to a list of tokens"""
     expr = expr.strip()
     # Special handling for pixel access syntax to prevent splitting
-    expr = re.sub(
-        r"(\w+)\[\s*(-?\d+)\s*,\s*(-?\d+)\s*\](?::(?:c|m))?", r"\1[\2,\3]", expr
-    )
-    return re.split(r"\s+", expr)
+    expr = token_pattern.sub(r"\1[\2,\3]", expr)
+    return split_pattern.split(expr)
 
 
 def is_numeric(token: str) -> bool:
     """Check if a token is a numeric constant"""
     # Support hexadecimal, octal, and decimal numbers
-    patterns = [
-        r"^0x[0-9A-Fa-f]+(\.[0-9A-Fa-f]+(p[+\-]?\d+)?)?$",  # Hexadecimal
-        r"^0[0-7]+$",  # Octal
-        r"^[+\-]?(\d+(\.\d+)?([eE][+\-]?\d+)?)$",  # Decimal and scientific notation
-    ]
 
-    for pattern in patterns:
-        if re.match(pattern, token):
+
+    for pattern in number_patterns:
+        if pattern.match(token):
             return True
     return False
 
 
 def parse_numeric(token: str) -> Union[int, float]:
     """Parse a numeric token to its actual value"""
-    if re.match(r"^0x", token):  # Hexadecimal
+    if hex_pattern.match(token):  # Hexadecimal
         # Handle hexadecimal with fraction and exponent
         if "." in token or "p" in token.lower():
-            parts = re.match(
-                r"^(0x[0-9A-Fa-f]+)(?:\.([0-9A-Fa-f]+))?(?:p([+\-]?\d+))?$",
-                token.lower(),
-            )
+            parts = hex_parts_pattern.match(token.lower())
             if parts:
                 integer_part = int(parts.group(1), 16)
                 fractional_part = 0
@@ -73,7 +74,7 @@ def parse_numeric(token: str) -> Union[int, float]:
                     exponent = int(parts.group(3))
                 return (integer_part + fractional_part) * (2**exponent)
         return int(token, 16)
-    elif re.match(r"^0[0-7]", token):  # Octal
+    elif octal_pattern.match(token):  # Octal
         return int(token, 8)
     else:  # Decimal
         if "." in token or "e" in token.lower():

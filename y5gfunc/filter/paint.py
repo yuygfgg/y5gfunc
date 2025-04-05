@@ -1,3 +1,4 @@
+import trimesh
 from vstools import vs
 from ..expr import infix2postfix
 import sys
@@ -643,3 +644,74 @@ def render_triangle_scene(
     converted_expr = infix2postfix(full_expr)
 
     return clip.akarin.Expr(converted_expr)
+
+def load_mesh(
+    file_path: str, 
+    default_color: str = "1",
+    axis_transform: str = "+xz-y"
+) -> tuple[list[dict], list[dict]]:
+    mesh = trimesh.load_mesh(file_path, force='mesh', process=True)
+        
+    if axis_transform == "+xz-y":
+        mesh.vertices[:, [1,2]] = mesh.vertices[:, [2,1]]
+        mesh.vertices[:, 2] *= -1
+    elif axis_transform == "xyz":
+        pass
+        
+    points = [
+            {
+            "x": f"{v[0]:.6f}", 
+            "y": f"{v[1]:.6f}", 
+            "z": f"{v[2]:.6f}"
+        } for v in mesh.vertices
+    ]
+        
+    faces = []
+    for face in mesh.faces:
+            
+        faces.append({
+            "a": int(face[0]),
+            "b": int(face[1]),
+            "c": int(face[2]),
+            "color": default_color
+        })
+    
+    return points, faces
+
+def render_model_scene(
+    clip: vs.VideoNode,
+    model_path: str,
+    lights: list,
+    camX: str,
+    camY: str,
+    camZ: str,
+    rotationX: str,
+    rotationY: str,
+    focal: str,
+    background: str = "0",
+    **mesh_kwargs
+) -> vs.VideoNode:
+    
+    points, faces = load_mesh(model_path, **mesh_kwargs)
+    print("read")
+    if "animate_rotation" in mesh_kwargs.get("tags", []):
+        for i, pt in enumerate(points):
+            points[i] = {
+                "x": f"({pt['x']} * cos(N*0.05) - ({pt['z']} * sin(N*0.05))",
+                "y": pt['y'],
+                "z": f"({pt['x']} * sin(N*0.05) + {pt['z']} * cos(N*0.05))"
+            }
+    
+    return render_triangle_scene(
+        clip=clip,
+        points=points,
+        faces=faces,
+        lights=lights,
+        camX=camX,
+        camY=camY,
+        camZ=camZ,
+        rotationX=rotationX,
+        rotationY=rotationY,
+        focal=focal,
+        background=background
+    )
