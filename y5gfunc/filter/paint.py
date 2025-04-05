@@ -413,6 +413,76 @@ def render_triangle_scene(
     focal: str,
     background: str = "0"
 ) -> vs.VideoNode:
+    '''
+    Example: 
+    ```python
+    clip = core.std.BlankClip(width=640, height=480, format=vs.GRAYS, length=12000)
+
+    orig_points = [
+        { "x" : "-100", "y" : "-100", "z" : "100"  },
+        { "x" : "100",  "y" : "-100", "z" : "100"  },
+        { "x" : "100",  "y" : "100",  "z" : "100"  },
+        { "x" : "-100", "y" : "100",  "z" : "100"  },
+        { "x" : "-100", "y" : "-100", "z" : "-100" },
+        { "x" : "100",  "y" : "-100", "z" : "-100" },
+        { "x" : "100",  "y" : "100",  "z" : "-100" },
+        { "x" : "-100", "y" : "100",  "z" : "-100" }
+    ]
+
+    transformed_points = []
+    for pt in orig_points:
+        new_pt = {
+            "x": f"(({pt['x']}) * cos(N * 0.02) - ({pt['z']}) * sin(N * 0.02) + 20 * sin(N * 0.015))",
+            "y": f"(({pt['y']}) + 20 * cos(N * 0.015))",
+            "z": f"(({pt['x']}) * sin(N * 0.02) + ({pt['z']}) * cos(N * 0.02))"
+        }
+        transformed_points.append(new_pt)
+
+    faces = [
+        { "a" : 0, "b" : 1, "c" : 2, "color" : "1"   },
+        { "a" : 0, "b" : 2, "c" : 3, "color" : "1"   },
+        { "a" : 4, "b" : 6, "c" : 5, "color" : "0.8" },
+        { "a" : 4, "b" : 7, "c" : 6, "color" : "0.8" },
+        { "a" : 0, "b" : 3, "c" : 7, "color" : "0.9" },
+        { "a" : 0, "b" : 7, "c" : 4, "color" : "0.9" },
+        { "a" : 1, "b" : 5, "c" : 6, "color" : "1.0" },
+        { "a" : 1, "b" : 6, "c" : 2, "color" : "1.0" },
+        { "a" : 3, "b" : 2, "c" : 6, "color" : "1.1" },
+        { "a" : 3, "b" : 6, "c" : 7, "color" : "1.1" },
+        { "a" : 0, "b" : 4, "c" : 5, "color" : "0.7" },
+        { "a" : 0, "b" : 5, "c" : 1, "color" : "0.7" }
+    ]
+
+    lights = [
+        { "lx" : "cos(N * 0.02)", "ly" : "0.5", "lz" : "sin(N * 0.02)", "intensity" : "0.8" },
+        { "lx" : "-0.5",          "ly" : "1",   "lz" : "0.5",           "intensity" : "0.6" }
+    ]
+
+    camX = "20 * sin(241 * 0.015) + 500 * cos(241 * 0.01)"
+    camY = "20 * cos(241 * 0.015) + 200 + 4 - 2 * abs(N % 8 - 4)"
+    camZ = "500 * sin(241 * 0.01) - 4 - 2 * abs(N % 8 - 4)"
+
+    rotationX = "0.38 + (40 - 2 * abs(N % 80 - 40)) / 500"
+    rotationY = "-2.41"
+
+    focal = "500"
+
+    clip_result = render_triangle_scene(
+        clip,
+        points=transformed_points,
+        faces=faces,
+        lights=lights,
+        camX=camX,
+        camY=camY,
+        camZ=camZ,
+        rotationX=rotationX,
+        rotationY=rotationY,
+        focal=focal,
+        background="0"
+    )
+    ```
+    Renders a rotating and vibrating cubic.
+    '''
 
     expr_lines = []
 
