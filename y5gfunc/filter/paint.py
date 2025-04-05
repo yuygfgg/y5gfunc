@@ -2,6 +2,10 @@ import trimesh
 from vstools import vs
 from ..expr import infix2postfix
 import sys
+import numpy as np
+
+
+sys.setrecursionlimit(5000)
 
 
 def draw_line(clip: vs.VideoNode, sx: str, sy: str, ex: str, ey: str, thickness: str, color: str, factor: str = "1") -> vs.VideoNode: 
@@ -179,8 +183,6 @@ def draw_mandelbrot_zoomer(
     escapeRadius: str = "2"
 ) -> vs.VideoNode:
     
-    sys.setrecursionlimit(3000)
-
     assert maxIter >= 1
     
     expr_lines = []
@@ -648,18 +650,28 @@ def render_triangle_scene(
 def load_mesh(
     file_path: str, 
     default_color: str = "1",
-    axis_transform: str = "+xz-y"
+    axis_transform: str = "+xz-y",
+    rotation: tuple[float, float, float] = (0.0, 0.0, 0.0)
 ) -> tuple[list[dict], list[dict]]:
+    
     mesh = trimesh.load_mesh(file_path, force='mesh', process=True)
         
     if axis_transform == "+xz-y":
-        mesh.vertices[:, [1,2]] = mesh.vertices[:, [2,1]]
+        mesh.vertices[:, [1, 2]] = mesh.vertices[:, [2, 1]]
         mesh.vertices[:, 2] *= -1
     elif axis_transform == "xyz":
         pass
-        
+
+    if rotation != (0.0, 0.0, 0.0):
+        rx, ry, rz = [np.deg2rad(angle) for angle in rotation]
+        R_x = trimesh.transformations.rotation_matrix(rx, [1, 0, 0])
+        R_y = trimesh.transformations.rotation_matrix(ry, [0, 1, 0])
+        R_z = trimesh.transformations.rotation_matrix(rz, [0, 0, 1])
+        R = trimesh.transformations.concatenate_matrices(R_z, R_y, R_x)
+        mesh.apply_transform(R)
+
     points = [
-            {
+        {
             "x": f"{v[0]:.6f}", 
             "y": f"{v[1]:.6f}", 
             "z": f"{v[2]:.6f}"
@@ -668,7 +680,6 @@ def load_mesh(
         
     faces = []
     for face in mesh.faces:
-            
         faces.append({
             "a": int(face[0]),
             "b": int(face[1]),
@@ -691,17 +702,9 @@ def render_model_scene(
     background: str = "0",
     **mesh_kwargs
 ) -> vs.VideoNode:
-    
+
     points, faces = load_mesh(model_path, **mesh_kwargs)
-    print("read")
-    if "animate_rotation" in mesh_kwargs.get("tags", []):
-        for i, pt in enumerate(points):
-            points[i] = {
-                "x": f"({pt['x']} * cos(N*0.05) - ({pt['z']} * sin(N*0.05))",
-                "y": pt['y'],
-                "z": f"({pt['x']} * sin(N*0.05) + {pt['z']} * cos(N*0.05))"
-            }
-    
+
     return render_triangle_scene(
         clip=clip,
         points=points,

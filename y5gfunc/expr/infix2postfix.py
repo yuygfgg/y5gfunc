@@ -1,4 +1,4 @@
-import re
+import regex as re
 from functools import reduce, lru_cache
 from .optimize import optimize_akarin_expr
 from typing import Optional
