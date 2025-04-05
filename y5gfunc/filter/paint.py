@@ -417,7 +417,7 @@ def render_triangle_scene(
     expr_lines = []
 
     expr_lines.append("<global<camX><camY><camZ><rotationX><rotationY><focal><screenCenterX><screenCenterY><epsilon>>")
-    expr_lines.append("function cam_coord_x (x , y , z) {")
+    expr_lines.append("function cam_coord_x(x , y , z) {")
     expr_lines.append("    tx = x - camX")
     expr_lines.append("    ty = y - camY")
     expr_lines.append("    tz = z - camZ")
@@ -428,7 +428,7 @@ def render_triangle_scene(
     expr_lines.append("}")
 
     expr_lines.append("<global<camX><camY><camZ><rotationX><rotationY><focal><screenCenterX><screenCenterY><epsilon>>")
-    expr_lines.append("function cam_coord_y (x , y , z) {")
+    expr_lines.append("function cam_coord_y(x , y , z) {")
     expr_lines.append("    ty = y - camY")
     expr_lines.append("    tz = z - camZ")
     expr_lines.append("    cy = ty * cos(rotationX) - tz * sin(rotationX)")
@@ -436,7 +436,7 @@ def render_triangle_scene(
     expr_lines.append("}")
 
     expr_lines.append("<global<camX><camY><camZ><rotationX><rotationY><epsilon><huge>>")
-    expr_lines.append("function cam_coord_z (x , y , z) {")
+    expr_lines.append("function cam_coord_z(x , y , z) {")
     expr_lines.append("    tx = x - camX")
     expr_lines.append("    ty = y - camY")
     expr_lines.append("    tz = z - camZ")
@@ -447,14 +447,14 @@ def render_triangle_scene(
     expr_lines.append("}")
 
     expr_lines.append("<global<focal><screenCenterX>>")
-    expr_lines.append("function projectX (x , y , z) {")
+    expr_lines.append("function projectX(x , y , z) {")
     expr_lines.append("    px = cam_coord_x(x , y , z)")
     expr_lines.append("    pz = cam_coord_z(x , y , z)")
     expr_lines.append("    return screenCenterX + (px * focal) / pz")
     expr_lines.append("}")
 
     expr_lines.append("<global<focal><screenCenterY>>")
-    expr_lines.append("function projectY (x , y , z) {")
+    expr_lines.append("function projectY(x , y , z) {")
     expr_lines.append("    py = cam_coord_y(x , y , z)")
     expr_lines.append("    pz = cam_coord_z(x , y , z)")
     expr_lines.append("    return screenCenterY + (py * focal) / pz")
