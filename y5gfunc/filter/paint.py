@@ -124,8 +124,8 @@ def draw_bezier_curve(
         expr_lines.append(f"oneMinusT_{sample_index} = 1 - parameterT_{sample_index}")
         expr_lines.append(f"oneMinusT_squared_{sample_index} = oneMinusT_{sample_index} ** 2")
         expr_lines.append(f"oneMinusT_cubed_{sample_index} = oneMinusT_{sample_index} ** 3")
-        expr_lines.append(f"parameterT_squared_{sample_index} = parameterT_{sample_index} * parameterT_{sample_index}")
-        expr_lines.append(f"parameterT_cubed_{sample_index} = parameterT_squared_{sample_index} * parameterT_{sample_index}")
+        expr_lines.append(f"parameterT_squared_{sample_index} = parameterT_{sample_index} ** 2")
+        expr_lines.append(f"parameterT_cubed_{sample_index} = parameterT_{sample_index} ** 3")
         expr_lines.append(
             f"bezierX_{sample_index} = oneMinusT_cubed_{sample_index} * controlPoint0X + "
             f"3 * oneMinusT_squared_{sample_index} * parameterT_{sample_index} * controlPoint1X + "
@@ -349,7 +349,7 @@ def draw_3d_cube(
                 t_clamped = clamp(tt, 0, 1)
                 projX = x0 + t_clamped * dx
                 projY = y0 + t_clamped * dy
-                return (X - projX) * (X - projX) + (Y - projY) * (Y - projY)
+                return (X - projX) ** 2 + (Y - projY) ** 2
             }}
             
             v0projX = project3d_x(-half, -half, -half)
