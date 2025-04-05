@@ -358,8 +358,8 @@ def draw_3d_cube(
             v1projX = project3d_x(half, -half, -half)
             v1projY = project3d_y(half, -half, -half)
             
-            v2projX = project3d_x( half, half, -half)
-            v2projY = project3d_y( half, half, -half)
+            v2projX = project3d_x(half, half, -half)
+            v2projY = project3d_y(half, half, -half)
             
             v3projX = project3d_x(-half, half, -half)
             v3projY = project3d_y(-half, half, -half)
@@ -399,3 +399,176 @@ def draw_3d_cube(
             ''')
 
     return clip.akarin.Expr(expr)
+
+def render_triangle_scene(
+    clip: vs.VideoNode,
+    points: list,
+    faces: list,
+    lights: list,
+    camX: str,
+    camY: str,
+    camZ: str,
+    rotationX: str,
+    rotationY: str,
+    focal: str,
+    background: str = "0"
+) -> vs.VideoNode:
+
+    expr_lines = []
+
+    expr_lines.append("<global<camX><camY><camZ><rotationX><rotationY><focal><screenCenterX><screenCenterY><epsilon>>")
+    expr_lines.append("function cam_coord_x (x , y , z) {")
+    expr_lines.append("    tx = x - camX")
+    expr_lines.append("    ty = y - camY")
+    expr_lines.append("    tz = z - camZ")
+    expr_lines.append("    ty1 = ty * cos(rotationX) - tz * sin(rotationX)")
+    expr_lines.append("    tz1 = ty * sin(rotationX) + tz * cos(rotationX)")
+    expr_lines.append("    cx = tx * cos(rotationY) + tz1 * sin(rotationY)")
+    expr_lines.append("    return cx")
+    expr_lines.append("}")
+
+    expr_lines.append("<global<camX><camY><camZ><rotationX><rotationY><focal><screenCenterX><screenCenterY><epsilon>>")
+    expr_lines.append("function cam_coord_y (x , y , z) {")
+    expr_lines.append("    ty = y - camY")
+    expr_lines.append("    tz = z - camZ")
+    expr_lines.append("    cy = ty * cos(rotationX) - tz * sin(rotationX)")
+    expr_lines.append("    return cy")
+    expr_lines.append("}")
+
+    expr_lines.append("<global<camX><camY><camZ><rotationX><rotationY><epsilon><huge>>")
+    expr_lines.append("function cam_coord_z (x , y , z) {")
+    expr_lines.append("    tx = x - camX")
+    expr_lines.append("    ty = y - camY")
+    expr_lines.append("    tz = z - camZ")
+    expr_lines.append("    ty1 = ty * cos(rotationX) - tz * sin(rotationX)")
+    expr_lines.append("    tz1 = ty * sin(rotationX) + tz * cos(rotationX)")
+    expr_lines.append("    cz = -tx * sin(rotationY) + tz1 * cos(rotationY)")
+    expr_lines.append("    return cz < 0 ? huge : cz")
+    expr_lines.append("}")
+
+    expr_lines.append("<global<focal><screenCenterX>>")
+    expr_lines.append("function projectX (x , y , z) {")
+    expr_lines.append("    px = cam_coord_x(x , y , z)")
+    expr_lines.append("    pz = cam_coord_z(x , y , z)")
+    expr_lines.append("    return screenCenterX + (px * focal) / pz")
+    expr_lines.append("}")
+
+    expr_lines.append("<global<focal><screenCenterY>>")
+    expr_lines.append("function projectY (x , y , z) {")
+    expr_lines.append("    py = cam_coord_y(x , y , z)")
+    expr_lines.append("    pz = cam_coord_z(x , y , z)")
+    expr_lines.append("    return screenCenterY + (py * focal) / pz")
+    expr_lines.append("}")
+
+    expr_lines.append(f"camX = {camX}")
+    expr_lines.append(f"camY = {camY}")
+    expr_lines.append(f"camZ = {camZ}")
+    expr_lines.append(f"rotationX = {rotationX}")
+    expr_lines.append(f"rotationY = {rotationY}")
+    expr_lines.append(f"focal = {focal}")
+    expr_lines.append(f"background = {background}")
+    expr_lines.append("screenCenterX = width / 2")
+    expr_lines.append("screenCenterY = height / 2")
+    expr_lines.append("epsilon = 0.0001")
+    expr_lines.append("huge = 1e9")
+    expr_lines.append("ambient = 0.2")
+
+    for idx, light in enumerate(lights):
+        expr_lines.append(f"light{idx}_raw_x = {light['lx']}")
+        expr_lines.append(f"light{idx}_raw_y = {light['ly']}")
+        expr_lines.append(f"light{idx}_raw_z = {light['lz']}")
+        expr_lines.append(f"light{idx}_intensity = {light['intensity']}")
+        expr_lines.append(f"mag_{idx} = sqrt(light{idx}_raw_x ** 2 + light{idx}_raw_y ** 2 + light{idx}_raw_z ** 2)")
+        expr_lines.append(f"light{idx}_nx = light{idx}_raw_x / mag_{idx}")
+        expr_lines.append(f"light{idx}_ny = light{idx}_raw_y / mag_{idx}")
+        expr_lines.append(f"light{idx}_nz = light{idx}_raw_z / mag_{idx}")
+        expr_lines.append(f"temp_ty_{idx} = light{idx}_ny * cos(rotationX) - light{idx}_nz * sin(rotationX)")
+        expr_lines.append(f"temp_tz_{idx} = light{idx}_ny * sin(rotationX) + light{idx}_nz * cos(rotationX)")
+        expr_lines.append(f"light{idx}_lx = light{idx}_nx * cos(rotationY) + temp_tz_{idx} * sin(rotationY)")
+        expr_lines.append(f"light{idx}_ly = temp_ty_{idx}")
+        expr_lines.append(f"light{idx}_lz = -light{idx}_nx * sin(rotationY) + temp_tz_{idx} * cos(rotationY)")
+
+    for i, pt in enumerate(points):
+        expr_lines.append(f"point{i}_x = {pt['x']}")
+        expr_lines.append(f"point{i}_y = {pt['y']}")
+        expr_lines.append(f"point{i}_z = {pt['z']}")
+        expr_lines.append(f"projX_{i} = projectX(point{i}_x , point{i}_y , point{i}_z)")
+        expr_lines.append(f"projY_{i} = projectY(point{i}_x , point{i}_y , point{i}_z)")
+        expr_lines.append(f"cam_x_{i} = cam_coord_x(point{i}_x , point{i}_y , point{i}_z)")
+        expr_lines.append(f"cam_y_{i} = cam_coord_y(point{i}_x , point{i}_y , point{i}_z)")
+        expr_lines.append(f"cam_z_{i} = cam_coord_z(point{i}_x , point{i}_y , point{i}_z)")
+
+    face_t_names = []
+    face_shading_names = []
+    face_count = len(faces)
+    for f_idx, face in enumerate(faces):
+        a_idx = face["a"]
+        b_idx = face["b"]
+        c_idx = face["c"]
+        face_color = face.get("color", "1")
+        expr_lines.append(f"E0_{f_idx} = (X - projX_{a_idx}) * (projY_{b_idx} - projY_{a_idx}) - (Y - projY_{a_idx}) * (projX_{b_idx} - projX_{a_idx})")
+        expr_lines.append(f"E1_{f_idx} = (X - projX_{b_idx}) * (projY_{c_idx} - projY_{b_idx}) - (Y - projY_{b_idx}) * (projX_{c_idx} - projX_{b_idx})")
+        expr_lines.append(f"E2_{f_idx} = (X - projX_{c_idx}) * (projY_{a_idx} - projY_{c_idx}) - (Y - projY_{c_idx}) * (projX_{a_idx} - projX_{c_idx})")
+        expr_lines.append(f"inside_pos_{f_idx} = E0_{f_idx} >= 0 && E1_{f_idx} >= 0 && E2_{f_idx} >= 0")
+        expr_lines.append(f"inside_neg_{f_idx} = E0_{f_idx} <= 0 && E1_{f_idx} <= 0 && E2_{f_idx} <= 0")
+        expr_lines.append(f"inside_{f_idx} = inside_pos_{f_idx} || inside_neg_{f_idx}")
+
+        expr_lines.append(f"area_{f_idx} = (projX_{b_idx} - projX_{a_idx}) * (projY_{c_idx} - projY_{a_idx}) - (projX_{c_idx} - projX_{a_idx}) * (projY_{b_idx} - projY_{a_idx})")
+        expr_lines.append(f"alpha_{f_idx} = ((projX_{b_idx} - X) * (projY_{c_idx} - Y) - (projX_{c_idx} - X) * (projY_{b_idx} - Y)) / area_{f_idx}")
+        expr_lines.append(f"beta_{f_idx} = ((projX_{c_idx} - X) * (projY_{a_idx} - Y) - (projX_{a_idx} - X) * (projY_{c_idx} - Y)) / area_{f_idx}")
+        expr_lines.append(f"gamma_{f_idx} = 1 - alpha_{f_idx} - beta_{f_idx}")
+        expr_lines.append(f"depth_{f_idx} = alpha_{f_idx} * cam_z_{a_idx} + beta_{f_idx} * cam_z_{b_idx} + gamma_{f_idx} * cam_z_{c_idx}")
+
+        expr_lines.append(f"ex1_{f_idx} = cam_x_{b_idx} - cam_x_{a_idx}")
+        expr_lines.append(f"ey1_{f_idx} = cam_y_{b_idx} - cam_y_{a_idx}")
+        expr_lines.append(f"ez1_{f_idx} = cam_z_{b_idx} - cam_z_{a_idx}")
+        expr_lines.append(f"ex2_{f_idx} = cam_x_{c_idx} - cam_x_{a_idx}")
+        expr_lines.append(f"ey2_{f_idx} = cam_y_{c_idx} - cam_y_{a_idx}")
+        expr_lines.append(f"ez2_{f_idx} = cam_z_{c_idx} - cam_z_{a_idx}")
+        expr_lines.append(f"nx_{f_idx} = ey1_{f_idx} * ez2_{f_idx} - ez1_{f_idx} * ey2_{f_idx}")
+        expr_lines.append(f"ny_{f_idx} = ez1_{f_idx} * ex2_{f_idx} - ex1_{f_idx} * ez2_{f_idx}")
+        expr_lines.append(f"nz_{f_idx} = ex1_{f_idx} * ey2_{f_idx} - ey1_{f_idx} * ex2_{f_idx}")
+        expr_lines.append(f"norm_{f_idx} = sqrt(nx_{f_idx} ** 2 + ny_{f_idx} ** 2 + nz_{f_idx} ** 2)")
+        expr_lines.append(f"nx_{f_idx} = nx_{f_idx} / norm_{f_idx}")
+        expr_lines.append(f"ny_{f_idx} = ny_{f_idx} / norm_{f_idx}")
+        expr_lines.append(f"nz_{f_idx} = nz_{f_idx} / norm_{f_idx}")
+
+        for l_idx in range(len(lights)):
+            dot_expr = f"nx_{f_idx} * light{l_idx}_lx + ny_{f_idx} * light{l_idx}_ly + nz_{f_idx} * light{l_idx}_lz"
+            expr_lines.append(f"dot_{f_idx}_{l_idx} = {dot_expr}")
+            expr_lines.append(f"diffuse_{f_idx}_{l_idx} = max(dot_{f_idx}_{l_idx}, 0)")
+            expr_lines.append(f"contrib_{f_idx}_{l_idx} = diffuse_{f_idx}_{l_idx} * light{l_idx}_intensity")
+
+        expr_lines.append(f"sum_diffuse_{f_idx} = ambient")
+        for l_idx in range(len(lights)):
+            expr_lines.append(f"sum_diffuse_{f_idx} = sum_diffuse_{f_idx} + contrib_{f_idx}_{l_idx}")
+
+        expr_lines.append(f"lighting_{f_idx} = sum_diffuse_{f_idx} > 1 ? 1 : sum_diffuse_{f_idx}")
+
+        expr_lines.append(f"faceColor_{f_idx} = {face_color}")
+        expr_lines.append(f"shading_{f_idx} = lighting_{f_idx} * faceColor_{f_idx}")
+
+        expr_lines.append(f"t_face_{f_idx} = inside_{f_idx} == 1 ? depth_{f_idx} : huge")
+        expr_lines.append(f"shading_face_{f_idx} = inside_{f_idx} == 1 ? shading_{f_idx} : 0")
+
+        face_t_names.append(f"t_face_{f_idx}")
+        face_shading_names.append(f"shading_face_{f_idx}")
+
+    if face_t_names:
+        face_t_args = ", ".join(face_t_names)
+        expr_lines.append(f"final_t = nth_1 ({face_t_args})")
+    else:
+        expr_lines.append("final_t = huge")
+    
+    select_terms = []
+    for f_idx in range(face_count):
+        expr_lines.append(f"select_{f_idx} = abs(t_face_{f_idx} - final_t) < epsilon ? shading_face_{f_idx} : 0")
+        select_terms.append(f"select_{f_idx}")
+    selects_sum = " + ".join(select_terms)
+    expr_lines.append(f"final_shading = final_t < huge ? ({selects_sum}) : background")
+    expr_lines.append("RESULT = final_shading")
+    
+    full_expr = "\n".join(expr_lines)
+    converted_expr = infix2postfix(full_expr)
+
+    return clip.akarin.Expr(converted_expr)
