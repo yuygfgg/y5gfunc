@@ -1,8 +1,4 @@
-try:
-    import regex as re
-except ModuleNotFoundError:
-    import re
-
+import regex as re
 from functools import reduce, lru_cache
 from .optimize import optimize_akarin_expr
 from typing import Optional
@@ -29,7 +25,10 @@ number_pattern = re.compile(
 nth_pattern = re.compile(r"^nth_(\d+)$")
 m_line_pattern = re.compile(r"^([a-zA-Z_]\w*)\s*=\s*(.+)$")
 m_static_pattern = re.compile(r"^(\w+)\[(-?\d+),\s*(-?\d+)\](\:\w)?$")
-m_ternary_pattern = re.compile(r"(.+?)\s*\?\s*(.+?)\s*:\s*(.+)")
+m_ternary_pattern = re.compile(
+    r"\s*+((?:(?>[^?:]+)|(?:\?(?R):))+?)\s*+\?\s*+((?:(?>[^?:]+)|(?:\?(?R):))+?)\s*+:\s*+((?:(?>[^?:]+)|(?:\?(?R):))++)\s*+",
+    re.VERBOSE,
+)
 find_duplicate_functions_pattern = re.compile(r"\bfunction\s+(\w+)\s*\(.*?\)")
 drop_pattern = re.compile(r"drop(\d*)")
 sort_pattern = re.compile(r"sort(\d+)")
