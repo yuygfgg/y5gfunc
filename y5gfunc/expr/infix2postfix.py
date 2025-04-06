@@ -14,13 +14,7 @@ m_call_pattern = re.compile(r"^(\w+)\s*\(")
 m_str_pattern = re.compile(r"^str\(([^)]+)\)$")
 valid_str_pattern = re.compile(r"\b([a-zA-Z_]\w*)\b")
 number_pattern = re.compile(
-    r"^("
-    r"0x[0-9A-Fa-f]+(\.[0-9A-Fa-f]+(p[+\-]?\d+)?)?"
-    r"|"
-    r"0[0-7]*"
-    r"|"
-    r"[+\-]?(\d+(\.\d+)?([eE][+\-]?\d+)?)"
-    r")$"
+    r"^(0x[0-9A-Fa-f]+(\.[0-9A-Fa-f]+(p[+\-]?\d+)?)?|0[0-7]*|[+\-]?(\d+(\.\d+)?([eE][+\-]?\d+)?))$"
 )
 nth_pattern = re.compile(r"^nth_(\d+)$")
 m_line_pattern = re.compile(r"^([a-zA-Z_]\w*)\s*=\s*(.+)$")
@@ -45,6 +39,7 @@ build_in_func_patterns = [
     re.compile(r)
     for r in [rf"^{prefix}\d+$" for prefix in ["nth_", "sort", "dup", "drop", "swap"]]
 ]
+
 
 class SyntaxError(Exception):
     """Custom syntax error class with line information"""

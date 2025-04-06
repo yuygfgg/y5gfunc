@@ -74,7 +74,7 @@ def draw_ellipse(clip: vs.VideoNode, f1x: str, f1y: str, f2x: str, f2y: str, ell
             cx = (f1x + f2x) / 2
             cy = (f1y + f2y) / 2
             aa = ellipse_sum / 2
-            a2 = aa * aa
+            a2 = aa ** 2
             dx = f2x - f1x
             dy = f2y - f1y
             c2 = (dx ** 2 + dy ** 2) / 4
