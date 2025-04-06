@@ -1,4 +1,8 @@
-import regex as re
+try:
+    import regex as re
+except ModuleNotFoundError:
+    import re
+
 from functools import reduce, lru_cache
 from .optimize import optimize_akarin_expr
 from typing import Optional
@@ -42,8 +46,6 @@ build_in_func_patterns = [
     re.compile(r)
     for r in [rf"^{prefix}\d+$" for prefix in ["nth_", "sort", "dup", "drop", "swap"]]
 ]
-assignment_pattern = re.compile(r"[<>!]=|==")
-
 
 class SyntaxError(Exception):
     """Custom syntax error class with line information"""
@@ -1046,7 +1048,7 @@ def convert_expr(
                         )
                     )
                 # Process assignment statements.
-                elif " = " in body_line and not assignment_pattern.search(body_line):
+                elif assign_pattern.search(body_line):
                     var_name, expr_line = body_line.split("=", 1)
                     var_name = var_name.strip()
                     if is_constant(var_name):
