@@ -4,14 +4,20 @@ import math
 
 token_pattern = re.compile(r"(\w+)\[\s*(-?\d+)\s*,\s*(-?\d+)\s*\](?::(?:c|m))?")
 split_pattern = re.compile(r"\s+")
-number_patterns = [re.compile(pattern) for pattern in [
-    r"^0x[0-9A-Fa-f]+(\.[0-9A-Fa-f]+(p[+\-]?\d+)?)?$",  # Hexadecimal
-    r"^0[0-7]+$",  # Octal
-    r"^[+\-]?(\d+(\.\d+)?([eE][+\-]?\d+)?)$",  # Decimal and scientific notation
-]]
+number_patterns = [
+    re.compile(pattern)
+    for pattern in [
+        r"^0x[0-9A-Fa-f]+(\.[0-9A-Fa-f]+(p[+\-]?\d+)?)?$",  # Hexadecimal
+        r"^0[0-7]+$",  # Octal
+        r"^[+\-]?(\d+(\.\d+)?([eE][+\-]?\d+)?)$",  # Decimal and scientific notation
+    ]
+]
 hex_pattern = re.compile(r"^0x")
-hex_parts_pattern = re.compile(r"^(0x[0-9A-Fa-f]+)(?:\.([0-9A-Fa-f]+))?(?:p([+\-]?\d+))?$")
+hex_parts_pattern = re.compile(
+    r"^(0x[0-9A-Fa-f]+)(?:\.([0-9A-Fa-f]+))?(?:p([+\-]?\d+))?$"
+)
 octal_pattern = re.compile(r"^0[0-7]")
+
 
 def optimize_akarin_expr(expr: str) -> str:
     """Optimize akarin.Expr expressions:
@@ -47,8 +53,6 @@ def tokenize_expr(expr: str) -> list[str]:
 
 def is_numeric(token: str) -> bool:
     """Check if a token is a numeric constant"""
-    # Support hexadecimal, octal, and decimal numbers
-
     for pattern in number_patterns:
         if pattern.match(token):
             return True
@@ -58,7 +62,6 @@ def is_numeric(token: str) -> bool:
 def parse_numeric(token: str) -> Union[int, float]:
     """Parse a numeric token to its actual value"""
     if hex_pattern.match(token):  # Hexadecimal
-        # Handle hexadecimal with fraction and exponent
         if "." in token or "p" in token.lower():
             parts = hex_parts_pattern.match(token.lower())
             if parts:
@@ -75,7 +78,7 @@ def parse_numeric(token: str) -> Union[int, float]:
         return int(token, 16)
     elif octal_pattern.match(token):  # Octal
         return int(token, 8)
-    else:  # Decimal
+    else:
         if "." in token or "e" in token.lower():
             return float(token)
         return int(token)
@@ -213,10 +216,8 @@ def fold_constants(expr: str) -> str:
                 # Variable not known constant, treat as non-constant
                 stack.append(None)
                 result_tokens.append(token)  # Keep the original load token
-
-            if is_processed:
-                i += 1
-                continue  # Move to next token
+            i += 1
+            continue  # Move to next token
 
         # Handle unary operators
         if token in {
@@ -244,26 +245,28 @@ def fold_constants(expr: str) -> str:
                     stack.append(result)
                     # Remove operand
                     result_tokens.pop()
-                    # Add result
                     if isinstance(result, int):
                         result_tokens.append(str(result))
                     else:
                         result_tokens.append(f"{result:g}")
                     is_processed = True
                 else:
-                    stack.append(
-                        None
-                    )  # Calculation failed (e.g., sqrt(-1)), result is non-constant
-                    result_tokens.append(token)  # Keep operator
+                    # Non-foldable: consume operand on the stack, but keep original token in result_tokens
+                    stack.pop()  # consume operand
+                    stack.append(None)
+                    result_tokens.append(token)
+                    is_processed = True
             else:
+                # Non constant operand: consume operand and append operator token without modifying operand token
+                stack.pop()
                 stack.append(None)  # Operand was non-constant
                 result_tokens.append(token)  # Keep operator
-
+                is_processed = True
             if is_processed:
                 i += 1
                 continue
 
-        # Handle binary operators
+        # --- Handle Binary Operators ---
         if token in {
             "+",
             "-",
@@ -290,7 +293,6 @@ def fold_constants(expr: str) -> str:
                 raise ValueError(
                     f"Stack underflow at token '{token}' at position {i}. Binary operator requires 2 operands."
                 )
-
             op2 = stack.pop()
             op1 = stack.pop()
             if isinstance(op1, (int, float)) and isinstance(op2, (int, float)):
@@ -305,12 +307,15 @@ def fold_constants(expr: str) -> str:
                         result_tokens.append(f"{result:g}")
                     is_processed = True
                 else:
-                    stack.append(None)  # Calculation failed, result non-constant
-                    result_tokens.append(token)  # Keep operator
+                    stack.append(None)
+                    # Non-foldable: leave the previously pushed operand tokens intact and append operator token
+                    result_tokens.append(token)
+                    is_processed = True
             else:
-                stack.append(None)  # At least one operand was non-constant
-                result_tokens.append(token)  # Keep operator
-
+                # At least one operand is non constant: simulate consumption and append operator token without modifying previous tokens
+                stack.append(None)
+                result_tokens.append(token)
+                is_processed = True
             if is_processed:
                 i += 1
                 continue
@@ -341,14 +346,12 @@ def fold_constants(expr: str) -> str:
                     result_tokens.append(str(result))
                 else:
                     result_tokens.append(f"{result:g}")
-                is_processed = True
             else:
-                stack.append(None)  # Operands not all constant
-                result_tokens.append(token)  # Keep operator
-
-            if is_processed:
-                i += 1
-                continue
+                # Non-foldable: simulate consumption and append operator token without modifying the operand tokens
+                stack.append(None)
+                result_tokens.append(token)
+            i += 1
+            continue
 
         # Handle clamp/clip operators
         if token in {"clamp", "clip"}:
@@ -356,37 +359,30 @@ def fold_constants(expr: str) -> str:
                 raise ValueError(
                     f"Stack underflow at token '{token}' at position {i}. Clamp operator requires 3 operands."
                 )
-
-            max_val_stack = stack.pop()
-            min_val_stack = stack.pop()
-            value_stack = stack.pop()
-
+            max_val = stack.pop()
+            min_val = stack.pop()
+            value_val = stack.pop()
             if (
-                isinstance(value_stack, (int, float))
-                and isinstance(min_val_stack, (int, float))
-                and isinstance(max_val_stack, (int, float))
+                isinstance(value_val, (int, float))
+                and isinstance(min_val, (int, float))
+                and isinstance(max_val, (int, float))
             ):
-                # Ensure min <= max for correct clamp behavior during folding
-                min_val = min(min_val_stack, max_val_stack)
-                max_val = max(min_val_stack, max_val_stack)
-
-                result = max(min_val, min(max_val, value_stack))
+                min_val_ordered = min(min_val, max_val)
+                max_val_ordered = max(min_val, max_val)
+                result = max(min_val_ordered, min(max_val_ordered, value_val))
                 stack.append(result)
-                result_tokens.pop()  # max val token
-                result_tokens.pop()  # min val token
-                result_tokens.pop()  # value token
+                # Remove the last three operand tokens and append result token
+                for _ in range(3):
+                    result_tokens.pop()
                 if isinstance(result, int):
                     result_tokens.append(str(result))
                 else:
                     result_tokens.append(f"{result:g}")
-                is_processed = True
             else:
                 stack.append(None)  # Operands not all constant
                 result_tokens.append(token)  # Keep operator
-
-            if is_processed:
-                i += 1
-                continue
+            i += 1
+            continue
 
         # --- Stack manipulation ops (swap, dup, drop, sort) ---
         # These don't change constant values directly, but we need to update the evaluation stack (`stack`)
@@ -394,8 +390,8 @@ def fold_constants(expr: str) -> str:
 
         # Handle swap operations
         if token.startswith("swap"):
-            n = 1  # Default for 'swap'
-            if len(token) > 4:  # Extract N from 'swapN'
+            n = 1
+            if len(token) > 4:
                 try:
                     n = int(token[4:])
                 except ValueError:
@@ -412,7 +408,6 @@ def fold_constants(expr: str) -> str:
             i += 1
             continue
 
-        # Handle dup operations
         if token.startswith("dup"):
             n = 0  # Default for 'dup'
             if len(token) > 3:  # Extract N from 'dupN'
@@ -420,7 +415,6 @@ def fold_constants(expr: str) -> str:
                     n = int(token[3:])
                 except ValueError:
                     pass
-
             if len(stack) <= n:
                 raise ValueError(
                     f"Stack underflow at token '{token}' at position {i}. Dup requires at least {n+1} items."
@@ -452,36 +446,27 @@ def fold_constants(expr: str) -> str:
             i += 1
             continue
 
-        # sort operations
         if token.startswith("sort"):
             n = 0
-            if len(token) > 4:  # Extract N from 'sortN'
+            if len(token) > 4:
                 try:
                     n = int(token[4:])
                 except ValueError:
                     pass
 
             if n <= 0:
-                raise ValueError(f"Invalid sort count. {token} requires a positive number.")
+                raise ValueError(
+                    f"Invalid sort count. {token} requires a positive number."
+                )
 
             if len(stack) < n:
                 raise ValueError(
                     f"Stack underflow at token '{token}' at position {i}. Sort requires at least {n} items."
                 )
-
-            sorted_segment = stack[-n:]
-            all_const = all(isinstance(x, (int, float)) for x in sorted_segment)
-
-            del stack[-n:]  # Remove items to be sorted
-
-            if all_const:
-                for _ in range(n):
-                    stack.append(None)
-            else:
-                for _ in range(n):
-                    stack.append(None)  # Non-constant result after sort
-
-            result_tokens.append(token)  # Keep the token
+            del stack[-n:]
+            for _ in range(n):
+                stack.append(None)
+            result_tokens.append(token)
             i += 1
             continue
 
@@ -496,16 +481,18 @@ def fold_constants(expr: str) -> str:
             stack.pop()  # x coord
             stack.append(None)  # Result of access is non-constant
             result_tokens.append(token)
-        elif token_pattern.match(token):
+            i += 1
+            continue
+
+        if token_pattern.match(token):
             stack.append(None)  # Result of access is non-constant
             result_tokens.append(token)
-        else:
-            if not (
-                token.endswith("!") or token.endswith("@")
-            ):  # Avoid double-adding var ops
-                stack.append(None)
-                result_tokens.append(token)
+            i += 1
+            continue
 
+        # Other tokens, leave unchanged
+        stack.append(None)
+        result_tokens.append(token)
         i += 1
 
     return " ".join(result_tokens)
