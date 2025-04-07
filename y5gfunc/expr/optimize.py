@@ -499,8 +499,7 @@ def fold_constants(expr: str) -> str:
 
 
 def convert_dynamic_to_static(expr: str) -> str:
-    """Convert dynamic pixel access to static when possible.
-    Assumes constant folding (including variable substitution) has already occurred."""
+    """Convert dynamic pixel access to static when possible."""
     tokens = tokenize_expr(expr)
     result_tokens = []
 

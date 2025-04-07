@@ -2,7 +2,9 @@ import regex as re
 from functools import reduce, lru_cache
 from .optimize import optimize_akarin_expr
 from typing import Optional
+import sys
 
+sys.setrecursionlimit(5000)
 
 func_call_pattern = re.compile(r"(\w+)\s*\(")
 clip_pattern = re.compile(r"(?:[a-zA-Z]|src\d+)$")
