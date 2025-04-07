@@ -1,4 +1,4 @@
-import re
+import regex as re
 from typing import Optional, Union, Any
 import math
 
@@ -48,7 +48,6 @@ def tokenize_expr(expr: str) -> list[str]:
 def is_numeric(token: str) -> bool:
     """Check if a token is a numeric constant"""
     # Support hexadecimal, octal, and decimal numbers
-
 
     for pattern in number_patterns:
         if pattern.match(token):
@@ -151,19 +150,73 @@ def calculate_ternary(
 def fold_constants(expr: str) -> str:
     """Perform constant folding optimization"""
     tokens = tokenize_expr(expr)
-    stack = []
-    result_tokens = []
+    stack: list[
+        Any
+    ] = []  # Stores actual values (numbers) or None for non-constants during evaluation
+    result_tokens: list[str] = []  # Stores the resulting optimized token list
+    variable_values: dict[
+        str, Union[int, float, None]
+    ] = {}  # Tracks known constant variable values
 
     i = 0
     while i < len(tokens):
         token = tokens[i]
+        is_processed = (
+            False  # Flag to check if the token was handled and loop should continue
+        )
 
         # Handle numeric constants
         if is_numeric(token):
-            stack.append(parse_numeric(token))
+            value = parse_numeric(token)
+            stack.append(value)
             result_tokens.append(token)
             i += 1
             continue
+
+        # --- Handle Variable Store (!) ---
+        if (
+            token.endswith("!") and len(token) > 1 and not token.startswith("[")
+        ):  # Avoid matching array access
+            var_name = token[:-1]
+            if len(stack) < 1:
+                raise ValueError(
+                    f"Stack underflow at token '{token}' at position {i}. Store '!' requires 1 operand."
+                )
+
+            value_to_store = stack.pop()
+            if isinstance(value_to_store, (int, float)):
+                variable_values[var_name] = value_to_store  # Store constant value
+            else:
+                variable_values[var_name] = None  # Mark as non-constant
+
+            result_tokens.append(token)  # Keep the store token in the output
+            i += 1
+            continue  # Skip other checks
+
+        # --- Handle Variable Load (@) ---
+        if (
+            token.endswith("@") and len(token) > 1 and not token.startswith("[")
+        ):  # Avoid matching array access
+            var_name = token[:-1]
+            constant_value = variable_values.get(var_name)
+
+            if isinstance(constant_value, (int, float)):
+                # Substitute load with the constant value
+                stack.append(constant_value)
+                if isinstance(constant_value, int):
+                    result_tokens.append(str(constant_value))
+                else:
+                    # Use 'g' format for concise float representation, avoid trailing zeros
+                    result_tokens.append(f"{constant_value:g}")
+                is_processed = True  # Mark as processed to skip adding original token
+            else:
+                # Variable not known constant, treat as non-constant
+                stack.append(None)
+                result_tokens.append(token)  # Keep the original load token
+
+            if is_processed:
+                i += 1
+                continue  # Move to next token
 
         # Handle unary operators
         if token in {
@@ -196,15 +249,19 @@ def fold_constants(expr: str) -> str:
                         result_tokens.append(str(result))
                     else:
                         result_tokens.append(f"{result:g}")
-                    i += 1
-                    continue
+                    is_processed = True
                 else:
-                    stack.append(None)  # Put placeholder back
+                    stack.append(
+                        None
+                    )  # Calculation failed (e.g., sqrt(-1)), result is non-constant
+                    result_tokens.append(token)  # Keep operator
             else:
-                stack.append(None)  # Non-constant
-            result_tokens.append(token)
-            i += 1
-            continue
+                stack.append(None)  # Operand was non-constant
+                result_tokens.append(token)  # Keep operator
+
+            if is_processed:
+                i += 1
+                continue
 
         # Handle binary operators
         if token in {
@@ -234,46 +291,47 @@ def fold_constants(expr: str) -> str:
                     f"Stack underflow at token '{token}' at position {i}. Binary operator requires 2 operands."
                 )
 
-            if isinstance(stack[-1], (int, float)) and isinstance(
-                stack[-2], (int, float)
-            ):
-                b = stack.pop()
-                a = stack.pop()
-                result = calculate_binary(token, a, b)
+            op2 = stack.pop()
+            op1 = stack.pop()
+            if isinstance(op1, (int, float)) and isinstance(op2, (int, float)):
+                result = calculate_binary(token, op1, op2)
                 if result is not None:
                     stack.append(result)
-                    # Remove operands
-                    result_tokens.pop()
-                    result_tokens.pop()
-                    # Add result
+                    result_tokens.pop()  # Remove op2 token
+                    result_tokens.pop()  # Remove op1 token
                     if isinstance(result, int):
                         result_tokens.append(str(result))
                     else:
                         result_tokens.append(f"{result:g}")
-                    i += 1
-                    continue
+                    is_processed = True
                 else:
-                    stack.append(a)
-                    stack.append(b)
+                    stack.append(None)  # Calculation failed, result non-constant
+                    result_tokens.append(token)  # Keep operator
             else:
-                # At least one operand is not a constant
-                stack.append(None)
-            result_tokens.append(token)
-            i += 1
-            continue
+                stack.append(None)  # At least one operand was non-constant
+                result_tokens.append(token)  # Keep operator
 
-        # Handle ternary operator
+            if is_processed:
+                i += 1
+                continue
+
+        # Handle ternary operator "?"
         if token == "?":
             if len(stack) < 3:
                 raise ValueError(
                     f"Stack underflow at token '{token}' at position {i}. Ternary operator requires 3 operands."
                 )
 
-            if all(isinstance(x, (int, float)) for x in stack[-3:]):
-                false_val = stack.pop()
-                true_val = stack.pop()
-                cond = stack.pop()
-                result = calculate_ternary(cond, true_val, false_val)
+            false_val_stack = stack.pop()
+            true_val_stack = stack.pop()
+            cond_stack = stack.pop()
+
+            if (
+                isinstance(cond_stack, (int, float))
+                and isinstance(true_val_stack, (int, float))
+                and isinstance(false_val_stack, (int, float))
+            ):
+                result = calculate_ternary(cond_stack, true_val_stack, false_val_stack)
                 stack.append(result)
                 # Remove operands
                 for _ in range(3):
@@ -283,13 +341,14 @@ def fold_constants(expr: str) -> str:
                     result_tokens.append(str(result))
                 else:
                     result_tokens.append(f"{result:g}")
+                is_processed = True
+            else:
+                stack.append(None)  # Operands not all constant
+                result_tokens.append(token)  # Keep operator
+
+            if is_processed:
                 i += 1
                 continue
-            else:
-                stack.append(None)
-            result_tokens.append(token)
-            i += 1
-            continue
 
         # Handle clamp/clip operators
         if token in {"clamp", "clip"}:
@@ -298,27 +357,40 @@ def fold_constants(expr: str) -> str:
                     f"Stack underflow at token '{token}' at position {i}. Clamp operator requires 3 operands."
                 )
 
-            if all(isinstance(x, (int, float)) for x in stack[-3:]):
-                max_val = stack.pop()
-                min_val = stack.pop()
-                value = stack.pop()
-                result = max(min_val, min(max_val, value))
+            max_val_stack = stack.pop()
+            min_val_stack = stack.pop()
+            value_stack = stack.pop()
+
+            if (
+                isinstance(value_stack, (int, float))
+                and isinstance(min_val_stack, (int, float))
+                and isinstance(max_val_stack, (int, float))
+            ):
+                # Ensure min <= max for correct clamp behavior during folding
+                min_val = min(min_val_stack, max_val_stack)
+                max_val = max(min_val_stack, max_val_stack)
+
+                result = max(min_val, min(max_val, value_stack))
                 stack.append(result)
-                # Remove operands
-                for _ in range(3):
-                    result_tokens.pop()
-                # Add result
+                result_tokens.pop()  # max val token
+                result_tokens.pop()  # min val token
+                result_tokens.pop()  # value token
                 if isinstance(result, int):
                     result_tokens.append(str(result))
                 else:
                     result_tokens.append(f"{result:g}")
+                is_processed = True
+            else:
+                stack.append(None)  # Operands not all constant
+                result_tokens.append(token)  # Keep operator
+
+            if is_processed:
                 i += 1
                 continue
-            else:
-                stack.append(None)
-            result_tokens.append(token)
-            i += 1
-            continue
+
+        # --- Stack manipulation ops (swap, dup, drop, sort) ---
+        # These don't change constant values directly, but we need to update the evaluation stack (`stack`)
+        # They remain in the result_tokens as they affect runtime execution flow
 
         # Handle swap operations
         if token.startswith("swap"):
@@ -331,16 +403,12 @@ def fold_constants(expr: str) -> str:
 
             if len(stack) <= n:
                 raise ValueError(
-                    f"Stack underflow at token '{token}' at position {i}. Swap requires at least {n+1} items on stack."
+                    f"Stack underflow at token '{token}' at position {i}. Swap requires at least {n+1} items."
                 )
-
-            # Simulate swap operation for stack tracking
-            if all(isinstance(stack[-(i + 1)], (int, float)) for i in range(n + 1)):
+            # Simulate swap on the evaluation stack
+            if n > 0:  # swap0 is a no-op
                 stack[-1], stack[-(n + 1)] = stack[-(n + 1)], stack[-1]
-            else:
-                stack.append(None)
-
-            result_tokens.append(token)
+            result_tokens.append(token)  # Keep the token
             i += 1
             continue
 
@@ -355,246 +423,137 @@ def fold_constants(expr: str) -> str:
 
             if len(stack) <= n:
                 raise ValueError(
-                    f"Stack underflow at token '{token}' at position {i}. Dup requires at least {n+1} items on stack."
+                    f"Stack underflow at token '{token}' at position {i}. Dup requires at least {n+1} items."
+                )
+            # Simulate dup on the evaluation stack
+            stack.append(stack[-(n + 1)])
+            result_tokens.append(token)  # Keep the token
+            i += 1
+            continue
+
+        # Handle drop operations
+        if token.startswith("drop"):
+            n = 1  # Default for 'drop'
+            if len(token) > 4:  # Extract N from 'dropN'
+                try:
+                    n = int(token[4:])
+                except ValueError:
+                    pass
+
+            if len(stack) < n:
+                raise ValueError(
+                    f"Stack underflow at token '{token}' at position {i}. Drop requires at least {n} items."
+                )
+            # Simulate drop on the evaluation stack
+            for _ in range(n):
+                stack.pop()
+
+            result_tokens.append(token)  # Keep the token
+            i += 1
+            continue
+
+        # sort operations
+        if token.startswith("sort"):
+            n = 0
+            if len(token) > 4:  # Extract N from 'sortN'
+                try:
+                    n = int(token[4:])
+                except ValueError:
+                    pass
+
+            if n <= 0:
+                raise ValueError(f"Invalid sort count. {token} requires a positive number.")
+
+            if len(stack) < n:
+                raise ValueError(
+                    f"Stack underflow at token '{token}' at position {i}. Sort requires at least {n} items."
                 )
 
-            # Simulate dup operation for stack tracking
-            if isinstance(stack[-(n + 1)], (int, float)):
-                stack.append(stack[-(n + 1)])
-            else:
-                stack.append(None)
+            sorted_segment = stack[-n:]
+            all_const = all(isinstance(x, (int, float)) for x in sorted_segment)
 
-            result_tokens.append(token)
+            del stack[-n:]  # Remove items to be sorted
+
+            if all_const:
+                for _ in range(n):
+                    stack.append(None)
+            else:
+                for _ in range(n):
+                    stack.append(None)  # Non-constant result after sort
+
+            result_tokens.append(token)  # Keep the token
             i += 1
             continue
 
         # Other tokens, no constant folding
-        stack.append(None)  # Non-constant placeholder
-        result_tokens.append(token)
+        if token.endswith("[]") and not token.startswith("["):
+            # Dynamic access requires 2 preceding items (coords) which become non-constant after access
+            if len(stack) < 2:
+                raise ValueError(
+                    f"Stack underflow for dynamic access '{token}'. Requires x y coordinates."
+                )
+            stack.pop()  # y coord
+            stack.pop()  # x coord
+            stack.append(None)  # Result of access is non-constant
+            result_tokens.append(token)
+        elif token_pattern.match(token):
+            stack.append(None)  # Result of access is non-constant
+            result_tokens.append(token)
+        else:
+            if not (
+                token.endswith("!") or token.endswith("@")
+            ):  # Avoid double-adding var ops
+                stack.append(None)
+                result_tokens.append(token)
+
         i += 1
 
     return " ".join(result_tokens)
 
 
 def convert_dynamic_to_static(expr: str) -> str:
-    """Convert dynamic pixel access to static when possible"""
+    """Convert dynamic pixel access to static when possible.
+    Assumes constant folding (including variable substitution) has already occurred."""
     tokens = tokenize_expr(expr)
-    stack = []
     result_tokens = []
 
     i = 0
     while i < len(tokens):
         token = tokens[i]
+        can_convert = False
 
-        # Check for dynamic pixel access pattern (clip identifier followed by [])
-        if token.endswith("[]") and len(stack) >= 2:
-            y_token_idx = len(result_tokens) - 1
-            x_token_idx = len(result_tokens) - 2
+        # Check for dynamic pixel access pattern (clip[])
+        if (
+            token.endswith("[]")
+            and not token.startswith("[")
+            and len(result_tokens) >= 2
+        ):
+            # Check if the last two tokens in the *result* list are numeric constants
+            y_token = result_tokens[-1]
+            x_token = result_tokens[-2]
 
-            # Check if x and y are constants
-            if (
-                x_token_idx >= 0
-                and is_numeric(result_tokens[x_token_idx])
-                and y_token_idx >= 0
-                and is_numeric(result_tokens[y_token_idx])
-            ):
-                # Get clip identifier and coordinates
+            if is_numeric(x_token) and is_numeric(y_token):
+                # Perform conversion
                 clip_identifier = token[:-2]
-                y = parse_numeric(result_tokens[y_token_idx])
-                x = parse_numeric(result_tokens[x_token_idx])
+                try:
+                    y = int(parse_numeric(y_token))
+                    x = int(parse_numeric(x_token))
 
-                # Remove coordinate tokens
-                result_tokens.pop()  # Remove y coordinate
-                result_tokens.pop()  # Remove x coordinate
+                    # Pop the constant coordinates from result_tokens
+                    result_tokens.pop()  # Remove y coordinate token
+                    result_tokens.pop()  # Remove x coordinate token
 
-                # Add static access token
-                result_tokens.append(f"{clip_identifier}[{int(x)},{int(y)}]")
+                    # Append the new static access token
+                    result_tokens.append(f"{clip_identifier}[{x},{y}]")
+                    can_convert = True
+                except ValueError:
+                    # If parsing fails for some reason, don't convert
+                    pass
 
-                # Update stack state
-                stack.pop()  # y
-                stack.pop()  # x
-                stack.append(None)  # Placeholder for access result
+        if not can_convert:
+            # If not converting, just append the original token
+            result_tokens.append(token)
 
-                i += 1
-                continue
-
-        # Handle numeric constants (update stack)
-        if is_numeric(token):
-            stack.append(parse_numeric(token))
-        else:
-            # Update stack state for other tokens
-            try:
-                stack = update_stack_for_token(token, stack)
-            except ValueError as e:
-                raise ValueError(f"Error at token '{token}' at position {i}: {str(e)}")
-
-        result_tokens.append(token)
         i += 1
 
     return " ".join(result_tokens)
-
-
-def update_stack_for_token(token: str, stack: list[Any]) -> list[Any]:
-    """Simulate stack operations to update stack state"""
-    # Unary operators
-    if token in {
-        "exp",
-        "log",
-        "sqrt",
-        "sin",
-        "cos",
-        "abs",
-        "not",
-        "bitnot",
-        "trunc",
-        "round",
-        "floor",
-    }:
-        if len(stack) < 1:
-            raise ValueError(
-                f"Stack underflow. Unary operator '{token}' requires 1 operand."
-            )
-        stack.pop()
-        stack.append(None)  # Result placeholder
-
-    # Binary operators
-    elif token in {
-        "+",
-        "-",
-        "*",
-        "/",
-        "max",
-        "min",
-        "pow",
-        "**",
-        ">",
-        "<",
-        "=",
-        ">=",
-        "<=",
-        "and",
-        "or",
-        "xor",
-        "%",
-        "bitand",
-        "bitor",
-        "bitxor",
-    }:
-        if len(stack) < 2:
-            raise ValueError(
-                f"Stack underflow. Binary operator '{token}' requires 2 operands."
-            )
-        stack.pop()
-        stack.pop()
-        stack.append(None)  # Result placeholder
-
-    # Ternary operator
-    elif token == "?":
-        if len(stack) < 3:
-            raise ValueError("Stack underflow. Ternary operator requires 3 operands.")
-        stack.pop()
-        stack.pop()
-        stack.pop()
-        stack.append(None)  # Result placeholder
-
-    # clamp/clip operator
-    elif token in {"clamp", "clip"}:
-        if len(stack) < 3:
-            raise ValueError("Stack underflow. Clamp operator requires 3 operands.")
-        stack.pop()
-        stack.pop()
-        stack.pop()
-        stack.append(None)  # Result placeholder
-
-    # swap operations
-    elif token.startswith("swap"):
-        n = 1  # Default for 'swap'
-        if len(token) > 4:  # Extract N from 'swapN'
-            try:
-                n = int(token[4:])
-            except ValueError:
-                pass
-
-        if len(stack) <= n:
-            raise ValueError(
-                f"Stack underflow. {token} requires at least {n+1} items on stack."
-            )
-
-        # Simulate swap operation
-        if n > 0:
-            stack[-1], stack[-(n + 1)] = stack[-(n + 1)], stack[-1]
-
-    # dup operations
-    elif token.startswith("dup"):
-        n = 0  # Default for 'dup'
-        if len(token) > 3:  # Extract N from 'dupN'
-            try:
-                n = int(token[3:])
-            except ValueError:
-                pass
-
-        if len(stack) <= n:
-            raise ValueError(
-                f"Stack underflow. {token} requires at least {n+1} items on stack."
-            )
-
-        # Simulate dup operation
-        stack.append(stack[-(n + 1)])
-
-    # drop operations
-    elif token.startswith("drop"):
-        n = 1  # Default for 'drop'
-        if len(token) > 4:  # Extract N from 'dropN'
-            try:
-                n = int(token[4:])
-            except ValueError:
-                pass
-
-        if len(stack) < n:
-            raise ValueError(
-                f"Stack underflow. {token} requires at least {n} items on stack."
-            )
-
-        # Simulate drop operation
-        for _ in range(n):
-            stack.pop()
-
-    # sort operations
-    elif token.startswith("sort"):
-        n = 0
-        if len(token) > 4:  # Extract N from 'sortN'
-            try:
-                n = int(token[4:])
-            except ValueError:
-                pass
-
-        if n <= 0:
-            raise ValueError(f"Invalid sort count. {token} requires a positive number.")
-
-        if len(stack) < n:
-            raise ValueError(
-                f"Stack underflow. {token} requires at least {n} items on stack."
-            )
-
-        # For simulation, just keep the stack with placeholders
-        for _ in range(n):
-            stack.pop()
-        for _ in range(n):
-            stack.append(None)
-
-    # Variable operations
-    elif token.endswith("!") or token.endswith("@"):
-        if token.endswith("!"):  # Store
-            if len(stack) < 1:
-                raise ValueError(
-                    "Stack underflow. Variable store requires 1 value on stack."
-                )
-            stack.pop()
-        else:  # Load
-            stack.append(None)
-
-    # Other tokens (variables, clip loads, etc.)
-    else:
-        stack.append(None)  # Add placeholder
-
-    return stack
