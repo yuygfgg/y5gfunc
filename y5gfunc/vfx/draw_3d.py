@@ -206,7 +206,7 @@ def render_triangle_scene(
     expr_lines = []
 
     expr_lines.append("<global<camX><camY><camZ><rotationX><rotationY><focal><screenCenterX><screenCenterY><epsilon>>")
-    expr_lines.append("function cam_coord_x(x , y , z) {")
+    expr_lines.append("function cam_coord_x(x, y, z) {")
     expr_lines.append("    tx = x - camX")
     expr_lines.append("    ty = y - camY")
     expr_lines.append("    tz = z - camZ")
@@ -217,7 +217,7 @@ def render_triangle_scene(
     expr_lines.append("}")
 
     expr_lines.append("<global<camX><camY><camZ><rotationX><rotationY><focal><screenCenterX><screenCenterY><epsilon>>")
-    expr_lines.append("function cam_coord_y(x , y , z) {")
+    expr_lines.append("function cam_coord_y(x, y, z) {")
     expr_lines.append("    ty = y - camY")
     expr_lines.append("    tz = z - camZ")
     expr_lines.append("    cy = ty * cos(rotationX) - tz * sin(rotationX)")
@@ -225,7 +225,7 @@ def render_triangle_scene(
     expr_lines.append("}")
 
     expr_lines.append("<global<camX><camY><camZ><rotationX><rotationY><epsilon><huge>>")
-    expr_lines.append("function cam_coord_z(x , y , z) {")
+    expr_lines.append("function cam_coord_z(x, y, z) {")
     expr_lines.append("    tx = x - camX")
     expr_lines.append("    ty = y - camY")
     expr_lines.append("    tz = z - camZ")
@@ -236,16 +236,16 @@ def render_triangle_scene(
     expr_lines.append("}")
 
     expr_lines.append("<global<focal><screenCenterX>>")
-    expr_lines.append("function projectX(x , y , z) {")
-    expr_lines.append("    px = cam_coord_x(x , y , z)")
-    expr_lines.append("    pz = cam_coord_z(x , y , z)")
+    expr_lines.append("function projectX(x, y, z) {")
+    expr_lines.append("    px = cam_coord_x(x, y, z)")
+    expr_lines.append("    pz = cam_coord_z(x, y, z)")
     expr_lines.append("    return screenCenterX + (px * focal) / pz")
     expr_lines.append("}")
 
     expr_lines.append("<global<focal><screenCenterY>>")
-    expr_lines.append("function projectY(x , y , z) {")
-    expr_lines.append("    py = cam_coord_y(x , y , z)")
-    expr_lines.append("    pz = cam_coord_z(x , y , z)")
+    expr_lines.append("function projectY(x, y, z) {")
+    expr_lines.append("    py = cam_coord_y(x, y, z)")
+    expr_lines.append("    pz = cam_coord_z(x, y, z)")
     expr_lines.append("    return screenCenterY + (py * focal) / pz")
     expr_lines.append("}")
 
@@ -281,11 +281,11 @@ def render_triangle_scene(
         expr_lines.append(f"point{i}_x = {pt['x']}")
         expr_lines.append(f"point{i}_y = {pt['y']}")
         expr_lines.append(f"point{i}_z = {pt['z']}")
-        expr_lines.append(f"projX_{i} = projectX(point{i}_x , point{i}_y , point{i}_z)")
-        expr_lines.append(f"projY_{i} = projectY(point{i}_x , point{i}_y , point{i}_z)")
-        expr_lines.append(f"cam_x_{i} = cam_coord_x(point{i}_x , point{i}_y , point{i}_z)")
-        expr_lines.append(f"cam_y_{i} = cam_coord_y(point{i}_x , point{i}_y , point{i}_z)")
-        expr_lines.append(f"cam_z_{i} = cam_coord_z(point{i}_x , point{i}_y , point{i}_z)")
+        expr_lines.append(f"projX_{i} = projectX(point{i}_x, point{i}_y, point{i}_z)")
+        expr_lines.append(f"projY_{i} = projectY(point{i}_x, point{i}_y, point{i}_z)")
+        expr_lines.append(f"cam_x_{i} = cam_coord_x(point{i}_x, point{i}_y, point{i}_z)")
+        expr_lines.append(f"cam_y_{i} = cam_coord_y(point{i}_x, point{i}_y, point{i}_z)")
+        expr_lines.append(f"cam_z_{i} = cam_coord_z(point{i}_x, point{i}_y, point{i}_z)")
 
     face_t_names = []
     face_shading_names = []
