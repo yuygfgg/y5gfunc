@@ -6,6 +6,7 @@ import functools
 from .mask import generate_detail_mask
 
 # TODO: use vs-jetpack Rescalers, handle asymmetrical descales
+# TODO: fix return type hint for upscaled_clips (list[vs.VideoNode])
 # inspired by https://skyeysnow.com/forum.php?mod=viewthread&tid=58390
 def rescale(
     clip: vs.VideoNode,
