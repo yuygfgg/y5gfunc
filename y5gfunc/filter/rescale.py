@@ -217,7 +217,7 @@ def rescale(
 
         return final_clip
 
-    def _fft(clip: vs.VideoNode, grid: bool = True) -> vs.VideoNode:
+    def _fft(clip: vs.VideoNode) -> vs.VideoNode:
         return core.fftspectrum_rs.FFTSpectrum(clip=vsutil.depth(clip,8))
     
     
@@ -326,7 +326,7 @@ def rescale(
         length = len(upscaled_clips)
         per_scene = core.std.ModifyFrame(per_frame, [per_frame, per_frame], functools.partial(scene_descale, prefetch=prefetch, cache=cache, length=length, scene_descale_threshold_ratio=scene_descale_threshold_ratio))
         rescaled = core.akarin.Select(rescaled_clips + [src_luma], [per_scene], 'src0.SceneMinIndex')
-        rescaled = core.std.CopyFrameProps(per_scene, per_scene)
+        rescaled = core.std.CopyFrameProps(rescaled, per_scene)
         rescaled = core.akarin.PropExpr([rescaled], lambda: {'Descaled': f'x.SceneMinIndex {len(upscaled_clips)} = not'})
         detail_mask = core.akarin.Select(clip_src=detail_masks + [core.std.BlankClip(clip=detail_masks[0])], prop_src=rescaled, expr="src0.SceneMinIndex")
         upscaled = core.akarin.Select(clip_src=upscaled_clips + [upscaled_per_frame], prop_src=rescaled, expr="src0.SceneMinIndex")
@@ -366,6 +366,7 @@ def rescale(
             f"{{B{i}}}   | {{C{i}}}   | {{Taps{i}}}   |\n"
         )
         upscaled_clips[i] = upscaled.text.Text(str(params_list[i]))
+    
     osd_clip = core.akarin.Text(final, format_string)
 
     if show_fft:
