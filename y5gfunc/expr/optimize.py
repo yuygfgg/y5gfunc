@@ -19,6 +19,19 @@ hex_parts_pattern = re.compile(
 octal_pattern = re.compile(r"^0[0-7]")
 
 
+def is_token_numeric(token: str) -> bool:
+    """Check if a token string represents a numeric constant."""
+    if token.isdigit() or (
+        token.startswith("-") and len(token) > 1 and token[1:].isdigit()
+    ):
+        return True
+
+    for pattern in number_patterns:
+        if pattern.match(token):
+            return True
+    return False
+
+
 def optimize_akarin_expr(expr: str) -> str:
     """Optimize akarin.Expr expressions:
     1. Constant folding
@@ -46,42 +59,82 @@ def optimize_akarin_expr(expr: str) -> str:
 def tokenize_expr(expr: str) -> list[str]:
     """Convert expression string to a list of tokens"""
     expr = expr.strip()
-    # Special handling for pixel access syntax to prevent splitting
-    expr = token_pattern.sub(r"\1[\2,\3]", expr)
-    return split_pattern.split(expr)
+    if not expr:
+        return []
+    # Use placeholders for pixel access to prevent splitting inside brackets
+    placeholders = {}
+    placeholder_prefix = "__PXACCESS"
+    placeholder_suffix = "__"
+    count = 0
 
+    def repl(matchobj):
+        nonlocal count
+        key = f"{placeholder_prefix}{count}{placeholder_suffix}"
+        placeholders[key] = matchobj.group(0)  # Store the original full match
+        count += 1
+        return key
 
-def is_numeric(token: str) -> bool:
-    """Check if a token is a numeric constant"""
-    for pattern in number_patterns:
-        if pattern.match(token):
-            return True
-    return False
+    expr_with_placeholders = token_pattern.sub(repl, expr)
+
+    # Split by whitespace
+    raw_tokens = split_pattern.split(expr_with_placeholders)
+
+    # Restore placeholders and filter empty tokens
+    tokens = []
+    for token in raw_tokens:
+        if token in placeholders:
+            tokens.append(placeholders[token])
+        elif token:  # Filter out empty strings resulting from multiple spaces
+            tokens.append(token)
+
+    return tokens
 
 
 def parse_numeric(token: str) -> Union[int, float]:
-    """Parse a numeric token to its actual value"""
+    """Parse a numeric token string to its actual value (int or float)."""
+    if not is_token_numeric(token):
+        raise ValueError(f"Token '{token}' is not a valid numeric format for parsing.")
+
     if hex_pattern.match(token):  # Hexadecimal
         if "." in token or "p" in token.lower():
-            parts = hex_parts_pattern.match(token.lower())
-            if parts:
-                integer_part = int(parts.group(1), 16)
-                fractional_part = 0
-                if parts.group(2):
-                    fractional_part = int(parts.group(2), 16) / (
-                        16 ** len(parts.group(2))
-                    )
-                exponent = 0
-                if parts.group(3):
-                    exponent = int(parts.group(3))
-                return (integer_part + fractional_part) * (2**exponent)
-        return int(token, 16)
-    elif octal_pattern.match(token):  # Octal
+            # Attempt parsing hex float
+            try:
+                return float.fromhex(token)
+            except ValueError:
+                # Fallback for complex hex patterns if fromhex fails (though less likely needed now)
+                parts = hex_parts_pattern.match(token.lower())
+                if parts:
+                    integer_part = int(parts.group(1), 16)
+                    fractional_part = 0
+                    if parts.group(2):
+                        frac_hex = parts.group(2)
+                        fractional_part = int(frac_hex, 16) / (16 ** len(frac_hex))
+                    exponent = 0
+                    if parts.group(3):
+                        exponent = int(parts.group(3))
+                    return (integer_part + fractional_part) * (2**exponent)
+                else:
+                    raise ValueError(
+                        f"Could not parse complex hex token: {token}"
+                    )  # Should not happen
+        else:
+            return int(token, 16)  # Simple hex integer
+    elif (
+        octal_pattern.match(token)
+        and len(token) > 1
+        and all(c in "01234567" for c in token[1:])
+    ):  # Octal
         return int(token, 8)
-    else:
-        if "." in token or "e" in token.lower():
-            return float(token)
-        return int(token)
+    else:  # Decimal / Scientific / Integer
+        try:
+            if "." in token or "e" in token.lower():
+                return float(token)
+            return int(token)
+        except ValueError:
+            # This should not be reached if is_token_numeric passed
+            raise ValueError(
+                f"Internal error: Could not parse supposedly numeric token: {token}"
+            )
 
 
 def calculate_unary(op: str, a: Union[int, float]) -> Optional[Union[int, float]]:
@@ -93,19 +146,42 @@ def calculate_unary(op: str, a: Union[int, float]) -> Optional[Union[int, float]
         "sin": math.sin,
         "cos": math.cos,
         "abs": abs,
-        "not": lambda x: 0.0 if x > 0 else 1.0,
-        "bitnot": lambda x: ~int(x),
-        "trunc": math.trunc,
-        "round": round,
-        "floor": math.floor,
+        "not": lambda x: 0.0 if float(x) > 0.0 else 1.0,
+        "bitnot": lambda x: ~int(x),  # Integer specific
+        "trunc": math.trunc,  # Returns int
+        "round": round,  # Returns int if possible
+        "floor": math.floor,  # Returns float
     }
+    if op not in operators:
+        return None
 
-    if op in operators:
-        try:
-            return operators[op](a)
-        except (ValueError, OverflowError, TypeError):
-            return None
-    return None
+    try:
+        arg = a
+        # Ensure correct type for the operation
+        if op in ["exp", "log", "sqrt", "sin", "cos", "not", "floor"]:
+            arg = float(a)
+        elif op == "bitnot":
+            # Check if float is actually an integer before converting
+            if isinstance(a, float):
+                if not a.is_integer():
+                    return None  # Cannot bitwise-not a non-integer float
+                arg = int(a)
+            else:  # Already int
+                arg = int(a)
+        # For abs, trunc, round, Python handles int/float input okay
+
+        result = operators[op](arg)
+
+        # Attempt to return int if result is numerically an integer where appropriate
+        if (
+            isinstance(result, float)
+            and result.is_integer()
+            and op in ["abs", "trunc", "round", "floor", "bitnot"]
+        ):
+            return int(result)
+        return result
+    except (ValueError, OverflowError, TypeError):
+        return None
 
 
 def calculate_binary(
@@ -116,111 +192,179 @@ def calculate_binary(
         "+": lambda x, y: x + y,
         "-": lambda x, y: x - y,
         "*": lambda x, y: x * y,
-        "/": lambda x, y: x / y,
+        "/": lambda x, y: float(x) / float(y) if float(y) != 0 else None,
         "max": max,
         "min": min,
-        "pow": pow,
-        "**": pow,
-        ">": lambda x, y: 1.0 if x > y else 0.0,
-        "<": lambda x, y: 1.0 if x < y else 0.0,
-        "=": lambda x, y: 1.0 if x == y else 0.0,
-        ">=": lambda x, y: 1.0 if x >= y else 0.0,
-        "<=": lambda x, y: 1.0 if x <= y else 0.0,
-        "and": lambda x, y: 1.0 if x > 0 and y > 0 else 0.0,
-        "or": lambda x, y: 1.0 if x > 0 or y > 0 else 0.0,
-        "xor": lambda x, y: 1.0 if (x > 0) != (y > 0) else 0.0,
-        "%": lambda x, y: x % y,
+        "pow": lambda x, y: pow(float(x), float(y)),
+        "**": lambda x, y: pow(float(x), float(y)),
+        ">": lambda x, y: 1.0 if float(x) > float(y) else 0.0,
+        "<": lambda x, y: 1.0 if float(x) < float(y) else 0.0,
+        "=": lambda x, y: 1.0 if float(x) == float(y) else 0.0,
+        ">=": lambda x, y: 1.0 if float(x) >= float(y) else 0.0,
+        "<=": lambda x, y: 1.0 if float(x) <= float(y) else 0.0,
+        "and": lambda x, y: 1.0 if float(x) > 0 and float(y) > 0 else 0.0,
+        "or": lambda x, y: 1.0 if float(x) > 0 or float(y) > 0 else 0.0,
+        "xor": lambda x, y: 1.0 if (float(x) > 0) != (float(y) > 0) else 0.0,
+        "%": lambda x, y: x % y if y != 0 else None,
         "bitand": lambda x, y: int(x) & int(y),
         "bitor": lambda x, y: int(x) | int(y),
         "bitxor": lambda x, y: int(x) ^ int(y),
     }
+    if op not in operators:
+        return None
 
-    if op in operators:
-        try:
-            return operators[op](a, b)
-        except (ZeroDivisionError, ValueError, OverflowError, TypeError):
+    try:
+        arg1, arg2 = a, b
+        # Ensure correct types for specific operations
+        if op.startswith("bit") or op == "%":
+            # Check if floats are integers before converting
+            f_args = []
+            for v in [a, b]:
+                if isinstance(v, float):
+                    if not v.is_integer():
+                        return None  # Cannot operate on non-integer float
+                    f_args.append(int(v))
+                else:
+                    f_args.append(int(v))
+            arg1, arg2 = f_args[0], f_args[1]
+            if (op == "%" or op == "/") and arg2 == 0:
+                return None  # check zero division
+        elif op in [
+            ">",
+            "<",
+            "=",
+            ">=",
+            "<=",
+            "and",
+            "or",
+            "xor",
+        ]:  # Comparisons use float logic
+            arg1, arg2 = float(a), float(b)
+
+        result = operators[op](arg1, arg2)
+        if result is None:
             return None
-    return None
+
+        # Attempt int conversion for appropriate ops if result is integer
+        if (
+            isinstance(result, float)
+            and result.is_integer()
+            and op in ["+", "-", "*", "%", "max", "min", "bitand", "bitor", "bitxor"]
+        ):
+            return int(result)
+        # Boolean results are always float 1.0/0.0
+        return result
+    except (ZeroDivisionError, ValueError, OverflowError, TypeError):
+        return None
 
 
 def calculate_ternary(
     cond: Union[int, float], true_val: Union[int, float], false_val: Union[int, float]
 ) -> Union[int, float]:
     """Calculate result of ternary operation"""
-    return true_val if cond > 0 else false_val
+    return true_val if float(cond) > 0 else false_val
+
+
+def format_number(num: Union[int, float]) -> str:
+    """Format number back to string representation for expression (more robust)."""
+    if isinstance(num, int):
+        return str(num)
+    elif isinstance(num, float):
+
+        formatted = f"{num:g}"
+
+        if "E" in formatted:
+            formatted = formatted.replace("E", "e")
+
+        return formatted
+    else:
+        # Should not happen
+        return str(num)  # Fallback
 
 
 def fold_constants(expr: str) -> str:
     """Perform constant folding optimization"""
     tokens = tokenize_expr(expr)
-    stack: list[
-        Any
-    ] = []  # Stores actual values (numbers) or None for non-constants during evaluation
-    result_tokens: list[str] = []  # Stores the resulting optimized token list
-    variable_values: dict[
-        str, Union[int, float, None]
-    ] = {}  # Tracks known constant variable values
+    # stack stores actual values (numbers) or None for non-constants/unknowns during evaluation
+    stack: list[Any] = []
+    # result_tokens stores the list of tokens for the potentially optimized expression
+    result_tokens: list[str] = []
+    # Tracks known constant variable values *during this pass*
+    variable_values: dict[str, Union[int, float, None]] = {}  # Reset each pass
 
     i = 0
     while i < len(tokens):
         token = tokens[i]
-        is_processed = (
-            False  # Flag to check if the token was handled and loop should continue
-        )
 
-        # Handle numeric constants
-        if is_numeric(token):
-            value = parse_numeric(token)
-            stack.append(value)
+        # 1. Handle Numeric Constants
+        if is_token_numeric(token):
+            try:
+                value = parse_numeric(token)
+                stack.append(value)
+                result_tokens.append(token)  # Append the original token string
+            except ValueError:
+                # Should not happen
+                stack.append(None)  # Treat as unknown if parsing fails
+                result_tokens.append(token)
+            i += 1
+            continue
+
+        # 2. Handle Variable Store (!)
+        # Store consumes one value from stack, updates variable map, adds '!' token.
+        is_store = (
+            token.endswith("!")
+            and len(token) > 1
+            and not token.startswith("[")
+            and not token_pattern.match(token)
+        )
+        if is_store:
+            var_name = token[:-1]
+            if not stack:
+                raise ValueError(f"Stack underflow at store '{token}'")
+
+            value_to_store = stack.pop()  # Get value from evaluation stack
+            # Store value (or None) associated with var_name for this pass
+            variable_values[var_name] = (
+                value_to_store if isinstance(value_to_store, (int, float)) else None
+            )
+
+            # Store operation only adds its own token. It doesn't remove the token
+            # corresponding to the value popped from the stack. That token remains.
             result_tokens.append(token)
             i += 1
             continue
 
-        # --- Handle Variable Store (!) ---
-        if (
-            token.endswith("!") and len(token) > 1 and not token.startswith("[")
-        ):  # Avoid matching array access
+        # 3. Handle Variable Load (@)
+        # Load checks variable map. If constant, pushes value to stack and adds value token.
+        # If not constant, pushes None to stack and adds '@' token.
+        is_load = (
+            token.endswith("@")
+            and len(token) > 1
+            and not token.startswith("[")
+            and not token_pattern.match(token)
+        )
+        if is_load:
             var_name = token[:-1]
-            if len(stack) < 1:
-                raise ValueError(
-                    f"Stack underflow at token '{token}' at position {i}. Store '!' requires 1 operand."
-                )
-
-            value_to_store = stack.pop()
-            if isinstance(value_to_store, (int, float)):
-                variable_values[var_name] = value_to_store  # Store constant value
-            else:
-                variable_values[var_name] = None  # Mark as non-constant
-
-            result_tokens.append(token)  # Keep the store token in the output
-            i += 1
-            continue  # Skip other checks
-
-        # --- Handle Variable Load (@) ---
-        if (
-            token.endswith("@") and len(token) > 1 and not token.startswith("[")
-        ):  # Avoid matching array access
-            var_name = token[:-1]
-            constant_value = variable_values.get(var_name)
+            constant_value = variable_values.get(
+                var_name
+            )  # Check if known constant in this pass
 
             if isinstance(constant_value, (int, float)):
-                # Substitute load with the constant value
                 stack.append(constant_value)
-                if isinstance(constant_value, int):
-                    result_tokens.append(str(constant_value))
-                else:
-                    # Use 'g' format for concise float representation, avoid trailing zeros
-                    result_tokens.append(f"{constant_value:g}")
-                is_processed = True  # Mark as processed to skip adding original token
+                # Replace the load token (@) with the constant value's token string
+                result_tokens.append(format_number(constant_value))
             else:
-                # Variable not known constant, treat as non-constant
+                # Variable value not known or not constant, result is unknown
                 stack.append(None)
-                result_tokens.append(token)  # Keep the original load token
+                result_tokens.append(token)  # Keep the original load token 'x@'
             i += 1
-            continue  # Move to next token
+            continue
 
-        # Handle unary operators
-        if token in {
+        # --- Operator Folding ---
+        # General strategy: Check stack values AND corresponding result tokens.
+
+        # 4. Handle Unary Operators
+        unary_ops = {
             "exp",
             "log",
             "sqrt",
@@ -232,42 +376,40 @@ def fold_constants(expr: str) -> str:
             "trunc",
             "round",
             "floor",
-        }:
-            if len(stack) < 1:
-                raise ValueError(
-                    f"Stack underflow at token '{token}' at position {i}. Unary operator requires 1 operand."
-                )
+        }
+        if token in unary_ops:
+            can_fold = False
+            if stack and result_tokens:  # Need operand on stack and its token in result
+                op1_stack_val = stack[-1]
+                op1_token = result_tokens[-1]
 
-            if isinstance(stack[-1], (int, float)):
-                a = stack.pop()
-                result = calculate_unary(token, a)
-                if result is not None:
-                    stack.append(result)
-                    # Remove operand
-                    result_tokens.pop()
-                    if isinstance(result, int):
-                        result_tokens.append(str(result))
-                    else:
-                        result_tokens.append(f"{result:g}")
-                    is_processed = True
-                else:
-                    # Non-foldable: consume operand on the stack, but keep original token in result_tokens
-                    stack.pop()  # consume operand
-                    stack.append(None)
-                    result_tokens.append(token)
-                    is_processed = True
-            else:
-                # Non constant operand: consume operand and append operator token without modifying operand token
-                stack.pop()
-                stack.append(None)  # Operand was non-constant
-                result_tokens.append(token)  # Keep operator
-                is_processed = True
-            if is_processed:
-                i += 1
-                continue
+                # Check if stack value is number AND token is numeric string
+                if isinstance(op1_stack_val, (int, float)) and is_token_numeric(
+                    op1_token
+                ):
+                    result = calculate_unary(token, op1_stack_val)
+                    if result is not None:
+                        # Folded successfully! Update stack and result_tokens.
+                        stack.pop()
+                        stack.append(result)
+                        result_tokens.pop()  # Remove operand token
+                        result_tokens.append(
+                            format_number(result)
+                        )  # Append result token
+                        can_fold = True
 
-        # --- Handle Binary Operators ---
-        if token in {
+            if not can_fold:
+                # Cannot fold: Pop stack operand (if any), push None, append operator token.
+                if stack:
+                    stack.pop()  # Consume the operand value from stack
+                stack.append(None)  # Result is unknown
+                result_tokens.append(token)  # Keep the operator token
+
+            i += 1
+            continue
+
+        # 5. Handle Binary Operators
+        BINARY_OPS = {
             "+",
             "-",
             "*",
@@ -288,164 +430,215 @@ def fold_constants(expr: str) -> str:
             "bitand",
             "bitor",
             "bitxor",
-        }:
-            if len(stack) < 2:
-                raise ValueError(
-                    f"Stack underflow at token '{token}' at position {i}. Binary operator requires 2 operands."
-                )
-            op2 = stack.pop()
-            op1 = stack.pop()
-            if isinstance(op1, (int, float)) and isinstance(op2, (int, float)):
-                result = calculate_binary(token, op1, op2)
-                if result is not None:
-                    stack.append(result)
-                    result_tokens.pop()  # Remove op2 token
-                    result_tokens.pop()  # Remove op1 token
-                    if isinstance(result, int):
-                        result_tokens.append(str(result))
-                    else:
-                        result_tokens.append(f"{result:g}")
-                    is_processed = True
-                else:
-                    stack.append(None)
-                    # Non-foldable: leave the previously pushed operand tokens intact and append operator token
-                    result_tokens.append(token)
-                    is_processed = True
-            else:
-                # At least one operand is non constant: simulate consumption and append operator token without modifying previous tokens
-                stack.append(None)
-                result_tokens.append(token)
-                is_processed = True
-            if is_processed:
-                i += 1
-                continue
+        }
+        if token in BINARY_OPS:
+            can_fold = False
+            if len(stack) >= 2 and len(result_tokens) >= 2:
+                op2_stack_val = stack[-1]
+                op1_stack_val = stack[-2]
+                op2_token = result_tokens[-1]
+                op1_token = result_tokens[-2]
 
-        # Handle ternary operator "?"
+                # Check stack values AND tokens
+                if (
+                    isinstance(op1_stack_val, (int, float))
+                    and isinstance(op2_stack_val, (int, float))
+                    and is_token_numeric(op1_token)
+                    and is_token_numeric(op2_token)
+                ):
+                    result = calculate_binary(token, op1_stack_val, op2_stack_val)
+                    if result is not None:
+                        # Folded successfully!
+                        stack.pop()
+                        stack.pop()
+                        stack.append(result)
+                        result_tokens.pop()
+                        result_tokens.pop()  # Remove operand tokens
+                        result_tokens.append(
+                            format_number(result)
+                        )  # Append result token
+                        can_fold = True
+
+            if not can_fold:
+                # Cannot fold: Pop stack operands (if any), push None, append operator token.
+                if len(stack) >= 2:
+                    stack.pop()
+                    stack.pop()
+                elif len(stack) == 1:
+                    stack.pop()
+                stack.append(None)  # Result is unknown
+                result_tokens.append(token)  # Keep the operator token
+
+            i += 1
+            continue
+
+        # 6. Handle Ternary Operator (?)
         if token == "?":
-            if len(stack) < 3:
-                raise ValueError(
-                    f"Stack underflow at token '{token}' at position {i}. Ternary operator requires 3 operands."
-                )
+            can_fold = False
+            if len(stack) >= 3 and len(result_tokens) >= 3:
+                false_val_stack = stack[-1]
+                true_val_stack = stack[-2]
+                cond_stack = stack[-3]
+                false_token = result_tokens[-1]
+                true_token = result_tokens[-2]
+                cond_token = result_tokens[-3]
 
-            false_val_stack = stack.pop()
-            true_val_stack = stack.pop()
-            cond_stack = stack.pop()
-
-            if (
-                isinstance(cond_stack, (int, float))
-                and isinstance(true_val_stack, (int, float))
-                and isinstance(false_val_stack, (int, float))
-            ):
-                result = calculate_ternary(cond_stack, true_val_stack, false_val_stack)
-                stack.append(result)
-                # Remove operands
-                for _ in range(3):
+                # Check stack values AND tokens
+                if (
+                    isinstance(cond_stack, (int, float))
+                    and isinstance(true_val_stack, (int, float))
+                    and isinstance(false_val_stack, (int, float))
+                    and is_token_numeric(cond_token)
+                    and is_token_numeric(true_token)
+                    and is_token_numeric(false_token)
+                ):
+                    # Note: calculate_ternary itself doesn't fail easily if inputs are numbers
+                    result = calculate_ternary(
+                        cond_stack, true_val_stack, false_val_stack
+                    )
+                    # Folded successfully!
+                    stack.pop()
+                    stack.pop()
+                    stack.pop()
+                    stack.append(result)
                     result_tokens.pop()
-                # Add result
-                if isinstance(result, int):
-                    result_tokens.append(str(result))
-                else:
-                    result_tokens.append(f"{result:g}")
-            else:
-                # Non-foldable: simulate consumption and append operator token without modifying the operand tokens
+                    result_tokens.pop()
+                    result_tokens.pop()  # Remove operand tokens
+                    result_tokens.append(format_number(result))  # Append result token
+                    can_fold = True
+
+            if not can_fold:
+                # Cannot fold
+                if len(stack) >= 3:
+                    stack.pop()
+                    stack.pop()
+                    stack.pop()
+                elif len(stack) == 2:
+                    stack.pop()
+                    stack.pop()
+                elif len(stack) == 1:
+                    stack.pop()
                 stack.append(None)
                 result_tokens.append(token)
             i += 1
             continue
 
-        # Handle clamp/clip operators
+        # 7. Handle clamp/clip operators
         if token in {"clamp", "clip"}:
-            if len(stack) < 3:
-                raise ValueError(
-                    f"Stack underflow at token '{token}' at position {i}. Clamp operator requires 3 operands."
-                )
-            max_val = stack.pop()
-            min_val = stack.pop()
-            value_val = stack.pop()
-            if (
-                isinstance(value_val, (int, float))
-                and isinstance(min_val, (int, float))
-                and isinstance(max_val, (int, float))
-            ):
-                min_val_ordered = min(min_val, max_val)
-                max_val_ordered = max(min_val, max_val)
-                result = max(min_val_ordered, min(max_val_ordered, value_val))
-                stack.append(result)
-                # Remove the last three operand tokens and append result token
-                for _ in range(3):
+            can_fold = False
+            if len(stack) >= 3 and len(result_tokens) >= 3:
+                max_val_stack = stack[-1]
+                min_val_stack = stack[-2]
+                value_val_stack = stack[-3]
+                max_token = result_tokens[-1]
+                min_token = result_tokens[-2]
+                value_token = result_tokens[-3]
+
+                if (
+                    isinstance(value_val_stack, (int, float))
+                    and isinstance(min_val_stack, (int, float))
+                    and isinstance(max_val_stack, (int, float))
+                    and is_token_numeric(value_token)
+                    and is_token_numeric(min_token)
+                    and is_token_numeric(max_token)
+                ):
+                    min_v = min(min_val_stack, max_val_stack)
+                    max_v = max(min_val_stack, max_val_stack)
+                    # Clamp logic assumes value_val_stack is the value to clamp
+                    result = max(min_v, min(max_v, value_val_stack))
+
+                    stack.pop()
+                    stack.pop()
+                    stack.pop()
+                    stack.append(result)
                     result_tokens.pop()
-                if isinstance(result, int):
-                    result_tokens.append(str(result))
-                else:
-                    result_tokens.append(f"{result:g}")
-            else:
-                stack.append(None)  # Operands not all constant
-                result_tokens.append(token)  # Keep operator
+                    result_tokens.pop()
+                    result_tokens.pop()
+                    result_tokens.append(format_number(result))
+                    can_fold = True
+
+            if not can_fold:
+                if len(stack) >= 3:
+                    stack.pop()
+                    stack.pop()
+                    stack.pop()
+                elif len(stack) == 2:
+                    stack.pop()
+                    stack.pop()
+                elif len(stack) == 1:
+                    stack.pop()
+                stack.append(None)
+                result_tokens.append(token)
+
             i += 1
             continue
 
-        # --- Stack manipulation ops (swap, dup, drop, sort) ---
-        # These don't change constant values directly, but we need to update the evaluation stack (`stack`)
-        # They remain in the result_tokens as they affect runtime execution flow
+        # --- Stack Manipulation Ops (No Folding, Just Stack Simulation and Token Append) ---
+        # These ops inherently prevent folding across them because they add non-numeric tokens.
 
-        # Handle swap operations
+        # 8. Handle swapN
         if token.startswith("swap"):
             n = 1
             if len(token) > 4:
                 try:
                     n = int(token[4:])
                 except ValueError:
-                    pass
+                    pass  # Treat as unknown token if N is invalid
+            if n < 0:
+                raise ValueError("Swap count cannot be negative")
 
             if len(stack) <= n:
-                raise ValueError(
-                    f"Stack underflow at token '{token}' at position {i}. Swap requires at least {n+1} items."
-                )
-            # Simulate swap on the evaluation stack
-            if n > 0:  # swap0 is a no-op
+                raise ValueError(f"Stack underflow for {token}")
+
+            if n > 0:  # Simulate swap on evaluation stack
                 stack[-1], stack[-(n + 1)] = stack[-(n + 1)], stack[-1]
-            result_tokens.append(token)  # Keep the token
+            # Always keep the token
+            result_tokens.append(token)
             i += 1
             continue
 
+        # 9. Handle dupN
         if token.startswith("dup"):
-            n = 0  # Default for 'dup'
-            if len(token) > 3:  # Extract N from 'dupN'
+            n = 0
+            if len(token) > 3:
                 try:
                     n = int(token[3:])
                 except ValueError:
                     pass
+            if n < 0:
+                raise ValueError("Dup index cannot be negative")
+
             if len(stack) <= n:
-                raise ValueError(
-                    f"Stack underflow at token '{token}' at position {i}. Dup requires at least {n+1} items."
-                )
-            # Simulate dup on the evaluation stack
+                raise ValueError(f"Stack underflow for {token}")
+            # Simulate dup on evaluation stack
             stack.append(stack[-(n + 1)])
-            result_tokens.append(token)  # Keep the token
+            # Always keep the token
+            result_tokens.append(token)
             i += 1
             continue
 
-        # Handle drop operations
+        # 10. Handle dropN
         if token.startswith("drop"):
-            n = 1  # Default for 'drop'
-            if len(token) > 4:  # Extract N from 'dropN'
+            n = 1
+            if len(token) > 4:
                 try:
                     n = int(token[4:])
                 except ValueError:
                     pass
-
-            if len(stack) < n:
-                raise ValueError(
-                    f"Stack underflow at token '{token}' at position {i}. Drop requires at least {n} items."
-                )
-            # Simulate drop on the evaluation stack
-            for _ in range(n):
-                stack.pop()
-
-            result_tokens.append(token)  # Keep the token
+            if n < 0:
+                raise ValueError("Drop count cannot be negative")
+            if n == 0:  # drop0 is no-op, just keep token
+                pass
+            elif len(stack) < n:
+                raise ValueError(f"Stack underflow for {token}")
+            else:  # Simulate drop on evaluation stack
+                del stack[-n:]
+            # Always keep the token
+            result_tokens.append(token)
             i += 1
             continue
 
+        # 11. Handle sortN
         if token.startswith("sort"):
             n = 0
             if len(token) > 4:
@@ -453,93 +646,132 @@ def fold_constants(expr: str) -> str:
                     n = int(token[4:])
                 except ValueError:
                     pass
-
             if n <= 0:
-                raise ValueError(
-                    f"Invalid sort count. {token} requires a positive number."
-                )
-
+                raise ValueError("Sort count must be positive")
             if len(stack) < n:
-                raise ValueError(
-                    f"Stack underflow at token '{token}' at position {i}. Sort requires at least {n} items."
-                )
+                raise ValueError(f"Stack underflow for {token}")
+            # Simulate sort effect: Removes N items, pushes N unknown results
             del stack[-n:]
             for _ in range(n):
                 stack.append(None)
+            # Always keep the token
             result_tokens.append(token)
             i += 1
             continue
 
-        # Other tokens, no constant folding
-        if token.endswith("[]") and not token.startswith("["):
-            # Dynamic access requires 2 preceding items (coords) which become non-constant after access
+        # --- Pixel Access (Treated as Non-foldable Operations) ---
+
+        # 12. Handle Dynamic Access like `clip[]`
+        # Consumes 2 stack items (coords), pushes None, keeps token.
+        is_dynamic_access = (
+            token.endswith("[]")
+            and len(token) > 2
+            and not token.startswith("[")
+            and not token_pattern.match(token)
+            and not is_token_numeric(token)
+        )  # Heuristic check
+        if is_dynamic_access:
             if len(stack) < 2:
-                raise ValueError(
-                    f"Stack underflow for dynamic access '{token}'. Requires x y coordinates."
-                )
-            stack.pop()  # y coord
-            stack.pop()  # x coord
-            stack.append(None)  # Result of access is non-constant
-            result_tokens.append(token)
+                raise ValueError(f"Stack underflow for dynamic access '{token}'")
+            stack.pop()
+            stack.pop()  # Consume y, x coords from stack
+            stack.append(None)  # Result is unknown
+            result_tokens.append(token)  # Keep the token
             i += 1
             continue
 
-        if token_pattern.match(token):
-            stack.append(None)  # Result of access is non-constant
-            result_tokens.append(token)
+        # 13. Handle Static Access like `clip[1,2]`
+        # Pushes None, keeps token.
+        match = token_pattern.match(token)
+        if match:
+            stack.append(None)  # Result is unknown during folding pass
+            result_tokens.append(token)  # Keep the token
             i += 1
             continue
 
-        # Other tokens, leave unchanged
+        # Default: Unknown/Other Tokens
+        # Assume it pushes one unknown result onto the stack and keep the token.
+        # This includes unrecognized functions, malformed tokens, etc.
         stack.append(None)
         result_tokens.append(token)
         i += 1
 
     return " ".join(result_tokens)
 
-
 def convert_dynamic_to_static(expr: str) -> str:
-    """Convert dynamic pixel access to static when possible."""
-    tokens = tokenize_expr(expr)
-    result_tokens = []
+    """Convert dynamic pixel access to static when possible"""
+    tokens = tokenize_expr(expr)  # Re-tokenize the folded expression
+    if not tokens:
+        return ""
 
+    result_tokens = []
     i = 0
     while i < len(tokens):
         token = tokens[i]
-        can_convert = False
+        converted = False
 
         # Check for dynamic pixel access pattern (clip[])
-        if (
+        is_dynamic_access = (
             token.endswith("[]")
+            and len(token) > 2
             and not token.startswith("[")
-            and len(result_tokens) >= 2
-        ):
-            # Check if the last two tokens in the *result* list are numeric constants
+            and not token_pattern.match(token)
+            and not is_token_numeric(token)
+        )  # Heuristic check
+
+        if is_dynamic_access and len(result_tokens) >= 2:
+            # Check if the last two tokens in the result list being built are integer constants
+            # TODO: convert float to int; need to check akarin.Expr code
             y_token = result_tokens[-1]
             x_token = result_tokens[-2]
 
-            if is_numeric(x_token) and is_numeric(y_token):
-                # Perform conversion
-                clip_identifier = token[:-2]
+            if is_token_numeric(x_token) and is_token_numeric(y_token):
                 try:
-                    y = int(parse_numeric(y_token))
-                    x = int(parse_numeric(x_token))
+                    y_val = parse_numeric(y_token)
+                    x_val = parse_numeric(x_token)
 
-                    # Pop the constant coordinates from result_tokens
-                    result_tokens.pop()  # Remove y coordinate token
-                    result_tokens.pop()  # Remove x coordinate token
+                    # Check if they are effectively integers
+                    is_x_int = isinstance(x_val, int) or (
+                        isinstance(x_val, float) and x_val.is_integer()
+                    )
+                    is_y_int = isinstance(y_val, int) or (
+                        isinstance(y_val, float) and y_val.is_integer()
+                    )
 
-                    # Append the new static access token
-                    result_tokens.append(f"{clip_identifier}[{x},{y}]")
-                    can_convert = True
-                except ValueError:
-                    # If parsing fails for some reason, don't convert
-                    pass
+                    if is_x_int and is_y_int:
+                        x_int = int(x_val)
+                        y_int = int(y_val)
 
-        if not can_convert:
-            # If not converting, just append the original token
+                        # Perform conversion
+                        clip_identifier = token[:-2]  # Get clip name
+                        # Handle potential :c or :m suffix
+                        suffix = ""
+                        if ":" in clip_identifier:
+                            parts = clip_identifier.split(":", 1)
+                            clip_identifier = parts[0]
+                            suffix = ":" + parts[1]
+
+                        # Pop the constant coordinate tokens from result_tokens
+                        result_tokens.pop()  # Remove y token
+                        result_tokens.pop()  # Remove x token
+
+                        # Append the new static access token
+                        result_tokens.append(
+                            f"{clip_identifier}[{x_int},{y_int}]{suffix}"
+                        )
+                        converted = True
+
+                except (
+                    ValueError,
+                    OverflowError,
+                ):  # Handle parse errors or large floats
+                    # If parsing or int conversion fails, don't convert
+                    pass  # Fall through to append original token
+
+        if not converted:
+            # If not converting this token, just append it
             result_tokens.append(token)
 
-        i += 1
+        i += 1  # Move to the next token in the *original* list
 
     return " ".join(result_tokens)
