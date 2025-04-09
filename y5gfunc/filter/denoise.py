@@ -1,7 +1,7 @@
 from vstools import vs
 from vstools import core
 import mvsfunc as mvf
-import vsutil
+import vstools
 from typing import Literal, Union
 from .resample import rgb2opp, opp2rgb
 
@@ -74,7 +74,7 @@ def Fast_BM3DWrapper(
 
     half_width = clip.width // 2  # half width
     half_height = clip.height // 2  # half height
-    srcY_float, srcU_float, srcV_float = vsutil.split(vsutil.depth(clip, 32))
+    srcY_float, srcU_float, srcV_float = vstools.split(vstools.depth(clip, 32))
 
     basic_y = bm3d.BM3Dv2(
         clip=srcY_float,
@@ -93,8 +93,8 @@ def Fast_BM3DWrapper(
     )
     
     vyhalf = final_y.resize2.Spline36(half_width, half_height, src_left=-0.5)
-    srchalf_444 = vsutil.join([vyhalf, srcU_float, srcV_float])
-    srchalf_opp = rgb2opp(mvf.ToRGB(input=srchalf_444, depth=32, matrix="709", sample=1))
+    srchalf_444 = vstools.join([vyhalf, srcU_float, srcV_float])
+    srchalf_opp = rgb2opp(mvf.ToRGB(input=srchalf_444, depth=32, matrix="709", sample=vs.FLOAT))
 
     basic_half = bm3d.BM3Dv2(
         clip=srchalf_opp,
@@ -117,6 +117,6 @@ def Fast_BM3DWrapper(
     )
 
     final_half = opp2rgb(final_half).resize2.Spline36(format=vs.YUV444PS, matrix=1)
-    _, final_u, final_v = vsutil.split(final_half)
-    vfinal = vsutil.join([final_y, final_u, final_v])
-    return vsutil.depth(vfinal, 16)
+    _, final_u, final_v = vstools.split(final_half)
+    vfinal = vstools.join([final_y, final_u, final_v])
+    return vstools.depth(vfinal, 16)

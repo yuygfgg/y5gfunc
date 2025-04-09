@@ -1,7 +1,7 @@
 from typing import Union, Optional, Literal
 from vstools import vs
 from vstools import core
-import vsutil
+import vstools
 from ..utils import PickFrames
 
 def encode_check(
@@ -38,7 +38,7 @@ def encode_check(
         ssim = SSIM(encoded, source)
             
     if enable_cambi:
-        cambi = core.cambi.Cambi(encoded if vsutil.get_depth(encoded) <= 10 else vsutil.depth(encoded, 10, dither_type="none"), prop='CAMBI')
+        cambi = core.cambi.Cambi(encoded if vstools.get_depth(encoded) <= 10 else vstools.depth(encoded, 10, dither_type="none"), prop='CAMBI')
     
     error_frames = []
     def _chk(n: int, f: list[vs.VideoFrame]) -> vs.VideoFrame:

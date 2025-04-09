@@ -1,6 +1,6 @@
 from vstools import vs
 from vstools import core
-import vsutil
+import vstools
 from typing import Union, Optional
 import functools
 import mvsfunc as mvf
@@ -32,7 +32,7 @@ def SynDeband(
     assert clip.format.id == vs.YUV420P16
     
     if kill is None:
-        kill = vsutil.iterate(clip, functools.partial(remove_grain, mode=[20, 11]), 2)
+        kill = vstools.iterate(clip, functools.partial(remove_grain, mode=[20, 11]), 2)
     elif not kill:
         kill = clip
     
@@ -51,7 +51,7 @@ def SynDeband(
         f3k2 = mvf.LimitFilter(f3k2, kill, thr=limit_thry, thrc=limit_thrc, elast=limit_elast)
     if bmask is None:
         bmask = retinex_edgemask(kill).std.Binarize(mstr)
-        bmask = vsutil.iterate(bmask, _inflate, inflate)
+        bmask = vstools.iterate(bmask, _inflate, inflate)
     deband = core.std.MaskedMerge(f3k2, kill, bmask)
     deband = core.std.MergeDiff(deband, grain)
     if include_mask:

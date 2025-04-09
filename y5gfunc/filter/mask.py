@@ -1,6 +1,6 @@
 from vstools import vs
 from vstools import core
-import vsutil
+import vstools
 from typing import Callable, Any, Optional, Union
 from vsrgtools import remove_grain
 from vsmasktools import retinex
@@ -16,9 +16,9 @@ def DBMask(clip: vs.VideoNode) -> vs.VideoNode:
     nrmaskb = core.tcanny.TCanny(clip, sigma=1.3, t_h=6.5, op=2, planes=0)
     nrmaskg = core.tcanny.TCanny(clip, sigma=1.1, t_h=5.0, op=2, planes=0)
     nrmask = core.akarin.Expr([nrmaskg, nrmaskb, nrmasks, clip], [f"a {scale_value_full(20, 8, clip)} < {get_peak_value_full(clip)} a {scale_value_full(48, 8, clip)} < x {scale_value_full(256, 16, clip)} * a {scale_value_full(96, 8, clip)} < y {scale_value_full(256, 16, clip)} * z ? ? ?",""], clip.format.id)
-    nrmask = minimum(vsutil.iterate(nrmask, functools.partial(maximum, planes=[0]), 2), planes=[0])
+    nrmask = minimum(vstools.iterate(nrmask, functools.partial(maximum, planes=[0]), 2), planes=[0])
     nrmask = remove_grain(nrmask, [20, 0])
-    nrmask = vsutil.get_y(nrmask) # first_plane=True in [LoliHouse] Anime_WebSource_deband_1080P_10bit_adcance.vpy: L33
+    nrmask = vstools.get_y(nrmask) # first_plane=True in [LoliHouse] Anime_WebSource_deband_1080P_10bit_adcance.vpy: L33
     return nrmask
 
 def get_oped_mask(
@@ -57,10 +57,10 @@ def get_oped_mask(
     max = get_peak_value_full(clip)
 
     diff = core.akarin.Expr([nc, clip], f"x y - abs {thr} < 0 {max} ?")
-    diff = vsutil.get_y(diff)
+    diff = vstools.get_y(diff)
     
-    diff = vsutil.iterate(diff, maximum, 5)
-    diff = vsutil.iterate(diff, minimum, 6)
+    diff = vstools.iterate(diff, maximum, 5)
+    diff = vstools.iterate(diff, minimum, 6)
     
     return nc, diff
 
@@ -76,20 +76,20 @@ def cambi_mask(
     assert 0 <= scale < 5
     assert callable(blur_func)
     
-    if vsutil.get_depth(clip) > 10:
-        clip = vsutil.depth(clip, 10, dither_type="none")
+    if vstools.get_depth(clip) > 10:
+        clip = vstools.depth(clip, 10, dither_type="none")
 
     scores = core.akarin.Cambi(clip, scores=True, **cambi_args)
     if merge_previous:
         cscores = [
-            blur_func(vsutil.iterate(scores.std.PropToClip(f'CAMBI_SCALE{i}'), deflate, 2))
+            blur_func(vstools.iterate(scores.std.PropToClip(f'CAMBI_SCALE{i}'), deflate, 2))
             for i in range(scale + 1)
         ]
         expr_parts = [f"src{i} {scale + 1} /" for i in range(scale + 1)]
         expr = " ".join(expr_parts) + " " + " ".join(["+"] * (scale))
         deband_mask = core.akarin.Expr([core.resize2.Bilinear(c, scores.width, scores.height) for c in cscores], expr)
     else:
-        deband_mask = blur_func(vsutil.iterate(scores.std.PropToClip(f'CAMBI_SCALE{scale}'), deflate, 2))
+        deband_mask = blur_func(vstools.iterate(scores.std.PropToClip(f'CAMBI_SCALE{scale}'), deflate, 2))
 
     return deband_mask.std.CopyFrameProps(scores)
 
@@ -103,7 +103,7 @@ def kirsch(src: vs.VideoNode) -> vs.VideoNode:
 
 # modified from kagefunc.retinex_edgemask()
 def retinex_edgemask(src: vs.VideoNode) -> vs.VideoNode:
-    luma = vsutil.get_y(src)
+    luma = vstools.get_y(src)
     max_value = get_peak_value_full(src)
     ret = retinex(luma, sigma=[50, 200, 350], upper_thr=0.005)
     tcanny = minimum(ret.tcanny.TCanny(mode=1, sigma=1), coordinates=[1, 0, 1, 0, 0, 1, 0, 1])
@@ -114,8 +114,8 @@ def generate_detail_mask(source: vs.VideoNode, upscaled: vs.VideoNode, threshold
     assert source.format == upscaled.format
     threshold = scale_value_full(threshold, 32, source)
     mask = core.akarin.Expr([source, upscaled], 'src0 src1 - abs').std.Binarize(threshold=threshold)
-    mask = vsutil.iterate(mask, maximum, 3)
-    mask = vsutil.iterate(mask, inflate, 3)
+    mask = vstools.iterate(mask, maximum, 3)
+    mask = vstools.iterate(mask, inflate, 3)
     return mask
 
 # modified from jvsfunc.comb_mask()

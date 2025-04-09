@@ -1,6 +1,6 @@
 from vstools import vs
 from vstools import core
-import vsutil
+import vstools
 from typing import Union, Optional
 import functools
 from .mask import generate_detail_mask
@@ -90,7 +90,7 @@ def rescale(
     b = [b] if isinstance(b, (float, int)) else b
     c = [c] if isinstance(c, (float, int)) else c
     
-    clip = vsutil.depth(clip, 32)
+    clip = vstools.depth(clip, 32)
     
     def scene_descale(
         n: int,
@@ -224,7 +224,7 @@ def rescale(
         return final_clip
 
     def _fft(clip: vs.VideoNode) -> vs.VideoNode:
-        return core.fftspectrum_rs.FFTSpectrum(clip=vsutil.depth(clip,8))
+        return core.fftspectrum_rs.FFTSpectrum(clip=vstools.depth(clip,8))
     
     
     if hasattr(core, "sneedif") and opencl:
@@ -245,7 +245,7 @@ def rescale(
     detail_masks: list[vs.VideoNode] = []
     params_list: list[dict] = []
     
-    src_luma = vsutil.get_y(clip)
+    src_luma = vstools.get_y(clip)
     
     for kernel_name, sh, base_w, base_h, _taps, _b, _c in product(descale_kernel, src_height, bw, bh, taps, b, c):
         extra_params: dict[str, dict[str, Union[float, int]]] = {}
