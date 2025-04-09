@@ -1,25 +1,106 @@
 from vstools import vs
 from vstools import core
 import vstools
-from typing import Union, Optional
+from typing import Literal, Union, Optional
+from enum import Enum
+from math import floor
 import functools
 from .mask import generate_detail_mask
+from itertools import product
+from muvsfunc import SSIM_downsample
 
-# TODO: use vs-jetpack Rescalers, handle asymmetrical descales
+class DescaleMode(Enum):
+    W = 0
+    H = 1
+    WH = 2
+    HW = 3
+
+# modified from getfnative.descale_cropping_args()
+def descale_cropping_args(
+    clip: vs.VideoNode,
+    src_height: float,
+    base_height: int,
+    base_width: int,
+    crop_top: int = 0,
+    crop_bottom: int = 0,
+    crop_left: int = 0,
+    crop_right: int = 0,
+    mode: DescaleMode = DescaleMode.WH
+) -> dict[str, Union[int, float]]:
+
+    effective_src_h = clip.height + crop_top + crop_bottom
+    if effective_src_h <= 0:
+        raise ValueError("descale_cropping_args: Effective source height (clip.height + crop_top + crop_bottom) must be positive.")
+
+    ratio = src_height / effective_src_h
+    effective_src_w = clip.width + crop_left + crop_right
+    if effective_src_w <= 0:
+        raise ValueError("descale_cropping_args: Effective source width (clip.width + crop_left + crop_right) must be positive.")
+
+    src_width = ratio * effective_src_w
+
+    cropped_src_width: float = ratio * clip.width
+    cropped_src_height: float = ratio * clip.height
+
+    margin_left: float = (base_width - src_width) / 2 + ratio * crop_left
+    margin_right: float = (base_width - src_width) / 2 + ratio * crop_right
+    margin_top: float = (base_height - src_height) / 2 + ratio * crop_top
+    margin_bottom: float = (base_height - src_height) / 2 + ratio * crop_bottom
+
+    cropped_width: int = max(0, base_width - floor(margin_left) - floor(margin_right))
+    cropped_height: int = max(0, base_height - floor(margin_top) - floor(margin_bottom))
+
+    cropped_src_left: float = margin_left - floor(margin_left)
+    cropped_src_top: float = margin_top - floor(margin_top)
+
+
+    args: dict[str, Union[int, float]] = dict(
+        width=clip.width,
+        height=clip.height
+    )
+
+    args_w: dict[str, Union[int, float]] = dict(
+        width=cropped_width,
+        src_width=cropped_src_width,
+        src_left=cropped_src_left
+    )
+
+    args_h: dict[str, Union[int, float]] = dict(
+        height=cropped_height,
+        src_height=cropped_src_height,
+        src_top=cropped_src_top
+    )
+
+    if mode == DescaleMode.WH:
+        args.update(args_w)
+        args.update(args_h)
+    elif mode == DescaleMode.HW:
+        args.update(args_h)
+        args.update(args_w)
+    elif mode == DescaleMode.W:
+        args.update(args_w)
+    elif mode == DescaleMode.H:
+        args.update(args_h)
+
+    return args
+
+# TODO: use vs-jetpack Rescalers
 # inspired by https://skyeysnow.com/forum.php?mod=viewthread&tid=58390
 def rescale(
     clip: vs.VideoNode,
-    descale_kernel: Union[str, list[str]] = "Debicubic",
+    descale_kernel: Union[Literal["Debicubic", "Delanczos", "Despline16", "Despline36", "Despline64", "Debilinear", "Depoint"], list[str]] = "Debicubic",
     src_height: Union[Union[float, int], list[Union[float, int]]] = 720,
     bw: Optional[Union[int, list[int]]] = None,
     bh: Optional[Union[int, list[int]]]  = None,
+    descale_mode: DescaleMode = DescaleMode.WH,
     show_upscaled: bool = False,
     show_fft: bool = False,
     detail_mask_threshold: float = 0.05,
     use_detail_mask: bool = True,
     show_detail_mask: bool = False,
+    exclude_common_mask: bool = True,
     show_common_mask: bool = False,
-    nnedi3_args: dict = {'field': 1, 'nsize': 4, 'nns': 4, 'qual': 2},
+    nnedi3_args: dict[str, int] = {'field': 1, 'nsize': 4, 'nns': 4, 'qual': 2},
     taps: Union[int, list[int]] = 4,
     b: Union[Union[float, int], list[Union[float, int]]] = 0.33,
     c: Union[Union[float, int], list[Union[float, int]]] = 0.33,
@@ -29,7 +110,6 @@ def rescale(
     ex_thr: Union[float, int] = 0.015, 
     norm_order: int = 1, 
     crop_size: int = 5,
-    exclude_common_mask: bool = True,
     scene_stable: bool = False,
     scene_descale_threshold_ratio: float = 0.5,
     scenecut_threshold: Union[float, int] = 0.1,
@@ -51,24 +131,67 @@ def rescale(
     tuple[vs.VideoNode, list[vs.VideoNode], vs.VideoNode, vs.VideoNode, vs.VideoNode, vs.VideoNode, vs.VideoNode, vs.VideoNode]
 ]:
     
-    '''
-    To rescale from multiple native resolution, use this func for every possible src_height, then choose the largest MaxDelta one.
-    
-    e.g. 
-    rescaled1, detail_mask1, osd1 = rescale(clip=srcorg, src_height=ranger(714.5, 715, 0.025)+[713, 714, 716, 717], bw=1920, bh=1080, descale_kernel="Debicubic", b=1/3, c=1/3, show_detail_mask=True)
-    rescaled2, detail_mask2, osd2 = rescale(clip=srcorg, src_height=ranger(955, 957,0.1)+[953, 954, 958], bw=1920, bh=1080, descale_kernel="Debicubic", b=1/3, c=1/3, show_detail_mask=True)
+    """
+    Automatically descale and rescale
 
-    select_expr = "src0.MaxDelta src0.Descaled * src1.MaxDelta src1.Descaled * argmax2"
+    This function attempts to find the 'native' resolution of a video clip that may have been upscaled during production. It tests various
+    descaling parameters by descaling the input clip, re-upscaling it with the *same* kernel, and comparing the result to the original clip luma.
 
-    osd = core.akarin.Select([osd1, osd2], [rescaled1, rescaled2], select_expr)
-    src = core.akarin.Select([rescaled1, rescaled2], [rescaled1, rescaled2], select_expr)
-    detail_mask = core.akarin.Select([detail_mask1, detail_mask2], [rescaled1, rescaled2], select_expr)
-    '''
+    The parameter set yielding the minimum difference (within thresholds) is considered the 'best' guess for the original upscale parameters. The clip
+    descaled with these parameters is then re-upscaled to the original dimensions using a potentially higher-quality method (NNEDI3 + SSIM_downsample).
+
+    A detail mask can be generated and used to merge the rescaled result with the original clip, preserving details that might exist only in the original
+    resolution (like credits). Scene-based decision logic can be enabled via `scene_stable`.
+
+    Args:
+        clip: Input video node. Expected to be in YUV format for proper handling.
+        descale_kernel: Descale kernel(s) to test (e.g., "Debicubic", "Delanczos").
+        src_height: Potential native source height(s) to test.
+        bw: Base width for descaling calculations.
+        bh: Base height for descaling calculations.
+        descale_mode: Order of applying width/height descaling.
+        show_upscaled: If True, return the list of intermediate same-kernel upscaled clips used for comparison.
+        show_fft: If True, return FFT spectrums of the original and final clip.
+        detail_mask_threshold: Threshold for generating the detail mask. Lower values detect more 'detail'.
+            Useful to mask original resolution contents.
+        use_detail_mask: If True, merge the final rescaled clip with the original using the detail mask.
+        show_detail_mask: If True, return the final selected detail mask.
+        exclude_common_mask: If True, use the common mask to exclude potential native details from the difference calculation.
+        show_common_mask: If True, return the mask generated by combining all candidate detail masks (used for error calculation exclusion).
+            Useful when descaling scenes with native resolution contents.
+        nnedi3_args: Arguments passed to the NNEDI3 function for the high-quality upscale.
+        taps: Taps parameter(s) for Delanczos/Despline kernels.
+        b: Bicubic 'b' parameter(s) for Debicubic kernel.
+        c: Bicubic 'c' parameter(s) for Debicubic kernel.
+        threshold_max: Maximum difference metric allowed for a frame to be considered 'descaled' (use large value to disable).
+        threshold_min: Minimum difference metric required for a frame to be considered 'descaled' (use negative value to disable).
+        show_osd: If True, return a clip with On-Screen Display showing frame stats.
+        ex_thr: Exclusion threshold for difference calculation; differences below this are ignored.
+        norm_order: Order of the norm used for calculating frame difference (1 = MAE).
+        crop_size: Pixels to crop from each border before calculating difference.
+        scene_stable: If True, use scene-based logic to choose parameters for entire scenes rather than frame-by-frame.
+        scene_descale_threshold_ratio: Minimum ratio of frames in a scene that must be successfully descaled for the scene to use the best descaled parameters.
+        scenecut_threshold: Threshold for scene change detection (used if scene_stable=True).
+        opencl: If True, attempt to use OpenCL versions of NNEDI3 if available.
+
+    Returns:
+        A tuple containing the final rescaled video node as the first element. The exact tuple structure varies depending on which flags are enabled.
     
-    from itertools import product
-    from getfnative import descale_cropping_args
-    from muvsfunc import SSIM_downsample
-    
+    ## Tips:
+        To rescale from multiple native resolution, use this function for every possible src_height, then choose the largest MaxDelta one.
+        
+        For example, to descale a show with mixed native resolution 714.75P and 956P:
+        ```python
+        rescaled1, osd1 = rescale(clip=src, src_height=ranger(714.5, 715, 0.025)+[713, 714, 716, 717])
+        rescaled2, osd2 = rescale(clip=src, src_height=ranger(955, 957,0.1)+[953, 954, 958])
+
+        select_expr = "src0.MaxDelta src0.Descaled * src1.MaxDelta src1.Descaled * argmax2"
+
+        osd = core.akarin.Select([osd1, osd2], [rescaled1, rescaled2], select_expr)
+        rescaled = core.akarin.Select([rescaled1, rescaled2], [rescaled1, rescaled2], select_expr)
+        ```
+    """
+
     KERNEL_MAP = {
         "Debicubic": 1,
         "Delanczos": 2,
@@ -262,7 +385,7 @@ def rescale(
         else:
             extra_params = {}
 
-        dargs = descale_cropping_args(clip=clip, src_height=sh, base_height=base_h, base_width=base_w)
+        dargs = descale_cropping_args(clip=clip, src_height=sh, base_height=base_h, base_width=base_w, mode=descale_mode)
 
         descaled = getattr(core.descale, kernel_name)(
             src_luma,

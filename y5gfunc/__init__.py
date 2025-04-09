@@ -1,12 +1,12 @@
 '''
-Yuygfgg's collection for vapoursynth video filtering and encoding stuff, written by others and me.
+Yuygfgg's collection for vapoursynth video filtering and encoding stuff.
 '''
 
 from .expr import postfix2infix, infix2postfix, optimize_akarin_expr, ex_planes
 from .filter import (
     SynDeband, Fast_BM3DWrapper, TIVTC_VFR, DBMask, get_oped_mask,
-    cambi_mask, kirsch, retinex_edgemask, comb_mask, rescale, Descale, rgb2opp, 
-    opp2rgb, is_stripe, convolution, maximum, minimum, inflate, deflate, scd_koala,
+    cambi_mask, kirsch, retinex_edgemask, comb_mask, rescale, descale_cropping_args, DescaleMode,
+    Descale, rgb2opp, opp2rgb, is_stripe, convolution, maximum, minimum, inflate, deflate, scd_koala,
     scale_value_full, get_peak_value_full, is_optimized_cpu
 )
 from .vfx import draw_line, draw_circle, draw_ellipse, draw_bezier_curve, draw_mandelbrot_zoomer, draw_spiral, draw_3d_cube, render_triangle_scene, render_model_scene, load_mesh, rotate_image
@@ -43,6 +43,8 @@ __all__ = [
     'retinex_edgemask',
     'comb_mask',
     'rescale',
+    'descale_cropping_args',
+    'DescaleMode',
     'Descale',
     'rgb2opp',
     'opp2rgb',
