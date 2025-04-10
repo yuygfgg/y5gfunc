@@ -10,7 +10,7 @@ from .filter import (
     scale_value_full, get_peak_value_full, is_optimized_cpu
 )
 from .vfx import draw_line, draw_circle, draw_ellipse, draw_bezier_curve, draw_mandelbrot_zoomer, draw_spiral, draw_3d_cube, render_triangle_scene, render_model_scene, load_mesh, rotate_image
-from .preview import reset_output_index, output, screen_shot
+from .preview import reset_output_index, preview, screen_shot
 from .source import WobblySource, load_source, get_frame_timestamp, clip_to_timecodes
 from .encode import (
     encode_audio, extract_audio_tracks, ProcessMode, TrackConfig, AudioConfig, get_bd_chapter, get_mkv_chapter,
@@ -21,6 +21,9 @@ from .shader import cfl_shader, KrigBilateral, fsrcnnx_x2, artcnn_c4f16, artcnn_
 from .utils import ranger, PickFrames
 
 __version__ = "0.0.1"
+
+# aliases
+output = preview
 
 __all__ = [
     'convolution',
@@ -64,6 +67,7 @@ __all__ = [
     'is_optimized_cpu',
     'is_stripe',
     'reset_output_index',
+    'preview',
     'output',
     'screen_shot',
     'WobblySource',
