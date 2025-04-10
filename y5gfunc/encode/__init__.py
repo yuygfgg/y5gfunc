@@ -1,6 +1,6 @@
 from .audio import (
     encode_audio, extract_audio_tracks, ProcessMode, TrackConfig ,AudioConfig,
-    check_audio_stream_lossless, LOSSLESS_CODECS, LOSSLESS_PROFILES
+    check_audio_stream_lossless
 )
 from .chapter import get_bd_chapter, get_mkv_chapter
 from .mux import mux_mkv
@@ -16,8 +16,6 @@ __all__ = [
     'TrackConfig',
     'AudioConfig',
     'check_audio_stream_lossless',
-    'LOSSLESS_CODECS',
-    'LOSSLESS_PROFILES',
     'get_bd_chapter',
     'get_mkv_chapter',
     'mux_mkv',

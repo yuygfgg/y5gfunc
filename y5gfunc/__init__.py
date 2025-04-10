@@ -15,7 +15,7 @@ from .source import WobblySource, load_source, get_frame_timestamp, clip_to_time
 from .encode import (
     encode_audio, extract_audio_tracks, ProcessMode, TrackConfig, AudioConfig, get_bd_chapter, get_mkv_chapter,
     mux_mkv, encode_check, subset_fonts, extract_pgs_subtitles, get_language_by_trackid, encode_video,
-    check_audio_stream_lossless, LOSSLESS_CODECS, LOSSLESS_PROFILES
+    check_audio_stream_lossless
 )
 from .shader import cfl_shader, KrigBilateral, fsrcnnx_x2, artcnn_c4f16, artcnn_c4f16_DS, artcnn_c4f32, artcnn_c4f32_DS, LazyVariable
 from .utils import ranger, PickFrames
@@ -80,8 +80,6 @@ __all__ = [
     'TrackConfig',
     'AudioConfig',
     'check_audio_stream_lossless',
-    'LOSSLESS_CODECS',
-    'LOSSLESS_PROFILES',
     'get_bd_chapter',
     'get_mkv_chapter',
     'mux_mkv',

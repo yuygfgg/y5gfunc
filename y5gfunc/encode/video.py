@@ -108,8 +108,7 @@ def encode_video(
     
     Args:
         clip: A VapourSynth video node or a list of video nodes/tuples to encode.
-        encoder: External encoder process(es) created with subprocess.Popen, a file-like object,
-                or None to output to stdout.
+        encoder: External encoder process(es) created with subprocess.Popen, a file-like object, or None to output to stdout.
         multi: If True, handle multiple input clips and multiple encoders. If False, handle a single clip.
     
     Examples:
