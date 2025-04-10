@@ -3,6 +3,7 @@ from vstools import vs
 from ..expr import infix2postfix
 import numpy as np
 
+
 def draw_3d_cube(
     clip: vs.VideoNode,
     centerX: str,
@@ -14,11 +15,11 @@ def draw_3d_cube(
     thickness: str,
     translateZ: str = "500",
     focal: str = "500",
-    factor: str = "1"
+    factor: str = "1",
 ) -> vs.VideoNode:
     assert clip.format.num_planes == 1
 
-    expr = infix2postfix(f'''
+    expr = infix2postfix(f"""
             centerX = {centerX}
             centerY = {centerY}
             cubeSize = {cubeSize}
@@ -115,9 +116,10 @@ def draw_3d_cube(
             doDraw = finalMinDistanceSquared <= halfThicknessSq
             
             RESULT = doDraw ? ((1 - factor) * src0 + factor * color) : src0
-            ''')
+            """)
 
     return clip.akarin.Expr(expr)
+
 
 def render_triangle_scene(
     clip: vs.VideoNode,
@@ -130,10 +132,10 @@ def render_triangle_scene(
     rotationX: str,
     rotationY: str,
     focal: str,
-    background: str = "0"
+    background: str = "0",
 ) -> vs.VideoNode:
-    '''
-    Example: 
+    """
+    Example:
     ```python
     clip = core.std.BlankClip(width=640, height=480, format=vs.GRAYS, length=12000)
 
@@ -201,11 +203,13 @@ def render_triangle_scene(
     )
     ```
     Renders a rotating and vibrating cubic.
-    '''
+    """
 
     expr_lines = []
 
-    expr_lines.append("<global<camX><camY><camZ><rotationX><rotationY><focal><screenCenterX><screenCenterY><epsilon>>")
+    expr_lines.append(
+        "<global<camX><camY><camZ><rotationX><rotationY><focal><screenCenterX><screenCenterY><epsilon>>"
+    )
     expr_lines.append("function cam_coord_x(x, y, z) {")
     expr_lines.append("    tx = x - camX")
     expr_lines.append("    ty = y - camY")
@@ -216,7 +220,9 @@ def render_triangle_scene(
     expr_lines.append("    return cx")
     expr_lines.append("}")
 
-    expr_lines.append("<global<camX><camY><camZ><rotationX><rotationY><focal><screenCenterX><screenCenterY><epsilon>>")
+    expr_lines.append(
+        "<global<camX><camY><camZ><rotationX><rotationY><focal><screenCenterX><screenCenterY><epsilon>>"
+    )
     expr_lines.append("function cam_coord_y(x, y, z) {")
     expr_lines.append("    ty = y - camY")
     expr_lines.append("    tz = z - camZ")
@@ -267,15 +273,25 @@ def render_triangle_scene(
         expr_lines.append(f"light{idx}_raw_y = {light['ly']}")
         expr_lines.append(f"light{idx}_raw_z = {light['lz']}")
         expr_lines.append(f"light{idx}_intensity = {light['intensity']}")
-        expr_lines.append(f"mag_{idx} = sqrt(light{idx}_raw_x ** 2 + light{idx}_raw_y ** 2 + light{idx}_raw_z ** 2)")
+        expr_lines.append(
+            f"mag_{idx} = sqrt(light{idx}_raw_x ** 2 + light{idx}_raw_y ** 2 + light{idx}_raw_z ** 2)"
+        )
         expr_lines.append(f"light{idx}_nx = light{idx}_raw_x / mag_{idx}")
         expr_lines.append(f"light{idx}_ny = light{idx}_raw_y / mag_{idx}")
         expr_lines.append(f"light{idx}_nz = light{idx}_raw_z / mag_{idx}")
-        expr_lines.append(f"temp_ty_{idx} = light{idx}_ny * cos(rotationX) - light{idx}_nz * sin(rotationX)")
-        expr_lines.append(f"temp_tz_{idx} = light{idx}_ny * sin(rotationX) + light{idx}_nz * cos(rotationX)")
-        expr_lines.append(f"light{idx}_lx = light{idx}_nx * cos(rotationY) + temp_tz_{idx} * sin(rotationY)")
+        expr_lines.append(
+            f"temp_ty_{idx} = light{idx}_ny * cos(rotationX) - light{idx}_nz * sin(rotationX)"
+        )
+        expr_lines.append(
+            f"temp_tz_{idx} = light{idx}_ny * sin(rotationX) + light{idx}_nz * cos(rotationX)"
+        )
+        expr_lines.append(
+            f"light{idx}_lx = light{idx}_nx * cos(rotationY) + temp_tz_{idx} * sin(rotationY)"
+        )
         expr_lines.append(f"light{idx}_ly = temp_ty_{idx}")
-        expr_lines.append(f"light{idx}_lz = -light{idx}_nx * sin(rotationY) + temp_tz_{idx} * cos(rotationY)")
+        expr_lines.append(
+            f"light{idx}_lz = -light{idx}_nx * sin(rotationY) + temp_tz_{idx} * cos(rotationY)"
+        )
 
     for i, pt in enumerate(points):
         expr_lines.append(f"point{i}_x = {pt['x']}")
@@ -283,9 +299,15 @@ def render_triangle_scene(
         expr_lines.append(f"point{i}_z = {pt['z']}")
         expr_lines.append(f"projX_{i} = projectX(point{i}_x, point{i}_y, point{i}_z)")
         expr_lines.append(f"projY_{i} = projectY(point{i}_x, point{i}_y, point{i}_z)")
-        expr_lines.append(f"cam_x_{i} = cam_coord_x(point{i}_x, point{i}_y, point{i}_z)")
-        expr_lines.append(f"cam_y_{i} = cam_coord_y(point{i}_x, point{i}_y, point{i}_z)")
-        expr_lines.append(f"cam_z_{i} = cam_coord_z(point{i}_x, point{i}_y, point{i}_z)")
+        expr_lines.append(
+            f"cam_x_{i} = cam_coord_x(point{i}_x, point{i}_y, point{i}_z)"
+        )
+        expr_lines.append(
+            f"cam_y_{i} = cam_coord_y(point{i}_x, point{i}_y, point{i}_z)"
+        )
+        expr_lines.append(
+            f"cam_z_{i} = cam_coord_z(point{i}_x, point{i}_y, point{i}_z)"
+        )
 
     face_t_names = []
     face_shading_names = []
@@ -295,19 +317,41 @@ def render_triangle_scene(
         b_idx = face["b"]
         c_idx = face["c"]
         face_color = face.get("color", "1")
-        expr_lines.append(f"E0_{f_idx} = (X - projX_{a_idx}) * (projY_{b_idx} - projY_{a_idx}) - (Y - projY_{a_idx}) * (projX_{b_idx} - projX_{a_idx})")
-        expr_lines.append(f"E1_{f_idx} = (X - projX_{b_idx}) * (projY_{c_idx} - projY_{b_idx}) - (Y - projY_{b_idx}) * (projX_{c_idx} - projX_{b_idx})")
-        expr_lines.append(f"E2_{f_idx} = (X - projX_{c_idx}) * (projY_{a_idx} - projY_{c_idx}) - (Y - projY_{c_idx}) * (projX_{a_idx} - projX_{c_idx})")
-        expr_lines.append(f"inside_pos_{f_idx} = E0_{f_idx} >= 0 && E1_{f_idx} >= 0 && E2_{f_idx} >= 0")
-        expr_lines.append(f"inside_neg_{f_idx} = E0_{f_idx} <= 0 && E1_{f_idx} <= 0 && E2_{f_idx} <= 0")
-        expr_lines.append(f"valid_{f_idx} = (cam_z_{a_idx} < huge) && (cam_z_{b_idx} < huge) && (cam_z_{c_idx} < huge)")
-        expr_lines.append(f"inside_{f_idx} = (inside_pos_{f_idx} || inside_neg_{f_idx}) && valid_{f_idx}")
+        expr_lines.append(
+            f"E0_{f_idx} = (X - projX_{a_idx}) * (projY_{b_idx} - projY_{a_idx}) - (Y - projY_{a_idx}) * (projX_{b_idx} - projX_{a_idx})"
+        )
+        expr_lines.append(
+            f"E1_{f_idx} = (X - projX_{b_idx}) * (projY_{c_idx} - projY_{b_idx}) - (Y - projY_{b_idx}) * (projX_{c_idx} - projX_{b_idx})"
+        )
+        expr_lines.append(
+            f"E2_{f_idx} = (X - projX_{c_idx}) * (projY_{a_idx} - projY_{c_idx}) - (Y - projY_{c_idx}) * (projX_{a_idx} - projX_{c_idx})"
+        )
+        expr_lines.append(
+            f"inside_pos_{f_idx} = E0_{f_idx} >= 0 && E1_{f_idx} >= 0 && E2_{f_idx} >= 0"
+        )
+        expr_lines.append(
+            f"inside_neg_{f_idx} = E0_{f_idx} <= 0 && E1_{f_idx} <= 0 && E2_{f_idx} <= 0"
+        )
+        expr_lines.append(
+            f"valid_{f_idx} = (cam_z_{a_idx} < huge) && (cam_z_{b_idx} < huge) && (cam_z_{c_idx} < huge)"
+        )
+        expr_lines.append(
+            f"inside_{f_idx} = (inside_pos_{f_idx} || inside_neg_{f_idx}) && valid_{f_idx}"
+        )
 
-        expr_lines.append(f"area_{f_idx} = (projX_{b_idx} - projX_{a_idx}) * (projY_{c_idx} - projY_{a_idx}) - (projX_{c_idx} - projX_{a_idx}) * (projY_{b_idx} - projY_{a_idx})")
-        expr_lines.append(f"alpha_{f_idx} = ((projX_{b_idx} - X) * (projY_{c_idx} - Y) - (projX_{c_idx} - X) * (projY_{b_idx} - Y)) / area_{f_idx}")
-        expr_lines.append(f"beta_{f_idx} = ((projX_{c_idx} - X) * (projY_{a_idx} - Y) - (projX_{a_idx} - X) * (projY_{c_idx} - Y)) / area_{f_idx}")
+        expr_lines.append(
+            f"area_{f_idx} = (projX_{b_idx} - projX_{a_idx}) * (projY_{c_idx} - projY_{a_idx}) - (projX_{c_idx} - projX_{a_idx}) * (projY_{b_idx} - projY_{a_idx})"
+        )
+        expr_lines.append(
+            f"alpha_{f_idx} = ((projX_{b_idx} - X) * (projY_{c_idx} - Y) - (projX_{c_idx} - X) * (projY_{b_idx} - Y)) / area_{f_idx}"
+        )
+        expr_lines.append(
+            f"beta_{f_idx} = ((projX_{c_idx} - X) * (projY_{a_idx} - Y) - (projX_{a_idx} - X) * (projY_{c_idx} - Y)) / area_{f_idx}"
+        )
         expr_lines.append(f"gamma_{f_idx} = 1 - alpha_{f_idx} - beta_{f_idx}")
-        expr_lines.append(f"depth_{f_idx} = alpha_{f_idx} * cam_z_{a_idx} + beta_{f_idx} * cam_z_{b_idx} + gamma_{f_idx} * cam_z_{c_idx}")
+        expr_lines.append(
+            f"depth_{f_idx} = alpha_{f_idx} * cam_z_{a_idx} + beta_{f_idx} * cam_z_{b_idx} + gamma_{f_idx} * cam_z_{c_idx}"
+        )
 
         expr_lines.append(f"ex1_{f_idx} = cam_x_{b_idx} - cam_x_{a_idx}")
         expr_lines.append(f"ey1_{f_idx} = cam_y_{b_idx} - cam_y_{a_idx}")
@@ -315,10 +359,18 @@ def render_triangle_scene(
         expr_lines.append(f"ex2_{f_idx} = cam_x_{c_idx} - cam_x_{a_idx}")
         expr_lines.append(f"ey2_{f_idx} = cam_y_{c_idx} - cam_y_{a_idx}")
         expr_lines.append(f"ez2_{f_idx} = cam_z_{c_idx} - cam_z_{a_idx}")
-        expr_lines.append(f"nx_{f_idx} = ey1_{f_idx} * ez2_{f_idx} - ez1_{f_idx} * ey2_{f_idx}")
-        expr_lines.append(f"ny_{f_idx} = ez1_{f_idx} * ex2_{f_idx} - ex1_{f_idx} * ez2_{f_idx}")
-        expr_lines.append(f"nz_{f_idx} = ex1_{f_idx} * ey2_{f_idx} - ey1_{f_idx} * ex2_{f_idx}")
-        expr_lines.append(f"norm_{f_idx} = sqrt(nx_{f_idx} ** 2 + ny_{f_idx} ** 2 + nz_{f_idx} ** 2)")
+        expr_lines.append(
+            f"nx_{f_idx} = ey1_{f_idx} * ez2_{f_idx} - ez1_{f_idx} * ey2_{f_idx}"
+        )
+        expr_lines.append(
+            f"ny_{f_idx} = ez1_{f_idx} * ex2_{f_idx} - ex1_{f_idx} * ez2_{f_idx}"
+        )
+        expr_lines.append(
+            f"nz_{f_idx} = ex1_{f_idx} * ey2_{f_idx} - ey1_{f_idx} * ex2_{f_idx}"
+        )
+        expr_lines.append(
+            f"norm_{f_idx} = sqrt(nx_{f_idx} ** 2 + ny_{f_idx} ** 2 + nz_{f_idx} ** 2)"
+        )
         expr_lines.append(f"nx_{f_idx} = nx_{f_idx} / norm_{f_idx}")
         expr_lines.append(f"ny_{f_idx} = ny_{f_idx} / norm_{f_idx}")
         expr_lines.append(f"nz_{f_idx} = nz_{f_idx} / norm_{f_idx}")
@@ -327,19 +379,29 @@ def render_triangle_scene(
             dot_expr = f"nx_{f_idx} * light{l_idx}_lx + ny_{f_idx} * light{l_idx}_ly + nz_{f_idx} * light{l_idx}_lz"
             expr_lines.append(f"dot_{f_idx}_{l_idx} = {dot_expr}")
             expr_lines.append(f"diffuse_{f_idx}_{l_idx} = max(dot_{f_idx}_{l_idx}, 0)")
-            expr_lines.append(f"contrib_{f_idx}_{l_idx} = diffuse_{f_idx}_{l_idx} * light{l_idx}_intensity")
+            expr_lines.append(
+                f"contrib_{f_idx}_{l_idx} = diffuse_{f_idx}_{l_idx} * light{l_idx}_intensity"
+            )
 
         expr_lines.append(f"sum_diffuse_{f_idx} = ambient")
         for l_idx in range(len(lights)):
-            expr_lines.append(f"sum_diffuse_{f_idx} = sum_diffuse_{f_idx} + contrib_{f_idx}_{l_idx}")
+            expr_lines.append(
+                f"sum_diffuse_{f_idx} = sum_diffuse_{f_idx} + contrib_{f_idx}_{l_idx}"
+            )
 
-        expr_lines.append(f"lighting_{f_idx} = sum_diffuse_{f_idx} > 1 ? 1 : sum_diffuse_{f_idx}")
+        expr_lines.append(
+            f"lighting_{f_idx} = sum_diffuse_{f_idx} > 1 ? 1 : sum_diffuse_{f_idx}"
+        )
 
         expr_lines.append(f"faceColor_{f_idx} = {face_color}")
         expr_lines.append(f"shading_{f_idx} = lighting_{f_idx} * faceColor_{f_idx}")
 
-        expr_lines.append(f"t_face_{f_idx} = inside_{f_idx} == 1 ? depth_{f_idx} : huge")
-        expr_lines.append(f"shading_face_{f_idx} = inside_{f_idx} == 1 ? shading_{f_idx} : 0")
+        expr_lines.append(
+            f"t_face_{f_idx} = inside_{f_idx} == 1 ? depth_{f_idx} : huge"
+        )
+        expr_lines.append(
+            f"shading_face_{f_idx} = inside_{f_idx} == 1 ? shading_{f_idx} : 0"
+        )
 
         face_t_names.append(f"t_face_{f_idx}")
         face_shading_names.append(f"shading_face_{f_idx}")
@@ -349,29 +411,31 @@ def render_triangle_scene(
         expr_lines.append(f"final_t = nth_1 ({face_t_args})")
     else:
         expr_lines.append("final_t = huge")
-    
+
     select_terms = []
     for f_idx in range(face_count):
-        expr_lines.append(f"select_{f_idx} = abs(t_face_{f_idx} - final_t) < epsilon ? shading_face_{f_idx} : 0")
+        expr_lines.append(
+            f"select_{f_idx} = abs(t_face_{f_idx} - final_t) < epsilon ? shading_face_{f_idx} : 0"
+        )
         select_terms.append(f"select_{f_idx}")
     selects_sum = " + ".join(select_terms)
     expr_lines.append(f"final_shading = final_t < huge ? ({selects_sum}) : background")
     expr_lines.append("RESULT = final_shading")
-    
+
     full_expr = "\n".join(expr_lines)
     converted_expr = infix2postfix(full_expr)
 
     return clip.akarin.Expr(converted_expr)
 
+
 def load_mesh(
-    file_path: str, 
+    file_path: str,
     default_color: str = "1",
     axis_transform: str = "+xz-y",
-    rotation: tuple[float, float, float] = (0.0, 0.0, 0.0)
+    rotation: tuple[float, float, float] = (0.0, 0.0, 0.0),
 ) -> tuple[list[dict], list[dict]]:
-    
-    mesh = trimesh.load_mesh(file_path, force='mesh', process=True)
-        
+    mesh = trimesh.load_mesh(file_path, force="mesh", process=True)
+
     if axis_transform == "+xz-y":
         mesh.vertices[:, [1, 2]] = mesh.vertices[:, [2, 1]]
         mesh.vertices[:, 2] *= -1
@@ -387,23 +451,23 @@ def load_mesh(
         mesh.apply_transform(R)
 
     points = [
-        {
-            "x": f"{v[0]:.6f}", 
-            "y": f"{v[1]:.6f}", 
-            "z": f"{v[2]:.6f}"
-        } for v in mesh.vertices
+        {"x": f"{v[0]:.6f}", "y": f"{v[1]:.6f}", "z": f"{v[2]:.6f}"}
+        for v in mesh.vertices
     ]
-        
+
     faces = []
     for face in mesh.faces:
-        faces.append({
-            "a": int(face[0]),
-            "b": int(face[1]),
-            "c": int(face[2]),
-            "color": default_color
-        })
-    
+        faces.append(
+            {
+                "a": int(face[0]),
+                "b": int(face[1]),
+                "c": int(face[2]),
+                "color": default_color,
+            }
+        )
+
     return points, faces
+
 
 def render_model_scene(
     clip: vs.VideoNode,
@@ -416,9 +480,8 @@ def render_model_scene(
     rotationY: str,
     focal: str,
     background: str = "0",
-    **mesh_kwargs
+    **mesh_kwargs,
 ) -> vs.VideoNode:
-
     points, faces = load_mesh(model_path, **mesh_kwargs)
 
     return render_triangle_scene(
@@ -432,5 +495,5 @@ def render_model_scene(
         rotationX=rotationX,
         rotationY=rotationY,
         focal=focal,
-        background=background
+        background=background,
     )
