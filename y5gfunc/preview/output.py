@@ -34,7 +34,7 @@ def reset_output_index(index: int = 0) -> None:
     used_indices = set()
 
 
-def preview(*args, debug: bool = True) -> None:
+def set_preview(*args, debug: bool = True) -> None:
     """
     Outputs VapourSynth clips in vspreview.
 

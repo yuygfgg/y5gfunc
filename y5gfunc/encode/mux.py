@@ -37,16 +37,19 @@ def mux_mkv(
         fonts_dir: Optional directory containing TTF/OTF fonts to attach.
         chapters: Optional path to an OGM chapter file.
 
-    Track dictionary structure:
-        {
-            "path": str | Path,       # Path to the track file (Required)
-            "language": str,          # Language code
-            "track_name": str,        # Name for the track
-            "default": bool,          # True to set the default flag
-            "comment": bool,          # True to set the commentary flag
-            "timecode": str | Path    # Path to a timecode file
-        }
-        The first track of each type (video, audio, subtitle) will be marked as default unless explicitly set otherwise via the "default" key.
+    Note:
+        Track dictionary structure:
+        ```python
+            {
+                "path": str | Path,       # Path to the track file (Required)
+                "language": str,          # Language code
+                "track_name": str,        # Name for the track
+                "default": bool,          # True to set the default flag
+                "comment": bool,          # True to set the commentary flag
+                "timecode": str | Path    # Path to a timecode file
+            }
+        ```
+            The first track of each type (video, audio, subtitle) will be marked as default unless explicitly set otherwise via the "default" key.
 
     Returns:
         Path to the created MKV file.

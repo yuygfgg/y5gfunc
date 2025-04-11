@@ -135,7 +135,9 @@ def render_triangle_scene(
     background: str = "0",
 ) -> vs.VideoNode:
     """
+
     Example:
+
     ```python
     clip = core.std.BlankClip(width=640, height=480, format=vs.GRAYS, length=12000)
 
@@ -202,6 +204,7 @@ def render_triangle_scene(
         background="0"
     )
     ```
+    
     Renders a rotating and vibrating cubic.
     """
 

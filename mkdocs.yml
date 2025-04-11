@@ -1,0 +1,72 @@
+site_name: y5gfunc
+site_author: yuygfgg
+copyright: Copyright © 2025, yuygfgg
+
+repo_url: https://github.com/yuygfgg/y5gfunc
+repo_name: yuygfgg/y5gfunc
+
+theme:
+  name: material
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - toc.integrate
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+  palette:
+    - scheme: default
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+
+markdown_extensions:
+  - footnotes
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+  - admonition
+  - pymdownx.details
+  - pymdownx.tabbed:
+      alternate_style: true
+  - toc:
+      permalink: true
+
+plugins:
+  - search
+  - gen-files:
+      scripts:
+        - docs/scripts/generate.py
+  - mkdocstrings:
+      handlers:
+        python:
+          inventories:
+              - https://docs.python.org/3/objects.inv
+              - https://www.vapoursynth.com/doc/objects.inv
+          options:
+            docstring_style: google
+            show_root_heading: true
+            show_source: true
+            members_order: source
+            separate_signature: true
+            show_symbol_type_toc: true
+            heading_level: 1
+            inherited_members: true
+            merge_init_into_class: true
+            parameter_headings: true
+            show_if_no_docstring: true
+            show_root_full_path: false
+            show_signature_annotations: true
+            show_symbol_type_heading: true
+            signature_crossrefs: true
+            summary: true
+            
+  - awesome-pages:
+      collapse_single_pages: true

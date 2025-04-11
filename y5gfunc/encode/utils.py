@@ -2,7 +2,7 @@ import subprocess
 from pathlib import Path
 
 
-def get_language_by_trackid(m2ts_path: Path, ffprobe_id) -> str:
+def get_language_by_trackid(m2ts_path: Path, ffprobe_id: str) -> str:
     """
     Get the language code for a specific track ID within an M2TS file.
 

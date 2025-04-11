@@ -1,7 +1,9 @@
 .DS_Store
 checks.json
 *.pyc
-_build/*
-_static/*
-_templates/*
-_autosummary/*
+doc/*
+!doc/conf.py
+!doc/index.rst
+!doc/make.bat
+!doc/Makefile
+!doc/_templates/

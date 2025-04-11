@@ -113,7 +113,7 @@ def rescale(
     scene_stable: bool = False,
     scene_descale_threshold_ratio: float = 0.5,
     scenecut_threshold: Union[float, int] = 0.1,
-    opencl = True
+    opencl: bool = True
 ) -> Union[
     vs.VideoNode,
     tuple[vs.VideoNode, vs.VideoNode],

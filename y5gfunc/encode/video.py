@@ -112,6 +112,9 @@ def encode_video(
         multi: If True, handle multiple input clips and multiple encoders. If False, handle a single clip.
     
     Examples:
+    
+        ```python
+        
         # Output to an external encoder
         encoder = subprocess.Popen(['x264', '--demuxer', 'y4m', '-', '-o', 'output.mp4'], stdin=subprocess.PIPE)
         encode_video(clip, encoder)
@@ -131,6 +134,8 @@ def encode_video(
             subprocess.Popen(['x264', '--demuxer', 'y4m', '-', '-o', 'output2.mp4'], stdin=subprocess.PIPE)
         ]
         encode_video([clip1, clip2], encoders, multi=True)
+        
+        ```
     """
     
     if not multi:

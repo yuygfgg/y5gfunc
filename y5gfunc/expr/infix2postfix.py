@@ -279,7 +279,7 @@ def compute_stack_effect(
 def infix2postfix(infix_code: str) -> str:
     R"""
     Convert infix expressions to postfix expressions.
-    Refer to ..filter/paint.py for examples.
+    Refer to ..vfx/ for examples.
 
     ## General Format
 

@@ -130,14 +130,15 @@ def comb_mask(
     """
     Comb mask from TIVTC/TFM plugin.
 
-    :param src: Input clip.
-    :param cthresh: Spatial combing threshold.
-    :param mthresh: Motion adaptive threshold.
-    :param expand: Assume left and right pixels of combed pixel as combed too.
-    :param metric: Sets which spatial combing metric is used to detect combed pixels.
-                    Metric 0 is what TFM used previous to v0.9.12.0.
-                    Metric 1 is from Donald Graft's decomb.dll.
-    :param planes: Planes to process.
+    Args:
+        clip: Input clip.
+        cthresh: Spatial combing threshold.
+        mthresh: Motion adaptive threshold.
+        expand: Assume left and right pixels of combed pixel as combed too.
+        metric: Sets which spatial combing metric is used to detect combed pixels.
+                - Metric 0 is what TFM used previous to v0.9.12.0.
+                - Metric 1 is from Donald Graft's decomb.dll.
+        planes: Planes to process.
     """
     
     cth_max = 65025 if metric else 255
