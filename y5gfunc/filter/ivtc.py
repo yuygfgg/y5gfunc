@@ -5,6 +5,7 @@ import time
 from typing import Union, Optional
 from ..utils import resolve_path
 
+
 # modified from https://github.com/DJATOM/VapourSynth-atomchtools/blob/34e16238291954206b3f7d5b704324dd6885b224/atomchtools.py#L370
 def TIVTC_VFR(
     source: vs.VideoNode,
@@ -14,18 +15,18 @@ def TIVTC_VFR(
     mkvOut: Union[Path, str] = "timecodes.txt",
     tfm_args: dict = dict(),
     tdecimate_args: dict = dict(),
-    overwrite: bool = False
+    overwrite: bool = False,
 ) -> vs.VideoNode:
-    '''
+    """
     Convenient wrapper on tivtc to perform automatic vfr decimation with one function.
-    '''
+    """
 
     analyze = True
 
     assert isinstance(tfmIn, (str, Path))
     assert isinstance(tdecIn, (str, Path))
     assert isinstance(mkvOut, (str, Path))
-    
+
     tfmIn = resolve_path(tfmIn)
     tdecIn = resolve_path(tdecIn)
     mkvOut = resolve_path(mkvOut)
@@ -48,15 +49,24 @@ def TIVTC_VFR(
         tmpnode = core.tivtc.TDecimate(tmpnode, **tdecimate_pass1_args)
 
         for i, _ in enumerate(tmpnode.frames()):
-            print(f"Analyzing frame #{i}...", end='\r')
+            print(f"Analyzing frame #{i}...", end="\r")
 
         del tmpnode
-        time.sleep(0.5) # let it write logs
+        time.sleep(0.5)  # let it write logs
 
     tfm_args.update(dict(input=str(tfmIn)))
-    tdecimate_args.update(dict(input=str(tdecIn), tfmIn=str(tfmIn), mkvOut=str(mkvOut), mode=5, hybrid=2, vfrDec=1))
+    tdecimate_args.update(
+        dict(
+            input=str(tdecIn),
+            tfmIn=str(tfmIn),
+            mkvOut=str(mkvOut),
+            mode=5,
+            hybrid=2,
+            vfrDec=1,
+        )
+    )
 
     output = core.tivtc.TFM(source, **tfm_args)
-    output = core.tivtc.TDecimate(output,  **tdecimate_args)
+    output = core.tivtc.TDecimate(output, **tdecimate_args)
 
     return output

@@ -9,6 +9,18 @@ import re
 
 # inspired by mvf.postfix2infix
 def postfix2infix(expr: str) -> LiteralString:
+    """
+    Convert postfix expr to infix code
+
+    Args:
+        expr: Input postfix expr.
+
+    Returns:
+            LiteralString: Converted infix code.
+    
+    Raises:
+        ValueError: If an error was found in the input expr.
+    """    
     # Preprocessing
     expr = expr.strip()
     expr = re.sub(r"\[\s*(\w+)\s*,\s*(\w+)\s*\]", r"[\1,\2]", expr)  # [x, y] => [x,y]
@@ -39,7 +51,7 @@ def postfix2infix(expr: str) -> LiteralString:
                 del stack[-n:]
                 return r
             except IndexError:
-                raise IndexError(
+                raise ValueError(
                     f"postfix2infix: Stack Underflow at token at {i}th token {token}."
                 )
 

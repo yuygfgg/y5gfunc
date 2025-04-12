@@ -32,10 +32,17 @@ def is_token_numeric(token: str) -> bool:
     return False
 
 
-def optimize_akarin_expr(expr: str) -> str:
-    """Optimize akarin.Expr expressions:
+def optimize_akarin_expr(expr: str) -> str:  
+    """
+    Optimize akarin.Expr expressions:
     1. Constant folding
     2. Convert dynamic pixel access to static when possible
+    
+    Args:
+        expr: Input expr.
+    
+    Returns:
+        Optimized expr.
     """
     # Initial expression preprocessing
     expr = expr.strip()

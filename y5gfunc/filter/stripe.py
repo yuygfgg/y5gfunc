@@ -10,7 +10,33 @@ def is_stripe(
     freq_range: Union[int, float] = 0.25,
     scenecut_threshold: Union[float, int] = 0.1
 ) -> vs.VideoNode:
+    """
+    Detects scenes potentially containing strong vertical stripes using FFT analysis.
 
+    This function analyzes the frequency spectrum of each frame to identify scenes where the energy in high vertical frequencies
+    significantly outweighs the energy in high horizontal frequencies. This pattern is often indicative of vertical stripes.
+
+    The analysis is performed per scene, meaning the ratio of vertical to horizontal frequency energy is averaged over all frames
+    within a detected scene. All frames in that scene are then marked based on this average ratio.
+
+    Args:
+        clip: Input video clip. Must be 8-bit per sample.
+        threshold: The threshold for the ratio of average vertical high-frequency energy to average horizontal
+            high-frequency energy within a scene. If a scene's ratio exceeds this value, it's marked as potentially containing stripes.
+        freq_range: Defines the proportion of the spectrum (from each edge towards the center) considered as "high frequency".
+            For example, 0.25 means the outer 25% of frequencies horizontally and vertically are analyzed.
+            Must be between 0 and 0.5 (exclusive of 0, inclusive of 0.5 isn't practically useful).
+        scenecut_threshold: Threshold used for scene change detection via `core.misc.SCDetect`.
+            Controls how sensitive the scene detection is. Lower values detect more scene changes.
+
+    Returns:
+        The input clip with a frame property `_Stripe` added. `_Stripe` is 1 (True) if the frame belongs to a scene detected as
+            potentially containing stripes (ratio > threshold), and 0 (False) otherwise.
+    
+    Raises:
+        ValueError: If input clip is not 8-bit per sample.
+        ValueError: if freq_range is not between 0 and 0.5.
+    """
     def scene_fft(n: int, f: list[vs.VideoFrame], cache: list[float], prefetch: vs.VideoNode) -> vs.VideoFrame:
         fout = f[0].copy()
         if n == 0 or n == prefetch.num_frames:
@@ -45,8 +71,10 @@ def is_stripe(
         fout.props['ratio'] = cache[n]
         return fout
     
-    assert clip.format.bits_per_sample == 8
-    assert 0 < freq_range < 0.5
+    if clip.format.bits_per_sample != 8:
+        raise ValueError("is_stripe: input clip must be 8-bit per sample.")
+    if not 0 < freq_range < 0.5:
+        raise ValueError("is_stripe: freq_range must be between 0 and 0.5.")
     
     freq_drop_range = 1 - freq_range
     freq_drop_lr = int(clip.width * freq_drop_range)

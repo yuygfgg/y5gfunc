@@ -279,6 +279,16 @@ def compute_stack_effect(
 def infix2postfix(infix_code: str) -> str:
     R"""
     Convert infix expressions to postfix expressions.
+    
+    Args:
+        infix_code: Input infix code.
+    
+    Returns:
+        Converted postfix expr.
+    
+    Raises:
+        SyntaxError: If infix code failed to convert to postfix expr.
+    
     Refer to ..vfx/ for examples.
 
     ## General Format

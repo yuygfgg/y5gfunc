@@ -31,7 +31,7 @@ def load_and_process(
     Args:
         wob_project_path: Path to Wobbly project file
         timecode_output_path: Optional path for timecode output
-        timecode_version: Timecode version, defaults to "v2"
+        timecode_version: Timecode version.
         
     Returns:
         Processed video node
@@ -55,7 +55,7 @@ class WobblySource:
         Args:
             wob_project_path: Path to Wobbly project file
             timecode_output_path: Optional path for timecode output
-            timecode_version: Timecode version, defaults to "v2"
+            timecode_version: Timecode version.
         """
         self.project_path = resolve_path(wob_project_path)
         self.timecode_path = resolve_path(timecode_output_path) if timecode_output_path else None
