@@ -92,7 +92,7 @@ def load_source(
     file_path = resolve_path(file_path)
 
     if not file_path.exists():
-        raise FileNotFoundError("load_source: File {file_path} does not exist.")
+        raise FileNotFoundError(f"load_source: File {file_path} does not exist.")
 
     if file_path.suffix.lower() == ".wob":
         assert track == 0

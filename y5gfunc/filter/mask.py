@@ -1,11 +1,11 @@
 from vstools import vs
 from vstools import core
 import vstools
-from typing import Callable, Any, Optional, Union
+from typing import Optional, Union
 from vsrgtools import remove_grain
 from vsmasktools import retinex
 import functools
-from .morpho import minimum, maximum, convolution, inflate, deflate
+from .morpho import minimum, maximum, convolution, inflate
 from .utils import scale_value_full, get_peak_value_full
 from vstools import get_peak_value
 from ..expr import ex_planes
