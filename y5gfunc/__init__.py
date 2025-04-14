@@ -4,17 +4,17 @@ Yuygfgg's collection for vapoursynth video filtering and encoding stuff.
 
 from .expr import postfix2infix, infix2postfix, optimize_akarin_expr, ex_planes
 from .filter import (
-    SynDeband, Fast_BM3DWrapper, TIVTC_VFR, DBMask, get_oped_mask,
+    SynDeband, BM3DPreset, Fast_BM3DWrapper, TIVTC_VFR, DBMask, get_oped_mask,
     kirsch, retinex_edgemask, comb_mask, rescale, descale_cropping_args, DescaleMode,
     Descale, rgb2opp, opp2rgb, is_stripe, convolution, maximum, minimum, inflate, deflate, scd_koala,
-    scale_value_full, get_peak_value_full, is_optimized_cpu
+    get_peak_value_full, is_optimized_cpu
 )
 from .vfx import draw_line, draw_circle, draw_ellipse, draw_bezier_curve, draw_mandelbrot_zoomer, draw_spiral, draw_3d_cube, render_triangle_scene, render_model_scene, load_mesh, rotate_image
 from .preview import reset_output_index, set_preview, screen_shot
 from .source import WobblySource, load_source, get_frame_timestamp, clip_to_timecodes
 from .encode import (
     encode_audio, extract_audio_tracks, ProcessMode, TrackConfig, AudioConfig, get_bd_chapter, get_mkv_chapter,
-    mux_mkv, encode_check, subset_fonts, extract_pgs_subtitles, get_language_by_trackid, encode_video,
+    mux_mkv, QcMode, ReturnType, encode_check, subset_fonts, extract_pgs_subtitles, get_language_by_trackid, encode_video,
     check_audio_stream_lossless
 )
 from .shader import cfl_shader, KrigBilateral, fsrcnnx_x2, artcnn_c4f16, artcnn_c4f16_DS, artcnn_c4f32, artcnn_c4f32_DS, LazyVariable
@@ -36,7 +36,8 @@ __all__ = [
     'infix2postfix',
     'optimize_akarin_expr',
     'ex_planes',
-    'SynDeband', 
+    'SynDeband',
+    'BM3DPreset',
     'Fast_BM3DWrapper',
     'TIVTC_VFR',
     'DBMask',
@@ -61,7 +62,6 @@ __all__ = [
     'render_model_scene',
     'load_mesh',
     'rotate_image',
-    'scale_value_full',
     'get_peak_value_full',
     'is_optimized_cpu',
     'is_stripe',
@@ -82,6 +82,8 @@ __all__ = [
     'get_bd_chapter',
     'get_mkv_chapter',
     'mux_mkv',
+    'QcMode',
+    'ReturnType',
     'encode_check',
     'subset_fonts',
     'extract_pgs_subtitles',

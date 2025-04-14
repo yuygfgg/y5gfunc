@@ -2,18 +2,18 @@ from vstools import vs
 from vstools import core
 import vstools
 from typing import Literal, Union, Optional
-from enum import Enum
+from enum import StrEnum
 from math import floor
 import functools
 from .mask import generate_detail_mask
 from itertools import product
 from muvsfunc import SSIM_downsample
 
-class DescaleMode(Enum):
-    W = 0
-    H = 1
-    WH = 2
-    HW = 3
+class DescaleMode(StrEnum):
+    W = "w"
+    H = "h"
+    WH = "wh"
+    HW = "hw"
 
 # modified from getfnative.descale_cropping_args()
 def descale_cropping_args(

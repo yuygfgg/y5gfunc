@@ -1,17 +1,35 @@
-from typing import Union, Optional, Literal
+from typing import Union, Optional
 from vstools import vs
 from vstools import core
 import vstools
+from enum import StrEnum
 from ..utils import PickFrames
 from muvsfunc import SSIM
+
+
+class QcMode(StrEnum):
+    """Which metrics to use for quality check"""
+
+    SSIM = "SSIM"
+    CAMBI = "CAMBI"
+    BOTH = "BOTH"
+
+
+class ReturnType(StrEnum):
+    """What to return after quality check"""
+
+    ENCODED = "encoded"  # Return the `encoded` clip with frame properties added (CAMBI, PlaneSSIM, *_err flags).
+    ERROR = "error"  # Return a clip containing only the frames flagged as errors.
+    BOTH = "both"  # Return a tuple containing both the annotated `encoded` clip and the `error` clip.
+
 
 def encode_check(
     encoded: vs.VideoNode,
     source: Optional[vs.VideoNode] = None,
-    mode: Literal["BOTH", "SSIM", "CAMBI"] = "BOTH",
+    mode: QcMode = QcMode.BOTH,
     threshold_cambi: float = 5,
     threshold_ssim: float = 0.9,
-    return_type: Literal["encoded", "error", "both"] = "encoded",
+    return_type: ReturnType = ReturnType.ENCODED,
 ) -> Union[vs.VideoNode, tuple[vs.VideoNode, vs.VideoNode]]:
     """
     Perform a quality check on an encoded video using SSIM and/or CAMBI metrics.
@@ -21,14 +39,11 @@ def encode_check(
 
     Args:
         encoded: The encoded video clip to check.
-        source: The source video clip for SSIM comparison. Required if mode includes "SSIM". Must have the same format as `encoded`.
-        mode: Which metrics to use: "BOTH", "SSIM", or "CAMBI".
+        source: The source video clip for SSIM comparison. Required if mode includes SSIM. Must have the same format as `encoded`.
+        mode: Which metrics to use.
         threshold_cambi: The maximum allowed CAMBI score. Frames exceeding this are flagged. Must be between 0 and 24.
         threshold_ssim: The minimum allowed PlaneSSIM score. Frames below this are flagged. Must be between 0 and 1.
         return_type: What to return:
-                        "encoded": Return the `encoded` clip with frame properties added (CAMBI, PlaneSSIM, *_err flags).
-                        "error": Return a clip containing only the frames flagged as errors.
-                        "both": Return a tuple containing both the annotated `encoded` clip and the `error` clip.
 
     Returns:
         Depending on `return_type`, either the annotated encoded clip, a clip with only error frames, or a tuple containing both.
@@ -39,12 +54,10 @@ def encode_check(
 
     assert 0 <= threshold_cambi <= 24
     assert 0 <= threshold_ssim <= 1
-    assert mode in ["BOTH", "SSIM", "CAMBI"]
-    assert return_type in ["encoded", "error", "both"]
 
-    if mode == "BOTH":
+    if mode == QcMode.BOTH:
         enable_ssim = enable_cambi = True
-    elif mode == "SSIM":
+    elif mode == QcMode.SSIM:
         enable_ssim = True
         enable_cambi = False
     else:
@@ -110,7 +123,7 @@ def encode_check(
     else:
         output = core.std.ModifyFrame(encoded, [encoded, ssim, ssim], _chk)
 
-    if return_type == "encoded":
+    if return_type == ReturnType.ENCODED:
         return output
 
     for _ in output.frames():
@@ -118,7 +131,7 @@ def encode_check(
 
     err = PickFrames(encoded, error_frames)
 
-    if return_type == "both":
+    if return_type == ReturnType.BOTH:
         return output, err
     else:
         return err

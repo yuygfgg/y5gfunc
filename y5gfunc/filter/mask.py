@@ -6,8 +6,8 @@ from vsrgtools import remove_grain
 from vsmasktools import retinex
 import functools
 from .morpho import minimum, maximum, convolution, inflate
-from .utils import scale_value_full, get_peak_value_full
-from vstools import get_peak_value
+from .utils import get_peak_value_full
+from vstools import get_peak_value, scale_mask, replace_ranges
 from ..expr import ex_planes
 
 
@@ -15,13 +15,13 @@ from ..expr import ex_planes
 def DBMask(clip: vs.VideoNode) -> vs.VideoNode:
     nrmasks = core.tcanny.TCanny(
         clip, sigma=0.8, op=2, mode=1, planes=[0, 1, 2]
-    ).std.Binarize(scale_value_full(7, 8, clip), planes=[0])
+    ).std.Binarize(scale_mask(7, 8, clip), planes=[0])
     nrmaskb = core.tcanny.TCanny(clip, sigma=1.3, t_h=6.5, op=2, planes=0)
     nrmaskg = core.tcanny.TCanny(clip, sigma=1.1, t_h=5.0, op=2, planes=0)
     nrmask = core.akarin.Expr(
         [nrmaskg, nrmaskb, nrmasks, clip],
         [
-            f"a {scale_value_full(20, 8, clip)} < {get_peak_value_full(clip)} a {scale_value_full(48, 8, clip)} < x {scale_value_full(256, 16, clip)} * a {scale_value_full(96, 8, clip)} < y {scale_value_full(256, 16, clip)} * z ? ? ?",
+            f"a {scale_mask(20, 8, clip)} < {get_peak_value_full(clip)} a {scale_mask(48, 8, clip)} < x {scale_mask(256, 16, clip)} * a {scale_mask(96, 8, clip)} < y {scale_mask(256, 16, clip)} * z ? ? ?",
             "",
         ],
         clip.format.id,
@@ -44,7 +44,6 @@ def get_oped_mask(
     ed_start: int,
     threshold: int = 7,
 ) -> tuple[vs.VideoNode, vs.VideoNode]:
-    from fvsfunc import rfs
 
     assert clip.format == ncop.format == nced.format
     assert clip.format.color_family == vs.YUV
@@ -72,10 +71,10 @@ def get_oped_mask(
     else:
         nced = core.std.Trim(clip, first=0, last=ed_start - 1) + nced
 
-    nc = rfs(clip, ncop, f"[{op_start} {op_end}]")
-    nc = rfs(nc, nced, f"[{ed_start} {ed_end}]")
+    nc = replace_ranges(clip, ncop, [op_start, op_end])
+    nc = replace_ranges(nc, nced, [ed_start, ed_end])
 
-    thr = scale_value_full(threshold, 8, clip)
+    thr = scale_mask(threshold, 8, clip)
     max = get_peak_value_full(clip)
 
     diff = core.akarin.Expr([nc, clip], f"x y - abs {thr} < 0 {max} ?")
@@ -112,7 +111,7 @@ def generate_detail_mask(
     source: vs.VideoNode, upscaled: vs.VideoNode, threshold: float = 0.05
 ) -> vs.VideoNode:
     assert source.format == upscaled.format
-    threshold = scale_value_full(threshold, 32, source)
+    threshold = scale_mask(threshold, 32, source)
     mask = core.akarin.Expr([source, upscaled], "src0 src1 - abs").std.Binarize(
         threshold=threshold
     )

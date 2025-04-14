@@ -2,39 +2,54 @@ from vstools import vs
 from vstools import core
 import mvsfunc as mvf
 import vstools
-from typing import Literal, Union
+from typing import Callable, Union
+from enum import StrEnum
 from .resample import rgb2opp, opp2rgb
 
-# modified from https://github.com/HomeOfVapourSynthEvolution/VapourSynth-BM3D?tab=readme-ov-file#profile-default
-# preset 'magic' is from rksfunc
+
+class BM3DPreset(StrEnum):
+    """
+    BM3D speed vs quality presets. `MAGIC` is better classified as tune but whatever.
+
+    modified from https://github.com/HomeOfVapourSynthEvolution/VapourSynth-BM3D?tab=readme-ov-file#profile-default
+    preset 'magic' is from rksfunc
+    """
+
+    FAST = "fast"
+    LC = "lc"
+    NP = "np"
+    HIGH = "high"
+    MAGIC = "magic"
+
+
 bm3d_presets = {
     "basic": {
-        "fast": {"block_step": 8, "bm_range": 9, "ps_num": 2, "ps_range": 4},
-        "lc": {"block_step": 6, "bm_range": 9, "ps_num": 2, "ps_range": 4},
-        "np": {"block_step": 4, "bm_range": 16, "ps_num": 2, "ps_range": 5},
-        "high": {"block_step": 3, "bm_range": 16, "ps_num": 2, "ps_range": 7},
-        "magic": {"block_step": 3, "bm_range": 12, "ps_num": 2, "ps_range": 8},
+        BM3DPreset.FAST: {"block_step": 8, "bm_range": 9, "ps_num": 2, "ps_range": 4},
+        BM3DPreset.LC: {"block_step": 6, "bm_range": 9, "ps_num": 2, "ps_range": 4},
+        BM3DPreset.NP: {"block_step": 4, "bm_range": 16, "ps_num": 2, "ps_range": 5},
+        BM3DPreset.HIGH: {"block_step": 3, "bm_range": 16, "ps_num": 2, "ps_range": 7},
+        BM3DPreset.MAGIC: {"block_step": 3, "bm_range": 12, "ps_num": 2, "ps_range": 8},
     },
     "vbasic": {
-        "fast": {"block_step": 8, "bm_range": 7, "ps_num": 2, "ps_range": 4},
-        "lc": {"block_step": 6, "bm_range": 9, "ps_num": 2, "ps_range": 4},
-        "np": {"block_step": 4, "bm_range": 12, "ps_num": 2, "ps_range": 5},
-        "high": {"block_step": 3, "bm_range": 16, "ps_num": 2, "ps_range": 7},
-        "magic": {"block_step": 3, "bm_range": 12, "ps_num": 2, "ps_range": 8},
+        BM3DPreset.FAST: {"block_step": 8, "bm_range": 7, "ps_num": 2, "ps_range": 4},
+        BM3DPreset.LC: {"block_step": 6, "bm_range": 9, "ps_num": 2, "ps_range": 4},
+        BM3DPreset.NP: {"block_step": 4, "bm_range": 12, "ps_num": 2, "ps_range": 5},
+        BM3DPreset.HIGH: {"block_step": 3, "bm_range": 16, "ps_num": 2, "ps_range": 7},
+        BM3DPreset.MAGIC: {"block_step": 3, "bm_range": 12, "ps_num": 2, "ps_range": 8},
     },
     "final": {
-        "fast": {"block_step": 7, "bm_range": 9, "ps_num": 2, "ps_range": 5},
-        "lc": {"block_step": 5, "bm_range": 9, "ps_num": 2, "ps_range": 5},
-        "np": {"block_step": 3, "bm_range": 16, "ps_num": 2, "ps_range": 6},
-        "high": {"block_step": 2, "bm_range": 16, "ps_num": 2, "ps_range": 8},
-        "magic": {"block_step": 2, "bm_range": 8, "ps_num": 2, "ps_range": 6},
+        BM3DPreset.FAST: {"block_step": 7, "bm_range": 9, "ps_num": 2, "ps_range": 5},
+        BM3DPreset.LC: {"block_step": 5, "bm_range": 9, "ps_num": 2, "ps_range": 5},
+        BM3DPreset.NP: {"block_step": 3, "bm_range": 16, "ps_num": 2, "ps_range": 6},
+        BM3DPreset.HIGH: {"block_step": 2, "bm_range": 16, "ps_num": 2, "ps_range": 8},
+        BM3DPreset.MAGIC: {"block_step": 2, "bm_range": 8, "ps_num": 2, "ps_range": 6},
     },
     "vfinal": {
-        "fast": {"block_step": 7, "bm_range": 7, "ps_num": 2, "ps_range": 5},
-        "lc": {"block_step": 5, "bm_range": 9, "ps_num": 2, "ps_range": 5},
-        "np": {"block_step": 3, "bm_range": 12, "ps_num": 2, "ps_range": 6},
-        "high": {"block_step": 2, "bm_range": 16, "ps_num": 2, "ps_range": 8},
-        "magic": {"block_step": 2, "bm_range": 8, "ps_num": 2, "ps_range": 6},
+        BM3DPreset.FAST: {"block_step": 7, "bm_range": 7, "ps_num": 2, "ps_range": 5},
+        BM3DPreset.LC: {"block_step": 5, "bm_range": 9, "ps_num": 2, "ps_range": 5},
+        BM3DPreset.NP: {"block_step": 3, "bm_range": 12, "ps_num": 2, "ps_range": 6},
+        BM3DPreset.HIGH: {"block_step": 2, "bm_range": 16, "ps_num": 2, "ps_range": 8},
+        BM3DPreset.MAGIC: {"block_step": 2, "bm_range": 8, "ps_num": 2, "ps_range": 6},
     },
 }
 
@@ -42,18 +57,18 @@ bm3d_presets = {
 # modified from rksfunc.BM3DWrapper()
 def Fast_BM3DWrapper(
     clip: vs.VideoNode,
-    bm3d=core.lazy.bm3dcpu,
+    bm3d: Callable = core.lazy.bm3dcpu,
     chroma: bool = True,
     sigma_Y: Union[float, int] = 1.2,
     radius_Y: int = 1,
     delta_sigma_Y: Union[float, int] = 0.6,
-    preset_Y_basic: Literal["fast", "lc", "np", "high", "magic"] = "fast",
-    preset_Y_final: Literal["fast", "lc", "np", "high", "magic"] = "fast",
+    preset_Y_basic: BM3DPreset = BM3DPreset.FAST,
+    preset_Y_final: BM3DPreset = BM3DPreset.FAST,
     sigma_chroma: Union[float, int] = 2.4,
     radius_chroma: int = 0,
     delta_sigma_chroma: Union[float, int] = 1.2,
-    preset_chroma_basic: Literal["fast", "lc", "np", "high", "magic"] = "fast",
-    preset_chroma_final: Literal["fast", "lc", "np", "high", "magic"] = "fast",
+    preset_chroma_basic: BM3DPreset = BM3DPreset.FAST,
+    preset_chroma_final: BM3DPreset = BM3DPreset.FAST,
 ) -> vs.VideoNode:
     """
     BM3D/V-BM3D denoising
@@ -99,7 +114,13 @@ def Fast_BM3DWrapper(
         preset_chroma_basic,
         preset_chroma_final,
     ]:
-        if preset not in ["fast", "lc", "np", "high", "magic"]:
+        if preset not in [
+            BM3DPreset.FAST,
+            BM3DPreset.LC,
+            BM3DPreset.NP,
+            BM3DPreset.HIGH,
+            BM3DPreset.MAGIC,
+        ]:
             raise ValueError(f"Fast_BM3DWrapper: Unknown preset {preset}.")
 
     params = {

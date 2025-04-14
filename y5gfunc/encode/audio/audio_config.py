@@ -1,9 +1,9 @@
 from typing import Optional
 from dataclasses import dataclass, field
-from enum import Enum
+from enum import StrEnum
 
 
-class ProcessMode(Enum):
+class ProcessMode(StrEnum):
     """Defines how an audio track should be processed."""
 
     COPY = "copy"  # Keep original track, stream copy if possible
