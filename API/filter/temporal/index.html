@@ -911,6 +911,29 @@
   
   
     <li class="md-nav__item">
+      <a href="../aa/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    aa
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../deband/" class="md-nav__link">
         
   
@@ -1009,6 +1032,29 @@
   
   <span class="md-ellipsis">
     morpho
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../nn2x/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    nn2x
     
   </span>
   
@@ -2702,7 +2748,7 @@ the strength of the stabilization effect versus preserving the original differen
 <a id="__codelineno-0-69" name="__codelineno-0-69"></a>    <span class="p">]</span>
 <a id="__codelineno-0-70" name="__codelineno-0-70"></a>
 <a id="__codelineno-0-71" name="__codelineno-0-71"></a>    <span class="n">stabilize_func</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">core</span><span class="o">.</span><span class="n">mv</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;Degrain</span><span class="si">{</span><span class="n">delta</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-72" name="__codelineno-0-72"></a>    <span class="n">diff_stabilized</span> <span class="o">=</span> <span class="n">stabilize_func</span><span class="p">[</span><span class="n">delta</span><span class="p">](</span><span class="n">diff</span><span class="p">,</span> <span class="n">diff_super</span><span class="p">,</span> <span class="o">*</span><span class="n">vectors</span><span class="p">)</span>
+<a id="__codelineno-0-72" name="__codelineno-0-72"></a>    <span class="n">diff_stabilized</span> <span class="o">=</span> <span class="n">stabilize_func</span><span class="p">(</span><span class="n">diff</span><span class="p">,</span> <span class="n">diff_super</span><span class="p">,</span> <span class="o">*</span><span class="n">vectors</span><span class="p">)</span>
 <a id="__codelineno-0-73" name="__codelineno-0-73"></a>
 <a id="__codelineno-0-74" name="__codelineno-0-74"></a>    <span class="n">diff_stabilized_limited</span> <span class="o">=</span> <span class="n">core</span><span class="o">.</span><span class="n">akarin</span><span class="o">.</span><span class="n">Expr</span><span class="p">(</span>
 <a id="__codelineno-0-75" name="__codelineno-0-75"></a>        <span class="p">[</span><span class="n">diff</span><span class="p">,</span> <span class="n">diff_stabilized</span><span class="p">],</span>
