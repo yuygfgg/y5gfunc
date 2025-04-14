@@ -6,6 +6,7 @@ from enum import StrEnum
 from math import floor
 import functools
 from .mask import generate_detail_mask
+from .nn2x import nn2x
 from itertools import product
 from muvsfunc import SSIM_downsample
 
@@ -348,20 +349,6 @@ def rescale(
 
     def _fft(clip: vs.VideoNode) -> vs.VideoNode:
         return core.fftspectrum_rs.FFTSpectrum(clip=vstools.depth(clip,8))
-    
-    
-    if hasattr(core, "sneedif") and opencl:
-        nnedi3 = functools.partial(core.sneedif.NNEDI3, **nnedi3_args)
-        def nn2x(nn2x) -> vs.VideoNode:
-            return nnedi3(nnedi3(nn2x, dh=True), dw=True)
-    elif hasattr(core, "nnedi3cl") and opencl:
-        nnedi3 = functools.partial(core.nnedi3cl.NNEDI3CL, **nnedi3_args)
-        def nn2x(nn2x) -> vs.VideoNode:
-            return nnedi3(nnedi3(nn2x, dh=True), dw=True)
-    else:
-        nnedi3 = functools.partial(core.nnedi3.nnedi3, **nnedi3_args)
-        def nn2x(nn2x) -> vs.VideoNode:
-            return nnedi3(nnedi3(nn2x, dh=True).std.Transpose(), dh=True).std.Transpose()
     
     upscaled_clips: list[vs.VideoNode] = []
     rescaled_clips: list[vs.VideoNode] = []

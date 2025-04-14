@@ -69,7 +69,7 @@ def temporal_stabilize(
     ]
 
     stabilize_func = getattr(core.mv, f"Degrain{delta}")
-    diff_stabilized = stabilize_func[delta](diff, diff_super, *vectors)
+    diff_stabilized = stabilize_func(diff, diff_super, *vectors)
 
     diff_stabilized_limited = core.akarin.Expr(
         [diff, diff_stabilized],

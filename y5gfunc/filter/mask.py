@@ -95,6 +95,30 @@ def kirsch(src: vs.VideoNode) -> vs.VideoNode:
     return core.akarin.Expr([kirsch1, kirsch2, kirsch3, kirsch4], "x y max z max a max")
 
 
+# modified from vsTaambk
+def prewitt(clip: vs.VideoNode, mthr: Union[int, float] = 24) -> vs.VideoNode:
+    mthr = scale_mask(mthr, 8, clip)
+    prewitt1 = convolution(
+        clip, [1, 1, 0, 1, 0, -1, 0, -1, -1], divisor=1, saturate=False
+    )
+    prewitt2 = convolution(
+        clip, [1, 1, 1, 0, 0, 0, -1, -1, -1], divisor=1, saturate=False
+    )
+    prewitt3 = convolution(
+        clip, [1, 0, -1, 1, 0, -1, 1, 0, -1], divisor=1, saturate=False
+    )
+    prewitt4 = convolution(
+        clip, [0, -1, -1, 1, 0, -1, 1, 1, 0], divisor=1, saturate=False
+    )
+    prewitt = core.akarin.Expr(
+        [prewitt1, prewitt2, prewitt3, prewitt4], "x y max z max a max"
+    )
+    prewitt = inflate(
+        remove_grain(core.akarin.Expr(prewitt, f"x {mthr} <= x 2 / x 1.4 pow ?"), 4)
+    )
+    return prewitt
+
+
 # modified from kagefunc.retinex_edgemask()
 def retinex_edgemask(src: vs.VideoNode) -> vs.VideoNode:
     luma = vstools.get_y(src)
