@@ -11,10 +11,10 @@
       
       
       
-        <link rel="prev" href="../../expr/utils/">
+        <link rel="prev" href="../stripe/">
       
       
-        <link rel="next" href="../denoise/">
+        <link rel="next" href="../utils/">
       
       
       <link rel="icon" href="../../../assets/images/favicon.png">
@@ -22,7 +22,7 @@
     
     
       
-        <title>deband - y5gfunc</title>
+        <title>temporal - y5gfunc</title>
       
     
     
@@ -76,7 +76,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#y5gfuncfilterdeband" class="md-skip">
+        <a href="#y5gfuncfiltertemporal" class="md-skip">
           Skip to content
         </a>
       
@@ -110,7 +110,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              deband
+              temporal
             
           </span>
         </div>
@@ -908,19 +908,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../deband/" class="md-nav__link">
         
   
   
@@ -931,7 +922,6 @@
   
 
       </a>
-      
     </li>
   
 
@@ -1125,10 +1115,19 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../temporal/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -1139,6 +1138,7 @@
   
 
       </a>
+      
     </li>
   
 
@@ -2316,18 +2316,18 @@
   
 
 
-<h1 id="y5gfuncfilterdeband"><code>y5gfunc.filter.deband</code><a class="headerlink" href="#y5gfuncfilterdeband" title="Permanent link">&para;</a></h1>
+<h1 id="y5gfuncfiltertemporal"><code>y5gfunc.filter.temporal</code><a class="headerlink" href="#y5gfuncfiltertemporal" title="Permanent link">&para;</a></h1>
 
 
 <div class="doc doc-object doc-module">
 
 
 
-<h1 id="y5gfunc.filter.deband" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-module"></code>            <span class="doc doc-object-name doc-module-name">deband</span>
+<h1 id="y5gfunc.filter.temporal" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-module"></code>            <span class="doc doc-object-name doc-module-name">temporal</span>
 
 
-<a href="#y5gfunc.filter.deband" class="headerlink" title="Permanent link">&para;</a></h1>
+<a href="#y5gfunc.filter.temporal" class="headerlink" title="Permanent link">&para;</a></h1>
 
     <div class="doc doc-contents first">
 
@@ -2350,10 +2350,10 @@
       </thead>
       <tbody>
             <tr class="doc-section-item">
-              <td><code><a class="autorefs autorefs-internal" title="            SynDeband (y5gfunc.filter.deband.SynDeband)" href="#y5gfunc.filter.deband.SynDeband">SynDeband</a></code></td>
+              <td><code><a class="autorefs autorefs-internal" title="            temporal_stabilize (y5gfunc.filter.temporal.temporal_stabilize)" href="#y5gfunc.filter.temporal.temporal_stabilize">temporal_stabilize</a></code></td>
               <td>
                 <div class="doc-md-description">
-                  
+                  <p>Temporally stabilizes a processed video clip using motion compensation based on a reference clip.</p>
                 </div>
               </td>
             </tr>
@@ -2377,20 +2377,199 @@
 <div class="doc doc-object doc-function">
 
 
-<h2 id="y5gfunc.filter.deband.SynDeband" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <span class="doc doc-object-name doc-function-name">SynDeband</span>
+<h2 id="y5gfunc.filter.temporal.temporal_stabilize" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <span class="doc doc-object-name doc-function-name">temporal_stabilize</span>
 
 
-<a href="#y5gfunc.filter.deband.SynDeband" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">SynDeband</span><span class="p">(</span><span class="n"><span title="y5gfunc.filter.deband.SynDeband(clip)">clip</span></span><span class="p">:</span> <span class="n"><span title="vstools.vs.VideoNode">VideoNode</span></span><span class="p">,</span> <span class="n"><span title="y5gfunc.filter.deband.SynDeband(r1)">r1</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></span> <span class="o">=</span> <span class="mi">14</span><span class="p">,</span> <span class="n"><span title="y5gfunc.filter.deband.SynDeband(y1)">y1</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></span> <span class="o">=</span> <span class="mi">72</span><span class="p">,</span> <span class="n"><span title="y5gfunc.filter.deband.SynDeband(uv1)">uv1</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></span> <span class="o">=</span> <span class="mi">48</span><span class="p">,</span> <span class="n"><span title="y5gfunc.filter.deband.SynDeband(r2)">r2</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></span> <span class="o">=</span> <span class="mi">30</span><span class="p">,</span> <span class="n"><span title="y5gfunc.filter.deband.SynDeband(y2)">y2</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></span> <span class="o">=</span> <span class="mi">48</span><span class="p">,</span> <span class="n"><span title="y5gfunc.filter.deband.SynDeband(uv2)">uv2</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></span> <span class="o">=</span> <span class="mi">32</span><span class="p">,</span> <span class="n"><span title="y5gfunc.filter.deband.SynDeband(mstr)">mstr</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></span> <span class="o">=</span> <span class="mi">6000</span><span class="p">,</span> <span class="n"><span title="y5gfunc.filter.deband.SynDeband(inflate)">inflate</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span> <span class="n"><span title="y5gfunc.filter.deband.SynDeband(include_mask)">include_mask</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n"><span title="y5gfunc.filter.deband.SynDeband(kill)">kill</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Optional" href="https://docs.python.org/3/library/typing.html#typing.Optional">Optional</a></span><span class="p">[</span><span class="n"><span title="vstools.vs.VideoNode">VideoNode</span></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n"><span title="y5gfunc.filter.deband.SynDeband(bmask)">bmask</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Optional" href="https://docs.python.org/3/library/typing.html#typing.Optional">Optional</a></span><span class="p">[</span><span class="n"><span title="vstools.vs.VideoNode">VideoNode</span></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n"><span title="y5gfunc.filter.deband.SynDeband(limit)">limit</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n"><span title="y5gfunc.filter.deband.SynDeband(limit_thry)">limit_thry</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></span> <span class="o">=</span> <span class="mf">0.12</span><span class="p">,</span> <span class="n"><span title="y5gfunc.filter.deband.SynDeband(limit_thrc)">limit_thrc</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></span> <span class="o">=</span> <span class="mf">0.1</span><span class="p">,</span> <span class="n"><span title="y5gfunc.filter.deband.SynDeband(limit_elast)">limit_elast</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></span> <span class="o">=</span> <span class="mi">20</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Union" href="https://docs.python.org/3/library/typing.html#typing.Union">Union</a></span><span class="p">[</span><span class="n"><span title="vstools.vs.VideoNode">VideoNode</span></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#tuple">tuple</a></span><span class="p">[</span><span class="n"><span title="vstools.vs.VideoNode">VideoNode</span></span><span class="p">,</span> <span class="n"><span title="vstools.vs.VideoNode">VideoNode</span></span><span class="p">]]</span>
+<a href="#y5gfunc.filter.temporal.temporal_stabilize" class="headerlink" title="Permanent link">&para;</a></h2>
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">temporal_stabilize</span><span class="p">(</span><span class="n"><a class="autorefs autorefs-internal" title="processed_clip (y5gfunc.filter.temporal.temporal_stabilize(processed_clip))" href="#y5gfunc.filter.temporal.temporal_stabilize(processed_clip)">processed_clip</a></span><span class="p">:</span> <span class="n"><span title="vstools.vs.VideoNode">VideoNode</span></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" title="ref_clip (y5gfunc.filter.temporal.temporal_stabilize(ref_clip))" href="#y5gfunc.filter.temporal.temporal_stabilize(ref_clip)">ref_clip</a></span><span class="p">:</span> <span class="n"><span title="vstools.vs.VideoNode">VideoNode</span></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" title="delta (y5gfunc.filter.temporal.temporal_stabilize(delta))" href="#y5gfunc.filter.temporal.temporal_stabilize(delta)">delta</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" title="pel (y5gfunc.filter.temporal.temporal_stabilize(pel))" href="#y5gfunc.filter.temporal.temporal_stabilize(pel)">pel</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" title="retain (y5gfunc.filter.temporal.temporal_stabilize(retain))" href="#y5gfunc.filter.temporal.temporal_stabilize(retain)">retain</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></span> <span class="o">=</span> <span class="mf">0.6</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="vstools.vs.VideoNode">VideoNode</span></span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
 
+        <p>Temporally stabilizes a processed video clip using motion compensation based on a reference clip.</p>
+<p>This function aims to reduce temporal inconsistencies (like flickering or unsteadiness) in the <code>processed_clip</code> by referencing a <code>reference_clip</code>.
+It calculates the difference between <code>reference_clip</code> and <code>processed_clip</code>, stabilizes this difference using motion vectors derived from <code>processed_clip</code>,
+and then applies the stabilized difference back onto <code>reference_clip</code>.</p>
+<p>A common use case is when <code>processed_clip</code> is the result of filtering applied to <code>reference_clip</code>, and that filtering
+introduced temporal instability. This function attempts to apply a temporally consistent version of the filter's effect.</p>
+<p>The core stabilization logic uses motion vector analysis on <code>processed_clip</code> and motion compensation on the difference clip.
+A limiting step ensures the stabilized difference doesn't deviate too drastically from the original difference, controlled by the <code>retain</code> parameter.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+<h3 id="y5gfunc.filter.temporal.temporal_stabilize(processed_clip)" class="doc doc-heading doc-heading-parameter">                  <code>processed_clip</code>
+<a href="#y5gfunc.filter.temporal.temporal_stabilize(processed_clip)" class="headerlink" title="Permanent link">&para;</a></h3>            </td>
+            <td>
+                  <code><span title="vstools.vs.VideoNode">VideoNode</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The input video clip that likely contains temporal instabilities.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+<h3 id="y5gfunc.filter.temporal.temporal_stabilize(ref_clip)" class="doc doc-heading doc-heading-parameter">                  <code>ref_clip</code>
+<a href="#y5gfunc.filter.temporal.temporal_stabilize(ref_clip)" class="headerlink" title="Permanent link">&para;</a></h3>            </td>
+            <td>
+                  <code><span title="vstools.vs.VideoNode">VideoNode</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The reference video clip,  the original source before the processing that introduced instability.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+<h3 id="y5gfunc.filter.temporal.temporal_stabilize(delta)" class="doc doc-heading doc-heading-parameter">                  <code>delta</code>
+<a href="#y5gfunc.filter.temporal.temporal_stabilize(delta)" class="headerlink" title="Permanent link">&para;</a></h3>            </td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Temporal radius for temporal stabilize (1-6). This value corresponds to the <code>mv.DegrainN</code> function used.</p>
+              </div>
+            </td>
+            <td>
+                  <code>3</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+<h3 id="y5gfunc.filter.temporal.temporal_stabilize(pel)" class="doc doc-heading doc-heading-parameter">                  <code>pel</code>
+<a href="#y5gfunc.filter.temporal.temporal_stabilize(pel)" class="headerlink" title="Permanent link">&para;</a></h3>            </td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Subpixel accuracy for motion estimation passed to <code>mv.Super</code>. Higher values increase accuracy but also computational cost.</p>
+              </div>
+            </td>
+            <td>
+                  <code>1</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+<h3 id="y5gfunc.filter.temporal.temporal_stabilize(retain)" class="doc doc-heading doc-heading-parameter">                  <code>retain</code>
+<a href="#y5gfunc.filter.temporal.temporal_stabilize(retain)" class="headerlink" title="Permanent link">&para;</a></h3>            </td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Weight for merging the limited stabilized difference with the full stabilized difference. A value of 1.0 means only the full
+stabilized difference is used, while 0.0 means only the limited difference (closer to the original difference) is used. It controls
+the strength of the stabilization effect versus preserving the original difference characteristics. Range [0.0, 1.0].</p>
+              </div>
+            </td>
+            <td>
+                  <code>0.6</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="vstools.vs.VideoNode">VideoNode</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>A new video clip, ideally resembling <code>processed_clip</code> but with reduced temporal instability.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<p><span class="doc-section-title">Raises:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/exceptions.html#ValueError">ValueError</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If <code>processed_clip</code> and <code>reference_clip</code> have different video formats.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/exceptions.html#ValueError">ValueError</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>if <code>pel</code> is not an ingeter in [1, 2, 4].</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/exceptions.html#ValueError">ValueError</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If <code>delta</code> is not an integer between 1 and 6 (inclusive).</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
 
             <details class="quote">
-              <summary>Source code in <code>y5gfunc/filter/deband.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-14">14</a></span>
+              <summary>Source code in <code>y5gfunc/filter/temporal.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-7"> 7</a></span>
+<span class="normal"><a href="#__codelineno-0-8"> 8</a></span>
+<span class="normal"><a href="#__codelineno-0-9"> 9</a></span>
+<span class="normal"><a href="#__codelineno-0-10">10</a></span>
+<span class="normal"><a href="#__codelineno-0-11">11</a></span>
+<span class="normal"><a href="#__codelineno-0-12">12</a></span>
+<span class="normal"><a href="#__codelineno-0-13">13</a></span>
+<span class="normal"><a href="#__codelineno-0-14">14</a></span>
 <span class="normal"><a href="#__codelineno-0-15">15</a></span>
 <span class="normal"><a href="#__codelineno-0-16">16</a></span>
 <span class="normal"><a href="#__codelineno-0-17">17</a></span>
@@ -2438,55 +2617,102 @@
 <span class="normal"><a href="#__codelineno-0-59">59</a></span>
 <span class="normal"><a href="#__codelineno-0-60">60</a></span>
 <span class="normal"><a href="#__codelineno-0-61">61</a></span>
-<span class="normal"><a href="#__codelineno-0-62">62</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-14" name="__codelineno-0-14"></a><span class="k">def</span><span class="w"> </span><span class="nf">SynDeband</span><span class="p">(</span>
-<a id="__codelineno-0-15" name="__codelineno-0-15"></a>    <span class="n">clip</span><span class="p">:</span> <span class="n">vs</span><span class="o">.</span><span class="n">VideoNode</span><span class="p">,</span>
-<a id="__codelineno-0-16" name="__codelineno-0-16"></a>    <span class="n">r1</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">14</span><span class="p">,</span>
-<a id="__codelineno-0-17" name="__codelineno-0-17"></a>    <span class="n">y1</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">72</span><span class="p">,</span>
-<a id="__codelineno-0-18" name="__codelineno-0-18"></a>    <span class="n">uv1</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">48</span><span class="p">,</span>
-<a id="__codelineno-0-19" name="__codelineno-0-19"></a>    <span class="n">r2</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">30</span><span class="p">,</span>
-<a id="__codelineno-0-20" name="__codelineno-0-20"></a>    <span class="n">y2</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">48</span><span class="p">,</span>
-<a id="__codelineno-0-21" name="__codelineno-0-21"></a>    <span class="n">uv2</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">32</span><span class="p">,</span>
-<a id="__codelineno-0-22" name="__codelineno-0-22"></a>    <span class="n">mstr</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">6000</span><span class="p">,</span>
-<a id="__codelineno-0-23" name="__codelineno-0-23"></a>    <span class="n">inflate</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
-<a id="__codelineno-0-24" name="__codelineno-0-24"></a>    <span class="n">include_mask</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-<a id="__codelineno-0-25" name="__codelineno-0-25"></a>    <span class="n">kill</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">vs</span><span class="o">.</span><span class="n">VideoNode</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-<a id="__codelineno-0-26" name="__codelineno-0-26"></a>    <span class="n">bmask</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">vs</span><span class="o">.</span><span class="n">VideoNode</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-<a id="__codelineno-0-27" name="__codelineno-0-27"></a>    <span class="n">limit</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-<a id="__codelineno-0-28" name="__codelineno-0-28"></a>    <span class="n">limit_thry</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.12</span><span class="p">,</span>
-<a id="__codelineno-0-29" name="__codelineno-0-29"></a>    <span class="n">limit_thrc</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.1</span><span class="p">,</span>
-<a id="__codelineno-0-30" name="__codelineno-0-30"></a>    <span class="n">limit_elast</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">20</span><span class="p">,</span>
-<a id="__codelineno-0-31" name="__codelineno-0-31"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">vs</span><span class="o">.</span><span class="n">VideoNode</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">vs</span><span class="o">.</span><span class="n">VideoNode</span><span class="p">,</span> <span class="n">vs</span><span class="o">.</span><span class="n">VideoNode</span><span class="p">]]:</span>
-<a id="__codelineno-0-32" name="__codelineno-0-32"></a>    <span class="k">assert</span> <span class="n">clip</span><span class="o">.</span><span class="n">format</span><span class="o">.</span><span class="n">id</span> <span class="o">==</span> <span class="n">vs</span><span class="o">.</span><span class="n">YUV420P16</span>
-<a id="__codelineno-0-33" name="__codelineno-0-33"></a>
-<a id="__codelineno-0-34" name="__codelineno-0-34"></a>    <span class="k">if</span> <span class="n">kill</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-<a id="__codelineno-0-35" name="__codelineno-0-35"></a>        <span class="n">kill</span> <span class="o">=</span> <span class="n">vstools</span><span class="o">.</span><span class="n">iterate</span><span class="p">(</span><span class="n">clip</span><span class="p">,</span> <span class="n">functools</span><span class="o">.</span><span class="n">partial</span><span class="p">(</span><span class="n">remove_grain</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="p">[</span><span class="mi">20</span><span class="p">,</span> <span class="mi">11</span><span class="p">]),</span> <span class="mi">2</span><span class="p">)</span>
-<a id="__codelineno-0-36" name="__codelineno-0-36"></a>    <span class="k">elif</span> <span class="ow">not</span> <span class="n">kill</span><span class="p">:</span>
-<a id="__codelineno-0-37" name="__codelineno-0-37"></a>        <span class="n">kill</span> <span class="o">=</span> <span class="n">clip</span>
+<span class="normal"><a href="#__codelineno-0-62">62</a></span>
+<span class="normal"><a href="#__codelineno-0-63">63</a></span>
+<span class="normal"><a href="#__codelineno-0-64">64</a></span>
+<span class="normal"><a href="#__codelineno-0-65">65</a></span>
+<span class="normal"><a href="#__codelineno-0-66">66</a></span>
+<span class="normal"><a href="#__codelineno-0-67">67</a></span>
+<span class="normal"><a href="#__codelineno-0-68">68</a></span>
+<span class="normal"><a href="#__codelineno-0-69">69</a></span>
+<span class="normal"><a href="#__codelineno-0-70">70</a></span>
+<span class="normal"><a href="#__codelineno-0-71">71</a></span>
+<span class="normal"><a href="#__codelineno-0-72">72</a></span>
+<span class="normal"><a href="#__codelineno-0-73">73</a></span>
+<span class="normal"><a href="#__codelineno-0-74">74</a></span>
+<span class="normal"><a href="#__codelineno-0-75">75</a></span>
+<span class="normal"><a href="#__codelineno-0-76">76</a></span>
+<span class="normal"><a href="#__codelineno-0-77">77</a></span>
+<span class="normal"><a href="#__codelineno-0-78">78</a></span>
+<span class="normal"><a href="#__codelineno-0-79">79</a></span>
+<span class="normal"><a href="#__codelineno-0-80">80</a></span>
+<span class="normal"><a href="#__codelineno-0-81">81</a></span>
+<span class="normal"><a href="#__codelineno-0-82">82</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-7" name="__codelineno-0-7"></a><span class="k">def</span><span class="w"> </span><span class="nf">temporal_stabilize</span><span class="p">(</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8"></a>    <span class="n">processed_clip</span><span class="p">:</span> <span class="n">vs</span><span class="o">.</span><span class="n">VideoNode</span><span class="p">,</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9"></a>    <span class="n">ref_clip</span><span class="p">:</span> <span class="n">vs</span><span class="o">.</span><span class="n">VideoNode</span><span class="p">,</span>
+<a id="__codelineno-0-10" name="__codelineno-0-10"></a>    <span class="n">delta</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span>
+<a id="__codelineno-0-11" name="__codelineno-0-11"></a>    <span class="n">pel</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+<a id="__codelineno-0-12" name="__codelineno-0-12"></a>    <span class="n">retain</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.6</span><span class="p">,</span>
+<a id="__codelineno-0-13" name="__codelineno-0-13"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">vs</span><span class="o">.</span><span class="n">VideoNode</span><span class="p">:</span>
+<a id="__codelineno-0-14" name="__codelineno-0-14"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<a id="__codelineno-0-15" name="__codelineno-0-15"></a><span class="sd">    Temporally stabilizes a processed video clip using motion compensation based on a reference clip.</span>
+<a id="__codelineno-0-16" name="__codelineno-0-16"></a>
+<a id="__codelineno-0-17" name="__codelineno-0-17"></a><span class="sd">    This function aims to reduce temporal inconsistencies (like flickering or unsteadiness) in the `processed_clip` by referencing a `reference_clip`.</span>
+<a id="__codelineno-0-18" name="__codelineno-0-18"></a><span class="sd">    It calculates the difference between `reference_clip` and `processed_clip`, stabilizes this difference using motion vectors derived from `processed_clip`,</span>
+<a id="__codelineno-0-19" name="__codelineno-0-19"></a><span class="sd">    and then applies the stabilized difference back onto `reference_clip`.</span>
+<a id="__codelineno-0-20" name="__codelineno-0-20"></a>
+<a id="__codelineno-0-21" name="__codelineno-0-21"></a><span class="sd">    A common use case is when `processed_clip` is the result of filtering applied to `reference_clip`, and that filtering</span>
+<a id="__codelineno-0-22" name="__codelineno-0-22"></a><span class="sd">    introduced temporal instability. This function attempts to apply a temporally consistent version of the filter&#39;s effect.</span>
+<a id="__codelineno-0-23" name="__codelineno-0-23"></a>
+<a id="__codelineno-0-24" name="__codelineno-0-24"></a><span class="sd">    The core stabilization logic uses motion vector analysis on `processed_clip` and motion compensation on the difference clip.</span>
+<a id="__codelineno-0-25" name="__codelineno-0-25"></a><span class="sd">    A limiting step ensures the stabilized difference doesn&#39;t deviate too drastically from the original difference, controlled by the `retain` parameter.</span>
+<a id="__codelineno-0-26" name="__codelineno-0-26"></a>
+<a id="__codelineno-0-27" name="__codelineno-0-27"></a><span class="sd">    Args:</span>
+<a id="__codelineno-0-28" name="__codelineno-0-28"></a><span class="sd">        processed_clip: The input video clip that likely contains temporal instabilities.</span>
+<a id="__codelineno-0-29" name="__codelineno-0-29"></a><span class="sd">        ref_clip: The reference video clip,  the original source before the processing that introduced instability.</span>
+<a id="__codelineno-0-30" name="__codelineno-0-30"></a><span class="sd">        delta: Temporal radius for temporal stabilize (1-6). This value corresponds to the `mv.DegrainN` function used.</span>
+<a id="__codelineno-0-31" name="__codelineno-0-31"></a><span class="sd">        pel: Subpixel accuracy for motion estimation passed to `mv.Super`. Higher values increase accuracy but also computational cost.</span>
+<a id="__codelineno-0-32" name="__codelineno-0-32"></a><span class="sd">        retain: Weight for merging the limited stabilized difference with the full stabilized difference. A value of 1.0 means only the full</span>
+<a id="__codelineno-0-33" name="__codelineno-0-33"></a><span class="sd">            stabilized difference is used, while 0.0 means only the limited difference (closer to the original difference) is used. It controls</span>
+<a id="__codelineno-0-34" name="__codelineno-0-34"></a><span class="sd">            the strength of the stabilization effect versus preserving the original difference characteristics. Range [0.0, 1.0].</span>
+<a id="__codelineno-0-35" name="__codelineno-0-35"></a>
+<a id="__codelineno-0-36" name="__codelineno-0-36"></a><span class="sd">    Returns:</span>
+<a id="__codelineno-0-37" name="__codelineno-0-37"></a><span class="sd">        A new video clip, ideally resembling `processed_clip` but with reduced temporal instability.</span>
 <a id="__codelineno-0-38" name="__codelineno-0-38"></a>
-<a id="__codelineno-0-39" name="__codelineno-0-39"></a>    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">kill</span><span class="p">,</span> <span class="n">vs</span><span class="o">.</span><span class="n">VideoNode</span><span class="p">)</span>
-<a id="__codelineno-0-40" name="__codelineno-0-40"></a>    <span class="n">grain</span> <span class="o">=</span> <span class="n">core</span><span class="o">.</span><span class="n">std</span><span class="o">.</span><span class="n">MakeDiff</span><span class="p">(</span><span class="n">clip</span><span class="p">,</span> <span class="n">kill</span><span class="p">)</span>
-<a id="__codelineno-0-41" name="__codelineno-0-41"></a>    <span class="n">f3kdb_params</span> <span class="o">=</span> <span class="p">{</span>
-<a id="__codelineno-0-42" name="__codelineno-0-42"></a>        <span class="s2">&quot;grainy&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
-<a id="__codelineno-0-43" name="__codelineno-0-43"></a>        <span class="s2">&quot;grainc&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
-<a id="__codelineno-0-44" name="__codelineno-0-44"></a>        <span class="s2">&quot;sample_mode&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
-<a id="__codelineno-0-45" name="__codelineno-0-45"></a>        <span class="s2">&quot;blur_first&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
-<a id="__codelineno-0-46" name="__codelineno-0-46"></a>        <span class="s2">&quot;dither_algo&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
-<a id="__codelineno-0-47" name="__codelineno-0-47"></a>    <span class="p">}</span>
-<a id="__codelineno-0-48" name="__codelineno-0-48"></a>    <span class="n">f3k1</span> <span class="o">=</span> <span class="n">kill</span><span class="o">.</span><span class="n">neo_f3kdb</span><span class="o">.</span><span class="n">Deband</span><span class="p">(</span><span class="n">r1</span><span class="p">,</span> <span class="n">y1</span><span class="p">,</span> <span class="n">uv1</span><span class="p">,</span> <span class="n">uv1</span><span class="p">,</span> <span class="o">**</span><span class="n">f3kdb_params</span><span class="p">)</span>
-<a id="__codelineno-0-49" name="__codelineno-0-49"></a>    <span class="n">f3k2</span> <span class="o">=</span> <span class="n">f3k1</span><span class="o">.</span><span class="n">neo_f3kdb</span><span class="o">.</span><span class="n">Deband</span><span class="p">(</span><span class="n">r2</span><span class="p">,</span> <span class="n">y2</span><span class="p">,</span> <span class="n">uv2</span><span class="p">,</span> <span class="n">uv2</span><span class="p">,</span> <span class="o">**</span><span class="n">f3kdb_params</span><span class="p">)</span>
-<a id="__codelineno-0-50" name="__codelineno-0-50"></a>    <span class="k">if</span> <span class="n">limit</span><span class="p">:</span>
-<a id="__codelineno-0-51" name="__codelineno-0-51"></a>        <span class="n">f3k2</span> <span class="o">=</span> <span class="n">mvf</span><span class="o">.</span><span class="n">LimitFilter</span><span class="p">(</span>
-<a id="__codelineno-0-52" name="__codelineno-0-52"></a>            <span class="n">f3k2</span><span class="p">,</span> <span class="n">kill</span><span class="p">,</span> <span class="n">thr</span><span class="o">=</span><span class="n">limit_thry</span><span class="p">,</span> <span class="n">thrc</span><span class="o">=</span><span class="n">limit_thrc</span><span class="p">,</span> <span class="n">elast</span><span class="o">=</span><span class="n">limit_elast</span>
-<a id="__codelineno-0-53" name="__codelineno-0-53"></a>        <span class="p">)</span>
-<a id="__codelineno-0-54" name="__codelineno-0-54"></a>    <span class="k">if</span> <span class="n">bmask</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-<a id="__codelineno-0-55" name="__codelineno-0-55"></a>        <span class="n">bmask</span> <span class="o">=</span> <span class="n">retinex_edgemask</span><span class="p">(</span><span class="n">kill</span><span class="p">)</span><span class="o">.</span><span class="n">std</span><span class="o">.</span><span class="n">Binarize</span><span class="p">(</span><span class="n">mstr</span><span class="p">)</span>
-<a id="__codelineno-0-56" name="__codelineno-0-56"></a>        <span class="n">bmask</span> <span class="o">=</span> <span class="n">vstools</span><span class="o">.</span><span class="n">iterate</span><span class="p">(</span><span class="n">bmask</span><span class="p">,</span> <span class="n">_inflate</span><span class="p">,</span> <span class="n">inflate</span><span class="p">)</span>
-<a id="__codelineno-0-57" name="__codelineno-0-57"></a>    <span class="n">deband</span> <span class="o">=</span> <span class="n">core</span><span class="o">.</span><span class="n">std</span><span class="o">.</span><span class="n">MaskedMerge</span><span class="p">(</span><span class="n">f3k2</span><span class="p">,</span> <span class="n">kill</span><span class="p">,</span> <span class="n">bmask</span><span class="p">)</span>
-<a id="__codelineno-0-58" name="__codelineno-0-58"></a>    <span class="n">deband</span> <span class="o">=</span> <span class="n">core</span><span class="o">.</span><span class="n">std</span><span class="o">.</span><span class="n">MergeDiff</span><span class="p">(</span><span class="n">deband</span><span class="p">,</span> <span class="n">grain</span><span class="p">)</span>
-<a id="__codelineno-0-59" name="__codelineno-0-59"></a>    <span class="k">if</span> <span class="n">include_mask</span><span class="p">:</span>
-<a id="__codelineno-0-60" name="__codelineno-0-60"></a>        <span class="k">return</span> <span class="n">deband</span><span class="p">,</span> <span class="n">bmask</span>
-<a id="__codelineno-0-61" name="__codelineno-0-61"></a>    <span class="k">else</span><span class="p">:</span>
-<a id="__codelineno-0-62" name="__codelineno-0-62"></a>        <span class="k">return</span> <span class="n">deband</span>
+<a id="__codelineno-0-39" name="__codelineno-0-39"></a><span class="sd">    Raises:</span>
+<a id="__codelineno-0-40" name="__codelineno-0-40"></a><span class="sd">        ValueError: If `processed_clip` and `reference_clip` have different video formats.</span>
+<a id="__codelineno-0-41" name="__codelineno-0-41"></a><span class="sd">        ValueError: if `pel` is not an ingeter in [1, 2, 4].</span>
+<a id="__codelineno-0-42" name="__codelineno-0-42"></a><span class="sd">        ValueError: If `delta` is not an integer between 1 and 6 (inclusive).</span>
+<a id="__codelineno-0-43" name="__codelineno-0-43"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="__codelineno-0-44" name="__codelineno-0-44"></a>    <span class="k">if</span> <span class="n">processed_clip</span><span class="o">.</span><span class="n">format</span> <span class="o">!=</span> <span class="n">ref_clip</span><span class="o">.</span><span class="n">format</span><span class="p">:</span>
+<a id="__codelineno-0-45" name="__codelineno-0-45"></a>        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+<a id="__codelineno-0-46" name="__codelineno-0-46"></a>            <span class="s2">&quot;temporal_stabilize: format of processed_clip and ref_clip mismatch.&quot;</span>
+<a id="__codelineno-0-47" name="__codelineno-0-47"></a>        <span class="p">)</span>
+<a id="__codelineno-0-48" name="__codelineno-0-48"></a>    <span class="k">if</span> <span class="n">pel</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">]:</span>
+<a id="__codelineno-0-49" name="__codelineno-0-49"></a>        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;temporal_stabilize: pel (1, 2, 4) invalid.&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-50" name="__codelineno-0-50"></a>    <span class="k">if</span> <span class="n">delta</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">]:</span>
+<a id="__codelineno-0-51" name="__codelineno-0-51"></a>        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;temporal_stabilize: delta (1~6) invalid.&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-52" name="__codelineno-0-52"></a>
+<a id="__codelineno-0-53" name="__codelineno-0-53"></a>    <span class="n">diff</span> <span class="o">=</span> <span class="n">core</span><span class="o">.</span><span class="n">std</span><span class="o">.</span><span class="n">MakeDiff</span><span class="p">(</span><span class="n">ref_clip</span><span class="p">,</span> <span class="n">processed_clip</span><span class="p">)</span>
+<a id="__codelineno-0-54" name="__codelineno-0-54"></a>    <span class="n">clip_super</span> <span class="o">=</span> <span class="n">core</span><span class="o">.</span><span class="n">mv</span><span class="o">.</span><span class="n">Super</span><span class="p">(</span><span class="n">processed_clip</span><span class="p">,</span> <span class="n">pel</span><span class="o">=</span><span class="n">pel</span><span class="p">)</span>
+<a id="__codelineno-0-55" name="__codelineno-0-55"></a>    <span class="n">diff_super</span> <span class="o">=</span> <span class="n">core</span><span class="o">.</span><span class="n">mv</span><span class="o">.</span><span class="n">Super</span><span class="p">(</span><span class="n">diff</span><span class="p">,</span> <span class="n">pel</span><span class="o">=</span><span class="n">pel</span><span class="p">,</span> <span class="n">levels</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<a id="__codelineno-0-56" name="__codelineno-0-56"></a>
+<a id="__codelineno-0-57" name="__codelineno-0-57"></a>    <span class="n">backward_vectors</span> <span class="o">=</span> <span class="p">[</span>
+<a id="__codelineno-0-58" name="__codelineno-0-58"></a>        <span class="n">core</span><span class="o">.</span><span class="n">mv</span><span class="o">.</span><span class="n">Analyse</span><span class="p">(</span><span class="n">clip_super</span><span class="p">,</span> <span class="n">isb</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">delta</span><span class="o">=</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">overlap</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span> <span class="n">blksize</span><span class="o">=</span><span class="mi">16</span><span class="p">)</span>
+<a id="__codelineno-0-59" name="__codelineno-0-59"></a>        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">delta</span><span class="p">)</span>
+<a id="__codelineno-0-60" name="__codelineno-0-60"></a>    <span class="p">]</span>
+<a id="__codelineno-0-61" name="__codelineno-0-61"></a>    <span class="n">forward_vectors</span> <span class="o">=</span> <span class="p">[</span>
+<a id="__codelineno-0-62" name="__codelineno-0-62"></a>        <span class="n">core</span><span class="o">.</span><span class="n">mv</span><span class="o">.</span><span class="n">Analyse</span><span class="p">(</span><span class="n">clip_super</span><span class="p">,</span> <span class="n">isb</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">delta</span><span class="o">=</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">overlap</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span> <span class="n">blksize</span><span class="o">=</span><span class="mi">16</span><span class="p">)</span>
+<a id="__codelineno-0-63" name="__codelineno-0-63"></a>        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">delta</span><span class="p">)</span>
+<a id="__codelineno-0-64" name="__codelineno-0-64"></a>    <span class="p">]</span>
+<a id="__codelineno-0-65" name="__codelineno-0-65"></a>    <span class="n">vectors</span> <span class="o">=</span> <span class="p">[</span>
+<a id="__codelineno-0-66" name="__codelineno-0-66"></a>        <span class="n">vector</span>
+<a id="__codelineno-0-67" name="__codelineno-0-67"></a>        <span class="k">for</span> <span class="n">vector_group</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">backward_vectors</span><span class="p">,</span> <span class="n">forward_vectors</span><span class="p">)</span>
+<a id="__codelineno-0-68" name="__codelineno-0-68"></a>        <span class="k">for</span> <span class="n">vector</span> <span class="ow">in</span> <span class="n">vector_group</span>
+<a id="__codelineno-0-69" name="__codelineno-0-69"></a>    <span class="p">]</span>
+<a id="__codelineno-0-70" name="__codelineno-0-70"></a>
+<a id="__codelineno-0-71" name="__codelineno-0-71"></a>    <span class="n">stabilize_func</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">core</span><span class="o">.</span><span class="n">mv</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;Degrain</span><span class="si">{</span><span class="n">delta</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-72" name="__codelineno-0-72"></a>    <span class="n">diff_stabilized</span> <span class="o">=</span> <span class="n">stabilize_func</span><span class="p">[</span><span class="n">delta</span><span class="p">](</span><span class="n">diff</span><span class="p">,</span> <span class="n">diff_super</span><span class="p">,</span> <span class="o">*</span><span class="n">vectors</span><span class="p">)</span>
+<a id="__codelineno-0-73" name="__codelineno-0-73"></a>
+<a id="__codelineno-0-74" name="__codelineno-0-74"></a>    <span class="n">diff_stabilized_limited</span> <span class="o">=</span> <span class="n">core</span><span class="o">.</span><span class="n">akarin</span><span class="o">.</span><span class="n">Expr</span><span class="p">(</span>
+<a id="__codelineno-0-75" name="__codelineno-0-75"></a>        <span class="p">[</span><span class="n">diff</span><span class="p">,</span> <span class="n">diff_stabilized</span><span class="p">],</span>
+<a id="__codelineno-0-76" name="__codelineno-0-76"></a>        <span class="sa">f</span><span class="s2">&quot;x </span><span class="si">{</span><span class="n">get_neutral_value</span><span class="p">(</span><span class="n">processed_clip</span><span class="p">)</span><span class="si">}</span><span class="s2"> - abs y </span><span class="si">{</span><span class="n">get_neutral_value</span><span class="p">(</span><span class="n">processed_clip</span><span class="p">)</span><span class="si">}</span><span class="s2"> - abs &lt; x y ?&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-77" name="__codelineno-0-77"></a>    <span class="p">)</span>
+<a id="__codelineno-0-78" name="__codelineno-0-78"></a>    <span class="n">diff_stabilized</span> <span class="o">=</span> <span class="n">core</span><span class="o">.</span><span class="n">std</span><span class="o">.</span><span class="n">Merge</span><span class="p">(</span>
+<a id="__codelineno-0-79" name="__codelineno-0-79"></a>        <span class="n">diff_stabilized_limited</span><span class="p">,</span> <span class="n">diff_stabilized</span><span class="p">,</span> <span class="n">weight</span><span class="o">=</span><span class="n">retain</span>
+<a id="__codelineno-0-80" name="__codelineno-0-80"></a>    <span class="p">)</span>
+<a id="__codelineno-0-81" name="__codelineno-0-81"></a>    <span class="n">clip_stabilized</span> <span class="o">=</span> <span class="n">core</span><span class="o">.</span><span class="n">std</span><span class="o">.</span><span class="n">MakeDiff</span><span class="p">(</span><span class="n">ref_clip</span><span class="p">,</span> <span class="n">diff_stabilized</span><span class="p">)</span>
+<a id="__codelineno-0-82" name="__codelineno-0-82"></a>    <span class="k">return</span> <span class="n">clip_stabilized</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
