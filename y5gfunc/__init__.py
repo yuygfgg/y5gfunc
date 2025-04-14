@@ -4,7 +4,7 @@ Yuygfgg's collection for vapoursynth video filtering and encoding stuff.
 
 from .expr import postfix2infix, infix2postfix, optimize_akarin_expr, ex_planes
 from .filter import (
-    SynDeband, BM3DPreset, Fast_BM3DWrapper, TIVTC_VFR, DBMask, get_oped_mask,
+    SynDeband, BM3DPreset, Fast_BM3DWrapper, TIVTC_VFR, DBMask, AnimeMask, get_oped_mask,
     kirsch, prewitt, retinex_edgemask, comb_mask, rescale, descale_cropping_args, DescaleMode,
     Descale, rgb2opp, opp2rgb, is_stripe, convolution, maximum, minimum, inflate, deflate, scd_koala, temporal_stabilize,
     nn2x, nn2x_aa, get_peak_value_full, is_optimized_cpu
@@ -42,6 +42,7 @@ __all__ = [
     'Fast_BM3DWrapper',
     'TIVTC_VFR',
     'DBMask',
+    'AnimeMask',
     'get_oped_mask',
     'kirsch',
     'prewitt',

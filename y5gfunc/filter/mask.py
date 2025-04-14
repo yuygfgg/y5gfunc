@@ -13,6 +13,7 @@ from ..expr import ex_planes
 
 # modified from LoliHouse: https://share.dmhy.org/topics/view/478666_LoliHouse_LoliHouse_1st_Anniversary_Announcement_and_Gift.html
 def DBMask(clip: vs.VideoNode) -> vs.VideoNode:
+    """Lolihouse's deband mask"""
     nrmasks = core.tcanny.TCanny(
         clip, sigma=0.8, op=2, mode=1, planes=[0, 1, 2]
     ).std.Binarize(scale_mask(7, 8, clip), planes=[0])
@@ -35,6 +36,59 @@ def DBMask(clip: vs.VideoNode) -> vs.VideoNode:
     )  # first_plane=True in [LoliHouse] Anime_WebSource_deband_1080P_10bit_adcance.vpy: L33
     return nrmask
 
+# modified from muvsfunc.AnimeMask
+def AnimeMask(clip: vs.VideoNode, shift: float = 0, mode: int = 1) -> vs.VideoNode:
+    """
+    Generates edge/ringing mask for anime based on gradient operator.
+
+    For Anime's ringing mask, it's recommended to set "shift" between 0.5 and 1.0.
+
+    Args:
+        clip: Source clip. Only the First plane will be processed.
+
+        shift: (float, -1.5 ~ 1.5) The distance of translation. Default is 0.
+
+        mode: (-1 or 1) Type of the kernel, which simply inverts the pixel values and "shift".
+            Typically, -1 is for edge, 1 is for ringing. Default is 1.
+
+    Returns:
+        Generated mask.
+    
+    Raises:
+        ValueError: If mode(-1 or 1) is invalid.
+    """
+
+    if clip.format.color_family != vs.GRAY:
+        clip = vstools.get_y(clip)
+
+    if mode not in [-1, 1]:
+        raise ValueError("AnimeMask: 'mode' have not a correct value! [-1 or 1]")
+
+    if mode == -1:
+        clip = core.std.Invert(clip)
+        shift = -shift
+
+    mask1 = convolution(
+        clip, [0, 0, 0, 0, 2, -1, 0, -1, 0], saturate=True
+    ).resize2.Bicubic(src_left=shift, src_top=shift, range_s="full", range_in_s="full")
+    mask2 = convolution(
+        clip, [0, -1, 0, -1, 2, 0, 0, 0, 0], saturate=True
+    ).resize2.Bicubic(
+        src_left=-shift, src_top=-shift, range_s="full", range_in_s="full"
+    )
+    mask3 = convolution(
+        clip, [0, -1, 0, 0, 2, -1, 0, 0, 0], saturate=True
+    ).resize2.Bicubic(src_left=shift, src_top=-shift, range_s="full", range_in_s="full")
+    mask4 = convolution(
+        clip, [0, 0, 0, -1, 2, 0, 0, -1, 0], saturate=True
+    ).resize2.Bicubic(src_left=-shift, src_top=shift, range_s="full", range_in_s="full")
+
+    calc_expr = "src0 2 ** src01 2 ** + src2 2 ** + src3 2 ** + sqrt "
+
+    mask = core.akarin.Expr([mask1, mask2, mask3, mask4], [calc_expr])
+
+    return mask
+
 
 def get_oped_mask(
     clip: vs.VideoNode,
@@ -44,7 +98,6 @@ def get_oped_mask(
     ed_start: int,
     threshold: int = 7,
 ) -> tuple[vs.VideoNode, vs.VideoNode]:
-
     assert clip.format == ncop.format == nced.format
     assert clip.format.color_family == vs.YUV
 
