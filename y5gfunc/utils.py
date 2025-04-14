@@ -47,7 +47,7 @@ def resolve_path(path: Union[Path, str]) -> Path:
         path: The input path string or Path object to resolve and for which to ensure directory structure exists.
 
     Returns:
-        Path: The absolute, resolved pathlib.Path object corresponding to the input path, after ensuring the relevant directory structure exists.
+        The absolute, resolved pathlib. Path object corresponding to the input path, after ensuring the relevant directory structure exists.
     """
     path = Path(path).resolve()
     if path.suffix:

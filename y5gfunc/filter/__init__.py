@@ -7,6 +7,7 @@ from .resample import Descale, rgb2opp, opp2rgb
 from .stripe import is_stripe
 from .morpho import convolution, maximum, minimum, inflate, deflate
 from .scenecut import scd_koala
+from .temporal import temporal_stabilize
 from .utils import get_peak_value_full, is_optimized_cpu
 
 __all__ = [
@@ -32,6 +33,7 @@ __all__ = [
     'inflate',
     'deflate',
     'scd_koala',
+    'temporal_stabilize',
     'get_peak_value_full',
     'is_optimized_cpu'
 ]
