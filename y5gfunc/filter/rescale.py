@@ -8,7 +8,7 @@ import functools
 from .mask import generate_detail_mask
 from .nn2x import nn2x
 from itertools import product
-from muvsfunc import SSIM_downsample
+from .resample import SSIM_downsample
 
 class DescaleMode(StrEnum):
     W = "w"
@@ -395,13 +395,13 @@ def rescale(
         
         rescaled = SSIM_downsample(
             clip=n2x,
-            w=clip.width,
-            h=clip.height,
+            width=clip.width,
+            height=clip.height,
             sigmoid=False,
-            src_left=dargs['src_left'] * 2 - 0.5,
-            src_top=dargs['src_top'] * 2 - 0.5,
-            src_width=dargs['src_width'] * 2,
-            src_height=dargs['src_height'] * 2
+            src_left=dargs['src_left'] * 2 - 0.5, # type: ignore
+            src_top=dargs['src_top'] * 2 - 0.5, # type: ignore
+            src_width=dargs['src_width'] * 2, # type: ignore
+            src_height=dargs['src_height'] * 2 # type: ignore
         )
 
         upscaled_clips.append(upscaled)

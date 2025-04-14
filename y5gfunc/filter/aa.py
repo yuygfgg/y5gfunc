@@ -4,7 +4,7 @@ from vstools import vs
 from vstools import depth, join, get_y
 from .mask import prewitt
 from .nn2x import nn2x
-from muvsfunc import SSIM_downsample
+from .resample import SSIM_downsample
 
 
 def nn2x_aa(clip: vs.VideoNode, mask: Optional[vs.VideoNode] = None) -> vs.VideoNode:
@@ -22,6 +22,6 @@ def nn2x_aa(clip: vs.VideoNode, mask: Optional[vs.VideoNode] = None) -> vs.Video
         Anti-aliased input video clip.
     """
 
-    return core.std.MaskedMerge(clip, join(depth(SSIM_downsample(nn2x(get_y(clip)), w=clip.width, h=clip.height, src_left=-0.5, src_top=-0.5), clip), clip), mask or prewitt(clip), first_plane=True)
+    return core.std.MaskedMerge(clip, join(depth(SSIM_downsample(nn2x(get_y(clip)), width=clip.width, height=clip.height, src_left=-0.5, src_top=-0.5), clip), clip), mask or prewitt(clip), first_plane=True)
     
     

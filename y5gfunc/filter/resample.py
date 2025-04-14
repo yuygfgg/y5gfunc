@@ -1,6 +1,9 @@
+import functools
 from vstools import vs
 from vstools import core
-from typing import Optional, Union, Callable
+from vstools import depth
+from vsrgtools import box_blur
+from typing import Any, Optional, Union, Callable
 
 
 # modified from yvsfunc
@@ -18,6 +21,117 @@ def opp2rgb(clip: vs.VideoNode) -> vs.VideoNode:
     rgb = core.std.SetFrameProps(rgb, _Matrix=vs.MATRIX_RGB)
     rgb = core.std.RemoveFrameProps(rgb, "BM3D_OPP")
     return rgb
+
+
+# modified from muvsfunc
+def SSIM_downsample(
+    clip: vs.VideoNode,
+    width: int,
+    height: int,
+    smooth: Union[float, Callable] = 1,
+    gamma: bool = True,
+    fulls: bool = False,
+    fulld: bool = False,
+    curve: str = "709",
+    sigmoid: bool = True,
+    epsilon: float = 1e-6,
+    **rersample_args: dict[str, Any],
+) -> vs.VideoNode:
+    """
+    SSIM downsampler
+
+    SSIM downsampler is an image downscaling technique that aims to optimize for the perceptual quality of the downscaled results.
+    Image downscaling is considered as an optimization problem
+    where the difference between the input and output images is measured using famous Structural SIMilarity (SSIM) index.
+    The solution is derived in closed-form, which leads to the simple, efficient implementation.
+    The downscaled images retain perceptually important features and details,
+    resulting in an accurate and spatio-temporally consistent representation of the high resolution input.
+
+    All the internal calculations are done at 32-bit float, except gamma correction is done at integer.
+
+    Args:
+        clip: The input clip.
+        width: The width of the output clip.
+        height: The height of the output clip
+        smooth: The method to smooth the image.
+            If it's an int, it specifies the "radius" of the internel used boxfilter, i.e. the window has a size of (2*smooth+1)x(2*smooth+1).
+            If it's a float, it specifies the "sigma" of core.tcanny.TCanny, i.e. the standard deviation of gaussian blur.
+            If it's a function, it acs as a general smoother.
+        gamma: Set to true to turn on gamma correction for the y channel.
+        fulls: Specifies if the luma is limited range (False) or full range (True)
+        fulld: Same as fulls, but for output.
+        curve: Type of gamma mapping.
+        sigmoid: When True, applies a sigmoidal curve after the power-like curve (or before when converting from linear to gamma-corrected).
+            This helps reducing the dark halo artefacts around sharp edges caused by resizing in linear luminance.
+        resample_args: Additional arguments passed to `core.resize2` in the form of keyword arguments.
+
+    Returns:
+        Downsampled clip in 32-bit format.
+
+    Raises:
+        TypeError: If `smooth` is neigher a int, float nor a function.
+
+    Ref:
+        [1] Oeztireli, A. C., & Gross, M. (2015). Perceptually based downscaling of images. ACM Transactions on Graphics (TOG), 34(4), 77.
+
+    """
+    if callable(smooth):
+        Filter = smooth
+    elif isinstance(smooth, int):
+        Filter = functools.partial(box_blur, radius=smooth + 1)
+    elif isinstance(smooth, float):
+        Filter = functools.partial(core.tcanny.TCanny, sigma=smooth, mode=-1)
+    else:
+        raise TypeError('SSIM_downsample: "smooth" must be a int, float or a function!')
+
+    if gamma:
+        import nnedi3_resample as nnrs
+
+        clip = nnrs.GammaToLinear(
+            depth(clip, 16),
+            fulls=fulls,
+            fulld=fulld,
+            curve=curve,
+            sigmoid=sigmoid,
+            planes=[0],
+        )
+
+    clip = depth(clip, 32)
+
+    l1 = core.resize2.Bicubic(clip, width, height, **rersample_args)  # type: ignore
+    l2 = core.resize2.Bicubic(
+        core.akarin.Expr([clip], ["x 2 **"]),
+        width,
+        height,
+        **rersample_args,  # type: ignore
+    )
+
+    m = Filter(l1)
+    sl_plus_m_square = Filter(core.akarin.Expr([l1], ["x 2 **"]))
+    sh_plus_m_square = Filter(l2)
+    m_square = core.akarin.Expr([m], ["x 2 **"])
+    r = core.akarin.Expr(
+        [sl_plus_m_square, sh_plus_m_square, m_square],
+        [
+            f"x z - {epsilon} < 0 y z - x z - / sqrt ?"
+        ],  # akarin.Expr adds "0 max" to sqrt by default
+    )
+    t = Filter(core.akarin.Expr([r, m], ["x y *"]))
+    m = Filter(m)
+    r = Filter(r)
+    d = core.akarin.Expr([m, r, l1, t], ["x y z * + a -"])
+
+    if gamma:
+        d = nnrs.LinearToGamma(
+            depth(d, 16),
+            fulls=fulls,
+            fulld=fulld,
+            curve=curve,
+            sigmoid=sigmoid,
+            planes=[0],
+        )
+
+    return depth(d, 32)
 
 
 def Descale(

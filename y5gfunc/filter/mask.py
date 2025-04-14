@@ -36,6 +36,7 @@ def DBMask(clip: vs.VideoNode) -> vs.VideoNode:
     )  # first_plane=True in [LoliHouse] Anime_WebSource_deband_1080P_10bit_adcance.vpy: L33
     return nrmask
 
+
 # modified from muvsfunc.AnimeMask
 def AnimeMask(clip: vs.VideoNode, shift: float = 0, mode: int = 1) -> vs.VideoNode:
     """
@@ -45,15 +46,13 @@ def AnimeMask(clip: vs.VideoNode, shift: float = 0, mode: int = 1) -> vs.VideoNo
 
     Args:
         clip: Source clip. Only the First plane will be processed.
-
         shift: (float, -1.5 ~ 1.5) The distance of translation. Default is 0.
-
         mode: (-1 or 1) Type of the kernel, which simply inverts the pixel values and "shift".
             Typically, -1 is for edge, 1 is for ringing. Default is 1.
 
     Returns:
         Generated mask.
-    
+
     Raises:
         ValueError: If mode(-1 or 1) is invalid.
     """

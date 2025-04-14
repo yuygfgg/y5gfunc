@@ -3,7 +3,7 @@ from .denoise import BM3DPreset, Fast_BM3DWrapper
 from .ivtc import TIVTC_VFR
 from .mask import DBMask, AnimeMask, get_oped_mask, kirsch, prewitt, retinex_edgemask, comb_mask
 from .rescale import rescale, descale_cropping_args, DescaleMode
-from .resample import Descale, rgb2opp, opp2rgb
+from .resample import Descale, rgb2opp, opp2rgb, SSIM_downsample
 from .stripe import is_stripe
 from .morpho import convolution, maximum, minimum, inflate, deflate
 from .scenecut import scd_koala
@@ -30,6 +30,7 @@ __all__ = [
     'Descale',
     'rgb2opp',
     'opp2rgb',
+    'SSIM_downsample',
     'is_stripe',
     'convolution',
     'maximum',
