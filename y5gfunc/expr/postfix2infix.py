@@ -16,7 +16,7 @@ def postfix2infix(expr: str) -> LiteralString:
         expr: Input postfix expr.
 
     Returns:
-            LiteralString: Converted infix code.
+        Converted infix code.
     
     Raises:
         ValueError: If an error was found in the input expr.

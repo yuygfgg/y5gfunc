@@ -26,7 +26,6 @@ def subset_fonts(
 
     Raises:
         RuntimeError: If the 'assfonts' command fails (returns a non-zero exit code).
-        FileNotFoundError: If 'assfonts' executable is not found in PATH.
     """
     if isinstance(ass_path, (str, Path)):
         ass_path = [ass_path]
@@ -64,7 +63,6 @@ def extract_pgs_subtitles(
 
     Raises:
         RuntimeError: If ffprobe fails, if tsMuxeR fails, if no PGS subtitles are found, or if an expected demuxed subtitle file is not found after tsMuxeR runs.
-        FileNotFoundError: If 'ffprobe' or 'tsmuxer' executables are not found in PATH.
     """
 
     m2ts_path = resolve_path(m2ts_path)

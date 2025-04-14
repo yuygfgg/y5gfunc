@@ -15,7 +15,7 @@ def ranger(start: Union[int, float], end: Union[int, float], step: Union[int, fl
         step: The step/increment between consecutive numbers. Must not be zero. Can be negative for descending sequences.
 
     Returns:
-        List[Union[int, float]]: A list of numbers (integers or floats) representing the generated sequence.
+        A list of numbers (integers or floats) representing the generated sequence.
 
     Raises:
         ValueError: If `step` is 0.

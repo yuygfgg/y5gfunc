@@ -11,7 +11,7 @@ class BM3DPreset(StrEnum):
     """
     BM3D speed vs quality presets. `MAGIC` is better classified as tune but whatever.
 
-    modified from https://github.com/HomeOfVapourSynthEvolution/VapourSynth-BM3D?tab=readme-ov-file#profile-default
+    modified from <https://github.com/HomeOfVapourSynthEvolution/VapourSynth-BM3D?tab=readme-ov-file#profile-default>
     preset 'magic' is from rksfunc
     """
 
