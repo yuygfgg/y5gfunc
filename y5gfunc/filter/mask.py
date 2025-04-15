@@ -7,6 +7,7 @@ from vsmasktools import retinex
 import functools
 from .morpho import minimum, maximum, convolution, inflate
 from .utils import get_peak_value_full
+from .resample import Gammarize
 from vstools import get_peak_value, scale_mask, replace_ranges
 from ..expr import ex_planes
 
@@ -87,6 +88,18 @@ def AnimeMask(clip: vs.VideoNode, shift: float = 0, mode: int = 1) -> vs.VideoNo
     mask = core.akarin.Expr([mask1, mask2, mask3, mask4], [calc_expr])
 
     return mask
+
+# modified from rksfunc
+def GammaMask(
+    clip: vs.VideoNode, 
+    gamma: float = 0.7, 
+) -> vs.VideoNode:
+    
+    y = vstools.get_y(clip)
+    gammarized = Gammarize(y, gamma)
+    _d_mask = core.tcanny.TCanny(gammarized, sigma=2, sigma_v=2, t_h=4, op=2)
+    _b_mask = core.tcanny.TCanny(y, sigma=2, sigma_v=2, t_h=3, op=2)
+    return vstools.iterate(minimum(vstools.iterate(core.akarin.Expr([_b_mask, _d_mask], 'x y max'), maximum, 2)), inflate, 2)
 
 
 def get_oped_mask(

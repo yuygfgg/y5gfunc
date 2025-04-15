@@ -1,10 +1,17 @@
+import functools
+from vsdenoise.prefilters import PrefilterPartial
 from vstools import vs
 from vstools import core
 import mvsfunc as mvf
 import vstools
-from typing import Callable, Union
+from vsdenoise import MVToolsPreset, mc_degrain, Prefilter, MVToolsPresets
+from vsrgtools import remove_grain
+import vsrgtools
+from typing import Callable, Optional, Union
 from enum import StrEnum
 from .resample import rgb2opp, opp2rgb
+from .mask import GammaMask
+from .morpho import maximum
 
 
 class BM3DPreset(StrEnum):
@@ -69,6 +76,7 @@ def Fast_BM3DWrapper(
     delta_sigma_chroma: Union[float, int] = 1.2,
     preset_chroma_basic: BM3DPreset = BM3DPreset.FAST,
     preset_chroma_final: BM3DPreset = BM3DPreset.FAST,
+    ref: Optional[vs.VideoNode] = None,
 ) -> vs.VideoNode:
     """
     BM3D/V-BM3D denoising
@@ -93,6 +101,7 @@ def Fast_BM3DWrapper(
         delta_sigma_chroma: Additional sigma added to `sigma_chroma` for the chroma planes' basic step.
         preset_chroma_basic: BM3D parameter preset for the chroma basic step.
         preset_chroma_final: BM3D parameter preset for the chroma final step.
+        ref: Ref for final BM3D step. If provided, basic step is bypassed.
 
     Returns:
         Denoised video clip in YUV420P16 format.
@@ -107,6 +116,12 @@ def Fast_BM3DWrapper(
 
     if clip.format.id != vs.YUV420P16:
         raise ValueError("Fast_BM3DWrapper: Input clip format must be YUV420P16.")
+    if ref:
+        if ref.format.id != clip.format.id:
+            # print(ref.format, clip.format)
+            raise ValueError(
+                f"Fast_BM3DWrapper: Input clip and ref must have the same format. Got {ref.format.id} and {clip.format.id}"
+            )
 
     for preset in [
         preset_Y_basic,
@@ -138,13 +153,16 @@ def Fast_BM3DWrapper(
     half_height = clip.height // 2  # half height
     srcY_float, srcU_float, srcV_float = vstools.split(vstools.depth(clip, 32))
 
-    basic_y = bm3d.BM3Dv2(
-        clip=srcY_float,
-        ref=srcY_float,
-        sigma=sigma_Y + delta_sigma_Y,
-        radius=radius_Y,
-        **params["y_basic"],
-    )
+    if ref is None:
+        basic_y = bm3d.BM3Dv2(
+            clip=srcY_float,
+            ref=srcY_float,
+            sigma=sigma_Y + delta_sigma_Y,
+            radius=radius_Y,
+            **params["y_basic"],
+        )
+    else:
+        basic_y = vstools.depth(vstools.get_y(ref), 32)
 
     final_y = bm3d.BM3Dv2(
         clip=srcY_float,
@@ -159,16 +177,24 @@ def Fast_BM3DWrapper(
     srchalf_opp = rgb2opp(
         mvf.ToRGB(input=srchalf_444, depth=32, matrix="709", sample=vs.FLOAT)
     )
+    if ref:
+        refhalf444 = vstools.join(vyhalf, vstools.depth(ref, 32))
+        refhalf_opp = rgb2opp(
+            mvf.ToRGB(input=refhalf444, depth=32, matrix="709", sample=vs.FLOAT)
+        )
 
-    basic_half = bm3d.BM3Dv2(
-        clip=srchalf_opp,
-        ref=srchalf_opp,
-        sigma=sigma_chroma + delta_sigma_chroma,
-        chroma=chroma,
-        radius=radius_chroma,
-        zero_init=0,
-        **params["chroma_basic"],
-    )
+    if ref is None:
+        basic_half = bm3d.BM3Dv2(
+            clip=srchalf_opp,
+            ref=srchalf_opp,
+            sigma=sigma_chroma + delta_sigma_chroma,
+            chroma=chroma,
+            radius=radius_chroma,
+            zero_init=0,
+            **params["chroma_basic"],
+        )
+    else:
+        basic_half = refhalf_opp
 
     final_half = bm3d.BM3Dv2(
         clip=srchalf_opp,
@@ -185,3 +211,36 @@ def Fast_BM3DWrapper(
     vfinal = vstools.join([final_y, final_u, final_v])
     return vstools.depth(vfinal, 16)
 
+
+def hybrid_denoise(
+    clip: vs.VideoNode,
+    mc_degrain_prefilter: PrefilterPartial = Prefilter.DFTTEST(),
+    mc_degrain_preset: MVToolsPreset = MVToolsPresets.HQ_SAD,
+    thsad: int = 400,
+    bm3d_sigma: Union[float, int] = 2,
+    bm3d_preset: BM3DPreset = BM3DPreset.FAST,
+) -> vs.VideoNode:
+    ref = mc_degrain(
+        clip=clip, prefilter=mc_degrain_prefilter, preset=mc_degrain_preset, thsad=thsad
+    )
+
+    bm3d = Fast_BM3DWrapper(
+        clip,
+        sigma_Y=bm3d_sigma,
+        sigma_chroma=bm3d_sigma,
+        preset_Y_final=bm3d_preset,
+        preset_chroma_final=bm3d_preset,
+        ref=ref,
+    )
+
+    return bm3d
+
+
+# modified from rksfunc
+def adaptive_denoise(clip: vs.VideoNode, denoised: vs.VideoNode) -> vs.VideoNode:
+    bilateral = vsrgtools.bilateral(clip, denoised, 0.5)
+    amask = vstools.iterate(denoised, functools.partial(remove_grain, mode=[20, 11]), 2)
+    amask = amask.std.PlaneStats().adg.Mask(12)
+    degrain = core.std.MaskedMerge(denoised, bilateral, amask, first_plane=True)
+    clear_edge = core.std.MaskedMerge(degrain, denoised, maximum(GammaMask(denoised)))
+    return vstools.join(clear_edge, denoised)

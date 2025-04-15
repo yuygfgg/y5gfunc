@@ -1,7 +1,15 @@
 import functools
 from vstools import vs
 from vstools import core
-from vstools import depth
+from vstools import (
+    depth,
+    get_y,
+    get_peak_value,
+    get_lowest_value,
+    ColorRange,
+    join,
+    scale_mask,
+)
 from vsrgtools import box_blur
 from typing import Any, Optional, Union, Callable
 
@@ -22,6 +30,7 @@ def opp2rgb(clip: vs.VideoNode) -> vs.VideoNode:
     rgb = core.std.RemoveFrameProps(rgb, "BM3D_OPP")
     return rgb
 
+
 def nn2x(
     clip: vs.VideoNode,
     opencl: bool = True,
@@ -38,6 +47,28 @@ def nn2x(
         nnedi3 = functools.partial(core.nnedi3.nnedi3, **nnedi3_args)
         return nnedi3(nnedi3(clip, dh=True).std.Transpose(), dh=True).std.Transpose()
 
+
+# modified from rksfunc
+def Gammarize(clip: vs.VideoNode, gamma, tvrange=False) -> vs.VideoNode:
+    if clip.format.name.startswith("YUV"):
+        is_yuv = True
+        y = get_y(clip)
+    elif clip.format.name.startswith("Gray"):
+        is_yuv = False
+        y = clip
+    else:
+        raise ValueError("Gammarize: Input clip must be either YUV or GRAY.")
+
+    range = ColorRange.LIMITED if tvrange else ColorRange.FULL
+
+    thrl = get_lowest_value(clip, range_in=range)
+    thrh = get_peak_value(clip, range_in=range)
+    rng = scale_mask(219, 8, clip) if tvrange else scale_mask(255, 8, clip)
+    corrected = y.akarin.Expr(
+        f"x {rng} / {gamma} pow {rng} * {thrl} + {thrl} max {thrh} min"
+    )
+
+    return join(corrected, clip) if is_yuv else corrected
 
 
 # modified from muvsfunc
