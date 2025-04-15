@@ -1059,29 +1059,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../nn2x/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    nn2x
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../resample/" class="md-nav__link">
         
   
@@ -2396,7 +2373,7 @@
       </thead>
       <tbody>
             <tr class="doc-section-item">
-              <td><code><a class="autorefs autorefs-internal" title="            nn2x_aa (y5gfunc.filter.aa.nn2x_aa)" href="#y5gfunc.filter.aa.nn2x_aa">nn2x_aa</a></code></td>
+              <td><code><a class="autorefs autorefs-internal" title="            double_aa (y5gfunc.filter.aa.double_aa)" href="#y5gfunc.filter.aa.double_aa">double_aa</a></code></td>
               <td>
                 <div class="doc-md-description">
                   <p>Apply light anti-aliasing to input video clip. Suitable for recent non-descalable anime.</p>
@@ -2423,18 +2400,18 @@
 <div class="doc doc-object doc-function">
 
 
-<h2 id="y5gfunc.filter.aa.nn2x_aa" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <span class="doc doc-object-name doc-function-name">nn2x_aa</span>
+<h2 id="y5gfunc.filter.aa.double_aa" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <span class="doc doc-object-name doc-function-name">double_aa</span>
 
 
-<a href="#y5gfunc.filter.aa.nn2x_aa" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">nn2x_aa</span><span class="p">(</span><span class="n"><a class="autorefs autorefs-internal" title="clip (y5gfunc.filter.aa.nn2x_aa(clip))" href="#y5gfunc.filter.aa.nn2x_aa(clip)">clip</a></span><span class="p">:</span> <span class="n"><span title="vstools.vs.VideoNode">VideoNode</span></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" title="mask (y5gfunc.filter.aa.nn2x_aa(mask))" href="#y5gfunc.filter.aa.nn2x_aa(mask)">mask</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Optional" href="https://docs.python.org/3/library/typing.html#typing.Optional">Optional</a></span><span class="p">[</span><span class="n"><span title="vstools.vs.VideoNode">VideoNode</span></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="vstools.vs.VideoNode">VideoNode</span></span>
+<a href="#y5gfunc.filter.aa.double_aa" class="headerlink" title="Permanent link">&para;</a></h2>
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">double_aa</span><span class="p">(</span><span class="n"><a class="autorefs autorefs-internal" title="clip (y5gfunc.filter.aa.double_aa(clip))" href="#y5gfunc.filter.aa.double_aa(clip)">clip</a></span><span class="p">:</span> <span class="n"><span title="vstools.vs.VideoNode">VideoNode</span></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" title="mask (y5gfunc.filter.aa.double_aa(mask))" href="#y5gfunc.filter.aa.double_aa(mask)">mask</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Optional" href="https://docs.python.org/3/library/typing.html#typing.Optional">Optional</a></span><span class="p">[</span><span class="n"><span title="vstools.vs.VideoNode">VideoNode</span></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" title="doubler (y5gfunc.filter.aa.double_aa(doubler))" href="#y5gfunc.filter.aa.double_aa(doubler)">doubler</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Callable" href="https://docs.python.org/3/library/typing.html#typing.Callable">Callable</a></span><span class="p">[[</span><span class="n"><span title="vstools.vs.VideoNode">VideoNode</span></span><span class="p">],</span> <span class="n"><span title="vstools.vs.VideoNode">VideoNode</span></span><span class="p">]</span> <span class="o">=</span> <span class="n"><a class="autorefs autorefs-internal" title="            nn2x (y5gfunc.filter.resample.nn2x)" href="../resample/#y5gfunc.filter.resample.nn2x">nn2x</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="vstools.vs.VideoNode">VideoNode</span></span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
 
         <p>Apply light anti-aliasing to input video clip. Suitable for recent non-descalable anime.</p>
-<p>The function first doubles the resolution of the input clip with nnedi3, then downscales back with SSIM_downsample.
+<p>The function first doubles the resolution of the input clip with <code>doubler</code>, then downscales back with SSIM_downsample.
 Chroma planes are not touched.</p>
 
 
@@ -2451,8 +2428,8 @@ Chroma planes are not touched.</p>
       <tbody>
           <tr class="doc-section-item">
             <td>
-<h3 id="y5gfunc.filter.aa.nn2x_aa(clip)" class="doc doc-heading doc-heading-parameter">                  <code>clip</code>
-<a href="#y5gfunc.filter.aa.nn2x_aa(clip)" class="headerlink" title="Permanent link">&para;</a></h3>            </td>
+<h3 id="y5gfunc.filter.aa.double_aa(clip)" class="doc doc-heading doc-heading-parameter">                  <code>clip</code>
+<a href="#y5gfunc.filter.aa.double_aa(clip)" class="headerlink" title="Permanent link">&para;</a></h3>            </td>
             <td>
                   <code><span title="vstools.vs.VideoNode">VideoNode</span></code>
             </td>
@@ -2467,8 +2444,8 @@ Chroma planes are not touched.</p>
           </tr>
           <tr class="doc-section-item">
             <td>
-<h3 id="y5gfunc.filter.aa.nn2x_aa(mask)" class="doc doc-heading doc-heading-parameter">                  <code>mask</code>
-<a href="#y5gfunc.filter.aa.nn2x_aa(mask)" class="headerlink" title="Permanent link">&para;</a></h3>            </td>
+<h3 id="y5gfunc.filter.aa.double_aa(mask)" class="doc doc-heading doc-heading-parameter">                  <code>mask</code>
+<a href="#y5gfunc.filter.aa.double_aa(mask)" class="headerlink" title="Permanent link">&para;</a></h3>            </td>
             <td>
                   <code><a class="autorefs autorefs-external" title="typing.Optional" href="https://docs.python.org/3/library/typing.html#typing.Optional">Optional</a>[<span title="vstools.vs.VideoNode">VideoNode</span>]</code>
             </td>
@@ -2481,36 +2458,32 @@ Chroma planes are not touched.</p>
                   <code>None</code>
             </td>
           </tr>
-      </tbody>
-    </table>
-
-
-    <p><span class="doc-section-title">Returns:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Type</th>
-          <th>Description</th>
-        </tr>
-      </thead>
-      <tbody>
           <tr class="doc-section-item">
             <td>
-                  <code><span title="vstools.vs.VideoNode">VideoNode</span></code>
+<h3 id="y5gfunc.filter.aa.double_aa(doubler)" class="doc doc-heading doc-heading-parameter">                  <code>doubler</code>
+<a href="#y5gfunc.filter.aa.double_aa(doubler)" class="headerlink" title="Permanent link">&para;</a></h3>            </td>
+            <td>
+                  <code><a class="autorefs autorefs-external" title="typing.Callable" href="https://docs.python.org/3/library/typing.html#typing.Callable">Callable</a>[[<span title="vstools.vs.VideoNode">VideoNode</span>], <span title="vstools.vs.VideoNode">VideoNode</span>]</code>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>Anti-aliased input video clip.</p>
+                <p>Function to double the clip.</p>
               </div>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="            nn2x (y5gfunc.filter.resample.nn2x)" href="../resample/#y5gfunc.filter.resample.nn2x">nn2x</a></code>
             </td>
           </tr>
       </tbody>
     </table>
+        <p>Returns:
+    Anti-aliased input video clip.</p>
 
 
             <details class="quote">
               <summary>Source code in <code>y5gfunc/filter/aa.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-10">10</a></span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-9"> 9</a></span>
+<span class="normal"><a href="#__codelineno-0-10">10</a></span>
 <span class="normal"><a href="#__codelineno-0-11">11</a></span>
 <span class="normal"><a href="#__codelineno-0-12">12</a></span>
 <span class="normal"><a href="#__codelineno-0-13">13</a></span>
@@ -2524,23 +2497,22 @@ Chroma planes are not touched.</p>
 <span class="normal"><a href="#__codelineno-0-21">21</a></span>
 <span class="normal"><a href="#__codelineno-0-22">22</a></span>
 <span class="normal"><a href="#__codelineno-0-23">23</a></span>
-<span class="normal"><a href="#__codelineno-0-24">24</a></span>
-<span class="normal"><a href="#__codelineno-0-25">25</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-10" name="__codelineno-0-10"></a><span class="k">def</span><span class="w"> </span><span class="nf">nn2x_aa</span><span class="p">(</span><span class="n">clip</span><span class="p">:</span> <span class="n">vs</span><span class="o">.</span><span class="n">VideoNode</span><span class="p">,</span> <span class="n">mask</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">vs</span><span class="o">.</span><span class="n">VideoNode</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">vs</span><span class="o">.</span><span class="n">VideoNode</span><span class="p">:</span>
-<a id="__codelineno-0-11" name="__codelineno-0-11"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<a id="__codelineno-0-12" name="__codelineno-0-12"></a><span class="sd">    Apply light anti-aliasing to input video clip. Suitable for recent non-descalable anime.</span>
-<a id="__codelineno-0-13" name="__codelineno-0-13"></a>
-<a id="__codelineno-0-14" name="__codelineno-0-14"></a><span class="sd">    The function first doubles the resolution of the input clip with nnedi3, then downscales back with SSIM_downsample.</span>
-<a id="__codelineno-0-15" name="__codelineno-0-15"></a><span class="sd">    Chroma planes are not touched.</span>
-<a id="__codelineno-0-16" name="__codelineno-0-16"></a>
-<a id="__codelineno-0-17" name="__codelineno-0-17"></a><span class="sd">    Args:</span>
-<a id="__codelineno-0-18" name="__codelineno-0-18"></a><span class="sd">        clip: Input video clip.</span>
-<a id="__codelineno-0-19" name="__codelineno-0-19"></a><span class="sd">        mask: If provided, will be used as mask to merge anti-aliased clip and source clip. Otherwise, Prewitt mask is used.</span>
-<a id="__codelineno-0-20" name="__codelineno-0-20"></a>
-<a id="__codelineno-0-21" name="__codelineno-0-21"></a><span class="sd">    Returns:</span>
-<a id="__codelineno-0-22" name="__codelineno-0-22"></a><span class="sd">        Anti-aliased input video clip.</span>
-<a id="__codelineno-0-23" name="__codelineno-0-23"></a><span class="sd">    &quot;&quot;&quot;</span>
-<a id="__codelineno-0-24" name="__codelineno-0-24"></a>
-<a id="__codelineno-0-25" name="__codelineno-0-25"></a>    <span class="k">return</span> <span class="n">core</span><span class="o">.</span><span class="n">std</span><span class="o">.</span><span class="n">MaskedMerge</span><span class="p">(</span><span class="n">clip</span><span class="p">,</span> <span class="n">join</span><span class="p">(</span><span class="n">depth</span><span class="p">(</span><span class="n">SSIM_downsample</span><span class="p">(</span><span class="n">nn2x</span><span class="p">(</span><span class="n">get_y</span><span class="p">(</span><span class="n">clip</span><span class="p">)),</span> <span class="n">width</span><span class="o">=</span><span class="n">clip</span><span class="o">.</span><span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="o">=</span><span class="n">clip</span><span class="o">.</span><span class="n">height</span><span class="p">,</span> <span class="n">src_left</span><span class="o">=-</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">src_top</span><span class="o">=-</span><span class="mf">0.5</span><span class="p">),</span> <span class="n">clip</span><span class="p">),</span> <span class="n">clip</span><span class="p">),</span> <span class="n">mask</span> <span class="ow">or</span> <span class="n">prewitt</span><span class="p">(</span><span class="n">clip</span><span class="p">),</span> <span class="n">first_plane</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="normal"><a href="#__codelineno-0-24">24</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-9" name="__codelineno-0-9"></a><span class="k">def</span><span class="w"> </span><span class="nf">double_aa</span><span class="p">(</span><span class="n">clip</span><span class="p">:</span> <span class="n">vs</span><span class="o">.</span><span class="n">VideoNode</span><span class="p">,</span> <span class="n">mask</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">vs</span><span class="o">.</span><span class="n">VideoNode</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">doubler</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">vs</span><span class="o">.</span><span class="n">VideoNode</span><span class="p">],</span> <span class="n">vs</span><span class="o">.</span><span class="n">VideoNode</span><span class="p">]</span> <span class="o">=</span> <span class="n">nn2x</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">vs</span><span class="o">.</span><span class="n">VideoNode</span><span class="p">:</span>
+<a id="__codelineno-0-10" name="__codelineno-0-10"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<a id="__codelineno-0-11" name="__codelineno-0-11"></a><span class="sd">    Apply light anti-aliasing to input video clip. Suitable for recent non-descalable anime.</span>
+<a id="__codelineno-0-12" name="__codelineno-0-12"></a>
+<a id="__codelineno-0-13" name="__codelineno-0-13"></a><span class="sd">    The function first doubles the resolution of the input clip with `doubler`, then downscales back with SSIM_downsample.</span>
+<a id="__codelineno-0-14" name="__codelineno-0-14"></a><span class="sd">    Chroma planes are not touched.</span>
+<a id="__codelineno-0-15" name="__codelineno-0-15"></a>
+<a id="__codelineno-0-16" name="__codelineno-0-16"></a><span class="sd">    Args:</span>
+<a id="__codelineno-0-17" name="__codelineno-0-17"></a><span class="sd">        clip: Input video clip.</span>
+<a id="__codelineno-0-18" name="__codelineno-0-18"></a><span class="sd">        mask: If provided, will be used as mask to merge anti-aliased clip and source clip. Otherwise, Prewitt mask is used.</span>
+<a id="__codelineno-0-19" name="__codelineno-0-19"></a><span class="sd">        doubler: Function to double the clip.</span>
+<a id="__codelineno-0-20" name="__codelineno-0-20"></a><span class="sd">    Returns:</span>
+<a id="__codelineno-0-21" name="__codelineno-0-21"></a><span class="sd">        Anti-aliased input video clip.</span>
+<a id="__codelineno-0-22" name="__codelineno-0-22"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="__codelineno-0-23" name="__codelineno-0-23"></a>
+<a id="__codelineno-0-24" name="__codelineno-0-24"></a>    <span class="k">return</span> <span class="n">core</span><span class="o">.</span><span class="n">std</span><span class="o">.</span><span class="n">MaskedMerge</span><span class="p">(</span><span class="n">clip</span><span class="p">,</span> <span class="n">join</span><span class="p">(</span><span class="n">depth</span><span class="p">(</span><span class="n">SSIM_downsample</span><span class="p">(</span><span class="n">doubler</span><span class="p">(</span><span class="n">get_y</span><span class="p">(</span><span class="n">clip</span><span class="p">)),</span> <span class="n">width</span><span class="o">=</span><span class="n">clip</span><span class="o">.</span><span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="o">=</span><span class="n">clip</span><span class="o">.</span><span class="n">height</span><span class="p">,</span> <span class="n">src_left</span><span class="o">=-</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">src_top</span><span class="o">=-</span><span class="mf">0.5</span><span class="p">),</span> <span class="n">clip</span><span class="p">),</span> <span class="n">clip</span><span class="p">),</span> <span class="n">mask</span> <span class="ow">or</span> <span class="n">prewitt</span><span class="p">(</span><span class="n">clip</span><span class="p">),</span> <span class="n">first_plane</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
