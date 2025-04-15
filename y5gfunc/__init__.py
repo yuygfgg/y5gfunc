@@ -7,7 +7,7 @@ from .filter import (
     SynDeband, BM3DPreset, Fast_BM3DWrapper, TIVTC_VFR, DBMask, AnimeMask, get_oped_mask,
     kirsch, prewitt, retinex_edgemask, comb_mask, rescale, descale_cropping_args, DescaleMode,
     Descale, rgb2opp, opp2rgb, SSIM_downsample, is_stripe, convolution, maximum, minimum, inflate, deflate, scd_koala, temporal_stabilize,
-    nn2x, nn2x_aa, get_peak_value_full, is_optimized_cpu
+    nn2x, double_aa, get_peak_value_full, is_optimized_cpu
 )
 from .vfx import draw_line, draw_circle, draw_ellipse, draw_bezier_curve, draw_mandelbrot_zoomer, draw_spiral, draw_3d_cube, render_triangle_scene, render_model_scene, load_mesh, rotate_image
 from .preview import reset_output_index, set_preview, screen_shot
@@ -67,7 +67,7 @@ __all__ = [
     'load_mesh',
     'rotate_image',
     'nn2x',
-    'nn2x_aa',
+    'double_aa',
     'get_peak_value_full',
     'is_optimized_cpu',
     'is_stripe',

@@ -6,7 +6,7 @@ from enum import StrEnum
 from math import floor
 import functools
 from .mask import generate_detail_mask
-from .nn2x import nn2x
+from .resample import nn2x
 from itertools import product
 from .resample import SSIM_downsample
 

@@ -22,7 +22,7 @@ class BM3DPreset(StrEnum):
     MAGIC = "magic"
 
 
-bm3d_presets = {
+bm3d_presets: dict[str, dict[BM3DPreset, dict[str, int]]] = {
     "basic": {
         BM3DPreset.FAST: {"block_step": 8, "bm_range": 9, "ps_num": 2, "ps_range": 4},
         BM3DPreset.LC: {"block_step": 6, "bm_range": 9, "ps_num": 2, "ps_range": 4},
@@ -184,3 +184,4 @@ def Fast_BM3DWrapper(
     _, final_u, final_v = vstools.split(final_half)
     vfinal = vstools.join([final_y, final_u, final_v])
     return vstools.depth(vfinal, 16)
+
