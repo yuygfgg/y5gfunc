@@ -4,7 +4,20 @@ from vstools import vs
 from vstools import core
 import mvsfunc as mvf
 import vstools
-from vsdenoise import MVToolsPreset, mc_degrain, Prefilter, MVToolsPresets
+from vsdenoise import (
+    AnalyzeArgs,
+    MVToolsPreset,
+    MotionMode,
+    RFilterMode,
+    RecalculateArgs,
+    SADMode,
+    SearchMode,
+    SharpMode,
+    SuperArgs,
+    mc_degrain,
+    Prefilter,
+    prefilter_to_full_range,
+)
 from vsrgtools import remove_grain
 import vsrgtools
 from typing import Callable, Optional, Union
@@ -215,13 +228,47 @@ def Fast_BM3DWrapper(
 def hybrid_denoise(
     clip: vs.VideoNode,
     mc_degrain_prefilter: PrefilterPartial = Prefilter.DFTTEST(),
-    mc_degrain_preset: MVToolsPreset = MVToolsPresets.HQ_SAD,
     thsad: int = 400,
     bm3d_sigma: Union[float, int] = 2,
     bm3d_preset: BM3DPreset = BM3DPreset.FAST,
 ) -> vs.VideoNode:
+    if clip.width <= 1024 and clip.height <= 576:
+        block_size = 32
+        overlap = 16
+    elif clip.width <= 2048 and clip.height <= 1536:
+        block_size = 64
+        overlap = 32
+    else:
+        block_size = 128
+        overlap = 64
+
+    preset = MVToolsPreset(
+        search_clip=prefilter_to_full_range, # type: ignore
+        pel=2,
+        super_args=SuperArgs(sharp=SharpMode.WIENER, rfilter=RFilterMode.TRIANGLE),
+        analyze_args=AnalyzeArgs(
+            blksize=block_size,
+            overlap=overlap,
+            search=SearchMode.DIAMOND,
+            dct=SADMode.ADAPTIVE_SPATIAL_MIXED,
+            truemotion=MotionMode.SAD,
+        ),
+        recalculate_args=RecalculateArgs(
+            blksize=int(block_size / 2),
+            overlap=int(overlap / 2),
+            search=SearchMode.DIAMOND,
+            dct=SADMode.ADAPTIVE_SPATIAL_MIXED,
+            truemotion=MotionMode.SAD,
+        ),
+    )
+
     ref = mc_degrain(
-        clip=clip, prefilter=mc_degrain_prefilter, preset=mc_degrain_preset, thsad=thsad
+        clip=clip,
+        prefilter=mc_degrain_prefilter,
+        preset=preset,
+        thsad=thsad,
+        blksize=block_size,
+        refine=3,
     )
 
     bm3d = Fast_BM3DWrapper(
