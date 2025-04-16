@@ -89,17 +89,23 @@ def AnimeMask(clip: vs.VideoNode, shift: float = 0, mode: int = 1) -> vs.VideoNo
 
     return mask
 
+
 # modified from rksfunc
 def GammaMask(
-    clip: vs.VideoNode, 
-    gamma: float = 0.7, 
+    clip: vs.VideoNode,
+    gamma: float = 0.7,
 ) -> vs.VideoNode:
-    
     y = vstools.get_y(clip)
     gammarized = Gammarize(y, gamma)
     _d_mask = core.tcanny.TCanny(gammarized, sigma=2, sigma_v=2, t_h=4, op=2)
     _b_mask = core.tcanny.TCanny(y, sigma=2, sigma_v=2, t_h=3, op=2)
-    return vstools.iterate(minimum(vstools.iterate(core.akarin.Expr([_b_mask, _d_mask], 'x y max'), maximum, 2)), inflate, 2)
+    return vstools.iterate(
+        minimum(
+            vstools.iterate(core.akarin.Expr([_b_mask, _d_mask], "x y max"), maximum, 2)
+        ),
+        inflate,
+        2,
+    )
 
 
 def get_oped_mask(
@@ -136,8 +142,8 @@ def get_oped_mask(
     else:
         nced = core.std.Trim(clip, first=0, last=ed_start - 1) + nced
 
-    nc = replace_ranges(clip, ncop, [op_start, op_end])
-    nc = replace_ranges(nc, nced, [ed_start, ed_end])
+    nc = replace_ranges(clip, ncop, range(op_start, op_end + 1))
+    nc = replace_ranges(nc, nced, range(ed_start, ed_end + 1))
 
     thr = scale_mask(threshold, 8, clip)
     max = get_peak_value_full(clip)
