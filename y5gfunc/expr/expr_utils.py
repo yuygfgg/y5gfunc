@@ -44,7 +44,7 @@ function atan2(var_y, var_x) {
     theta = 0
     theta = (var_x > 0) ? atan(var_y / var_x) : theta
     theta = (var_x < 0) ? (atan(var_y / var_x) + copysign(pi, var_y)) : theta
-    theta = ((var_x == 0) && (var_y != 0)) ? (copysign(pi / 2.0, var_y)) : theta
+    theta = ((var_x == 0) && var_y) ? (copysign(pi / 2, var_y)) : theta
     theta = ((var_x == 0) && (var_y == 0)) ? 0 : theta
     return theta
 }
@@ -124,10 +124,10 @@ function arcsch(var) {
 # https://stackoverflow.com/a/77465269
 function cbrt(var) {
     abs_var = abs(var)
-    est = (abs_var != 0) ? exp(log(abs_var) / 3.0) : var
+    est = abs_var ? exp(log(abs_var) / 3) : var
     est = copysign(est, var)
     cube = est ** 3 
-    return abs_var != 0 ? fma(-est, ((cube - var) / (2.0 * cube + var)), est) : var
+    return abs_var? fma(-est, ((cube - var) / (2 * cube + var)), est) : var
 }
 
 # https://github.com/kravietz/nist-sts/blob/master/erf.c
@@ -143,7 +143,7 @@ function erfc(var) {
 	zz = abs(var)
 	tt = 1 / (1 + 0.5 * zz)
 	ans = tt * exp(-zz * zz - 1.26551223 + tt * (1.00002368 + tt * (0.37409196 + tt * (0.09678418 + tt * (-0.18628806 + tt * (0.27886807 + tt * (-1.13520398 + tt * (1.48851587 + tt * (-0.82215223 + tt * 0.17087277)))))))))
-	return var >= 0.0 ? ans : 2.0 - ans
+	return var >= 0 ? ans : 2 - ans
 }
 
 function gamma_sign(var_z) {
@@ -174,7 +174,7 @@ function lgamma_val(var_z) {
     log_series = log(max(series, 1e9))
     log_gamma_core = 0.5 * log(2 * pi) + (var_z_calc - 0.5) * log(max(tmp, 1e9)) - tmp + log_series
     sin_pi_var_z = sin(pi * var_z)
-    log_abs_sin = log(max(fabs(sin_pi_var_z), 1e9))
+    log_abs_sin = log(max(abs(sin_pi_var_z), 1e9))
     reflection_adjustment = log(pi) - log_abs_sin
     final_log_gamma = use_reflection ? (reflection_adjustment - log_gamma_core) : log_gamma_core
     return is_pole ? 1e9 : final_log_gamma
@@ -185,7 +185,7 @@ function tgamma(var_z) {
     lgamma_val = lgamma_val(var_z)
     is_inf = (lgamma_val >= 1e9)
     abs_gamma = exp(lgamma_val)
-    signed_gamma = (double)sign * abs_gamma
-    return is_inf ? ((double)sign * 1e9) : signed_gamma
+    signed_gamma = sign * abs_gamma
+    return is_inf ? (sign * 1e9) : signed_gamma
 }
 """
