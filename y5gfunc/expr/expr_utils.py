@@ -1,4 +1,6 @@
-math_functions = """
+math_functions: str = """
+# These functions works, but some are really slow......
+
 function fma(var1, var2, var3) {
     return var1 * var2 + var3
 }
@@ -133,7 +135,7 @@ function erf(var) {
     abs_var = abs(var)
     tt = 1 / (1 + 0.3275911 * abs_var)
     yy = 1 - (((((1.061405429 * tt + -1.453152027) * tt) + 1.421413741) * tt + -0.284496736) * tt + 0.254829592) * tt * exp(-abs_var * abs_var)
-    return copysign(yy, var);
+    return copysign(yy, var)
 }
 
 # https://github.com/kravietz/nist-sts/blob/master/erf.c
@@ -141,7 +143,49 @@ function erfc(var) {
 	zz = abs(var)
 	tt = 1 / (1 + 0.5 * zz)
 	ans = tt * exp(-zz * zz - 1.26551223 + tt * (1.00002368 + tt * (0.37409196 + tt * (0.09678418 + tt * (-0.18628806 + tt * (0.27886807 + tt * (-1.13520398 + tt * (1.48851587 + tt * (-0.82215223 + tt * 0.17087277)))))))))
-
 	return var >= 0.0 ? ans : 2.0 - ans
+}
+
+function gamma_sign(var_z) {
+    is_pole = (var_z <= 0) && (floor(var_z) == var_z)
+    use_reflection = (var_z < 0.5) && !is_pole
+    sign_direct = 1
+    sin_pi_var_z = sin(pi * var_z)
+    sign_reflected = (sin_pi_var_z >= 0) ? 1 : -1
+    calc_sign = use_reflection ? sign_reflected : sign_direct
+    return is_pole ? 1 : calc_sign
+}
+
+function lgamma_val(var_z) {
+    is_pole = (var_z <= 0) && (floor(var_z) == var_z)
+    use_reflection = (var_z < 0.5) && !is_pole
+    var_z_calc = use_reflection ? (1 - var_z) : var_z
+    var_z_minus_1 = var_z_calc - 1
+    tmp = var_z_minus_1 + 7 + 0.5
+    series = 0.99999999999980993227684700473478
+    series = series + 676.52036812188509856700919044401 / (var_z_minus_1 + 1)
+    series = series + -1259.1392167224028704715607875528 / (var_z_minus_1 + 2)
+    series = series + 771.32342877765307884893049653757 / (var_z_minus_1 + 3)
+    series = series + -176.61502916214059906584551354002 / (var_z_minus_1 + 4)
+    series = series + 12.507343278686904814458936853287 / (var_z_minus_1 + 5)
+    series = series + -0.13857109526572011689554707118956 / (var_z_minus_1 + 6)
+    series = series + 9.9843695780195708595638234185252e-6 / (var_z_minus_1 + 7)
+    series = series + 1.5056327351493115583497230996790e-7 / (var_z_minus_1 + 8)
+    log_series = log(max(series, 1e9))
+    log_gamma_core = 0.5 * log(2 * pi) + (var_z_calc - 0.5) * log(max(tmp, 1e9)) - tmp + log_series
+    sin_pi_var_z = sin(pi * var_z)
+    log_abs_sin = log(max(fabs(sin_pi_var_z), 1e9))
+    reflection_adjustment = log(pi) - log_abs_sin
+    final_log_gamma = use_reflection ? (reflection_adjustment - log_gamma_core) : log_gamma_core
+    return is_pole ? 1e9 : final_log_gamma
+}
+
+function tgamma(var_z) {
+    sign = gamma_sign(var_z)
+    lgamma_val = lgamma_val(var_z)
+    is_inf = (lgamma_val >= 1e9)
+    abs_gamma = exp(lgamma_val)
+    signed_gamma = (double)sign * abs_gamma
+    return is_inf ? ((double)sign * 1e9) : signed_gamma
 }
 """
