@@ -2,7 +2,7 @@
 Yuygfgg's collection for vapoursynth video filtering and encoding stuff.
 '''
 
-from .expr import postfix2infix, infix2postfix, optimize_akarin_expr, ex_planes
+from .expr import postfix2infix, infix2postfix, optimize_akarin_expr, math_functions, ex_planes
 from .filter import (
     SynDeband, BM3DPreset, Fast_BM3DWrapper, hybrid_denoise, adaptive_denoise, TIVTC_VFR, DBMask, AnimeMask, get_oped_mask,
     kirsch, prewitt, retinex_edgemask, comb_mask, Gammarize, GammaMask, rescale, descale_cropping_args, DescaleMode,
@@ -36,6 +36,7 @@ __all__ = [
     'postfix2infix',
     'infix2postfix',
     'optimize_akarin_expr',
+    'math_functions',
     'ex_planes',
     'SynDeband',
     'BM3DPreset',
