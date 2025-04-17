@@ -3,6 +3,7 @@ from vstools import core
 from vstools import vs
 import numpy as np
 from functools import partial
+from ..filter import AnimeMask
 import muvsfunc
 
 
@@ -31,7 +32,7 @@ def scd_koala(
     window_size: int = 8,
     deviation: float = 3.0,
     edge_func: Callable[[vs.VideoNode], vs.VideoNode] = partial(
-        muvsfunc.AnimeMask, mode=-1
+        AnimeMask, mode=-1
     ),
 ) -> vs.VideoNode:
     """

@@ -228,7 +228,9 @@ def Fast_BM3DWrapper(
 def hybrid_denoise(
     clip: vs.VideoNode,
     mc_degrain_prefilter: PrefilterPartial = Prefilter.DFTTEST(),
-    thsad: int = 400,
+    mc_degrain_preset: Optional[MVToolsPreset] = None,
+    mc_degrain_refine: int = 3,
+    thsad: int = 100,
     bm3d_sigma: Union[float, int] = 2,
     bm3d_preset: BM3DPreset = BM3DPreset.FAST,
 ) -> vs.VideoNode:
@@ -242,33 +244,34 @@ def hybrid_denoise(
         block_size = 128
         overlap = 64
 
-    preset = MVToolsPreset(
-        search_clip=prefilter_to_full_range, # type: ignore
-        pel=2,
-        super_args=SuperArgs(sharp=SharpMode.WIENER, rfilter=RFilterMode.TRIANGLE),
-        analyze_args=AnalyzeArgs(
-            blksize=block_size,
-            overlap=overlap,
-            search=SearchMode.DIAMOND,
-            dct=SADMode.ADAPTIVE_SPATIAL_MIXED,
-            truemotion=MotionMode.SAD,
-        ),
-        recalculate_args=RecalculateArgs(
-            blksize=int(block_size / 2),
-            overlap=int(overlap / 2),
-            search=SearchMode.DIAMOND,
-            dct=SADMode.ADAPTIVE_SPATIAL_MIXED,
-            truemotion=MotionMode.SAD,
-        ),
-    )
+    if mc_degrain_preset is None:
+        mc_degrain_preset = MVToolsPreset(
+            search_clip=prefilter_to_full_range, # type: ignore
+            pel=2,
+            super_args=SuperArgs(sharp=SharpMode.WIENER, rfilter=RFilterMode.TRIANGLE),
+            analyze_args=AnalyzeArgs(
+                blksize=block_size,
+                overlap=overlap,
+                search=SearchMode.DIAMOND,
+                dct=SADMode.ADAPTIVE_SPATIAL_MIXED,
+                truemotion=MotionMode.SAD,
+            ),
+            recalculate_args=RecalculateArgs(
+                blksize=int(block_size / 2),
+                overlap=int(overlap / 2),
+                search=SearchMode.DIAMOND,
+                dct=SADMode.ADAPTIVE_SPATIAL_MIXED,
+                truemotion=MotionMode.SAD,
+            ),
+        )
 
     ref = mc_degrain(
         clip=clip,
         prefilter=mc_degrain_prefilter,
-        preset=preset,
+        preset=mc_degrain_preset,
         thsad=thsad,
         blksize=block_size,
-        refine=3,
+        refine=mc_degrain_refine,
     )
 
     bm3d = Fast_BM3DWrapper(
