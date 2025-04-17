@@ -3,14 +3,13 @@ function fma(var1, var2, var3) {
     return var1 * var2 + var3
 }
 
-function copysign(a1, a2) {
-    absx = (a1 < 0) ? -a1 : a1
-    return (a2 < 0) ? -absx : absx
+function copysign(val, sign) {
+    return (sign < 0) ? -abs(val) : abs(val)
 }
 
 # https://stackoverflow.com/a/23097989
-function atan(xx) {
-    zz = abs(xx)
+function atan(var) {
+    zz = abs(var)
     aa = (zz > 1) ? (1 / zz): zz
     ss = aa ** 2
     qq = ss ** 2
@@ -36,15 +35,15 @@ function atan(xx) {
     pp = fma(pp, ss, -3.3333333333331838e-1)
     pp = fma(pp * ss, aa, aa)
     rr = (zz > 1) ? fma(0.93282184640716537, 1.6839188885261840, -pp): pp
-    return copysign (rr, xx)
+    return copysign (rr, var)
 }
 
 function atan2(var_y, var_x) {
     theta = 0
-    theta = (var_x > 0.0) ? atan(var_y / var_x) : theta
-    theta = (var_x < 0.0) ? (atan(var_y / var_x) + copysign(pi, var_y)) : theta
-    theta = ((var_x == 0.0) && (var_y != 0.0)) ? (copysign(pi / 2.0, var_y)) : theta
-    theta = ((var_x == 0.0) && (var_y == 0.0)) ? 0.0 : theta
+    theta = (var_x > 0) ? atan(var_y / var_x) : theta
+    theta = (var_x < 0) ? (atan(var_y / var_x) + copysign(pi, var_y)) : theta
+    theta = ((var_x == 0) && (var_y != 0)) ? (copysign(pi / 2.0, var_y)) : theta
+    theta = ((var_x == 0) && (var_y == 0)) ? 0 : theta
     return theta
 }
 
@@ -123,9 +122,26 @@ function arcsch(var) {
 # https://stackoverflow.com/a/77465269
 function cbrt(var) {
     abs_var = abs(var)
-    est = (abs_var != 0.0) ? exp(log(abs_var) / 3.0) : var
+    est = (abs_var != 0) ? exp(log(abs_var) / 3.0) : var
     est = copysign(est, var)
     cube = est ** 3 
-    return abs_var != 0.0 ? fma(-est, ((cube - var) / (2.0 * cube + var)), est) : var
+    return abs_var != 0 ? fma(-est, ((cube - var) / (2.0 * cube + var)), est) : var
+}
+
+# https://github.com/kravietz/nist-sts/blob/master/erf.c
+function erf(var) {
+    abs_var = abs(var)
+    tt = 1 / (1 + 0.3275911 * abs_var)
+    yy = 1 - (((((1.061405429 * tt + -1.453152027) * tt) + 1.421413741) * tt + -0.284496736) * tt + 0.254829592) * tt * exp(-abs_var * abs_var)
+    return copysign(yy, var);
+}
+
+# https://github.com/kravietz/nist-sts/blob/master/erf.c
+function erfc(var) {
+	zz = abs(var)
+	tt = 1 / (1 + 0.5 * zz)
+	ans = tt * exp(-zz * zz - 1.26551223 + tt * (1.00002368 + tt * (0.37409196 + tt * (0.09678418 + tt * (-0.18628806 + tt * (0.27886807 + tt * (-1.13520398 + tt * (1.48851587 + tt * (-0.82215223 + tt * 0.17087277)))))))))
+
+	return var >= 0.0 ? ans : 2.0 - ans
 }
 """
