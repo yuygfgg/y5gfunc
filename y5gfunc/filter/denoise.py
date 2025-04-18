@@ -20,6 +20,7 @@ from vsdenoise import (
 )
 from vsrgtools import remove_grain
 import vsrgtools
+from vsmasktools import adg_mask
 from typing import Callable, Optional, Union
 from enum import StrEnum
 from .resample import rgb2opp, opp2rgb
@@ -290,7 +291,7 @@ def hybrid_denoise(
 def adaptive_denoise(clip: vs.VideoNode, denoised: vs.VideoNode) -> vs.VideoNode:
     bilateral = vsrgtools.bilateral(clip, denoised, 0.5)
     amask = vstools.iterate(denoised, functools.partial(remove_grain, mode=[20, 11]), 2)
-    amask = amask.std.PlaneStats().adg.Mask(12)
+    amask = adg_mask(amask, luma_scaling=12)
     degrain = core.std.MaskedMerge(denoised, bilateral, amask, first_plane=True)
     clear_edge = core.std.MaskedMerge(degrain, denoised, maximum(GammaMask(denoised)))
     return vstools.join(clear_edge, denoised)

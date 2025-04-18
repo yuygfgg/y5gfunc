@@ -12,7 +12,7 @@ function copysign(val, sign) {
 # https://stackoverflow.com/a/23097989
 function atan(var) {
     zz = abs(var)
-    aa = (zz > 1) ? (1 / zz): zz
+    aa = (zz > 1) ? (1 / zz) : zz
     ss = aa ** 2
     qq = ss ** 2
     pp =             -2.0258553044340116e-5

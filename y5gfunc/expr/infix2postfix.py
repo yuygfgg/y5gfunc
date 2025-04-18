@@ -289,7 +289,7 @@ def infix2postfix(infix_code: str) -> str:
     Raises:
         SyntaxError: If infix code failed to convert to postfix expr.
     
-    Refer to ..vfx/ for examples.
+    Refer to ..vfx/ and .expr_utils.py for examples.
 
     ## General Format
 
