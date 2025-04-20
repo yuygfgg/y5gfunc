@@ -114,7 +114,7 @@ def rescale(
     scene_stable: bool = False,
     scene_descale_threshold_ratio: float = 0.5,
     scenecut_threshold: Union[float, int] = 0.1,
-    opencl: bool = True
+    opencl: bool = True,
 ) -> Union[
     vs.VideoNode,
     tuple[vs.VideoNode, vs.VideoNode],
@@ -265,9 +265,6 @@ def rescale(
         if descale_name.startswith('De'):
             return descale_name[2:].capitalize()
         return descale_name
-
-    def _mergeuv(clipy: vs.VideoNode, clipuv: vs.VideoNode) -> vs.VideoNode:
-        return core.std.ShufflePlanes([clipy, clipuv], [0, 1, 2], vs.YUV)
     
     def _generate_common_mask(detail_mask_clips: list[vs.VideoNode]) -> vs.VideoNode:
         load_expr = [f'src{i} * ' for i in range(len(detail_mask_clips))]
@@ -391,7 +388,7 @@ def rescale(
             **extra_params.get('rparams', {})
         )
 
-        n2x = nn2x(descaled)
+        n2x = nn2x(descaled, opencl=opencl, nnedi3_args=nnedi3_args)
         
         rescaled = SSIM_downsample(
             clip=n2x,
@@ -450,7 +447,7 @@ def rescale(
     if use_detail_mask:
         rescaled = core.std.MaskedMerge(rescaled, src_luma, detail_mask)
 
-    final = _mergeuv(rescaled, clip) if clip.format.color_family == vs.YUV else rescaled
+    final = vstools.join(rescaled, clip) if clip.format.color_family == vs.YUV else rescaled
     
     if not scene_stable:
         format_string = (
