@@ -2,7 +2,6 @@ import functools
 from vsdenoise.prefilters import PrefilterPartial
 from vstools import vs
 from vstools import core
-import mvsfunc as mvf
 import vstools
 from vsdenoise import (
     AnalyzeArgs,
@@ -23,7 +22,16 @@ import vsrgtools
 from vsmasktools import adg_mask
 from typing import Callable, Optional, Union
 from enum import StrEnum
-from .resample import rgb2opp, opp2rgb
+from .resample import (
+    yuv7092opp,
+    opp2yuv709,
+    yuv2020ncl2opp,
+    opp2yuv2020ncl,
+    yuv6012opp,
+    opp2yuv601,
+    rgb2opp,
+    opp2rgb,
+)
 from .mask import GammaMask
 from .morpho import maximum
 
@@ -137,6 +145,24 @@ def Fast_BM3DWrapper(
                 f"Fast_BM3DWrapper: Input clip and ref must have the same format. Got {ref.format.id} and {clip.format.id}"
             )
 
+    matrix = vstools.get_prop(obj=clip, key="_Matrix", t=int)
+
+    def to_opp(clip) -> vs.VideoNode:
+        return rgb2opp(core.resize2.Bicubic(clip, format=vs.RGBS, matrix_in=matrix))
+
+    def to_yuv(clip) -> vs.VideoNode:
+        return opp2rgb(clip).resize2.Spline36(format=vs.YUV444PS, matrix=matrix)
+
+    if matrix == vs.MATRIX_BT709:
+        to_opp = yuv7092opp
+        to_yuv = opp2yuv709
+    elif matrix == vs.MATRIX_BT2020_NCL:
+        to_opp = yuv2020ncl2opp
+        to_yuv = opp2yuv2020ncl
+    elif matrix == vs.MATRIX_BT470_BG:
+        to_opp = yuv6012opp
+        to_yuv = opp2yuv601
+
     for preset in [
         preset_Y_basic,
         preset_Y_final,
@@ -188,14 +214,10 @@ def Fast_BM3DWrapper(
 
     vyhalf = final_y.resize2.Spline36(half_width, half_height, src_left=-0.5)
     srchalf_444 = vstools.join([vyhalf, srcU_float, srcV_float])
-    srchalf_opp = rgb2opp(
-        mvf.ToRGB(input=srchalf_444, depth=32, matrix="709", sample=vs.FLOAT)
-    )
+    srchalf_opp = to_opp(srchalf_444)
     if ref:
         refhalf444 = vstools.join(vyhalf, vstools.depth(ref, 32))
-        refhalf_opp = rgb2opp(
-            mvf.ToRGB(input=refhalf444, depth=32, matrix="709", sample=vs.FLOAT)
-        )
+        refhalf_opp = to_opp(refhalf444)
 
     if ref is None:
         basic_half = bm3d.BM3Dv2(
@@ -220,7 +242,7 @@ def Fast_BM3DWrapper(
         **params["chroma_final"],
     )
 
-    final_half = opp2rgb(final_half).resize2.Spline36(format=vs.YUV444PS, matrix=1)
+    final_half = to_yuv(final_half)
     _, final_u, final_v = vstools.split(final_half)
     vfinal = vstools.join([final_y, final_u, final_v])
     return vstools.depth(vfinal, 16)
@@ -247,7 +269,7 @@ def hybrid_denoise(
 
     if mc_degrain_preset is None:
         mc_degrain_preset = MVToolsPreset(
-            search_clip=prefilter_to_full_range, # type: ignore
+            search_clip=prefilter_to_full_range,  # type: ignore
             pel=2,
             super_args=SuperArgs(sharp=SharpMode.WIENER, rfilter=RFilterMode.TRIANGLE),
             analyze_args=AnalyzeArgs(

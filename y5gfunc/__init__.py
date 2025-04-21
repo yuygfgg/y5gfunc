@@ -6,7 +6,8 @@ from .expr import postfix2infix, infix2postfix, optimize_akarin_expr, math_funct
 from .filter import (
     SynDeband, BM3DPreset, Fast_BM3DWrapper, hybrid_denoise, adaptive_denoise, TIVTC_VFR, DBMask, AnimeMask, get_oped_mask,
     kirsch, prewitt, retinex_edgemask, comb_mask, Gammarize, GammaMask, rescale, descale_cropping_args, DescaleMode,
-    Descale, rgb2opp, opp2rgb, SSIM_downsample, is_stripe, convolution, maximum, minimum, inflate, deflate, scd_koala, temporal_stabilize,
+    Descale, yuv7092opp, opp2yuv709, rgb2opp, opp2rgb, yuv2020ncl2opp, opp2yuv2020ncl, 
+    SSIM_downsample, is_stripe, convolution, maximum, minimum, inflate, deflate, scd_koala, temporal_stabilize,
     nn2x, double_aa, get_peak_value_full, is_optimized_cpu
 )
 from .vfx import draw_line, draw_circle, draw_ellipse, draw_bezier_curve, draw_mandelbrot_zoomer, draw_spiral, draw_3d_cube, render_triangle_scene, render_model_scene, load_mesh, rotate_image
@@ -57,8 +58,12 @@ __all__ = [
     'descale_cropping_args',
     'DescaleMode',
     'Descale',
+    'yuv7092opp',
+    'opp2yuv709',
     'rgb2opp',
     'opp2rgb',
+    'yuv2020ncl2opp',
+    'opp2yuv2020ncl',
     'SSIM_downsample',
     'draw_line',
     'draw_circle',

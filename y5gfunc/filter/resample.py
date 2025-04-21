@@ -8,7 +8,9 @@ from vstools import (
     get_lowest_value,
     ColorRange,
     join,
+    split,
     scale_mask,
+    get_prop,
 )
 from vsrgtools import box_blur
 from typing import Any, Optional, Union, Callable
@@ -16,6 +18,7 @@ from typing import Any, Optional, Union, Callable
 
 # modified from yvsfunc
 def rgb2opp(clip: vs.VideoNode) -> vs.VideoNode:
+    assert clip.format.id == vs.RGBS
     coef = [1 / 3, 1 / 3, 1 / 3, 0, 1 / 2, -1 / 2, 0, 0, 1 / 4, 1 / 4, -1 / 2, 0]
     opp = core.fmtc.matrix(clip, fulls=True, fulld=True, col_fam=vs.YUV, coef=coef)
     opp = core.std.SetFrameProps(opp, _Matrix=vs.MATRIX_UNSPECIFIED, BM3D_OPP=1)
@@ -24,11 +27,73 @@ def rgb2opp(clip: vs.VideoNode) -> vs.VideoNode:
 
 # modified from yvsfunc
 def opp2rgb(clip: vs.VideoNode) -> vs.VideoNode:
+    assert get_prop(clip, "BM3D_OPP", int) == 1
     coef = [1, 1, 2 / 3, 0, 1, -1, 2 / 3, 0, 1, 0, -4 / 3, 0]
     rgb = core.fmtc.matrix(clip, fulls=True, fulld=True, col_fam=vs.RGB, coef=coef)
     rgb = core.std.SetFrameProps(rgb, _Matrix=vs.MATRIX_RGB)
     rgb = core.std.RemoveFrameProps(rgb, "BM3D_OPP")
     return rgb
+
+
+# https://github.com/HomeOfVapourSynthEvolution/VapourSynth-BM3D/issues/27#issuecomment-2819731631
+def yuv7092opp(clip: vs.VideoNode) -> vs.VideoNode:
+    assert clip.format.id == vs.YUV444PS
+    o = core.akarin.Expr(split(clip), "y 0.5561 * z 0.3689 * + x +")
+    p = core.akarin.Expr(split(clip), "y 0.09365 * z 1.02145 * +")
+    q = core.akarin.Expr(split(clip), "y -0.974625 * z 0.276675 * +")
+    return join([o, p, q]).std.SetFrameProps(_Matrix=vs.MATRIX_UNSPECIFIED, BM3D_OPP=1)
+
+
+def opp2yuv709(clip: vs.VideoNode) -> vs.VideoNode:
+    assert get_prop(clip, "BM3D_OPP", int) == 1
+    y = core.akarin.Expr(split(clip), "x y -0.502621266552 * + z 0.522282435239 * +")
+    cb = core.akarin.Expr(split(clip), "y 0.270867248562 * z -1.000008497709 * +")
+    cr = core.akarin.Expr(split(clip), "y 0.954166412607 * z 0.091684170355 * +")
+    return (
+        join([y, cb, cr])
+        .std.SetFrameProps(_Matrix=vs.MATRIX_BT709)
+        .std.RemoveFrameProps("BM3D_OPP")
+    )
+
+
+def yuv2020ncl2opp(clip: vs.VideoNode) -> vs.VideoNode:
+    assert clip.format.id == vs.YUV444PS
+    o = core.akarin.Expr(split(clip), "y 0.572203333333 * z 0.301193333333 * + x +")
+    p = core.akarin.Expr(split(clip), "y 0.082395 * z 1.02314 * +")
+    q = core.akarin.Expr(split(clip), "y -0.9818975 * z 0.225895 * +")
+    return join([o, p, q]).std.SetFrameProps(_Matrix=vs.MATRIX_UNSPECIFIED, BM3D_OPP=1)
+
+
+def opp2yuv2020ncl(clip: vs.VideoNode) -> vs.VideoNode:
+    assert get_prop(clip, "BM3D_OPP", int) == 1
+    y = core.akarin.Expr(split(clip), "x y -0.415349768332 * + z 0.547898929488 * +")
+    cb = core.akarin.Expr(split(clip), "y 0.220766327426 * z -0.999910844466 * +")
+    cr = core.akarin.Expr(split(clip), "y 0.95960470564 * z 0.080524321236 * +")
+    return (
+        join([y, cb, cr])
+        .std.SetFrameProps(_Matrix=vs.MATRIX_BT2020_NCL)
+        .std.RemoveFrameProps("BM3D_OPP")
+    )
+
+
+def yuv6012opp(clip: vs.VideoNode) -> vs.VideoNode:
+    assert clip.format.id == vs.YUV444PS
+    o = core.akarin.Expr(split(clip), "y 0.475954666667 * z 0.229288 * + x +")
+    p = core.akarin.Expr(split(clip), "y 0.172068 * z 1.058068 * +")
+    q = core.akarin.Expr(split(clip), "y -0.972034 * z 0.171966 * +")
+    return join([o, p, q]).std.SetFrameProps(_Matrix=vs.MATRIX_UNSPECIFIED, BM3D_OPP=1)
+
+
+def opp2yuv601(clip: vs.VideoNode) -> vs.VideoNode:
+    assert get_prop(clip, "BM3D_OPP", int) == 1
+    y = core.akarin.Expr(split(clip), "x y -0.288000181644 * + z 0.438666807346 * +")
+    cb = core.akarin.Expr(split(clip), "y 0.162528319194 * z -1.000000078902 * +")
+    cr = core.akarin.Expr(split(clip), "y 0.918687718675 * z 0.162624721328 * +")
+    return (
+        join([y, cb, cr])
+        .std.SetFrameProps(_Matrix=vs.MATRIX_BT470_BG)
+        .std.RemoveFrameProps("BM3D_OPP")
+    )
 
 
 def nn2x(
