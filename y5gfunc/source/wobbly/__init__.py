@@ -10,17 +10,17 @@ __version__ = "0.2.0"
 # Export main functionality
 from .core import WobblySource, wobbly_source, load_and_process
 from .types import (
-    FrameProperties, 
-    FieldMatchOrder, 
-    ProcessPosition, 
+    FrameProperties,
+    FieldMatchOrder,
+    ProcessPosition,
     ProjectData,
-    VideoResult
+    VideoResult,
 )
 from .errors import WobblyError, WobblyParseError, WobblyProcessError
 
 
 __all__ = [
-    "WobblySource", 
+    "WobblySource",
     "wobbly_source",
     "load_and_process",
     "FrameProperties",
@@ -30,5 +30,5 @@ __all__ = [
     "VideoResult",
     "WobblyError",
     "WobblyParseError",
-    "WobblyProcessError"
+    "WobblyProcessError",
 ]

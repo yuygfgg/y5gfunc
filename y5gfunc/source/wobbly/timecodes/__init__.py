@@ -13,5 +13,5 @@ __all__ = [
     "TimecodeGenerator",
     "TimecodeGeneratorFactory",
     "TimecodesV1Generator",
-    "TimecodesV2Generator"
+    "TimecodesV2Generator",
 ]

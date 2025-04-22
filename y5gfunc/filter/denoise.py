@@ -23,12 +23,8 @@ from vsmasktools import adg_mask
 from typing import Callable, Optional, Union
 from enum import StrEnum
 from .resample import (
-    yuv7092opp,
-    opp2yuv709,
-    yuv20202opp,
-    opp2yuv2020,
-    yuv6012opp,
-    opp2yuv601,
+    yuv2opp,
+    opp2yuv,
     rgb2opp,
     opp2rgb,
 )
@@ -99,6 +95,7 @@ def Fast_BM3DWrapper(
     preset_chroma_basic: BM3DPreset = BM3DPreset.FAST,
     preset_chroma_final: BM3DPreset = BM3DPreset.FAST,
     ref: Optional[vs.VideoNode] = None,
+    normalized_opp = False
 ) -> vs.VideoNode:
     """
     BM3D/V-BM3D denoising
@@ -124,6 +121,7 @@ def Fast_BM3DWrapper(
         preset_chroma_basic: BM3D parameter preset for the chroma basic step.
         preset_chroma_final: BM3D parameter preset for the chroma final step.
         ref: Ref for final BM3D step. If provided, basic step is bypassed.
+        normalized_opp: Whether to use normalized OPP transform.
 
     Returns:
         Denoised video clip in YUV420P16 format.
@@ -145,23 +143,17 @@ def Fast_BM3DWrapper(
                 f"Fast_BM3DWrapper: Input clip and ref must have the same format. Got {ref.format.id} and {clip.format.id}"
             )
 
-    matrix = vstools.get_prop(obj=clip, key="_Matrix", t=int)
+    matrix = vstools.get_prop(obj=clip, key="_Matrix", t=int, cast=vs.MatrixCoefficients)
 
     def to_opp(clip) -> vs.VideoNode:
-        return rgb2opp(core.resize2.Bicubic(clip, format=vs.RGBS, matrix_in=matrix))
+        return rgb2opp(core.resize2.Bicubic(clip, format=vs.RGBS, matrix_in=matrix), normalized=normalized_opp)
 
     def to_yuv(clip) -> vs.VideoNode:
-        return opp2rgb(clip).resize2.Spline36(format=vs.YUV444PS, matrix=matrix)
+        return opp2rgb(clip, normalized=normalized_opp).resize2.Spline36(format=vs.YUV444PS, matrix=matrix)
 
-    if matrix == vs.MATRIX_BT709:
-        to_opp = yuv7092opp
-        to_yuv = opp2yuv709
-    elif matrix == vs.MATRIX_BT2020_NCL or matrix == vs.MATRIX_BT2020_CL:
-        to_opp = yuv20202opp
-        to_yuv = opp2yuv2020
-    elif matrix == vs.MATRIX_BT470_BG:
-        to_opp = yuv6012opp
-        to_yuv = opp2yuv601
+    if matrix in [vs.MATRIX_BT709, vs.MATRIX_BT2020_CL, vs.MATRIX_BT2020_NCL, vs.MATRIX_BT470_BG, vs.MATRIX_ST170_M]:
+        to_opp = functools.partial(yuv2opp, matrix=matrix, normalized=normalized_opp)
+        to_yuv = functools.partial(opp2yuv, target_matrix=matrix, normalized=normalized_opp)
 
     for preset in [
         preset_Y_basic,

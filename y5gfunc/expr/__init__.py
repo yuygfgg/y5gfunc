@@ -5,9 +5,9 @@ from .expr_utils import math_functions
 from .utils import ex_planes
 
 __all__ = [
-    'postfix2infix',
-    'infix2postfix',
-    'optimize_akarin_expr',
-    'ex_planes',
-    'math_functions'
+    "postfix2infix",
+    "infix2postfix",
+    "optimize_akarin_expr",
+    "ex_planes",
+    "math_functions",
 ]
