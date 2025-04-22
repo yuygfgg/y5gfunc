@@ -3517,9 +3517,9 @@ at half resolution, denoising in OPP, converting back to YUV, and finally joinin
 <a id="__codelineno-0-156" name="__codelineno-0-156"></a>    <span class="k">if</span> <span class="n">matrix</span> <span class="o">==</span> <span class="n">vs</span><span class="o">.</span><span class="n">MATRIX_BT709</span><span class="p">:</span>
 <a id="__codelineno-0-157" name="__codelineno-0-157"></a>        <span class="n">to_opp</span> <span class="o">=</span> <span class="n">yuv7092opp</span>
 <a id="__codelineno-0-158" name="__codelineno-0-158"></a>        <span class="n">to_yuv</span> <span class="o">=</span> <span class="n">opp2yuv709</span>
-<a id="__codelineno-0-159" name="__codelineno-0-159"></a>    <span class="k">elif</span> <span class="n">matrix</span> <span class="o">==</span> <span class="n">vs</span><span class="o">.</span><span class="n">MATRIX_BT2020_NCL</span><span class="p">:</span>
-<a id="__codelineno-0-160" name="__codelineno-0-160"></a>        <span class="n">to_opp</span> <span class="o">=</span> <span class="n">yuv2020ncl2opp</span>
-<a id="__codelineno-0-161" name="__codelineno-0-161"></a>        <span class="n">to_yuv</span> <span class="o">=</span> <span class="n">opp2yuv2020ncl</span>
+<a id="__codelineno-0-159" name="__codelineno-0-159"></a>    <span class="k">elif</span> <span class="n">matrix</span> <span class="o">==</span> <span class="n">vs</span><span class="o">.</span><span class="n">MATRIX_BT2020_NCL</span> <span class="ow">or</span> <span class="n">matrix</span> <span class="o">==</span> <span class="n">vs</span><span class="o">.</span><span class="n">MATRIX_BT2020_CL</span><span class="p">:</span>
+<a id="__codelineno-0-160" name="__codelineno-0-160"></a>        <span class="n">to_opp</span> <span class="o">=</span> <span class="n">yuv20202opp</span>
+<a id="__codelineno-0-161" name="__codelineno-0-161"></a>        <span class="n">to_yuv</span> <span class="o">=</span> <span class="n">opp2yuv2020</span>
 <a id="__codelineno-0-162" name="__codelineno-0-162"></a>    <span class="k">elif</span> <span class="n">matrix</span> <span class="o">==</span> <span class="n">vs</span><span class="o">.</span><span class="n">MATRIX_BT470_BG</span><span class="p">:</span>
 <a id="__codelineno-0-163" name="__codelineno-0-163"></a>        <span class="n">to_opp</span> <span class="o">=</span> <span class="n">yuv6012opp</span>
 <a id="__codelineno-0-164" name="__codelineno-0-164"></a>        <span class="n">to_yuv</span> <span class="o">=</span> <span class="n">opp2yuv601</span>

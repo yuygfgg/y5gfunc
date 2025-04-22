@@ -2451,7 +2451,7 @@
               </td>
             </tr>
             <tr class="doc-section-item">
-              <td><code><a class="autorefs autorefs-internal" title="            yuv2020ncl2opp (y5gfunc.filter.resample.yuv2020ncl2opp)" href="#y5gfunc.filter.resample.yuv2020ncl2opp">yuv2020ncl2opp</a></code></td>
+              <td><code><a class="autorefs autorefs-internal" title="            yuv20202opp (y5gfunc.filter.resample.yuv20202opp)" href="#y5gfunc.filter.resample.yuv20202opp">yuv20202opp</a></code></td>
               <td>
                 <div class="doc-md-description">
                   
@@ -2459,7 +2459,7 @@
               </td>
             </tr>
             <tr class="doc-section-item">
-              <td><code><a class="autorefs autorefs-internal" title="            opp2yuv2020ncl (y5gfunc.filter.resample.opp2yuv2020ncl)" href="#y5gfunc.filter.resample.opp2yuv2020ncl">opp2yuv2020ncl</a></code></td>
+              <td><code><a class="autorefs autorefs-internal" title="            opp2yuv2020 (y5gfunc.filter.resample.opp2yuv2020)" href="#y5gfunc.filter.resample.opp2yuv2020">opp2yuv2020</a></code></td>
               <td>
                 <div class="doc-md-description">
                   
@@ -2676,12 +2676,12 @@
 <div class="doc doc-object doc-function">
 
 
-<h2 id="y5gfunc.filter.resample.yuv2020ncl2opp" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <span class="doc doc-object-name doc-function-name">yuv2020ncl2opp</span>
+<h2 id="y5gfunc.filter.resample.yuv20202opp" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <span class="doc doc-object-name doc-function-name">yuv20202opp</span>
 
 
-<a href="#y5gfunc.filter.resample.yuv2020ncl2opp" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">yuv2020ncl2opp</span><span class="p">(</span><span class="n"><span title="y5gfunc.filter.resample.yuv2020ncl2opp(clip)">clip</span></span><span class="p">:</span> <span class="n"><span title="vstools.vs.VideoNode">VideoNode</span></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="vstools.vs.VideoNode">VideoNode</span></span>
+<a href="#y5gfunc.filter.resample.yuv20202opp" class="headerlink" title="Permanent link">&para;</a></h2>
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">yuv20202opp</span><span class="p">(</span><span class="n"><span title="y5gfunc.filter.resample.yuv20202opp(clip)">clip</span></span><span class="p">:</span> <span class="n"><span title="vstools.vs.VideoNode">VideoNode</span></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="vstools.vs.VideoNode">VideoNode</span></span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -2694,7 +2694,7 @@
 <span class="normal"><a href="#__codelineno-0-61">61</a></span>
 <span class="normal"><a href="#__codelineno-0-62">62</a></span>
 <span class="normal"><a href="#__codelineno-0-63">63</a></span>
-<span class="normal"><a href="#__codelineno-0-64">64</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-59" name="__codelineno-0-59"></a><span class="k">def</span><span class="w"> </span><span class="nf">yuv2020ncl2opp</span><span class="p">(</span><span class="n">clip</span><span class="p">:</span> <span class="n">vs</span><span class="o">.</span><span class="n">VideoNode</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">vs</span><span class="o">.</span><span class="n">VideoNode</span><span class="p">:</span>
+<span class="normal"><a href="#__codelineno-0-64">64</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-59" name="__codelineno-0-59"></a><span class="k">def</span><span class="w"> </span><span class="nf">yuv20202opp</span><span class="p">(</span><span class="n">clip</span><span class="p">:</span> <span class="n">vs</span><span class="o">.</span><span class="n">VideoNode</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">vs</span><span class="o">.</span><span class="n">VideoNode</span><span class="p">:</span>
 <a id="__codelineno-0-60" name="__codelineno-0-60"></a>    <span class="k">assert</span> <span class="n">clip</span><span class="o">.</span><span class="n">format</span><span class="o">.</span><span class="n">id</span> <span class="o">==</span> <span class="n">vs</span><span class="o">.</span><span class="n">YUV444PS</span>
 <a id="__codelineno-0-61" name="__codelineno-0-61"></a>    <span class="n">o</span> <span class="o">=</span> <span class="n">core</span><span class="o">.</span><span class="n">akarin</span><span class="o">.</span><span class="n">Expr</span><span class="p">(</span><span class="n">split</span><span class="p">(</span><span class="n">clip</span><span class="p">),</span> <span class="s2">&quot;y 0.572203333333 * z 0.301193333333 * + x +&quot;</span><span class="p">)</span>
 <a id="__codelineno-0-62" name="__codelineno-0-62"></a>    <span class="n">p</span> <span class="o">=</span> <span class="n">core</span><span class="o">.</span><span class="n">akarin</span><span class="o">.</span><span class="n">Expr</span><span class="p">(</span><span class="n">split</span><span class="p">(</span><span class="n">clip</span><span class="p">),</span> <span class="s2">&quot;y 0.082395 * z 1.02314 * +&quot;</span><span class="p">)</span>
@@ -2709,12 +2709,12 @@
 <div class="doc doc-object doc-function">
 
 
-<h2 id="y5gfunc.filter.resample.opp2yuv2020ncl" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <span class="doc doc-object-name doc-function-name">opp2yuv2020ncl</span>
+<h2 id="y5gfunc.filter.resample.opp2yuv2020" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <span class="doc doc-object-name doc-function-name">opp2yuv2020</span>
 
 
-<a href="#y5gfunc.filter.resample.opp2yuv2020ncl" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">opp2yuv2020ncl</span><span class="p">(</span><span class="n"><span title="y5gfunc.filter.resample.opp2yuv2020ncl(clip)">clip</span></span><span class="p">:</span> <span class="n"><span title="vstools.vs.VideoNode">VideoNode</span></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="vstools.vs.VideoNode">VideoNode</span></span>
+<a href="#y5gfunc.filter.resample.opp2yuv2020" class="headerlink" title="Permanent link">&para;</a></h2>
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">opp2yuv2020</span><span class="p">(</span><span class="n"><span title="y5gfunc.filter.resample.opp2yuv2020(clip)">clip</span></span><span class="p">:</span> <span class="n"><span title="vstools.vs.VideoNode">VideoNode</span></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="vstools.vs.VideoNode">VideoNode</span></span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -2731,7 +2731,7 @@
 <span class="normal"><a href="#__codelineno-0-73">73</a></span>
 <span class="normal"><a href="#__codelineno-0-74">74</a></span>
 <span class="normal"><a href="#__codelineno-0-75">75</a></span>
-<span class="normal"><a href="#__codelineno-0-76">76</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-67" name="__codelineno-0-67"></a><span class="k">def</span><span class="w"> </span><span class="nf">opp2yuv2020ncl</span><span class="p">(</span><span class="n">clip</span><span class="p">:</span> <span class="n">vs</span><span class="o">.</span><span class="n">VideoNode</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">vs</span><span class="o">.</span><span class="n">VideoNode</span><span class="p">:</span>
+<span class="normal"><a href="#__codelineno-0-76">76</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-67" name="__codelineno-0-67"></a><span class="k">def</span><span class="w"> </span><span class="nf">opp2yuv2020</span><span class="p">(</span><span class="n">clip</span><span class="p">:</span> <span class="n">vs</span><span class="o">.</span><span class="n">VideoNode</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">vs</span><span class="o">.</span><span class="n">VideoNode</span><span class="p">:</span>
 <a id="__codelineno-0-68" name="__codelineno-0-68"></a>    <span class="k">assert</span> <span class="n">get_prop</span><span class="p">(</span><span class="n">clip</span><span class="p">,</span> <span class="s2">&quot;BM3D_OPP&quot;</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
 <a id="__codelineno-0-69" name="__codelineno-0-69"></a>    <span class="n">y</span> <span class="o">=</span> <span class="n">core</span><span class="o">.</span><span class="n">akarin</span><span class="o">.</span><span class="n">Expr</span><span class="p">(</span><span class="n">split</span><span class="p">(</span><span class="n">clip</span><span class="p">),</span> <span class="s2">&quot;x y -0.415349768332 * + z 0.547898929488 * +&quot;</span><span class="p">)</span>
 <a id="__codelineno-0-70" name="__codelineno-0-70"></a>    <span class="n">cb</span> <span class="o">=</span> <span class="n">core</span><span class="o">.</span><span class="n">akarin</span><span class="o">.</span><span class="n">Expr</span><span class="p">(</span><span class="n">split</span><span class="p">(</span><span class="n">clip</span><span class="p">),</span> <span class="s2">&quot;y 0.220766327426 * z -0.999910844466 * +&quot;</span><span class="p">)</span>
