@@ -25,8 +25,8 @@ from enum import StrEnum
 from .resample import (
     yuv7092opp,
     opp2yuv709,
-    yuv2020ncl2opp,
-    opp2yuv2020ncl,
+    yuv20202opp,
+    opp2yuv2020,
     yuv6012opp,
     opp2yuv601,
     rgb2opp,
@@ -156,9 +156,9 @@ def Fast_BM3DWrapper(
     if matrix == vs.MATRIX_BT709:
         to_opp = yuv7092opp
         to_yuv = opp2yuv709
-    elif matrix == vs.MATRIX_BT2020_NCL:
-        to_opp = yuv2020ncl2opp
-        to_yuv = opp2yuv2020ncl
+    elif matrix == vs.MATRIX_BT2020_NCL or matrix == vs.MATRIX_BT2020_CL:
+        to_opp = yuv20202opp
+        to_yuv = opp2yuv2020
     elif matrix == vs.MATRIX_BT470_BG:
         to_opp = yuv6012opp
         to_yuv = opp2yuv601

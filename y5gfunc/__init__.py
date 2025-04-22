@@ -6,7 +6,7 @@ from .expr import postfix2infix, infix2postfix, optimize_akarin_expr, math_funct
 from .filter import (
     SynDeband, BM3DPreset, Fast_BM3DWrapper, hybrid_denoise, adaptive_denoise, TIVTC_VFR, DBMask, AnimeMask, get_oped_mask,
     kirsch, prewitt, retinex_edgemask, comb_mask, Gammarize, GammaMask, rescale, descale_cropping_args, DescaleMode,
-    Descale, yuv7092opp, opp2yuv709, rgb2opp, opp2rgb, yuv2020ncl2opp, opp2yuv2020ncl, 
+    Descale, yuv7092opp, opp2yuv709, rgb2opp, opp2rgb, yuv20202opp, opp2yuv2020, 
     SSIM_downsample, is_stripe, convolution, maximum, minimum, inflate, deflate, scd_koala, temporal_stabilize,
     nn2x, double_aa, ColorSpace, ColorPrimaries, GamutMapping, ToneMappingFunction, Metadata, tonemap, get_peak_value_full, is_optimized_cpu
 )
@@ -62,8 +62,8 @@ __all__ = [
     'opp2yuv709',
     'rgb2opp',
     'opp2rgb',
-    'yuv2020ncl2opp',
-    'opp2yuv2020ncl',
+    'yuv20202opp',
+    'opp2yuv2020',
     'SSIM_downsample',
     'draw_line',
     'draw_circle',

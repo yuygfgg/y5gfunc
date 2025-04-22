@@ -56,7 +56,7 @@ def opp2yuv709(clip: vs.VideoNode) -> vs.VideoNode:
     )
 
 
-def yuv2020ncl2opp(clip: vs.VideoNode) -> vs.VideoNode:
+def yuv20202opp(clip: vs.VideoNode) -> vs.VideoNode:
     assert clip.format.id == vs.YUV444PS
     o = core.akarin.Expr(split(clip), "y 0.572203333333 * z 0.301193333333 * + x +")
     p = core.akarin.Expr(split(clip), "y 0.082395 * z 1.02314 * +")
@@ -64,7 +64,7 @@ def yuv2020ncl2opp(clip: vs.VideoNode) -> vs.VideoNode:
     return join([o, p, q]).std.SetFrameProps(_Matrix=vs.MATRIX_UNSPECIFIED, BM3D_OPP=1)
 
 
-def opp2yuv2020ncl(clip: vs.VideoNode) -> vs.VideoNode:
+def opp2yuv2020(clip: vs.VideoNode) -> vs.VideoNode:
     assert get_prop(clip, "BM3D_OPP", int) == 1
     y = core.akarin.Expr(split(clip), "x y -0.415349768332 * + z 0.547898929488 * +")
     cb = core.akarin.Expr(split(clip), "y 0.220766327426 * z -0.999910844466 * +")
