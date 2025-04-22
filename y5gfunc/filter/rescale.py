@@ -40,19 +40,19 @@ def descale_cropping_args(
 
     src_width = ratio * effective_src_w
 
-    cropped_src_width: float = ratio * clip.width
-    cropped_src_height: float = ratio * clip.height
+    cropped_src_width = ratio * clip.width
+    cropped_src_height = ratio * clip.height
 
-    margin_left: float = (base_width - src_width) / 2 + ratio * crop_left
-    margin_right: float = (base_width - src_width) / 2 + ratio * crop_right
-    margin_top: float = (base_height - src_height) / 2 + ratio * crop_top
-    margin_bottom: float = (base_height - src_height) / 2 + ratio * crop_bottom
+    margin_left = (base_width - src_width) / 2 + ratio * crop_left
+    margin_right = (base_width - src_width) / 2 + ratio * crop_right
+    margin_top = (base_height - src_height) / 2 + ratio * crop_top
+    margin_bottom = (base_height - src_height) / 2 + ratio * crop_bottom
 
-    cropped_width: int = max(0, base_width - floor(margin_left) - floor(margin_right))
-    cropped_height: int = max(0, base_height - floor(margin_top) - floor(margin_bottom))
+    cropped_width = max(0, base_width - floor(margin_left) - floor(margin_right))
+    cropped_height = max(0, base_height - floor(margin_top) - floor(margin_bottom))
 
-    cropped_src_left: float = margin_left - floor(margin_left)
-    cropped_src_top: float = margin_top - floor(margin_top)
+    cropped_src_left = margin_left - floor(margin_left)
+    cropped_src_top = margin_top - floor(margin_top)
 
 
     args: dict[str, Union[int, float]] = dict(

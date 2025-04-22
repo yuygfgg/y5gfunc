@@ -16,11 +16,18 @@ class QcMode(StrEnum):
 
 
 class ReturnType(StrEnum):
-    """What to return after quality check"""
+    """
+    What to return after quality check
 
-    ENCODED = "encoded"  # Return the `encoded` clip with frame properties added (CAMBI, PlaneSSIM, *_err flags).
-    ERROR = "error"  # Return a clip containing only the frames flagged as errors.
-    BOTH = "both"  # Return a tuple containing both the annotated `encoded` clip and the `error` clip.
+    Attributes:
+        ENCODED: Return the `encoded` clip with frame properties added (CAMBI, PlaneSSIM, *_err flags)
+        ERROR: Return a clip containing only the frames flagged as errors
+        BOTH: Return a tuple containing both the annotated `encoded` clip and the `error` clip.
+    """
+
+    ENCODED = "encoded"
+    ERROR = "error"
+    BOTH = "both"
 
 
 def encode_check(

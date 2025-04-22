@@ -9,6 +9,7 @@ from .morpho import convolution, maximum, minimum, inflate, deflate
 from .scenecut import scd_koala
 from .temporal import temporal_stabilize
 from .aa import double_aa
+from .tonemap import ColorSpace, ColorPrimaries, GamutMapping, ToneMappingFunction, Metadata, tonemap
 from .utils import get_peak_value_full, is_optimized_cpu
 
 __all__ = [
@@ -48,6 +49,12 @@ __all__ = [
     'nn2x',
     'Gammarize',
     'double_aa',
+    'ColorSpace',
+    'ColorPrimaries',
+    'GamutMapping',
+    'ToneMappingFunction',
+    'Metadata',
+    'tonemap',
     'get_peak_value_full',
     'is_optimized_cpu'
 ]

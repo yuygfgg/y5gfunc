@@ -4,12 +4,20 @@ from enum import StrEnum
 
 
 class ProcessMode(StrEnum):
-    """Defines how an audio track should be processed."""
+    """
+    Defines how an audio track should be processed.
 
-    COPY = "copy"  # Keep original track, stream copy if possible
-    COMPRESS = "compress"  # Re-encode losslessly (e.g., to FLAC)
-    LOSSY = "lossy"  # Re-encode lossily (e.g., to AAC, Opus)
-    DROP = "drop"  # Do not include this track in the output
+    Attributes:
+        COPY: Keep original track, stream copy if possible
+        COMPRESS: Re-encode losslessly (e.g., to FLAC)
+        LOSSY: Re-encode lossily (e.g., to AAC, Opus)
+        DROP: Do not include this track in the output
+    """
+
+    COPY = "copy"
+    COMPRESS = "compress"
+    LOSSY = "lossy"
+    DROP = "drop"
 
 
 @dataclass
