@@ -5006,7 +5006,7 @@
             </td>
             <td>
               <div class="doc-md-description">
-                <p>Tone mapping function (integer enum)</p>
+                <p>Tone mapping function</p>
               </div>
             </td>
             <td>
@@ -5017,21 +5017,6 @@
       class-attribute
       instance-attribute
    (y5gfunc.filter.tonemap.ToneMappingFunction.SPLINE)" href="#y5gfunc.filter.tonemap.ToneMappingFunction.SPLINE">SPLINE</a></code>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-<h3 id="y5gfunc.filter.tonemap.tonemap(tone_mapping_function_s)" class="doc doc-heading doc-heading-parameter">                  <code>tone_mapping_function_s</code>
-<a href="#y5gfunc.filter.tonemap.tonemap(tone_mapping_function_s)" class="headerlink" title="Permanent link">&para;</a></h3>            </td>
-            <td>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>Tone mapping function (string enum)</p>
-              </div>
-            </td>
-            <td>
-                <em>required</em>
             </td>
           </tr>
           <tr class="doc-section-item">
@@ -5266,8 +5251,7 @@
 <span class="normal"><a href="#__codelineno-0-232">232</a></span>
 <span class="normal"><a href="#__codelineno-0-233">233</a></span>
 <span class="normal"><a href="#__codelineno-0-234">234</a></span>
-<span class="normal"><a href="#__codelineno-0-235">235</a></span>
-<span class="normal"><a href="#__codelineno-0-236">236</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-150" name="__codelineno-0-150"></a><span class="k">def</span><span class="w"> </span><span class="nf">tonemap</span><span class="p">(</span>
+<span class="normal"><a href="#__codelineno-0-235">235</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-150" name="__codelineno-0-150"></a><span class="k">def</span><span class="w"> </span><span class="nf">tonemap</span><span class="p">(</span>
 <a id="__codelineno-0-151" name="__codelineno-0-151"></a>    <span class="n">clip</span><span class="p">:</span> <span class="n">vs</span><span class="o">.</span><span class="n">VideoNode</span><span class="p">,</span>
 <a id="__codelineno-0-152" name="__codelineno-0-152"></a>    <span class="n">src_csp</span><span class="p">:</span> <span class="n">ColorSpace</span><span class="p">,</span>
 <a id="__codelineno-0-153" name="__codelineno-0-153"></a>    <span class="n">dst_csp</span><span class="p">:</span> <span class="n">ColorSpace</span><span class="p">,</span>
@@ -5309,51 +5293,50 @@
 <a id="__codelineno-0-189" name="__codelineno-0-189"></a><span class="sd">        scene_threshold_high: Upper bound for scene change detection (in units of 1% PQ)</span>
 <a id="__codelineno-0-190" name="__codelineno-0-190"></a><span class="sd">        percentile: Percentile of brightness histogram to consider as true peak</span>
 <a id="__codelineno-0-191" name="__codelineno-0-191"></a><span class="sd">        gamut_mapping: Gamut mapping function to handle out-of-gamut colors</span>
-<a id="__codelineno-0-192" name="__codelineno-0-192"></a><span class="sd">        tone_mapping_function: Tone mapping function (integer enum)</span>
-<a id="__codelineno-0-193" name="__codelineno-0-193"></a><span class="sd">        tone_mapping_function_s: Tone mapping function (string enum)</span>
-<a id="__codelineno-0-194" name="__codelineno-0-194"></a><span class="sd">        tone_mapping_param: Optional parameter for tone mapping function</span>
-<a id="__codelineno-0-195" name="__codelineno-0-195"></a><span class="sd">        metadata: Data source to use when tone-mapping</span>
-<a id="__codelineno-0-196" name="__codelineno-0-196"></a><span class="sd">        use_dovi: Whether to use Dolby Vision RPU for ST2086 metadata</span>
-<a id="__codelineno-0-197" name="__codelineno-0-197"></a><span class="sd">        visualize_lut: Display a (PQ-PQ) graph of the active tone-mapping LUT</span>
-<a id="__codelineno-0-198" name="__codelineno-0-198"></a><span class="sd">        show_clipping: Highlight hard-clipped pixels during tone-mapping</span>
-<a id="__codelineno-0-199" name="__codelineno-0-199"></a><span class="sd">        contrast_recovery: HDR contrast recovery strength</span>
-<a id="__codelineno-0-200" name="__codelineno-0-200"></a><span class="sd">        log_level: Logging verbosity level</span>
-<a id="__codelineno-0-201" name="__codelineno-0-201"></a>
-<a id="__codelineno-0-202" name="__codelineno-0-202"></a><span class="sd">    Returns:</span>
-<a id="__codelineno-0-203" name="__codelineno-0-203"></a><span class="sd">        Tonemapped video clip</span>
-<a id="__codelineno-0-204" name="__codelineno-0-204"></a><span class="sd">    &quot;&quot;&quot;</span>
-<a id="__codelineno-0-205" name="__codelineno-0-205"></a>    <span class="n">src_csp_int</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">src_csp</span><span class="p">)</span>
-<a id="__codelineno-0-206" name="__codelineno-0-206"></a>    <span class="n">dst_csp_int</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">dst_csp</span><span class="p">)</span>
-<a id="__codelineno-0-207" name="__codelineno-0-207"></a>    <span class="n">dst_prim_int</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">dst_prim</span><span class="p">)</span> <span class="k">if</span> <span class="n">dst_prim</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
-<a id="__codelineno-0-208" name="__codelineno-0-208"></a>    <span class="n">gamut_mapping_int</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">gamut_mapping</span><span class="p">)</span>
-<a id="__codelineno-0-209" name="__codelineno-0-209"></a>    <span class="n">metadata_int</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">metadata</span><span class="p">)</span>
-<a id="__codelineno-0-210" name="__codelineno-0-210"></a>
-<a id="__codelineno-0-211" name="__codelineno-0-211"></a>    <span class="n">tone_mapping_function_int</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">tone_mapping_function</span><span class="p">)</span>
-<a id="__codelineno-0-212" name="__codelineno-0-212"></a>
-<a id="__codelineno-0-213" name="__codelineno-0-213"></a>    <span class="k">return</span> <span class="n">core</span><span class="o">.</span><span class="n">placebo</span><span class="o">.</span><span class="n">Tonemap</span><span class="p">(</span>
-<a id="__codelineno-0-214" name="__codelineno-0-214"></a>        <span class="n">clip</span><span class="o">=</span><span class="n">clip</span><span class="p">,</span>
-<a id="__codelineno-0-215" name="__codelineno-0-215"></a>        <span class="n">src_csp</span><span class="o">=</span><span class="n">src_csp_int</span><span class="p">,</span>
-<a id="__codelineno-0-216" name="__codelineno-0-216"></a>        <span class="n">dst_csp</span><span class="o">=</span><span class="n">dst_csp_int</span><span class="p">,</span>
-<a id="__codelineno-0-217" name="__codelineno-0-217"></a>        <span class="n">dst_prim</span><span class="o">=</span><span class="n">dst_prim_int</span><span class="p">,</span>  <span class="c1"># type: ignore</span>
-<a id="__codelineno-0-218" name="__codelineno-0-218"></a>        <span class="n">src_max</span><span class="o">=</span><span class="n">src_max</span><span class="p">,</span>  <span class="c1"># type: ignore</span>
-<a id="__codelineno-0-219" name="__codelineno-0-219"></a>        <span class="n">src_min</span><span class="o">=</span><span class="n">src_min</span><span class="p">,</span>  <span class="c1"># type: ignore</span>
-<a id="__codelineno-0-220" name="__codelineno-0-220"></a>        <span class="n">dst_max</span><span class="o">=</span><span class="n">dst_max</span><span class="p">,</span>  <span class="c1"># type: ignore</span>
-<a id="__codelineno-0-221" name="__codelineno-0-221"></a>        <span class="n">dst_min</span><span class="o">=</span><span class="n">dst_min</span><span class="p">,</span>  <span class="c1"># type: ignore</span>
-<a id="__codelineno-0-222" name="__codelineno-0-222"></a>        <span class="n">dynamic_peak_detection</span><span class="o">=</span><span class="n">dynamic_peak_detection</span><span class="p">,</span>
-<a id="__codelineno-0-223" name="__codelineno-0-223"></a>        <span class="n">smoothing_period</span><span class="o">=</span><span class="n">smoothing_period</span><span class="p">,</span>
-<a id="__codelineno-0-224" name="__codelineno-0-224"></a>        <span class="n">scene_threshold_low</span><span class="o">=</span><span class="n">scene_threshold_low</span><span class="p">,</span>
-<a id="__codelineno-0-225" name="__codelineno-0-225"></a>        <span class="n">scene_threshold_high</span><span class="o">=</span><span class="n">scene_threshold_high</span><span class="p">,</span>
-<a id="__codelineno-0-226" name="__codelineno-0-226"></a>        <span class="n">percentile</span><span class="o">=</span><span class="n">percentile</span><span class="p">,</span>
-<a id="__codelineno-0-227" name="__codelineno-0-227"></a>        <span class="n">gamut_mapping</span><span class="o">=</span><span class="n">gamut_mapping_int</span><span class="p">,</span>
-<a id="__codelineno-0-228" name="__codelineno-0-228"></a>        <span class="n">tone_mapping_function</span><span class="o">=</span><span class="n">tone_mapping_function_int</span><span class="p">,</span>
-<a id="__codelineno-0-229" name="__codelineno-0-229"></a>        <span class="n">tone_mapping_param</span><span class="o">=</span><span class="n">tone_mapping_param</span><span class="p">,</span>  <span class="c1"># type: ignore</span>
-<a id="__codelineno-0-230" name="__codelineno-0-230"></a>        <span class="n">metadata</span><span class="o">=</span><span class="n">metadata_int</span><span class="p">,</span>
-<a id="__codelineno-0-231" name="__codelineno-0-231"></a>        <span class="n">use_dovi</span><span class="o">=</span><span class="n">use_dovi</span><span class="p">,</span>  <span class="c1"># type: ignore</span>
-<a id="__codelineno-0-232" name="__codelineno-0-232"></a>        <span class="n">visualize_lut</span><span class="o">=</span><span class="n">visualize_lut</span><span class="p">,</span>
-<a id="__codelineno-0-233" name="__codelineno-0-233"></a>        <span class="n">show_clipping</span><span class="o">=</span><span class="n">show_clipping</span><span class="p">,</span>
-<a id="__codelineno-0-234" name="__codelineno-0-234"></a>        <span class="n">contrast_recovery</span><span class="o">=</span><span class="n">contrast_recovery</span><span class="p">,</span>
-<a id="__codelineno-0-235" name="__codelineno-0-235"></a>        <span class="n">log_level</span><span class="o">=</span><span class="n">log_level</span><span class="p">,</span>
-<a id="__codelineno-0-236" name="__codelineno-0-236"></a>    <span class="p">)</span>
+<a id="__codelineno-0-192" name="__codelineno-0-192"></a><span class="sd">        tone_mapping_function: Tone mapping function</span>
+<a id="__codelineno-0-193" name="__codelineno-0-193"></a><span class="sd">        tone_mapping_param: Optional parameter for tone mapping function</span>
+<a id="__codelineno-0-194" name="__codelineno-0-194"></a><span class="sd">        metadata: Data source to use when tone-mapping</span>
+<a id="__codelineno-0-195" name="__codelineno-0-195"></a><span class="sd">        use_dovi: Whether to use Dolby Vision RPU for ST2086 metadata</span>
+<a id="__codelineno-0-196" name="__codelineno-0-196"></a><span class="sd">        visualize_lut: Display a (PQ-PQ) graph of the active tone-mapping LUT</span>
+<a id="__codelineno-0-197" name="__codelineno-0-197"></a><span class="sd">        show_clipping: Highlight hard-clipped pixels during tone-mapping</span>
+<a id="__codelineno-0-198" name="__codelineno-0-198"></a><span class="sd">        contrast_recovery: HDR contrast recovery strength</span>
+<a id="__codelineno-0-199" name="__codelineno-0-199"></a><span class="sd">        log_level: Logging verbosity level</span>
+<a id="__codelineno-0-200" name="__codelineno-0-200"></a>
+<a id="__codelineno-0-201" name="__codelineno-0-201"></a><span class="sd">    Returns:</span>
+<a id="__codelineno-0-202" name="__codelineno-0-202"></a><span class="sd">        Tonemapped video clip</span>
+<a id="__codelineno-0-203" name="__codelineno-0-203"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="__codelineno-0-204" name="__codelineno-0-204"></a>    <span class="n">src_csp_int</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">src_csp</span><span class="p">)</span>
+<a id="__codelineno-0-205" name="__codelineno-0-205"></a>    <span class="n">dst_csp_int</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">dst_csp</span><span class="p">)</span>
+<a id="__codelineno-0-206" name="__codelineno-0-206"></a>    <span class="n">dst_prim_int</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">dst_prim</span><span class="p">)</span> <span class="k">if</span> <span class="n">dst_prim</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
+<a id="__codelineno-0-207" name="__codelineno-0-207"></a>    <span class="n">gamut_mapping_int</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">gamut_mapping</span><span class="p">)</span>
+<a id="__codelineno-0-208" name="__codelineno-0-208"></a>    <span class="n">metadata_int</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">metadata</span><span class="p">)</span>
+<a id="__codelineno-0-209" name="__codelineno-0-209"></a>
+<a id="__codelineno-0-210" name="__codelineno-0-210"></a>    <span class="n">tone_mapping_function_int</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">tone_mapping_function</span><span class="p">)</span>
+<a id="__codelineno-0-211" name="__codelineno-0-211"></a>
+<a id="__codelineno-0-212" name="__codelineno-0-212"></a>    <span class="k">return</span> <span class="n">core</span><span class="o">.</span><span class="n">placebo</span><span class="o">.</span><span class="n">Tonemap</span><span class="p">(</span>
+<a id="__codelineno-0-213" name="__codelineno-0-213"></a>        <span class="n">clip</span><span class="o">=</span><span class="n">clip</span><span class="p">,</span>
+<a id="__codelineno-0-214" name="__codelineno-0-214"></a>        <span class="n">src_csp</span><span class="o">=</span><span class="n">src_csp_int</span><span class="p">,</span>
+<a id="__codelineno-0-215" name="__codelineno-0-215"></a>        <span class="n">dst_csp</span><span class="o">=</span><span class="n">dst_csp_int</span><span class="p">,</span>
+<a id="__codelineno-0-216" name="__codelineno-0-216"></a>        <span class="n">dst_prim</span><span class="o">=</span><span class="n">dst_prim_int</span><span class="p">,</span>  <span class="c1"># type: ignore</span>
+<a id="__codelineno-0-217" name="__codelineno-0-217"></a>        <span class="n">src_max</span><span class="o">=</span><span class="n">src_max</span><span class="p">,</span>  <span class="c1"># type: ignore</span>
+<a id="__codelineno-0-218" name="__codelineno-0-218"></a>        <span class="n">src_min</span><span class="o">=</span><span class="n">src_min</span><span class="p">,</span>  <span class="c1"># type: ignore</span>
+<a id="__codelineno-0-219" name="__codelineno-0-219"></a>        <span class="n">dst_max</span><span class="o">=</span><span class="n">dst_max</span><span class="p">,</span>  <span class="c1"># type: ignore</span>
+<a id="__codelineno-0-220" name="__codelineno-0-220"></a>        <span class="n">dst_min</span><span class="o">=</span><span class="n">dst_min</span><span class="p">,</span>  <span class="c1"># type: ignore</span>
+<a id="__codelineno-0-221" name="__codelineno-0-221"></a>        <span class="n">dynamic_peak_detection</span><span class="o">=</span><span class="n">dynamic_peak_detection</span><span class="p">,</span>
+<a id="__codelineno-0-222" name="__codelineno-0-222"></a>        <span class="n">smoothing_period</span><span class="o">=</span><span class="n">smoothing_period</span><span class="p">,</span>
+<a id="__codelineno-0-223" name="__codelineno-0-223"></a>        <span class="n">scene_threshold_low</span><span class="o">=</span><span class="n">scene_threshold_low</span><span class="p">,</span>
+<a id="__codelineno-0-224" name="__codelineno-0-224"></a>        <span class="n">scene_threshold_high</span><span class="o">=</span><span class="n">scene_threshold_high</span><span class="p">,</span>
+<a id="__codelineno-0-225" name="__codelineno-0-225"></a>        <span class="n">percentile</span><span class="o">=</span><span class="n">percentile</span><span class="p">,</span>
+<a id="__codelineno-0-226" name="__codelineno-0-226"></a>        <span class="n">gamut_mapping</span><span class="o">=</span><span class="n">gamut_mapping_int</span><span class="p">,</span>
+<a id="__codelineno-0-227" name="__codelineno-0-227"></a>        <span class="n">tone_mapping_function</span><span class="o">=</span><span class="n">tone_mapping_function_int</span><span class="p">,</span>
+<a id="__codelineno-0-228" name="__codelineno-0-228"></a>        <span class="n">tone_mapping_param</span><span class="o">=</span><span class="n">tone_mapping_param</span><span class="p">,</span>  <span class="c1"># type: ignore</span>
+<a id="__codelineno-0-229" name="__codelineno-0-229"></a>        <span class="n">metadata</span><span class="o">=</span><span class="n">metadata_int</span><span class="p">,</span>
+<a id="__codelineno-0-230" name="__codelineno-0-230"></a>        <span class="n">use_dovi</span><span class="o">=</span><span class="n">use_dovi</span><span class="p">,</span>  <span class="c1"># type: ignore</span>
+<a id="__codelineno-0-231" name="__codelineno-0-231"></a>        <span class="n">visualize_lut</span><span class="o">=</span><span class="n">visualize_lut</span><span class="p">,</span>
+<a id="__codelineno-0-232" name="__codelineno-0-232"></a>        <span class="n">show_clipping</span><span class="o">=</span><span class="n">show_clipping</span><span class="p">,</span>
+<a id="__codelineno-0-233" name="__codelineno-0-233"></a>        <span class="n">contrast_recovery</span><span class="o">=</span><span class="n">contrast_recovery</span><span class="p">,</span>
+<a id="__codelineno-0-234" name="__codelineno-0-234"></a>        <span class="n">log_level</span><span class="o">=</span><span class="n">log_level</span><span class="p">,</span>
+<a id="__codelineno-0-235" name="__codelineno-0-235"></a>    <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
