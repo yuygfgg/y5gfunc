@@ -189,8 +189,7 @@ def tonemap(
         scene_threshold_high: Upper bound for scene change detection (in units of 1% PQ)
         percentile: Percentile of brightness histogram to consider as true peak
         gamut_mapping: Gamut mapping function to handle out-of-gamut colors
-        tone_mapping_function: Tone mapping function (integer enum)
-        tone_mapping_function_s: Tone mapping function (string enum)
+        tone_mapping_function: Tone mapping function
         tone_mapping_param: Optional parameter for tone mapping function
         metadata: Data source to use when tone-mapping
         use_dovi: Whether to use Dolby Vision RPU for ST2086 metadata
