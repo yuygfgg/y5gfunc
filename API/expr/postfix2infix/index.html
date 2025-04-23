@@ -2829,7 +2829,7 @@
 <a id="__codelineno-0-20" name="__codelineno-0-20"></a>
 <a id="__codelineno-0-21" name="__codelineno-0-21"></a><span class="sd">    Raises:</span>
 <a id="__codelineno-0-22" name="__codelineno-0-22"></a><span class="sd">        ValueError: If an error was found in the input expr.</span>
-<a id="__codelineno-0-23" name="__codelineno-0-23"></a><span class="sd">    &quot;&quot;&quot;</span>    
+<a id="__codelineno-0-23" name="__codelineno-0-23"></a><span class="sd">    &quot;&quot;&quot;</span>
 <a id="__codelineno-0-24" name="__codelineno-0-24"></a>    <span class="c1"># Preprocessing</span>
 <a id="__codelineno-0-25" name="__codelineno-0-25"></a>    <span class="n">expr</span> <span class="o">=</span> <span class="n">expr</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
 <a id="__codelineno-0-26" name="__codelineno-0-26"></a>    <span class="n">expr</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;\[\s*(\w+)\s*,\s*(\w+)\s*\]&quot;</span><span class="p">,</span> <span class="sa">r</span><span class="s2">&quot;[\1,\2]&quot;</span><span class="p">,</span> <span class="n">expr</span><span class="p">)</span>  <span class="c1"># [x, y] =&gt; [x,y]</span>
