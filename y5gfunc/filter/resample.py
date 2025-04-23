@@ -164,8 +164,6 @@ def _register_standard_matrices(manager: ColorMatrixManager) -> None:
         [
             vstools.Matrix.BT470BG,
             vstools.Matrix.SMPTE170M,
-            vstools.Matrix.BT601_525,
-            vstools.Matrix.BT601_625,
         ],
         sympy.Matrix(
             [[1.0, 0.0, 1.402], [1.0, -0.344136, -0.714136], [1.0, 1.772, 0.0]]
