@@ -31,9 +31,7 @@ def scd_koala(
     filter_size: int = 3,
     window_size: int = 8,
     deviation: float = 3.0,
-    edge_func: Callable[[vs.VideoNode], vs.VideoNode] = partial(
-        AnimeMask, mode=-1
-    ),
+    edge_func: Callable[[vs.VideoNode], vs.VideoNode] = partial(AnimeMask, mode=-1),
 ) -> vs.VideoNode:
     """
     Koala-36M Based Scenecut Detector

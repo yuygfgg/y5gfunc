@@ -32,15 +32,15 @@ def is_token_numeric(token: str) -> bool:
     return False
 
 
-def optimize_akarin_expr(expr: str) -> str:  
+def optimize_akarin_expr(expr: str) -> str:
     """
     Optimize akarin.Expr expressions:
     1. Constant folding
     2. Convert dynamic pixel access to static when possible
-    
+
     Args:
         expr: Input expr.
-    
+
     Returns:
         Optimized expr.
     """
@@ -277,7 +277,6 @@ def format_number(num: Union[int, float]) -> str:
     if isinstance(num, int):
         return str(num)
     elif isinstance(num, float):
-
         formatted = f"{num:g}"
 
         if "E" in formatted:
@@ -704,6 +703,7 @@ def fold_constants(expr: str) -> str:
         i += 1
 
     return " ".join(result_tokens)
+
 
 def convert_dynamic_to_static(expr: str) -> str:
     """Convert dynamic pixel access to static when possible"""

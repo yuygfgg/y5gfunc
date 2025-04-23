@@ -7,10 +7,14 @@ from .morpho import maximum
 from .resample import SSIM_downsample, nn2x
 
 
-def double_aa(clip: vs.VideoNode, mask: Optional[vs.VideoNode] = None, doubler: Callable[[vs.VideoNode], vs.VideoNode] = nn2x) -> vs.VideoNode:
+def double_aa(
+    clip: vs.VideoNode,
+    mask: Optional[vs.VideoNode] = None,
+    doubler: Callable[[vs.VideoNode], vs.VideoNode] = nn2x,
+) -> vs.VideoNode:
     """
     Apply light anti-aliasing to input video clip. Suitable for recent non-descalable anime.
-    
+
     The function first doubles the resolution of the input clip with `doubler`, then downscales back with SSIM_downsample.
     Chroma planes are not touched.
 
@@ -22,6 +26,21 @@ def double_aa(clip: vs.VideoNode, mask: Optional[vs.VideoNode] = None, doubler: 
         Anti-aliased input video clip.
     """
 
-    return core.std.MaskedMerge(clip, join(depth(SSIM_downsample(doubler(get_y(clip)), width=clip.width, height=clip.height, src_left=-0.5, src_top=-0.5), clip), clip), mask or maximum(prewitt(clip)), first_plane=True)
-    
-    
+    return core.std.MaskedMerge(
+        clip,
+        join(
+            depth(
+                SSIM_downsample(
+                    doubler(get_y(clip)),
+                    width=clip.width,
+                    height=clip.height,
+                    src_left=-0.5,
+                    src_top=-0.5,
+                ),
+                clip,
+            ),
+            clip,
+        ),
+        mask or maximum(prewitt(clip)),
+        first_plane=True,
+    )

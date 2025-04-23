@@ -95,7 +95,7 @@ def Fast_BM3DWrapper(
     preset_chroma_basic: BM3DPreset = BM3DPreset.FAST,
     preset_chroma_final: BM3DPreset = BM3DPreset.FAST,
     ref: Optional[vs.VideoNode] = None,
-    normalized_opp = False
+    normalized_opp=False,
 ) -> vs.VideoNode:
     """
     BM3D/V-BM3D denoising
@@ -138,22 +138,36 @@ def Fast_BM3DWrapper(
         raise ValueError("Fast_BM3DWrapper: Input clip format must be YUV420P16.")
     if ref:
         if ref.format.id != clip.format.id:
-            # print(ref.format, clip.format)
             raise ValueError(
                 f"Fast_BM3DWrapper: Input clip and ref must have the same format. Got {ref.format.id} and {clip.format.id}"
             )
 
-    matrix = vstools.get_prop(obj=clip, key="_Matrix", t=int, cast=vs.MatrixCoefficients)
+    matrix = vstools.get_prop(
+        obj=clip, key="_Matrix", t=int, cast=vs.MatrixCoefficients
+    )
 
     def to_opp(clip) -> vs.VideoNode:
-        return rgb2opp(core.resize2.Bicubic(clip, format=vs.RGBS, matrix_in=matrix), normalized=normalized_opp)
+        return rgb2opp(
+            core.resize2.Bicubic(clip, format=vs.RGBS, matrix_in=matrix),
+            normalized=normalized_opp,
+        )
 
     def to_yuv(clip) -> vs.VideoNode:
-        return opp2rgb(clip, normalized=normalized_opp).resize2.Spline36(format=vs.YUV444PS, matrix=matrix)
+        return opp2rgb(clip, normalized=normalized_opp).resize2.Spline36(
+            format=vs.YUV444PS, matrix=matrix
+        )
 
-    if matrix in [vs.MATRIX_BT709, vs.MATRIX_BT2020_CL, vs.MATRIX_BT2020_NCL, vs.MATRIX_BT470_BG, vs.MATRIX_ST170_M]:
+    if matrix in [
+        vs.MATRIX_BT709,
+        vs.MATRIX_BT2020_CL,
+        vs.MATRIX_BT2020_NCL,
+        vs.MATRIX_BT470_BG,
+        vs.MATRIX_ST170_M,
+    ]:
         to_opp = functools.partial(yuv2opp, matrix=matrix, normalized=normalized_opp)
-        to_yuv = functools.partial(opp2yuv, target_matrix=matrix, normalized=normalized_opp)
+        to_yuv = functools.partial(
+            opp2yuv, target_matrix=matrix, normalized=normalized_opp
+        )
 
     for preset in [
         preset_Y_basic,

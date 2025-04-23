@@ -17,10 +17,10 @@ def postfix2infix(expr: str) -> LiteralString:
 
     Returns:
         Converted infix code.
-    
+
     Raises:
         ValueError: If an error was found in the input expr.
-    """    
+    """
     # Preprocessing
     expr = expr.strip()
     expr = re.sub(r"\[\s*(\w+)\s*,\s*(\w+)\s*\]", r"[\1,\2]", expr)  # [x, y] => [x,y]
