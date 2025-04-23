@@ -253,7 +253,7 @@ def yuv2opp(
         Clip in OPP color space with appropriate frame properties
     """
     if matrix_in is None:
-        matrix_in = get_prop(clip, "_Matrix", int, vstools.Matrix)
+        matrix_in = vstools.Matrix.from_video(clip, strict=True)
     if range_in is None:
         range_in = ColorRange.from_video(clip, strict=True)
 
