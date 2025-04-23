@@ -1,4 +1,5 @@
 import functools
+import vstools
 from vstools import vs
 from vstools import core
 from vstools import (
@@ -7,6 +8,8 @@ from vstools import (
     get_peak_value,
     get_lowest_value,
     ColorRange,
+    Primaries,
+    Transfer,
     join,
     scale_mask,
     get_prop,
@@ -14,65 +17,57 @@ from vstools import (
 from vsrgtools import box_blur
 from typing import Any, Optional, Union, Callable
 import sympy
-from sympy import S, Matrix, Rational, sqrt
+from sympy import S, Rational, sqrt
 
 
-class OPPMatrixManager:
-    """OPP color space conversion matrices and coefficients"""
+class ColorMatrixManager:
+    """Manager for a specific RGB-OPP conversion matrix and its related transformations."""
 
-    _RGB_OPP_MATRIX = Matrix(
-        [
-            [Rational(1, 3), Rational(1, 3), Rational(1, 3)],
-            [Rational(1, 2), Rational(-1, 2), 0],
-            [Rational(1, 4), Rational(1, 4), Rational(-1, 2)],
-        ]
-    )
+    def __init__(self, rgb_opp_matrix: sympy.Matrix, name: str):
+        """
+        Initialize the ColorMatrixManager with a specific RGB to OPP matrix.
 
-    _RGB_OPP_MATRIX_NORMALIZED = Matrix(
-        [
-            [Rational(1, 3), Rational(1, 3), Rational(1, 3)],
-            [S(1) / sqrt(6), S(-1) / sqrt(6), 0],
-            [S(1) / sqrt(18), S(1) / sqrt(18), S(-2) / sqrt(18)],
-        ]
-    )
+        Args:
+            rgb_opp_matrix: A 3x3 sympy.Matrix for RGB to OPP conversion
+            name: Identifier for this specific OPP transform variant
+        """
+        self._rgb_opp_matrix = rgb_opp_matrix
+        self._rgb_from_opp_matrix = rgb_opp_matrix.inv()
+        self.name = name
 
-    def __init__(self):
-        """Initialize the ColorMatrixManager."""
-        self._yuv_to_rgb_matrices: dict[vs.MatrixCoefficients, Matrix] = {}
-        self._yuv_to_opp_matrices: dict[vs.MatrixCoefficients, dict[bool, Matrix]] = {}
-        self._opp_to_yuv_matrices: dict[vs.MatrixCoefficients, dict[bool, Matrix]] = {}
-        self._yuv_to_opp_coefs: dict[
-            vs.MatrixCoefficients, dict[bool, list[float]]
-        ] = {}
-        self._opp_to_yuv_coefs: dict[
-            vs.MatrixCoefficients, dict[bool, list[float]]
-        ] = {}
-        self._rgb_to_opp_coefs: dict[bool, list[float]] = {}
-        self._opp_to_rgb_coefs: dict[bool, list[float]] = {}
+        self._yuv_to_rgb_matrices: dict[vstools.Matrix, sympy.Matrix] = {}
+        self._yuv_to_opp_matrices: dict[vstools.Matrix, sympy.Matrix] = {}
+        self._opp_to_yuv_matrices: dict[vstools.Matrix, sympy.Matrix] = {}
+
+        self._yuv_to_opp_coefs: dict[vstools.Matrix, list[float]] = {}
+        self._opp_to_yuv_coefs: dict[vstools.Matrix, list[float]] = {}
+
+        self._rgb_to_opp_coefs: Optional[list[float]] = None
+        self._opp_to_rgb_coefs: Optional[list[float]] = None
+
         self._initialized = False
 
     def register_yuv_matrix(
-        self, matrix_id: vs.MatrixCoefficients, yuv_to_rgb_matrix: Matrix
+        self,
+        matrix_ids: Union[vstools.Matrix, list[vstools.Matrix]],
+        yuv_to_rgb_matrix: sympy.Matrix,
     ) -> None:
         """
         Register a YUV to RGB matrix type.
 
         Args:
-            matrix_id: The VapourSynth matrix constant ID
+            matrix_id: The matrix id
             yuv_to_rgb_matrix: A sympy 3x3 Matrix representing YUV->RGB conversion
         """
-        self._yuv_to_rgb_matrices[matrix_id] = yuv_to_rgb_matrix
+        if isinstance(matrix_ids, vstools.Matrix):
+            matrix_ids = [matrix_ids]
 
-        if matrix_id not in self._yuv_to_opp_matrices:
-            self._yuv_to_opp_matrices[matrix_id] = {}
-            self._opp_to_yuv_matrices[matrix_id] = {}
-            self._yuv_to_opp_coefs[matrix_id] = {}
-            self._opp_to_yuv_coefs[matrix_id] = {}
+        for matrix_id in matrix_ids:
+            self._yuv_to_rgb_matrices[matrix_id] = yuv_to_rgb_matrix
+            if self._initialized:
+                self._recalculate_for_matrix(matrix_id)
 
-        if self._initialized:
-            self._recalculate_for_matrix(matrix_id)
-
-    def _matrix_to_coefs(self, matrix: Matrix) -> list[float]:
+    def _matrix_to_coefs(self, matrix: sympy.Matrix) -> list[float]:
         """Convert a 3x3 matrix to fmtc.matrix compatible coefficients."""
         coefs = []
         for i in range(3):
@@ -81,199 +76,217 @@ class OPPMatrixManager:
             coefs.append(0.0)  # Bias term
         return coefs
 
-    def _recalculate_for_matrix(self, matrix_id: vs.MatrixCoefficients) -> None:
+    def _recalculate_for_matrix(self, matrix_id: vstools.Matrix) -> None:
         """Recalculate conversion matrices and coefficients for a specific matrix ID."""
         m_yuv_rgb = self._yuv_to_rgb_matrices[matrix_id]
+        m_rgb_opp = self._rgb_opp_matrix
+        m_rgb_from_opp = self._rgb_from_opp_matrix
 
-        for normalized in [False, True]:
-            m_rgb_opp = (
-                self._RGB_OPP_MATRIX_NORMALIZED if normalized else self._RGB_OPP_MATRIX
-            )
-            m_rgb_from_opp = m_rgb_opp.inv()
+        self._yuv_to_opp_matrices[matrix_id] = m_rgb_opp * m_yuv_rgb
 
-            self._yuv_to_opp_matrices[matrix_id][normalized] = m_rgb_opp * m_yuv_rgb
+        m_yuv_from_rgb = m_yuv_rgb.inv()
+        self._opp_to_yuv_matrices[matrix_id] = m_yuv_from_rgb * m_rgb_from_opp
 
-            m_yuv_from_rgb = m_yuv_rgb.inv()
-            self._opp_to_yuv_matrices[matrix_id][normalized] = (
-                m_yuv_from_rgb * m_rgb_from_opp
-            )
-
-            self._yuv_to_opp_coefs[matrix_id][normalized] = self._matrix_to_coefs(
-                self._yuv_to_opp_matrices[matrix_id][normalized]
-            )
-            self._opp_to_yuv_coefs[matrix_id][normalized] = self._matrix_to_coefs(
-                self._opp_to_yuv_matrices[matrix_id][normalized]
-            )
+        self._yuv_to_opp_coefs[matrix_id] = self._matrix_to_coefs(
+            self._yuv_to_opp_matrices[matrix_id]
+        )
+        self._opp_to_yuv_coefs[matrix_id] = self._matrix_to_coefs(
+            self._opp_to_yuv_matrices[matrix_id]
+        )
 
     def initialize(self) -> None:
         """Initialize all matrices and coefficients."""
         if self._initialized:
             return
 
-        for normalized in [False, True]:
-            m_rgb_opp = (
-                self._RGB_OPP_MATRIX_NORMALIZED if normalized else self._RGB_OPP_MATRIX
-            )
-            m_rgb_from_opp = m_rgb_opp.inv()
+        # Calculate direct RGB↔OPP coefficients
+        self._rgb_to_opp_coefs = self._matrix_to_coefs(self._rgb_opp_matrix)
+        self._opp_to_rgb_coefs = self._matrix_to_coefs(self._rgb_from_opp_matrix)
 
-            self._rgb_to_opp_coefs[normalized] = self._matrix_to_coefs(m_rgb_opp)
-            self._opp_to_rgb_coefs[normalized] = self._matrix_to_coefs(m_rgb_from_opp)
-
+        # Calculate matrices and coefficients for all registered matrix types
         for matrix_type in self._yuv_to_rgb_matrices:
             self._recalculate_for_matrix(matrix_type)
 
         self._initialized = True
 
-    def get_yuv_to_opp_coefs(
-        self, matrix_type: vs.MatrixCoefficients, normalized: bool = False
-    ) -> list[float]:
-        """
-        Get YUV to OPP conversion coefficients for a specific matrix type.
-
-        Args:
-            matrix_type: The matrix type (vs.MATRIX_* constant)
-            normalized: Whether to use normalized OPP transform
-
-        Returns:
-            List of coefficients for fmtc.matrix
-
-        Raises:
-            ValueError: If matrix type is not supported
-        """
+    def get_yuv_to_opp_coefs(self, matrix_type: vstools.Matrix) -> list[float]:
+        """Get YUV to OPP conversion coefficients for a specific matrix type."""
         if not self._initialized:
             self.initialize()
 
         if matrix_type not in self._yuv_to_opp_coefs:
             raise ValueError(f"Unsupported matrix type: {matrix_type}")
 
-        return self._yuv_to_opp_coefs[matrix_type][normalized]
+        return self._yuv_to_opp_coefs[matrix_type]
 
-    def get_opp_to_yuv_coefs(
-        self, matrix_type: vs.MatrixCoefficients, normalized: bool = False
-    ) -> list[float]:
-        """
-        Get OPP to YUV conversion coefficients for a specific matrix type.
-
-        Args:
-            matrix_type: The matrix type (vs.MATRIX_* constant)
-            normalized: Whether to use normalized OPP transform
-
-        Returns:
-            List of coefficients for fmtc.matrix
-
-        Raises:
-            ValueError: If matrix type is not supported
-        """
+    def get_opp_to_yuv_coefs(self, matrix_type: vstools.Matrix) -> list[float]:
+        """Get OPP to YUV conversion coefficients for a specific matrix type."""
         if not self._initialized:
             self.initialize()
 
         if matrix_type not in self._opp_to_yuv_coefs:
             raise ValueError(f"Unsupported matrix type: {matrix_type}")
 
-        return self._opp_to_yuv_coefs[matrix_type][normalized]
+        return self._opp_to_yuv_coefs[matrix_type]
 
-    def get_rgb_to_opp_coefs(self, normalized: bool = False) -> list[float]:
-        """
-        Get RGB to OPP conversion coefficients.
-
-        Args:
-            normalized: Whether to use normalized OPP transform
-
-        Returns:
-            List of coefficients for fmtc.matrix
-        """
+    def get_rgb_to_opp_coefs(self) -> list[float]:
+        """Get RGB to OPP conversion coefficients."""
         if not self._initialized:
             self.initialize()
 
-        return self._rgb_to_opp_coefs[normalized]
+        return self._rgb_to_opp_coefs  # type: ignore
 
-    def get_opp_to_rgb_coefs(self, normalized: bool = False) -> list[float]:
-        """
-        Get OPP to RGB conversion coefficients.
-
-        Args:
-            normalized: Whether to use normalized OPP transform
-
-        Returns:
-            List of coefficients for fmtc.matrix
-        """
+    def get_opp_to_rgb_coefs(self) -> list[float]:
+        """Get OPP to RGB conversion coefficients."""
         if not self._initialized:
             self.initialize()
 
-        return self._opp_to_rgb_coefs[normalized]
+        return self._opp_to_rgb_coefs  # type: ignore
 
 
-_matrix_manager = OPPMatrixManager()
+# Dictionary to store all OPP matrix managers by name
+_opp_managers = {}
 
-_matrix_manager.register_yuv_matrix(
-    vs.MATRIX_BT709,
-    Matrix([[1.0, 0.0, 1.5748], [1.0, -0.1873, -0.4681], [1.0, 1.8556, 0.0]]),
+
+def _register_standard_matrices(manager: ColorMatrixManager) -> None:
+    """
+    Register standard YUV->RGB matrices to a matrix manager.
+
+    Args:
+        manager: The ColorMatrixManager to register matrices to
+    """
+    manager.register_yuv_matrix(
+        vstools.Matrix.BT709,
+        sympy.Matrix([[1.0, 0.0, 1.5748], [1.0, -0.1873, -0.4681], [1.0, 1.8556, 0.0]]),
+    )
+
+    manager.register_yuv_matrix(
+        [
+            vstools.Matrix.BT470BG,
+            vstools.Matrix.SMPTE170M,
+            vstools.Matrix.BT601_525,
+            vstools.Matrix.BT601_625,
+        ],
+        sympy.Matrix(
+            [[1.0, 0.0, 1.402], [1.0, -0.344136, -0.714136], [1.0, 1.772, 0.0]]
+        ),
+    )
+
+    manager.register_yuv_matrix(
+        [vstools.Matrix.BT2020NCL, vstools.Matrix.BT2020CL],
+        sympy.Matrix(
+            [[1.0, 0.0, 1.47493], [1.0, -0.16479, -0.57135], [1.0, 1.8814, 0.0]]
+        ),
+    )
+
+
+def register_opp_matrix(name: str, rgb_opp_matrix: sympy.Matrix) -> ColorMatrixManager:
+    """
+    Register a new OPP matrix variant and create its manager.
+
+    Args:
+        name: Name identifier for this OPP variant
+        rgb_opp_matrix: The 3x3 RGB to OPP conversion matrix
+
+    Returns:
+        The created ColorMatrixManager instance
+    """
+    if name in _opp_managers:
+        raise ValueError(f"OPP matrix variant '{name}' already registered")
+
+    manager = ColorMatrixManager(rgb_opp_matrix, name)
+    _register_standard_matrices(manager)
+    _opp_managers[name] = manager
+    return manager
+
+
+STANDARD_OPP = register_opp_matrix(
+    "standard",
+    sympy.Matrix(
+        [
+            [Rational(1, 3), Rational(1, 3), Rational(1, 3)],
+            [Rational(1, 2), Rational(-1, 2), 0],
+            [Rational(1, 4), Rational(1, 4), Rational(-1, 2)],
+        ]
+    ),
 )
 
-_matrix_manager.register_yuv_matrix(
-    vs.MATRIX_BT470_BG,
-    Matrix([[1.0, 0.0, 1.402], [1.0, -0.344136, -0.714136], [1.0, 1.772, 0.0]]),
+NORMALIZED_OPP = register_opp_matrix(
+    "normalized",
+    sympy.Matrix(
+        [
+            [Rational(1, 3), Rational(1, 3), Rational(1, 3)],
+            [S(1) / sqrt(6), S(-1) / sqrt(6), 0],
+            [S(1) / sqrt(18), S(1) / sqrt(18), S(-2) / sqrt(18)],
+        ]
+    ),
 )
 
-_matrix_manager.register_yuv_matrix(
-    vs.MATRIX_ST170_M,
-    Matrix([[1.0, 0.0, 1.402], [1.0, -0.344136, -0.714136], [1.0, 1.772, 0.0]]),
+MAWEN_OPP = register_opp_matrix(
+    "mawen",
+    sympy.Matrix(
+        [
+            [Rational(1, 3), Rational(1, 3), Rational(1, 3)],
+            [Rational(1, 2), 0, Rational(-1, 2)],
+            [Rational(1, 4), Rational(-1, 2), Rational(1, 4)],
+        ]
+    ),
 )
 
-_matrix_manager.register_yuv_matrix(
-    vs.MATRIX_BT2020_NCL,
-    Matrix([[1.0, 0.0, 1.47493], [1.0, -0.16479, -0.57135], [1.0, 1.8814, 0.0]]),
-)
-
-_matrix_manager.register_yuv_matrix(
-    vs.MATRIX_BT2020_CL,
-    Matrix([[1.0, 0.0, 1.47493], [1.0, -0.16479, -0.57135], [1.0, 1.8814, 0.0]]),
-)
+default_opp = STANDARD_OPP
 
 
 def yuv2opp(
     clip: vs.VideoNode,
-    matrix: Optional[vs.MatrixCoefficients] = None,
-    normalized: bool = False,
+    matrix_in: Optional[vstools.Matrix] = None,
+    range_in: Optional[ColorRange] = None,
+    opp_manager: ColorMatrixManager = default_opp,
 ) -> vs.VideoNode:
     """
     Convert YUV to OPP color space.
 
     Args:
         clip: Input YUV clip
-        matrix: Source matrix override (vs.MATRIX_* constant), if None, read from clip properties
-        normalized: Whether to use normalized OPP transform
+        matrix_in: Source matrix override, if None, read from clip properties
+        range_in: Source range override, if None, read from clip properties
+        opp_manager: ColorMatrixManager for the specific OPP variant to use
 
     Returns:
         Clip in OPP color space with appropriate frame properties
     """
-    if matrix is None:
-        matrix = get_prop(
-            clip, "_Matrix", int, vs.MatrixCoefficients, vs.MATRIX_BT709
-        )
+    if matrix_in is None:
+        matrix_in = get_prop(clip, "_Matrix", int, vstools.Matrix)
+    if range_in is None:
+        range_in = ColorRange.from_video(clip, strict=True)
 
-    coef = _matrix_manager.get_yuv_to_opp_coefs(matrix, normalized)
+    coef = opp_manager.get_yuv_to_opp_coefs(matrix_in)
 
-    opp = core.fmtc.matrix(clip, fulls=True, fulld=True, col_fam=vs.YUV, coef=coef)
+    opp = core.fmtc.matrix(
+        clip, fulls=not range_in, fulld=True, col_fam=vs.YUV, coef=coef
+    )
     return opp.std.SetFrameProps(
         _Matrix=vs.MATRIX_UNSPECIFIED,
         BM3D_OPP=1,
-        BM3D_OPP_NORMALIZED=True if normalized else False,
+        BM3D_OPP_VARIANT=opp_manager.name,
+        BM3D_OPP_SRC_RANGE=range_in,
+        BM3D_OPP_SRC_MATRIX=matrix_in,
     )
 
 
 def opp2yuv(
     clip: vs.VideoNode,
-    target_matrix: vs.MatrixCoefficients,
-    normalized: Optional[bool] = None,
+    target_matrix: Optional[vstools.Matrix] = None,
+    target_range: Optional[ColorRange] = None,
+    opp_manager: Optional[ColorMatrixManager] = None,
 ) -> vs.VideoNode:
     """
     Convert OPP to YUV color space.
 
     Args:
         clip: Input OPP clip
-        target_matrix: Target YUV color space (vs.MATRIX_* constant)
-        normalized: Whether to use normalized OPP transform, if None, read from clip properties
+        target_matrix: Target YUV color space, if None, read from clip properties
+        target_range: Target range, if None, read from clip properties
+        opp_manager: ColorMatrixManager for the specific OPP variant, if None, read from clip properties
 
     Returns:
         Clip in YUV color space
@@ -282,47 +295,68 @@ def opp2yuv(
         get_prop(clip, "BM3D_OPP", int) == 1
     ), "Input must be an OPP clip (BM3D_OPP=1)"
 
-    if normalized is None:
-        normalized = get_prop(clip, "BM3D_OPP_NORMALIZED", int, bool, False)
+    if opp_manager is None:
+        variant_name = get_prop(clip, "BM3D_OPP_VARIANT", str, str)
+        if variant_name not in _opp_managers:
+            raise ValueError(f"Unknown OPP variant: {variant_name}")
+        opp_manager = _opp_managers[variant_name]
 
-    coef = _matrix_manager.get_opp_to_yuv_coefs(target_matrix, normalized)
+    if target_matrix is None:
+        target_matrix = get_prop(clip, "BM3D_OPP_SRC_MATRIX", int, vstools.Matrix)
 
-    yuv = core.fmtc.matrix(clip, fulls=True, fulld=True, col_fam=vs.YUV, coef=coef)
-    return yuv.std.SetFrameProps(_Matrix=target_matrix).std.RemoveFrameProps(
-        ["BM3D_OPP", "BM3D_OPP_NORMALIZED"]
+    primaries = Primaries.from_matrix(target_matrix)
+    transfer = Transfer.from_matrix(target_matrix)
+
+    if target_range is None:
+        target_range = get_prop(clip, "BM3D_OPP_SRC_RANGE", int, ColorRange)
+
+    coef = opp_manager.get_opp_to_yuv_coefs(target_matrix)  # type: ignore
+
+    yuv = core.fmtc.matrix(
+        clip, fulls=True, fulld=not target_range, col_fam=vs.YUV, coef=coef
+    )
+    return yuv.std.SetFrameProps(
+        _Matrix=target_matrix, _Primaries=primaries, _Transfer=transfer
+    ).std.RemoveFrameProps(
+        ["BM3D_OPP", "BM3D_OPP_VARIANT", "BM3D_OPP_SRC_MATRIX", "BM3D_OPP_SRC_RANGE"]
     )
 
 
-def rgb2opp(clip: vs.VideoNode, normalized: bool = False) -> vs.VideoNode:
-    """Convert RGB to OPP color space.
+def rgb2opp(
+    clip: vs.VideoNode,
+    opp_manager: ColorMatrixManager = default_opp,
+) -> vs.VideoNode:
+    """
+    Convert RGB to OPP color space.
 
     Args:
         clip: Input RGB clip
-        normalized: Whether to use normalized OPP transform
+        opp_manager: ColorMatrixManager for the specific OPP variant to use
 
     Returns:
         Clip in OPP color space
     """
     assert clip.format.color_family == vs.RGB, "Input must be in RGB format"
 
-    coef = _matrix_manager.get_rgb_to_opp_coefs(normalized)
+    coef = opp_manager.get_rgb_to_opp_coefs()
 
     opp = core.fmtc.matrix(clip, fulls=True, fulld=True, col_fam=vs.YUV, coef=coef)
     return opp.std.SetFrameProps(
-        _Matrix=vs.MATRIX_UNSPECIFIED,
-        BM3D_OPP=1,
-        BM3D_OPP_NORMALIZED=1 if normalized else 0,
+        _Matrix=vs.MATRIX_UNSPECIFIED, BM3D_OPP=1, BM3D_OPP_VARIANT=opp_manager.name
     )
 
 
-def opp2rgb(clip: vs.VideoNode, normalized: Optional[bool] = None,) -> vs.VideoNode:
+def opp2rgb(
+    clip: vs.VideoNode,
+    opp_manager: Optional[ColorMatrixManager] = None,
+) -> vs.VideoNode:
     """
     Convert OPP to RGB color space.
 
     Args:
         clip: Input OPP clip
-        normalized: Whether to use normalized OPP transform, if None, read from clip properties
-        
+        opp_manager: ColorMatrixManager for the specific OPP variant, if None, read from clip properties
+
     Returns:
         Clip in RGB color space
     """
@@ -330,14 +364,19 @@ def opp2rgb(clip: vs.VideoNode, normalized: Optional[bool] = None,) -> vs.VideoN
         get_prop(clip, "BM3D_OPP", int) == 1
     ), "Input must be an OPP clip (BM3D_OPP=1)"
 
-    if normalized is None:
-        normalized = get_prop(clip, "BM3D_OPP_NORMALIZED", int, bool, False)
+    if opp_manager is None:
+        variant_name = get_prop(clip, "BM3D_OPP_VARIANT", str, str, "standard")
+        if variant_name not in _opp_managers:
+            raise ValueError(f"Unknown OPP variant: {variant_name}")
+        opp_manager = _opp_managers[variant_name]
 
-    coef = _matrix_manager.get_opp_to_rgb_coefs(normalized)
+    coef = opp_manager.get_opp_to_rgb_coefs()  # type: ignore
 
     rgb = core.fmtc.matrix(clip, fulls=True, fulld=True, col_fam=vs.RGB, coef=coef)
-    return rgb.std.SetFrameProps(_Matrix=vs.MATRIX_RGB).std.RemoveFrameProps(
-        ["BM3D_OPP", "BM3D_OPP_NORMALIZED"]
+    return rgb.std.SetFrameProps(
+        _Matrix=vstools.Matrix.RGB, _Transfer=Transfer.SRGB
+    ).std.RemoveFrameProps(
+        ["BM3D_OPP", "BM3D_OPP_VARIANT", "BM3D_OPP_SRC_MATRIX", "BM3D_OPP_SRC_RANGE"]
     )
 
 

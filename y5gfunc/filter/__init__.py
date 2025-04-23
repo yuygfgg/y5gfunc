@@ -14,6 +14,11 @@ from .mask import (
 from .rescale import rescale, descale_cropping_args, DescaleMode
 from .resample import (
     Descale,
+    register_opp_matrix,
+    ColorMatrixManager,
+    STANDARD_OPP,
+    NORMALIZED_OPP,
+    MAWEN_OPP,
     yuv2opp,
     opp2yuv,
     rgb2opp,
@@ -56,6 +61,11 @@ __all__ = [
     "descale_cropping_args",
     "DescaleMode",
     "Descale",
+    "register_opp_matrix",
+    "ColorMatrixManager",
+    "STANDARD_OPP",
+    "NORMALIZED_OPP",
+    "MAWEN_OPP",
     "yuv2opp",
     "opp2yuv",
     "rgb2opp",

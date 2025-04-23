@@ -108,7 +108,7 @@ def scd_koala(
     cut_found = [score < 0.0 for score in scores]
     cut_found.append(True)
 
-    filter_kernel = np.ones(filter_size) / filter_size
+    filter_kernel = np.ones(filter_size) / filter_size  # type: ignore
     filtered = np.convolve(scores, filter_kernel, mode="same")
 
     for i in range(len(scores)):
