@@ -1,5 +1,11 @@
 from .deband import SynDeband
-from .denoise import BM3DPreset, Fast_BM3DWrapper, hybrid_denoise, adaptive_denoise
+from .denoise import (
+    BM3DPreset,
+    Fast_BM3DWrapper,
+    hybrid_denoise,
+    magic_denoise,
+    adaptive_denoise,
+)
 from .ivtc import TIVTC_VFR
 from .mask import (
     DBMask,
@@ -47,6 +53,7 @@ __all__ = [
     "BM3DPreset",
     "Fast_BM3DWrapper",
     "hybrid_denoise",
+    "magic_denoise",
     "adaptive_denoise",
     "TIVTC_VFR",
     "DBMask",

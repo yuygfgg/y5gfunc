@@ -5,6 +5,8 @@ from vstools import core
 import vstools
 from vsdenoise import (
     AnalyzeArgs,
+    DFTTest,
+    FilterType,
     MVToolsPreset,
     MotionMode,
     RFilterMode,
@@ -255,8 +257,8 @@ def hybrid_denoise(
     clip: vs.VideoNode,
     mc_degrain_prefilter: PrefilterPartial = Prefilter.DFTTEST(),
     mc_degrain_preset: Optional[MVToolsPreset] = None,
-    mc_degrain_refine: int = 3,
-    thsad: int = 100,
+    mc_degrain_refine: int = 2,
+    mc_degrain_thsad: int = 100,
     bm3d_sigma: Union[float, int] = 2,
     bm3d_preset: BM3DPreset = BM3DPreset.FAST,
 ) -> vs.VideoNode:
@@ -281,6 +283,7 @@ def hybrid_denoise(
                 search=SearchMode.DIAMOND,
                 dct=SADMode.ADAPTIVE_SPATIAL_MIXED,
                 truemotion=MotionMode.SAD,
+                pelsearch=2,
             ),
             recalculate_args=RecalculateArgs(
                 blksize=int(block_size / 2),
@@ -288,6 +291,7 @@ def hybrid_denoise(
                 search=SearchMode.DIAMOND,
                 dct=SADMode.ADAPTIVE_SPATIAL_MIXED,
                 truemotion=MotionMode.SAD,
+                searchparam=1,
             ),
         )
 
@@ -295,7 +299,8 @@ def hybrid_denoise(
         clip=clip,
         prefilter=mc_degrain_prefilter,
         preset=mc_degrain_preset,
-        thsad=thsad,
+        thsad=mc_degrain_thsad,
+        thsad_recalc=mc_degrain_thsad,
         blksize=block_size,
         refine=mc_degrain_refine,
     )
@@ -310,6 +315,61 @@ def hybrid_denoise(
     )
 
     return bm3d
+
+
+# modified from soifunc
+def magic_denoise(clip: vs.VideoNode) -> vs.VideoNode:
+    """
+    Uses dark magic to denoise heavy grain from videos.
+    """
+    super = core.mv.Super(clip, hpad=16, vpad=16, rfilter=4)
+
+    backward2 = core.mv.Analyse(
+        super, isb=True, blksize=16, overlap=8, delta=2, search=3, dct=6
+    )
+    backward = core.mv.Analyse(super, isb=True, blksize=16, overlap=8, search=3, dct=6)
+    forward = core.mv.Analyse(super, isb=False, blksize=16, overlap=8, search=3, dct=6)
+    forward2 = core.mv.Analyse(
+        super, isb=False, blksize=16, overlap=8, delta=2, search=3, dct=6
+    )
+
+    backward2 = core.mv.Recalculate(
+        super, backward2, blksize=8, overlap=4, search=3, divide=2, dct=6
+    )
+    backward = core.mv.Recalculate(
+        super, backward, blksize=8, overlap=4, search=3, divide=2, dct=6
+    )
+    forward = core.mv.Recalculate(
+        super, forward, blksize=8, overlap=4, search=3, divide=2, dct=6
+    )
+    forward2 = core.mv.Recalculate(
+        super, forward2, blksize=8, overlap=4, search=3, divide=2, dct=6
+    )
+
+    backward_re2 = core.mv.Finest(backward2)
+    backward_re = core.mv.Finest(backward)
+    forward_re = core.mv.Finest(forward)
+    forward_re2 = core.mv.Finest(forward2)
+
+    clip = core.mv.Degrain2(
+        clip,
+        super,
+        backward_re,
+        forward_re,
+        backward_re2,
+        forward_re2,
+        thsad=220,
+        thscd1=300,
+    )
+
+    return DFTTest(plugin=DFTTest.Backend.GCC, sloc=[(0.0, 0.8), (0.06, 1.1), (0.12, 1.0), (1.0, 1.0)]).denoise(
+        clip,
+        pmax=1000000,
+        pmin=1.25,
+        ftype=FilterType.MULT_RANGE,
+        tbsize=3,
+        ssystem=1,
+    )
 
 
 # modified from rksfunc
