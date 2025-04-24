@@ -253,15 +253,24 @@ def Fast_BM3DWrapper(
     return vstools.depth(vfinal, 16)
 
 
+# Inspired by mawen1250's bm3d readme, Vodesfunc and EoEfunc
 def hybrid_denoise(
     clip: vs.VideoNode,
     mc_degrain_prefilter: PrefilterPartial = Prefilter.DFTTEST(),
     mc_degrain_preset: Optional[MVToolsPreset] = None,
     mc_degrain_refine: int = 2,
     mc_degrain_thsad: int = 100,
+    show_ref: bool = False,
     bm3d_sigma: Union[float, int] = 2,
     bm3d_preset: BM3DPreset = BM3DPreset.FAST,
-) -> vs.VideoNode:
+    bm3d_opp_matrix: ColorMatrixManager = default_opp,
+) -> Union[vs.VideoNode, tuple[vs.VideoNode, vs.VideoNode]]:
+    """
+    mc_degrain + bm3d denoise
+    """
+    if clip.format.id != vs.YUV420P16:
+        raise ValueError("Fast_BM3DWrapper: Input clip format must be YUV420P16.")
+
     if clip.width <= 1024 and clip.height <= 576:
         block_size = 32
         overlap = 16
@@ -312,9 +321,12 @@ def hybrid_denoise(
         preset_Y_final=bm3d_preset,
         preset_chroma_final=bm3d_preset,
         ref=ref,
+        opp_matrix=bm3d_opp_matrix,
     )
-
-    return bm3d
+    if show_ref:
+        return bm3d, ref
+    else:
+        return bm3d
 
 
 # modified from soifunc
@@ -362,7 +374,9 @@ def magic_denoise(clip: vs.VideoNode) -> vs.VideoNode:
         thscd1=300,
     )
 
-    return DFTTest(plugin=DFTTest.Backend.GCC, sloc=[(0.0, 0.8), (0.06, 1.1), (0.12, 1.0), (1.0, 1.0)]).denoise(
+    return DFTTest(
+        sloc=[(0.0, 0.8), (0.06, 1.1), (0.12, 1.0), (1.0, 1.0)],
+    ).denoise(
         clip,
         pmax=1000000,
         pmin=1.25,
