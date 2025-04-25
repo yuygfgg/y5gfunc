@@ -2483,7 +2483,7 @@ within a detected scene. All frames in that scene are then marked based on this 
             </td>
             <td>
               <div class="doc-md-description">
-                <p>Input video clip. Must be 8-bit per sample.</p>
+                <p>Input video clip. Must be 32-bit per sample.</p>
               </div>
             </td>
             <td>
@@ -2585,7 +2585,7 @@ potentially containing stripes (ratio &gt; threshold), and 0 (False) otherwise.<
             </td>
             <td>
               <div class="doc-md-description">
-                <p>If input clip is not 8-bit per sample.</p>
+                <p>If input clip is not 32-bit per sample.</p>
               </div>
             </td>
           </tr>
@@ -2734,7 +2734,7 @@ potentially containing stripes (ratio &gt; threshold), and 0 (False) otherwise.<
 <a id="__codelineno-0-21" name="__codelineno-0-21"></a><span class="sd">    within a detected scene. All frames in that scene are then marked based on this average ratio.</span>
 <a id="__codelineno-0-22" name="__codelineno-0-22"></a>
 <a id="__codelineno-0-23" name="__codelineno-0-23"></a><span class="sd">    Args:</span>
-<a id="__codelineno-0-24" name="__codelineno-0-24"></a><span class="sd">        clip: Input video clip. Must be 8-bit per sample.</span>
+<a id="__codelineno-0-24" name="__codelineno-0-24"></a><span class="sd">        clip: Input video clip. Must be 32-bit per sample.</span>
 <a id="__codelineno-0-25" name="__codelineno-0-25"></a><span class="sd">        threshold: The threshold for the ratio of average vertical high-frequency energy to average horizontal</span>
 <a id="__codelineno-0-26" name="__codelineno-0-26"></a><span class="sd">            high-frequency energy within a scene. If a scene&#39;s ratio exceeds this value, it&#39;s marked as potentially containing stripes.</span>
 <a id="__codelineno-0-27" name="__codelineno-0-27"></a><span class="sd">        freq_range: Defines the proportion of the spectrum (from each edge towards the center) considered as &quot;high frequency&quot;.</span>
@@ -2748,7 +2748,7 @@ potentially containing stripes (ratio &gt; threshold), and 0 (False) otherwise.<
 <a id="__codelineno-0-35" name="__codelineno-0-35"></a><span class="sd">            potentially containing stripes (ratio &gt; threshold), and 0 (False) otherwise.</span>
 <a id="__codelineno-0-36" name="__codelineno-0-36"></a>
 <a id="__codelineno-0-37" name="__codelineno-0-37"></a><span class="sd">    Raises:</span>
-<a id="__codelineno-0-38" name="__codelineno-0-38"></a><span class="sd">        ValueError: If input clip is not 8-bit per sample.</span>
+<a id="__codelineno-0-38" name="__codelineno-0-38"></a><span class="sd">        ValueError: If input clip is not 32-bit per sample.</span>
 <a id="__codelineno-0-39" name="__codelineno-0-39"></a><span class="sd">        ValueError: if freq_range is not between 0 and 0.5.</span>
 <a id="__codelineno-0-40" name="__codelineno-0-40"></a><span class="sd">    &quot;&quot;&quot;</span>
 <a id="__codelineno-0-41" name="__codelineno-0-41"></a>
@@ -2788,7 +2788,7 @@ potentially containing stripes (ratio &gt; threshold), and 0 (False) otherwise.<
 <a id="__codelineno-0-75" name="__codelineno-0-75"></a>        <span class="n">fout</span><span class="o">.</span><span class="n">props</span><span class="p">[</span><span class="s2">&quot;ratio&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">cache</span><span class="p">[</span><span class="n">n</span><span class="p">]</span>
 <a id="__codelineno-0-76" name="__codelineno-0-76"></a>        <span class="k">return</span> <span class="n">fout</span>
 <a id="__codelineno-0-77" name="__codelineno-0-77"></a>
-<a id="__codelineno-0-78" name="__codelineno-0-78"></a>    <span class="k">if</span> <span class="n">clip</span><span class="o">.</span><span class="n">format</span><span class="o">.</span><span class="n">bits_per_sample</span> <span class="o">!=</span> <span class="mi">8</span><span class="p">:</span>
+<a id="__codelineno-0-78" name="__codelineno-0-78"></a>    <span class="k">if</span> <span class="n">clip</span><span class="o">.</span><span class="n">format</span><span class="o">.</span><span class="n">bits_per_sample</span> <span class="o">!=</span> <span class="mi">32</span><span class="p">:</span>
 <a id="__codelineno-0-79" name="__codelineno-0-79"></a>        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;is_stripe: input clip must be 8-bit per sample.&quot;</span><span class="p">)</span>
 <a id="__codelineno-0-80" name="__codelineno-0-80"></a>    <span class="k">if</span> <span class="ow">not</span> <span class="mi">0</span> <span class="o">&lt;</span> <span class="n">freq_range</span> <span class="o">&lt;</span> <span class="mf">0.5</span><span class="p">:</span>
 <a id="__codelineno-0-81" name="__codelineno-0-81"></a>        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;is_stripe: freq_range must be between 0 and 0.5.&quot;</span><span class="p">)</span>
