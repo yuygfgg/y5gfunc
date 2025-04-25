@@ -2789,7 +2789,7 @@ potentially containing stripes (ratio &gt; threshold), and 0 (False) otherwise.<
 <a id="__codelineno-0-76" name="__codelineno-0-76"></a>        <span class="k">return</span> <span class="n">fout</span>
 <a id="__codelineno-0-77" name="__codelineno-0-77"></a>
 <a id="__codelineno-0-78" name="__codelineno-0-78"></a>    <span class="k">if</span> <span class="n">clip</span><span class="o">.</span><span class="n">format</span><span class="o">.</span><span class="n">bits_per_sample</span> <span class="o">!=</span> <span class="mi">32</span><span class="p">:</span>
-<a id="__codelineno-0-79" name="__codelineno-0-79"></a>        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;is_stripe: input clip must be 8-bit per sample.&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-79" name="__codelineno-0-79"></a>        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;is_stripe: input clip must be 32-bit per sample.&quot;</span><span class="p">)</span>
 <a id="__codelineno-0-80" name="__codelineno-0-80"></a>    <span class="k">if</span> <span class="ow">not</span> <span class="mi">0</span> <span class="o">&lt;</span> <span class="n">freq_range</span> <span class="o">&lt;</span> <span class="mf">0.5</span><span class="p">:</span>
 <a id="__codelineno-0-81" name="__codelineno-0-81"></a>        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;is_stripe: freq_range must be between 0 and 0.5.&quot;</span><span class="p">)</span>
 <a id="__codelineno-0-82" name="__codelineno-0-82"></a>
