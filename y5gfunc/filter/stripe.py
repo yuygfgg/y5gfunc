@@ -21,7 +21,7 @@ def is_stripe(
     within a detected scene. All frames in that scene are then marked based on this average ratio.
 
     Args:
-        clip: Input video clip. Must be 8-bit per sample.
+        clip: Input video clip. Must be 32-bit per sample.
         threshold: The threshold for the ratio of average vertical high-frequency energy to average horizontal
             high-frequency energy within a scene. If a scene's ratio exceeds this value, it's marked as potentially containing stripes.
         freq_range: Defines the proportion of the spectrum (from each edge towards the center) considered as "high frequency".
@@ -35,7 +35,7 @@ def is_stripe(
             potentially containing stripes (ratio > threshold), and 0 (False) otherwise.
 
     Raises:
-        ValueError: If input clip is not 8-bit per sample.
+        ValueError: If input clip is not 32-bit per sample.
         ValueError: if freq_range is not between 0 and 0.5.
     """
 
@@ -75,8 +75,8 @@ def is_stripe(
         fout.props["ratio"] = cache[n]
         return fout
 
-    if clip.format.bits_per_sample != 8:
-        raise ValueError("is_stripe: input clip must be 8-bit per sample.")
+    if clip.format.bits_per_sample != 32:
+        raise ValueError("is_stripe: input clip must be 32-bit per sample.")
     if not 0 < freq_range < 0.5:
         raise ValueError("is_stripe: freq_range must be between 0 and 0.5.")
 
