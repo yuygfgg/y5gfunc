@@ -2952,7 +2952,7 @@
 
 
 <a href="#y5gfunc.filter.resample.ColorMatrixManager.register_yuv_matrix" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">register_yuv_matrix</span><span class="p">(</span><span class="n"><span title="y5gfunc.filter.resample.ColorMatrixManager.register_yuv_matrix(matrix_ids)">matrix_ids</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Union" href="https://docs.python.org/3/library/typing.html#typing.Union">Union</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" title="vstools.Matrix" href="https://sgt0.github.io/jet-docs/api/vstools/enums/color/#vstools.enums.color.Matrix">Matrix</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#list">list</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" title="vstools.Matrix" href="https://sgt0.github.io/jet-docs/api/vstools/enums/color/#vstools.enums.color.Matrix">Matrix</a></span><span class="p">]],</span> <span class="n"><a class="autorefs autorefs-internal" title="yuv_to_rgb_matrix (y5gfunc.filter.resample.ColorMatrixManager.register_yuv_matrix(yuv_to_rgb_matrix))" href="#y5gfunc.filter.resample.ColorMatrixManager.register_yuv_matrix(yuv_to_rgb_matrix)">yuv_to_rgb_matrix</a></span><span class="p">:</span> <span class="n"><span title="sympy.Matrix">Matrix</span></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">register_yuv_matrix</span><span class="p">(</span><span class="n"><a class="autorefs autorefs-internal" title="matrix_ids (y5gfunc.filter.resample.ColorMatrixManager.register_yuv_matrix(matrix_ids))" href="#y5gfunc.filter.resample.ColorMatrixManager.register_yuv_matrix(matrix_ids)">matrix_ids</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Union" href="https://docs.python.org/3/library/typing.html#typing.Union">Union</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" title="vstools.Matrix" href="https://sgt0.github.io/jet-docs/api/vstools/enums/color/#vstools.enums.color.Matrix">Matrix</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#list">list</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" title="vstools.Matrix" href="https://sgt0.github.io/jet-docs/api/vstools/enums/color/#vstools.enums.color.Matrix">Matrix</a></span><span class="p">]],</span> <span class="n"><a class="autorefs autorefs-internal" title="yuv_to_rgb_matrix (y5gfunc.filter.resample.ColorMatrixManager.register_yuv_matrix(yuv_to_rgb_matrix))" href="#y5gfunc.filter.resample.ColorMatrixManager.register_yuv_matrix(yuv_to_rgb_matrix)">yuv_to_rgb_matrix</a></span><span class="p">:</span> <span class="n"><span title="sympy.Matrix">Matrix</span></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -2973,9 +2973,10 @@
       <tbody>
           <tr class="doc-section-item">
             <td>
-<h4 id="y5gfunc.filter.resample.ColorMatrixManager.register_yuv_matrix(matrix_id)" class="doc doc-heading doc-heading-parameter">                  <code>matrix_id</code>
-<a href="#y5gfunc.filter.resample.ColorMatrixManager.register_yuv_matrix(matrix_id)" class="headerlink" title="Permanent link">&para;</a></h4>            </td>
+<h4 id="y5gfunc.filter.resample.ColorMatrixManager.register_yuv_matrix(matrix_ids)" class="doc doc-heading doc-heading-parameter">                  <code>matrix_ids</code>
+<a href="#y5gfunc.filter.resample.ColorMatrixManager.register_yuv_matrix(matrix_ids)" class="headerlink" title="Permanent link">&para;</a></h4>            </td>
             <td>
+                  <code><a class="autorefs autorefs-external" title="typing.Union" href="https://docs.python.org/3/library/typing.html#typing.Union">Union</a>[<a class="autorefs autorefs-external" title="vstools.Matrix" href="https://sgt0.github.io/jet-docs/api/vstools/enums/color/#vstools.enums.color.Matrix">Matrix</a>, <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#list">list</a>[<a class="autorefs autorefs-external" title="vstools.Matrix" href="https://sgt0.github.io/jet-docs/api/vstools/enums/color/#vstools.enums.color.Matrix">Matrix</a>]]</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -3035,7 +3036,7 @@
 <a id="__codelineno-0-56" name="__codelineno-0-56"></a><span class="sd">    Register a YUV to RGB matrix type.</span>
 <a id="__codelineno-0-57" name="__codelineno-0-57"></a>
 <a id="__codelineno-0-58" name="__codelineno-0-58"></a><span class="sd">    Args:</span>
-<a id="__codelineno-0-59" name="__codelineno-0-59"></a><span class="sd">        matrix_id: The matrix id</span>
+<a id="__codelineno-0-59" name="__codelineno-0-59"></a><span class="sd">        matrix_ids: The matrix id</span>
 <a id="__codelineno-0-60" name="__codelineno-0-60"></a><span class="sd">        yuv_to_rgb_matrix: A sympy 3x3 Matrix representing YUV-&gt;RGB conversion</span>
 <a id="__codelineno-0-61" name="__codelineno-0-61"></a><span class="sd">    &quot;&quot;&quot;</span>
 <a id="__codelineno-0-62" name="__codelineno-0-62"></a>    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">matrix_ids</span><span class="p">,</span> <span class="n">vstools</span><span class="o">.</span><span class="n">Matrix</span><span class="p">):</span>
