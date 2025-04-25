@@ -1,24 +1,31 @@
 from vstools import vs
 from ..expr import infix2postfix
+from enum import IntEnum
+
+
+class ZoomMode(IntEnum):
+    NO_ZOOM = 0
+    ZOOM_TO_FIT = 1
+    CONSTANT_MAX_ZOOM = 2
+
 
 def rotate_image(
     clip: vs.VideoNode,
     angle_degrees: str,
-    zoom_to_fit: bool = False,
+    zoom: ZoomMode = ZoomMode.NO_ZOOM,
     bicubic_b: str = "1 / 3",
     bicubic_c: str = "1 / 3",
     center_x: str = "width / 2",
-    center_y: str = "height / 2"
+    center_y: str = "height / 2",
 ) -> vs.VideoNode:
-
-    bicubic_func_def = f'''
+    setup = f"""
         param_b  = {bicubic_b}
         param_c = {bicubic_c}
         <global<param_b><param_c>>
         function bicubic_weight(in) {{
             ax = abs(in)
-            ax2 = ax * ax
-            ax3 = ax2 * ax
+            ax2 = ax ** 2
+            ax3 = ax ** 3
 
             term3_p1 = (12 - 9 * param_b - 6 * param_c) * ax3
             term2_p1 = (-18 + 12 * param_b + 6 * param_c) * ax2
@@ -36,9 +43,7 @@ def rotate_image(
 
             return result
         }}
-    '''
-
-    rotation_setup = f'''
+        
         angle_degrees = {angle_degrees}
         angle_rad = angle_degrees * pi / 180
         center_x = {center_x}
@@ -48,10 +53,26 @@ def rotate_image(
 
         out_rel_x = X - center_x
         out_rel_y = Y - center_y
-    '''
+    """
 
-    if zoom_to_fit:
-        source_coord_calc = '''
+    if zoom == ZoomMode.CONSTANT_MAX_ZOOM:
+        source_coord_calc = """
+            qq = 0.7071067811865476
+            w_bound_const = width * qq + height * qq
+            h_bound_const = width * qq + height * qq
+            shrink_scale = min(width / max(w_bound_const, 1e-9), height / max(h_bound_const, 1e-9))
+
+            src_rel_x_unscaled = out_rel_x * cos_a + out_rel_y * sin_a
+            src_rel_y_unscaled = -out_rel_x * sin_a + out_rel_y * cos_a
+
+            final_src_rel_x = src_rel_x_unscaled * shrink_scale
+            final_src_rel_y = src_rel_y_unscaled * shrink_scale
+
+            source_x = final_src_rel_x + center_x
+            source_y = final_src_rel_y + center_y
+        """
+    elif zoom == ZoomMode.ZOOM_TO_FIT:
+        source_coord_calc = """
             ca = abs(cos_a)
             sa = abs(sin_a)
             w_bound = width * ca + height * sa
@@ -68,17 +89,17 @@ def rotate_image(
 
             source_x = final_src_rel_x + center_x
             source_y = final_src_rel_y + center_y
-        '''
+        """
     else:
-        source_coord_calc = '''
+        source_coord_calc = """
             final_src_rel_x = out_rel_x * cos_a + out_rel_y * sin_a
             final_src_rel_y = -out_rel_x * sin_a + out_rel_y * cos_a
 
             source_x = final_src_rel_x + center_x
             source_y = final_src_rel_y + center_y
-        '''
+        """
 
-    interpolation_logic = '''
+    interpolate = """
         ix = floor(source_x)
         iy = floor(source_y)
         fx = source_x - ix
@@ -125,20 +146,10 @@ def rotate_image(
         row_1  = p_m1_1 * wx_m1 + p0_1 * wx0 + p1_1 * wx1 + p2_1 * wx2
         row_2  = p_m1_2 * wx_m1 + p0_2 * wx0 + p1_2 * wx1 + p2_2 * wx2
 
-        interpolated_value = row_m1 * wy_m1 + row_0 * wy0 + row_1 * wy1 + row_2 * wy2
-    '''
+        RESULT = row_m1 * wy_m1 + row_0 * wy0 + row_1 * wy1 + row_2 * wy2
+    """
 
-    result_logic = '''
-        RESULT = interpolated_value
-    '''
-
-    full_expr_str = (
-        bicubic_func_def
-        + rotation_setup
-        + source_coord_calc
-        + interpolation_logic
-        + result_logic
-    )
+    full_expr_str = setup + source_coord_calc + interpolate
 
     expr_postfix = infix2postfix(full_expr_str)
     return clip.akarin.Expr(expr_postfix)

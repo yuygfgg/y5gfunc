@@ -71,6 +71,7 @@ from .vfx import (
     render_model_scene,
     load_mesh,
     rotate_image,
+    ZoomMode,
 )
 from .preview import reset_output_index, set_preview, screen_shot
 from .source import WobblySource, load_source, get_frame_timestamp, clip_to_timecodes
@@ -162,6 +163,7 @@ __all__ = [
     "render_triangle_scene",
     "render_model_scene",
     "load_mesh",
+    "ZoomMode",
     "rotate_image",
     "nn2x",
     "double_aa",
