@@ -2,7 +2,7 @@ from enum import IntEnum
 from typing import Optional, Union
 from vstools import vs
 from vstools import core
-
+import vstools
 
 class ColorSpace(IntEnum):
     """
@@ -151,7 +151,7 @@ def tonemap(
     clip: vs.VideoNode,
     src_csp: ColorSpace,
     dst_csp: ColorSpace,
-    dst_prim: Optional[ColorPrimaries] = None,
+    dst_prim: Optional[Union[ColorPrimaries, vstools.Primaries]] = None,
     src_max: Optional[Union[float, int]] = None,
     src_min: Optional[Union[float, int]] = None,
     dst_max: Optional[Union[float, int]] = None,
@@ -203,7 +203,14 @@ def tonemap(
     """
     src_csp_int = int(src_csp)
     dst_csp_int = int(dst_csp)
-    dst_prim_int = int(dst_prim) if dst_prim is not None else None
+    
+    if isinstance(dst_prim, ColorPrimaries):
+        dst_prim_int = int(dst_prim)
+    elif isinstance(dst_prim, vstools.Primaries):
+        dst_prim_int = dst_prim.value_libplacebo
+    else:
+        dst_prim_int = None
+    
     gamut_mapping_int = int(gamut_mapping)
     metadata_int = int(metadata)
 
