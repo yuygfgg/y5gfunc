@@ -56,7 +56,7 @@ class ColorMatrixManager:
         Register a YUV to RGB matrix type.
 
         Args:
-            matrix_id: The matrix id
+            matrix_ids: The matrix id
             yuv_to_rgb_matrix: A sympy 3x3 Matrix representing YUV->RGB conversion
         """
         if isinstance(matrix_ids, vstools.Matrix):

@@ -4,6 +4,15 @@ from enum import IntEnum
 
 
 class ZoomMode(IntEnum):
+    """
+    Controls the zoom behavior of rotate_image function
+
+    Attributes:
+        NO_ZOOM: Rotate the clip without any scaling; missing border pixels will be interpolated
+        ZOOM_TO_FIT: Dynamically scale the clip to ensure the entire image fits within the frame, thus avoids additional interpolation on the borders
+        CONSTANT_MAX_ZOOM: Use a constant scaling factor based on a 45° rotation to prevent dynamic changes during rotation
+    """
+
     NO_ZOOM = 0
     ZOOM_TO_FIT = 1
     CONSTANT_MAX_ZOOM = 2
@@ -18,6 +27,24 @@ def rotate_image(
     center_x: str = "width / 2",
     center_y: str = "height / 2",
 ) -> vs.VideoNode:
+    """
+    Rotate a video clip
+
+    This function rotates the given video clip by an angle specified in degrees. The rotation is
+    performed around a defined center point and uses bicubic interpolation for resampling.
+
+    Args:
+        clip: The source video clip to rotate.
+        angle_degrees: The rotation angle in degrees, can be an expression to evaluate in run-time.
+        zoom: The zoom mode to apply.
+        bicubic_b: The 'b' parameter for bicubic interpolation.
+        bicubic_c: The 'c' parameter for bicubic interpolation.
+        center_x: The x-coordinate of the rotation center, can be an expression to evaluate in run-time
+        center_y: The y-coordinate of the rotation center, can be an expression to evaluate in run-time
+
+    Returns:
+        The rotated video clip.
+    """
     setup = f"""
         param_b  = {bicubic_b}
         param_c = {bicubic_c}
