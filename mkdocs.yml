@@ -51,6 +51,7 @@ plugins:
               - https://docs.python.org/3/objects.inv
               - https://www.vapoursynth.com/doc/objects.inv
               - https://sgt0.github.io/jet-docs/objects.inv
+              - https://simpy.readthedocs.io/en/latest/objects.inv
           options:
             docstring_style: google
             show_root_heading: true

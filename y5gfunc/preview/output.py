@@ -26,7 +26,7 @@ def reset_output_index(index: int = 0) -> None:
     """Resets the global output index counter and the set of used indices.
 
     Args:
-        index (int, optional): The value to reset the automatic index counter to.
+        index: The value to reset the automatic index counter to.
     """
     global _output_index
     _output_index = index
@@ -48,7 +48,7 @@ def set_preview(*args, debug: bool = True) -> None:
             - A list or tuple of `vs.VideoNode` objects: Each node in the sequence will be assigned the next available automatic output index.
             - A tuple in the format `(vs.VideoNode, int)`: The specified node will be assigned the given integer index. The index must be non-negative.
             - A list or tuple containing any combination of the above formats, including mixtures of `vs.VideoNode` and `(vs.VideoNode, int)` tuples.
-        debug (bool, optional): If True, overlays the inferred variable name onto the output clip for identification during previews.
+        debug: If True, overlays the inferred variable name onto the output clip for identification during previews.
 
     Raises:
         ValueError: If `debug` is True when the script is run for encoding (i.e., `__name__ == '__vapoursynth__'`).
@@ -58,8 +58,7 @@ def set_preview(*args, debug: bool = True) -> None:
 
     Note:
         This function uses global variables (`_output_index`, `used_indices`) to track assigned indices across multiple calls within a single script run.
-        Use `reset_output_index()` to clear this state if you need to reuse indices or manage output sets independently (e.g., within different functions
-        or conditional branches).
+        Use `reset_output_index()` to clear this state if you need to reuse indices or manage output sets independently.
     """
     if debug and __name__ == "__vapoursynth__":
         raise ValueError("output: Do not set debug=True when encoding!")
@@ -116,7 +115,7 @@ def set_preview(*args, debug: bool = True) -> None:
             set_output(processed_clip, index, name=f"{index}: {variable_name}")
             used_indices.add(index)
 
-    # Automatically Indexed Clips ---
+    # Automatically Indexed Clips
     for clip, index in clips_to_process:
         if index is None:
             while _output_index in used_indices:
