@@ -1,9 +1,10 @@
 from vstools import vs
-from vstools import core
 from .wobbly import load_and_process
 from typing import Optional, Union
 from pathlib import Path
 from ..utils import resolve_path
+from vssource import BestSource
+from vstools import Matrix, Primaries, Transfer
 
 
 def wobbly_source(
@@ -39,30 +40,34 @@ def bestsource(
     Args:
         file_path: Path to the video file.
         track: Index of the video track to load.
-        timecodes_v2_path: Optional path to a V2 timecodes file. If provided, it will be passed to `bs.VideoSource`.
-        variableformat: `variableformat` parameter for `bs.VideoSource`. See bestsource documentation.
-        rff: `rff` parameter for `bs.VideoSource` (Repeat First Field). See bestsource documentation.
+        timecodes_v2_path: Path to a V2 timecodes file.
+        variableformat: See bestsource documentation.
+        rff: See bestsource documentation.
     Returns:
         A VapourSynth VideoNode loaded by bestsource.
     """
     if timecodes_v2_path:
-        return core.bs.VideoSource(
-            str(file_path),
-            track,
-            variableformat,
+        return BestSource.source(
+            file=str(file_path),
+            track=track,
+            variableformat=variableformat,
             timecodes=str(timecodes_v2_path),
             rff=rff,
         )
     else:
-        return core.bs.VideoSource(str(file_path), track, variableformat, rff=rff)
+        return BestSource.source(
+            file=str(file_path),
+            track=track,
+            variableformat=variableformat,
+            rff=rff,
+        )
 
 
-# TODO: auto matrix handle
 def load_source(
     file_path: Union[Path, str],
     track: int = 0,
-    matrix_s: str = "709",
-    matrix_in_s: str = "709",
+    matrix: Optional[Matrix] = None,
+    matrix_in: Optional[Matrix] = None,
     timecodes_v2_path: Optional[Union[Path, str]] = None,
 ) -> vs.VideoNode:
     """
@@ -78,9 +83,9 @@ def load_source(
     Args:
         file_path: Path to the video file or .wob project file.
         track: Index of the video track to load. Ignored for .wob files.
-        matrix_s: Target color matrix string (e.g., "709", "bt470bg").
-        matrix_in_s: Input color matrix string (e.g., "709", "bt470bg").
-        timecodes_v2_path: Optional path to a V2 timecodes file.
+        matrix_s: Target color matrix.
+        matrix_in_s: Input color matrix.
+        timecodes_v2_path: Path to a V2 timecodes file.
 
     Returns:
         A VapourSynth VideoNode representing the loaded and matrix-converted video clip.
@@ -105,4 +110,22 @@ def load_source(
 
         clip = bestsource(file_path, track, timecodes_v2_path, rff=rff)
 
-    return clip.resize2.Spline36(matrix_s=matrix_s, matrix_in_s=matrix_in_s)
+    if matrix is None:
+        matrix = Matrix.from_res(clip)
+    
+    if matrix_in is None:
+        matrix_in = Matrix.from_res(clip)
+    
+    primaries = Primaries.from_matrix(matrix)
+    primaries_in = Primaries.from_matrix(matrix_in)
+    transfer = Transfer.from_matrix(matrix)
+    transfer_in = Transfer.from_matrix(matrix)
+    
+    return clip.resize2.Spline36(
+        matrix=matrix,
+        matrix_in=matrix_in,
+        primaries=primaries,
+        primaries_in=primaries_in,
+        transfer=transfer,
+        transfer_in=transfer_in,
+    )
