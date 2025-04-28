@@ -48,10 +48,10 @@ plugins:
       handlers:
         python:
           inventories:
-              - https://docs.python.org/3/objects.inv
-              - https://www.vapoursynth.com/doc/objects.inv
-              - https://sgt0.github.io/jet-docs/objects.inv
-              - https://simpy.readthedocs.io/en/latest/objects.inv
+            - https://docs.python.org/3/objects.inv
+            - https://www.vapoursynth.com/doc/objects.inv
+            - https://sgt0.github.io/jet-docs/objects.inv
+            - https://simpy.readthedocs.io/en/latest/objects.inv
           options:
             docstring_style: google
             show_root_heading: true
@@ -69,6 +69,6 @@ plugins:
             show_symbol_type_heading: true
             signature_crossrefs: true
             summary: true
-            
+
   - awesome-pages:
       collapse_single_pages: true
