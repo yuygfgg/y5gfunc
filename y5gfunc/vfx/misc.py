@@ -65,8 +65,7 @@ def rotate_image(
             term0_p2 = (8 * param_b + 24 * param_c)
             part2 = (term3_p2 + term2_p2 + term1_p2 + term0_p2) / 6
 
-            result = (ax < 2) ? part2 : 0
-            result = (ax < 1) ? part1 : result
+            result = (ax < 1) ? part1 : (ax < 2) ? part2 : 0
 
             return result
         }}

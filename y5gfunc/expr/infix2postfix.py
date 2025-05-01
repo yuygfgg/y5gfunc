@@ -21,10 +21,6 @@ number_pattern = re.compile(
 nth_pattern = re.compile(r"^nth_(\d+)$")
 m_line_pattern = re.compile(r"^([a-zA-Z_]\w*)\s*=\s*(.+)$")
 m_static_pattern = re.compile(r"^(\w+)\[(-?\d+),\s*(-?\d+)\](\:\w)?$")
-m_ternary_pattern = re.compile(
-    r"\s*+((?:(?>[^?:]+)|(?:\?(?R):))+?)\s*+\?\s*+((?:(?>[^?:]+)|(?:\?(?R):))+?)\s*+:\s*+((?:(?>[^?:]+)|(?:\?(?R):))++)\s*+",
-    re.VERBOSE,
-)
 find_duplicate_functions_pattern = re.compile(r"\bfunction\s+(\w+)\s*\(.*?\)")
 drop_pattern = re.compile(r"drop(\d*)")
 sort_pattern = re.compile(r"sort(\d+)")
@@ -274,6 +270,53 @@ def compute_stack_effect(
         else:
             stack.append(1)
     return len(stack)
+
+
+def parse_ternary(
+    expr: str, line_num: Optional[int] = None, func_name: Optional[str] = None
+) -> Optional[tuple[str, str, str]]:
+    """
+    For a given expression string without delimiters, detects the presence of a ternary operator in the outer layer.
+    If present, returns a triple (condition, true_expr, false_expr); otherwise returns None.
+    """
+    expr = expr.strip()
+    n = len(expr)
+    depth = 0
+    q_index = -1
+    for i, c in enumerate(expr):
+        if c == "(":
+            depth += 1
+        elif c == ")":
+            depth -= 1
+        elif c == "?" and depth == 0:
+            q_index = i
+            break
+    if q_index == -1:
+        return None
+
+    condition = expr[:q_index].strip()
+
+    ternary_level = 1
+    depth = 0
+    colon_index = -1
+    for i in range(q_index + 1, n):
+        c = expr[i]
+        if c == "(":
+            depth += 1
+        elif c == ")":
+            depth -= 1
+        elif c == "?" and depth == 0:
+            ternary_level += 1
+        elif c == ":" and depth == 0:
+            ternary_level -= 1
+            if ternary_level == 0:
+                colon_index = i
+                break
+    if colon_index == -1:
+        raise SyntaxError("Ternary operator missing ':'", line_num, func_name)
+    true_expr = expr[q_index + 1 : colon_index].strip()
+    false_expr = expr[colon_index + 1 :].strip()
+    return (condition, true_expr, false_expr)
 
 
 def infix2postfix(infix_code: str) -> str:
@@ -952,7 +995,7 @@ def convert_expr(
             if func_name in builtin_unary:
                 if len(args) != 1:
                     raise SyntaxError(
-                        f"Built-in function {func_name} requires 1 arguments, but {len(args)} were provided.",
+                        f"Built-in function {func_name} requires 1 argument, but {len(args)} were provided.",
                         line_num,
                         current_function,
                     )
@@ -970,7 +1013,9 @@ def convert_expr(
             param_map = {p: f"__internal_{func_name}_{p}" for p in params}
             body_lines = [line.strip() for line in body.split("\n")]
             body_lines_strip = [
-                line.strip() for line in body.split("\n") if line.strip()
+                line.strip()
+                for line in body.split("\n")
+                if line.strip() and not line.lstrip().startswith("#")
             ]
             return_indices = [
                 i
@@ -986,6 +1031,8 @@ def convert_expr(
 
             local_map: dict[str, str] = {}
             for offset, body_line in enumerate(body_lines):
+                if body_line.lstrip().startswith("#"):
+                    continue
                 if body_line.startswith("return"):
                     continue
                 m_line = m_line_pattern.match(body_line)
@@ -1027,6 +1074,8 @@ def convert_expr(
                         param_assignments.append(f"{args_postfix[i]} {rename_map[p]}!")
             new_lines: list[str] = []
             for line_text in body_lines:
+                if line_text.lstrip().startswith("#"):
+                    continue
                 new_line = line_text
                 for old, new in rename_map.items():
                     if old not in global_vars:
@@ -1038,6 +1087,8 @@ def convert_expr(
             return_count = 0
             for offset, body_line in enumerate(new_lines):
                 effective_line_num = func_line_num + offset
+                if body_line.lstrip().startswith("#"):
+                    continue
                 if body_line.startswith(
                     "return"
                 ):  # Return does nothing, but it looks better to have one.
@@ -1129,33 +1180,19 @@ def convert_expr(
             )
         return f"{clip}[{statX},{statY}]{suffix}"
 
-    m_ternary = m_ternary_pattern.search(expr)
-    if m_ternary:
-        cond = convert_expr(
-            m_ternary.group(1),
-            variables,
-            functions,
-            line_num,
-            current_function,
-            local_vars,
+    ternary_parts = parse_ternary(expr, line_num, current_function)
+    if ternary_parts is not None:
+        cond, true_expr, false_expr = ternary_parts
+        cond_conv = convert_expr(
+            cond, variables, functions, line_num, current_function, local_vars
         )
-        true_expr = convert_expr(
-            m_ternary.group(2),
-            variables,
-            functions,
-            line_num,
-            current_function,
-            local_vars,
+        true_conv = convert_expr(
+            true_expr, variables, functions, line_num, current_function, local_vars
         )
-        false_expr = convert_expr(
-            m_ternary.group(3),
-            variables,
-            functions,
-            line_num,
-            current_function,
-            local_vars,
+        false_conv = convert_expr(
+            false_expr, variables, functions, line_num, current_function, local_vars
         )
-        return f"{cond} {true_expr} {false_expr} ?"
+        return f"{cond_conv} {true_conv} {false_conv} ?"
 
     operators = [
         ("||", "or"),
