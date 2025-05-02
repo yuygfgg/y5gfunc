@@ -269,7 +269,7 @@ def hybrid_denoise(
     mc_degrain + bm3d denoise
     """
     if clip.format.id != vs.YUV420P16:
-        raise ValueError("Fast_BM3DWrapper: Input clip format must be YUV420P16.")
+        raise ValueError("hybrid_denoise: Input clip format must be YUV420P16.")
 
     if clip.width <= 1024 and clip.height <= 576:
         block_size = 32
