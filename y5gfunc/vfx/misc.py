@@ -5,7 +5,7 @@ from enum import IntEnum
 
 class ZoomMode(IntEnum):
     """
-    Controls the zoom behavior of rotate_image function
+    Controls the zoom behavior of `rotate_image` function
 
     Attributes:
         NO_ZOOM: Rotate the clip without any scaling; missing border pixels will be interpolated

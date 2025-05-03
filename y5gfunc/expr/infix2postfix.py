@@ -6,322 +6,11 @@ import sys
 
 sys.setrecursionlimit(5000)
 
-func_call_pattern = re.compile(r"(\w+)\s*\(")
-clip_pattern = re.compile(r"(?:[a-zA-Z]|src\d+)$")
-func_info_pattern = re.compile(r"__internal_([a-zA-Z_]\w*)_([a-zA-Z_]\w+)$")
-func_pattern = re.compile(r"function\s+(\w+)")
-global_decl_pattern = re.compile(r"^<global((?:<[a-zA-Z_]\w*>)+)>$")
-function_def_pattern = re.compile(r"^\s*function\s+(\w+)\s*\(([^)]*)\)\s*\{")
-m_call_pattern = re.compile(r"^(\w+)\s*\(")
-m_str_pattern = re.compile(r"^str\(([^)]+)\)$")
-valid_str_pattern = re.compile(r"\b([a-zA-Z_]\w*)\b")
-number_pattern = re.compile(
-    r"^(0x[0-9A-Fa-f]+(\.[0-9A-Fa-f]+(p[+\-]?\d+)?)?|0[0-7]*|[+\-]?(\d+(\.\d+)?([eE][+\-]?\d+)?))$"
-)
-nth_pattern = re.compile(r"^nth_(\d+)$")
-m_line_pattern = re.compile(r"^([a-zA-Z_]\w*)\s*=\s*(.+)$")
-m_static_pattern = re.compile(r"^(\w+)\[(-?\d+),\s*(-?\d+)\](\:\w)?$")
-find_duplicate_functions_pattern = re.compile(r"\bfunction\s+(\w+)\s*\(.*?\)")
-drop_pattern = re.compile(r"drop(\d*)")
-sort_pattern = re.compile(r"sort(\d+)")
-global_match_pattern = re.compile(r"<([a-zA-Z_]\w*)>")
-assign_pattern = re.compile(r"(?<![<>!])=(?![=])")
-rel_pattern = re.compile(r"\w+\[(.*?)\]")
-func_sub_pattern = re.compile(r"\w+\([^)]*\)|\[[^\]]*\]")
-identifier_pattern = re.compile(r"\b([a-zA-Z_]\w*)\b(?!\s*\()")
-letter_pattern = re.compile(r"[a-zA-Z_]\w*")
-function_pattern = re.compile(
-    r"function\s+(\w+)\s*\(([^)]*)\)\s*\{([^{}]*(?:\{[^{}]*\}[^{}]*)*)\}"
-)
-build_in_func_patterns = [
-    re.compile(r)
-    for r in [rf"^{prefix}\d+$" for prefix in ["nth_", "sort", "dup", "drop", "swap"]]
-]
-
-
-class SyntaxError(Exception):
-    """Custom syntax error class with line information"""
-
-    def __init__(
-        self,
-        message: str,
-        line_num: Optional[int] = None,
-        function_name: Optional[str] = None,
-    ):
-        self.line_num = line_num
-        self.function_name = function_name
-        if function_name and line_num is not None:
-            super().__init__(
-                f"Line {line_num}: In function '{function_name}', {message}"
-            )
-        elif line_num is not None:
-            super().__init__(f"Line {line_num}: {message}")
-        else:
-            super().__init__(message)
-
-
-@lru_cache
-def is_clip(token: str) -> bool:
-    """
-    Determine whether token is a source clip.
-    (std.Expr: single letter; or akarin.Expr: srcN)
-    """
-    return bool(clip_pattern.fullmatch(token))
-
-
-@lru_cache
-def is_constant(token: str) -> bool:
-    """
-    Check if the token is a built-in constant.
-    """
-    constants_set = {
-        "N",
-        "X",
-        "current_x",
-        "Y",
-        "current_y",
-        "width",
-        "current_width",
-        "height",
-        "current_height",
-        "pi",
-    }
-    if token in constants_set:
-        return True
-    if is_clip(token):
-        return True
-    return False
-
-
-@lru_cache
-def strip_outer_parentheses(expr: str) -> str:
-    """
-    Remove outer parentheses if the entire expression is enclosed.
-    """
-    if not expr.startswith("(") or not expr.endswith(")"):
-        return expr
-    count = 0
-    for i, char in enumerate(expr):
-        if char == "(":
-            count += 1
-        elif char == ")":
-            count -= 1
-        if count == 0 and i < len(expr) - 1:
-            return expr
-    return expr[1:-1]
-
-
-@lru_cache
-def match_full_function_call(expr: str) -> Optional[tuple[str, str]]:
-    """
-    Try to match a complete function call with proper nesting.
-    Returns (func_name, args_str) if matched; otherwise returns None.
-    """
-    expr = expr.strip()
-    m = func_call_pattern.match(expr)
-    if not m:
-        return None
-    func_name = m.group(1)
-    start = m.end() - 1  # position of '('
-    depth = 0
-    for i in range(start, len(expr)):
-        if expr[i] == "(":
-            depth += 1
-        elif expr[i] == ")":
-            depth -= 1
-            if depth == 0:
-                if i == len(expr) - 1:
-                    args_str = expr[start + 1 : i]
-                    return func_name, args_str
-                else:
-                    return None
-    return None
-
-
-@lru_cache
-def extract_function_info(
-    internal_var: str, current_function: Optional[str] = None
-) -> tuple[Optional[str], Optional[str]]:
-    """
-    Given a renamed internal variable (e.g. __internal_funcname_varname),
-    extract the original function name and variable name.
-    """
-    if current_function is not None and internal_var.startswith(
-        f"__internal_{current_function}_"
-    ):
-        return current_function, internal_var[len(f"__internal_{current_function}_") :]
-    match = func_info_pattern.match(internal_var)
-    if match:
-        return match.group(1), match.group(2)
-    return None, None
-
-
-def find_duplicate_functions(code: str):
-    """
-    Check if any duplicate function is defined.
-    """
-    function_lines = {}
-    lines = code.split("\n")
-    for line_num, line in enumerate(lines, start=1):
-        match = find_duplicate_functions_pattern.search(line)
-        if match:
-            func_name = match.group(1)
-            if func_name in function_lines:
-                raise SyntaxError(
-                    f"Duplicated function '{func_name}' defined at lines {function_lines[func_name]} and {line_num}",
-                    line_num=line_num,
-                )
-            function_lines[func_name] = line_num
-
-
-def compute_stack_effect(
-    postfix_expr: str, line_num: Optional[int] = None, func_name: Optional[str] = None
-) -> int:
-    """
-    Compute the net stack effect of a postfix expression.
-    """
-    tokens = postfix_expr.split()
-    op_arity = {
-        "+": 2,
-        "-": 2,
-        "*": 2,
-        "/": 2,
-        "%": 2,
-        "pow": 2,
-        "and": 2,
-        "or": 2,
-        "=": 2,
-        "<": 2,
-        ">": 2,
-        "<=": 2,
-        ">=": 2,
-        "bitand": 2,
-        "bitor": 2,
-        "bitxor": 2,
-        "min": 2,
-        "max": 2,
-        "clamp": 3,
-        "?": 3,
-        "not": 1,
-        "sin": 1,
-        "cos": 1,
-        "round": 1,
-        "floor": 1,
-        "abs": 1,
-        "sqrt": 1,
-        "trunc": 1,
-        "bitnot": 1,
-    }
-
-    stack: list[int] = []
-    for i, token in enumerate(tokens):
-        if token.endswith("!"):
-            if not stack:
-                raise SyntaxError("Stack underflow in assignment", line_num, func_name)
-            stack.pop()
-            continue
-        elif token.endswith("[]"):  # dynamic access operator
-            if len(stack) < 2:
-                raise SyntaxError(
-                    f"Stack underflow for operator {token} at token index {i}",
-                    line_num,
-                    func_name,
-                )
-            stack.pop()
-            stack.pop()
-            stack.append(1)
-            continue
-
-        # dropN operator (default is drop1)
-        m_drop = drop_pattern.fullmatch(token)
-        if m_drop:
-            n_str = m_drop.group(1)
-            n = int(n_str) if n_str != "" else 1
-            if len(stack) < n:
-                raise SyntaxError(
-                    f"Stack underflow for operator {token}", line_num, func_name
-                )
-            for _ in range(n):
-                stack.pop()
-            continue
-
-        # sortN operator: reorder top N items without changing the stack count.
-        m_sort = sort_pattern.fullmatch(token)
-        if m_sort:
-            n = int(m_sort.group(1))
-            if len(stack) < n:
-                raise SyntaxError(
-                    f"Stack underflow for operator {token}", line_num, func_name
-                )
-            # Sorting reorders items but does not change the stack count.
-            continue
-
-        if token in op_arity:
-            arity = op_arity[token]
-            if len(stack) < arity:
-                raise SyntaxError(
-                    f"Stack underflow for operator {token} at token index {i}",
-                    line_num,
-                    func_name,
-                )
-            for _ in range(arity):
-                stack.pop()
-            stack.append(1)
-        else:
-            stack.append(1)
-    return len(stack)
-
-
-def parse_ternary(
-    expr: str, line_num: Optional[int] = None, func_name: Optional[str] = None
-) -> Optional[tuple[str, str, str]]:
-    """
-    For a given expression string without delimiters, detects the presence of a ternary operator in the outer layer.
-    If present, returns a triple (condition, true_expr, false_expr); otherwise returns None.
-    """
-    expr = expr.strip()
-    n = len(expr)
-    depth = 0
-    q_index = -1
-    for i, c in enumerate(expr):
-        if c == "(":
-            depth += 1
-        elif c == ")":
-            depth -= 1
-        elif c == "?" and depth == 0:
-            q_index = i
-            break
-    if q_index == -1:
-        return None
-
-    condition = expr[:q_index].strip()
-
-    ternary_level = 1
-    depth = 0
-    colon_index = -1
-    for i in range(q_index + 1, n):
-        c = expr[i]
-        if c == "(":
-            depth += 1
-        elif c == ")":
-            depth -= 1
-        elif c == "?" and depth == 0:
-            ternary_level += 1
-        elif c == ":" and depth == 0:
-            ternary_level -= 1
-            if ternary_level == 0:
-                colon_index = i
-                break
-    if colon_index == -1:
-        raise SyntaxError("Ternary operator missing ':'", line_num, func_name)
-    true_expr = expr[q_index + 1 : colon_index].strip()
-    false_expr = expr[colon_index + 1 :].strip()
-    return (condition, true_expr, false_expr)
-
-
 def infix2postfix(infix_code: str) -> str:
     R"""
     Convert infix expressions to postfix expressions.
+    
+    [muvs](https://github.com/WolframRhodium/muvsfunc/blob/master/muvs.py) is a better alternative of this function.
 
     Args:
         infix_code: Input infix code.
@@ -767,6 +456,318 @@ def infix2postfix(infix_code: str) -> str:
 
     optimized = optimize_akarin_expr(final_result + " RESULT@")
     return optimized
+
+func_call_pattern = re.compile(r"(\w+)\s*\(")
+clip_pattern = re.compile(r"(?:[a-zA-Z]|src\d+)$")
+func_info_pattern = re.compile(r"__internal_([a-zA-Z_]\w*)_([a-zA-Z_]\w+)$")
+func_pattern = re.compile(r"function\s+(\w+)")
+global_decl_pattern = re.compile(r"^<global((?:<[a-zA-Z_]\w*>)+)>$")
+function_def_pattern = re.compile(r"^\s*function\s+(\w+)\s*\(([^)]*)\)\s*\{")
+m_call_pattern = re.compile(r"^(\w+)\s*\(")
+m_str_pattern = re.compile(r"^str\(([^)]+)\)$")
+valid_str_pattern = re.compile(r"\b([a-zA-Z_]\w*)\b")
+number_pattern = re.compile(
+    r"^(0x[0-9A-Fa-f]+(\.[0-9A-Fa-f]+(p[+\-]?\d+)?)?|0[0-7]*|[+\-]?(\d+(\.\d+)?([eE][+\-]?\d+)?))$"
+)
+nth_pattern = re.compile(r"^nth_(\d+)$")
+m_line_pattern = re.compile(r"^([a-zA-Z_]\w*)\s*=\s*(.+)$")
+m_static_pattern = re.compile(r"^(\w+)\[(-?\d+),\s*(-?\d+)\](\:\w)?$")
+find_duplicate_functions_pattern = re.compile(r"\bfunction\s+(\w+)\s*\(.*?\)")
+drop_pattern = re.compile(r"drop(\d*)")
+sort_pattern = re.compile(r"sort(\d+)")
+global_match_pattern = re.compile(r"<([a-zA-Z_]\w*)>")
+assign_pattern = re.compile(r"(?<![<>!])=(?![=])")
+rel_pattern = re.compile(r"\w+\[(.*?)\]")
+func_sub_pattern = re.compile(r"\w+\([^)]*\)|\[[^\]]*\]")
+identifier_pattern = re.compile(r"\b([a-zA-Z_]\w*)\b(?!\s*\()")
+letter_pattern = re.compile(r"[a-zA-Z_]\w*")
+function_pattern = re.compile(
+    r"function\s+(\w+)\s*\(([^)]*)\)\s*\{([^{}]*(?:\{[^{}]*\}[^{}]*)*)\}"
+)
+build_in_func_patterns = [
+    re.compile(r)
+    for r in [rf"^{prefix}\d+$" for prefix in ["nth_", "sort", "dup", "drop", "swap"]]
+]
+
+
+class SyntaxError(Exception):
+    """Custom syntax error class with line information"""
+
+    def __init__(
+        self,
+        message: str,
+        line_num: Optional[int] = None,
+        function_name: Optional[str] = None,
+    ):
+        self.line_num = line_num
+        self.function_name = function_name
+        if function_name and line_num is not None:
+            super().__init__(
+                f"Line {line_num}: In function '{function_name}', {message}"
+            )
+        elif line_num is not None:
+            super().__init__(f"Line {line_num}: {message}")
+        else:
+            super().__init__(message)
+
+
+@lru_cache
+def is_clip(token: str) -> bool:
+    """
+    Determine whether token is a source clip.
+    (std.Expr: single letter; or akarin.Expr: srcN)
+    """
+    return bool(clip_pattern.fullmatch(token))
+
+
+@lru_cache
+def is_constant(token: str) -> bool:
+    """
+    Check if the token is a built-in constant.
+    """
+    constants_set = {
+        "N",
+        "X",
+        "current_x",
+        "Y",
+        "current_y",
+        "width",
+        "current_width",
+        "height",
+        "current_height",
+        "pi",
+    }
+    if token in constants_set:
+        return True
+    if is_clip(token):
+        return True
+    return False
+
+
+@lru_cache
+def strip_outer_parentheses(expr: str) -> str:
+    """
+    Remove outer parentheses if the entire expression is enclosed.
+    """
+    if not expr.startswith("(") or not expr.endswith(")"):
+        return expr
+    count = 0
+    for i, char in enumerate(expr):
+        if char == "(":
+            count += 1
+        elif char == ")":
+            count -= 1
+        if count == 0 and i < len(expr) - 1:
+            return expr
+    return expr[1:-1]
+
+
+@lru_cache
+def match_full_function_call(expr: str) -> Optional[tuple[str, str]]:
+    """
+    Try to match a complete function call with proper nesting.
+    Returns (func_name, args_str) if matched; otherwise returns None.
+    """
+    expr = expr.strip()
+    m = func_call_pattern.match(expr)
+    if not m:
+        return None
+    func_name = m.group(1)
+    start = m.end() - 1  # position of '('
+    depth = 0
+    for i in range(start, len(expr)):
+        if expr[i] == "(":
+            depth += 1
+        elif expr[i] == ")":
+            depth -= 1
+            if depth == 0:
+                if i == len(expr) - 1:
+                    args_str = expr[start + 1 : i]
+                    return func_name, args_str
+                else:
+                    return None
+    return None
+
+
+@lru_cache
+def extract_function_info(
+    internal_var: str, current_function: Optional[str] = None
+) -> tuple[Optional[str], Optional[str]]:
+    """
+    Given a renamed internal variable (e.g. __internal_funcname_varname),
+    extract the original function name and variable name.
+    """
+    if current_function is not None and internal_var.startswith(
+        f"__internal_{current_function}_"
+    ):
+        return current_function, internal_var[len(f"__internal_{current_function}_") :]
+    match = func_info_pattern.match(internal_var)
+    if match:
+        return match.group(1), match.group(2)
+    return None, None
+
+
+def find_duplicate_functions(code: str):
+    """
+    Check if any duplicate function is defined.
+    """
+    function_lines = {}
+    lines = code.split("\n")
+    for line_num, line in enumerate(lines, start=1):
+        match = find_duplicate_functions_pattern.search(line)
+        if match:
+            func_name = match.group(1)
+            if func_name in function_lines:
+                raise SyntaxError(
+                    f"Duplicated function '{func_name}' defined at lines {function_lines[func_name]} and {line_num}",
+                    line_num=line_num,
+                )
+            function_lines[func_name] = line_num
+
+
+def compute_stack_effect(
+    postfix_expr: str, line_num: Optional[int] = None, func_name: Optional[str] = None
+) -> int:
+    """
+    Compute the net stack effect of a postfix expression.
+    """
+    tokens = postfix_expr.split()
+    op_arity = {
+        "+": 2,
+        "-": 2,
+        "*": 2,
+        "/": 2,
+        "%": 2,
+        "pow": 2,
+        "and": 2,
+        "or": 2,
+        "=": 2,
+        "<": 2,
+        ">": 2,
+        "<=": 2,
+        ">=": 2,
+        "bitand": 2,
+        "bitor": 2,
+        "bitxor": 2,
+        "min": 2,
+        "max": 2,
+        "clamp": 3,
+        "?": 3,
+        "not": 1,
+        "sin": 1,
+        "cos": 1,
+        "round": 1,
+        "floor": 1,
+        "abs": 1,
+        "sqrt": 1,
+        "trunc": 1,
+        "bitnot": 1,
+    }
+
+    stack: list[int] = []
+    for i, token in enumerate(tokens):
+        if token.endswith("!"):
+            if not stack:
+                raise SyntaxError("Stack underflow in assignment", line_num, func_name)
+            stack.pop()
+            continue
+        elif token.endswith("[]"):  # dynamic access operator
+            if len(stack) < 2:
+                raise SyntaxError(
+                    f"Stack underflow for operator {token} at token index {i}",
+                    line_num,
+                    func_name,
+                )
+            stack.pop()
+            stack.pop()
+            stack.append(1)
+            continue
+
+        # dropN operator (default is drop1)
+        m_drop = drop_pattern.fullmatch(token)
+        if m_drop:
+            n_str = m_drop.group(1)
+            n = int(n_str) if n_str != "" else 1
+            if len(stack) < n:
+                raise SyntaxError(
+                    f"Stack underflow for operator {token}", line_num, func_name
+                )
+            for _ in range(n):
+                stack.pop()
+            continue
+
+        # sortN operator: reorder top N items without changing the stack count.
+        m_sort = sort_pattern.fullmatch(token)
+        if m_sort:
+            n = int(m_sort.group(1))
+            if len(stack) < n:
+                raise SyntaxError(
+                    f"Stack underflow for operator {token}", line_num, func_name
+                )
+            # Sorting reorders items but does not change the stack count.
+            continue
+
+        if token in op_arity:
+            arity = op_arity[token]
+            if len(stack) < arity:
+                raise SyntaxError(
+                    f"Stack underflow for operator {token} at token index {i}",
+                    line_num,
+                    func_name,
+                )
+            for _ in range(arity):
+                stack.pop()
+            stack.append(1)
+        else:
+            stack.append(1)
+    return len(stack)
+
+
+def parse_ternary(
+    expr: str, line_num: Optional[int] = None, func_name: Optional[str] = None
+) -> Optional[tuple[str, str, str]]:
+    """
+    For a given expression string without delimiters, detects the presence of a ternary operator in the outer layer.
+    If present, returns a triple (condition, true_expr, false_expr); otherwise returns None.
+    """
+    expr = expr.strip()
+    n = len(expr)
+    depth = 0
+    q_index = -1
+    for i, c in enumerate(expr):
+        if c == "(":
+            depth += 1
+        elif c == ")":
+            depth -= 1
+        elif c == "?" and depth == 0:
+            q_index = i
+            break
+    if q_index == -1:
+        return None
+
+    condition = expr[:q_index].strip()
+
+    ternary_level = 1
+    depth = 0
+    colon_index = -1
+    for i in range(q_index + 1, n):
+        c = expr[i]
+        if c == "(":
+            depth += 1
+        elif c == ")":
+            depth -= 1
+        elif c == "?" and depth == 0:
+            ternary_level += 1
+        elif c == ":" and depth == 0:
+            ternary_level -= 1
+            if ternary_level == 0:
+                colon_index = i
+                break
+    if colon_index == -1:
+        raise SyntaxError("Ternary operator missing ':'", line_num, func_name)
+    true_expr = expr[q_index + 1 : colon_index].strip()
+    false_expr = expr[colon_index + 1 :].strip()
+    return (condition, true_expr, false_expr)
 
 
 def validate_static_relative_pixel_indices(
