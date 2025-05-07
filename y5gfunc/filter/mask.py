@@ -233,8 +233,8 @@ def comb_mask(
         mthresh: Motion adaptive threshold.
         expand: Assume left and right pixels of combed pixel as combed too.
         metric: Sets which spatial combing metric is used to detect combed pixels.
-                - Metric 0 is what TFM used previous to v0.9.12.0.
-                - Metric 1 is from Donald Graft's decomb.dll.
+            - Metric 0 is what TFM used previous to v0.9.12.0.
+            - Metric 1 is from Donald Graft's decomb.dll.
         planes: Planes to process.
     """
 

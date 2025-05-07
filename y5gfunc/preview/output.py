@@ -23,7 +23,8 @@ def _add_text(clip: vs.VideoNode, text: str, debug: bool) -> vs.VideoNode:
 
 
 def reset_output_index(index: int = 0) -> None:
-    """Resets the global output index counter and the set of used indices.
+    """
+    Resets the global output index counter and the set of used indices.
 
     Args:
         index: The value to reset the automatic index counter to.

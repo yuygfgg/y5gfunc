@@ -6,10 +6,11 @@ import sys
 
 sys.setrecursionlimit(5000)
 
+
 def infix2postfix(infix_code: str) -> str:
     R"""
     Convert infix expressions to postfix expressions.
-    
+
     [muvs](https://github.com/WolframRhodium/muvsfunc/blob/master/muvs.py) is a better alternative of this function.
 
     Args:
@@ -250,6 +251,11 @@ def infix2postfix(infix_code: str) -> str:
             "User input code cannot contain semicolons. Use newlines instead."
         )
 
+    # Remove comments
+    infix_code = "\n".join(
+        line.split("#", 1)[0].rstrip() for line in infix_code.split("\n")
+    )
+
     # Check for duplicate function definitions.
     find_duplicate_functions(infix_code)
 
@@ -312,9 +318,9 @@ def infix2postfix(infix_code: str) -> str:
                     "Global declaration must not be at the last line of code.",
                     j,
                 )
-            # Comment out the global declaration lines.
+            # Replace the global declaration lines with empty line.
             for k in range(i, j):
-                modified_lines.append("# " + lines[k])
+                modified_lines.append("\n")
             i = j
         else:
             modified_lines.append(lines[i])
@@ -384,9 +390,6 @@ def infix2postfix(infix_code: str) -> str:
 
     # Process global statements in order and check function call global dependencies.
     for stmt, line_num in global_statements:
-        # Skip comment lines.
-        if stmt.startswith("#"):
-            continue
         # Process assignment statements.
         if assign_pattern.search(stmt):
             var_name, expr = stmt.split("=", 1)
@@ -456,6 +459,7 @@ def infix2postfix(infix_code: str) -> str:
 
     optimized = optimize_akarin_expr(final_result + " RESULT@")
     return optimized
+
 
 func_call_pattern = re.compile(r"(\w+)\s*\(")
 clip_pattern = re.compile(r"(?:[a-zA-Z]|src\d+)$")
@@ -1016,7 +1020,7 @@ def convert_expr(
             body_lines_strip = [
                 line.strip()
                 for line in body.split("\n")
-                if line.strip() and not line.lstrip().startswith("#")
+                if line.strip()
             ]
             return_indices = [
                 i
@@ -1032,8 +1036,6 @@ def convert_expr(
 
             local_map: dict[str, str] = {}
             for offset, body_line in enumerate(body_lines):
-                if body_line.lstrip().startswith("#"):
-                    continue
                 if body_line.startswith("return"):
                     continue
                 m_line = m_line_pattern.match(body_line)
@@ -1075,8 +1077,6 @@ def convert_expr(
                         param_assignments.append(f"{args_postfix[i]} {rename_map[p]}!")
             new_lines: list[str] = []
             for line_text in body_lines:
-                if line_text.lstrip().startswith("#"):
-                    continue
                 new_line = line_text
                 for old, new in rename_map.items():
                     if old not in global_vars:
@@ -1088,8 +1088,6 @@ def convert_expr(
             return_count = 0
             for offset, body_line in enumerate(new_lines):
                 effective_line_num = func_line_num + offset
-                if body_line.lstrip().startswith("#"):
-                    continue
                 if body_line.startswith(
                     "return"
                 ):  # Return does nothing, but it looks better to have one.
