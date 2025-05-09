@@ -1,4 +1,5 @@
 import functools
+from varname.core import argname
 from vsdenoise.prefilters import PrefilterPartial
 from vstools import vs
 from vstools import core
@@ -183,19 +184,43 @@ def Fast_BM3DWrapper(
         ]:
             raise ValueError(f"Fast_BM3DWrapper: Unknown preset {preset}.")
 
-    params = {
-        "y_basic": bm3d_presets["vbasic" if radius_Y > 0 else "basic"][preset_Y_basic],
-        "y_final": bm3d_presets["vfinal" if radius_Y > 0 else "final"][preset_Y_final],
-        "chroma_basic": bm3d_presets["vbasic" if radius_chroma > 0 else "basic"][
-            preset_chroma_basic
-        ],
-        "chroma_final": bm3d_presets["vfinal" if radius_chroma > 0 else "final"][
-            preset_chroma_final
-        ],
-    }
+    if "cpu" in argname("bm3d"):
+        params = {
+            "y_basic": bm3d_presets["vbasic" if radius_Y > 0 else "basic"][
+                preset_Y_basic
+            ],
+            "y_final": bm3d_presets["vfinal" if radius_Y > 0 else "final"][
+                preset_Y_final
+            ],
+            "chroma_basic": bm3d_presets["vbasic" if radius_chroma > 0 else "basic"][
+                preset_chroma_basic
+            ],
+            "chroma_final": bm3d_presets["vfinal" if radius_chroma > 0 else "final"][
+                preset_chroma_final
+            ],
+        }
+    else:
+        params = {
+            "y_basic": bm3d_presets["vbasic" if radius_Y > 0 else "basic"][
+                preset_Y_basic
+            ]
+            | {"fast": True},
+            "y_final": bm3d_presets["vfinal" if radius_Y > 0 else "final"][
+                preset_Y_final
+            ]
+            | {"fast": True},
+            "chroma_basic": bm3d_presets["vbasic" if radius_chroma > 0 else "basic"][
+                preset_chroma_basic
+            ]
+            | {"fast": True},
+            "chroma_final": bm3d_presets["vfinal" if radius_chroma > 0 else "final"][
+                preset_chroma_final
+            ]
+            | {"fast": True},
+        }
 
-    half_width = clip.width // 2  # half width
-    half_height = clip.height // 2  # half height
+    half_width = clip.width // 2
+    half_height = clip.height // 2
     srcY_float, srcU_float, srcV_float = vstools.split(vstools.depth(clip, 32))
 
     if ref is None:
