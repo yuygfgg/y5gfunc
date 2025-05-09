@@ -16,6 +16,7 @@ LOSSLESS_CODEC_NAMES = {
     "pcm_alaw",
     "pcm_mulaw",
     "pcm_u8",
+    "pcm_bluray"
 }
 
 
