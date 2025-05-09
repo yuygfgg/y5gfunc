@@ -3,3 +3,4 @@ regex>=2024.11.6
 sympy>=1.13.1
 trimesh>=4.6.6
 vsjetpack>=0.4.0
+varname>=0.14.0
