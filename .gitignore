@@ -7,3 +7,4 @@ doc/*
 !doc/make.bat
 !doc/Makefile
 !doc/_templates/
+y5gfunc.egg-info/*
