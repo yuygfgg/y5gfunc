@@ -18,7 +18,7 @@
       
       
       <link rel="icon" href="../../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.12">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.14">
     
     
       
@@ -26,7 +26,7 @@
       
     
     
-      <link rel="stylesheet" href="../../../assets/stylesheets/main.2afb09e1.min.css">
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.342714a4.min.css">
       
         
         <link rel="stylesheet" href="../../../assets/stylesheets/palette.06af60db.min.css">
@@ -3108,8 +3108,7 @@
 <span class="normal"><a href="#__codelineno-0-427">427</a></span>
 <span class="normal"><a href="#__codelineno-0-428">428</a></span>
 <span class="normal"><a href="#__codelineno-0-429">429</a></span>
-<span class="normal"><a href="#__codelineno-0-430">430</a></span>
-<span class="normal"><a href="#__codelineno-0-431">431</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-124" name="__codelineno-0-124"></a><span class="k">def</span><span class="w"> </span><span class="nf">render_triangle_scene</span><span class="p">(</span>
+<span class="normal"><a href="#__codelineno-0-430">430</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-124" name="__codelineno-0-124"></a><span class="k">def</span><span class="w"> </span><span class="nf">render_triangle_scene</span><span class="p">(</span>
 <a id="__codelineno-0-125" name="__codelineno-0-125"></a>    <span class="n">clip</span><span class="p">:</span> <span class="n">vs</span><span class="o">.</span><span class="n">VideoNode</span><span class="p">,</span>
 <a id="__codelineno-0-126" name="__codelineno-0-126"></a>    <span class="n">points</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span>
 <a id="__codelineno-0-127" name="__codelineno-0-127"></a>    <span class="n">faces</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span>
@@ -3399,7 +3398,7 @@
 <a id="__codelineno-0-411" name="__codelineno-0-411"></a>
 <a id="__codelineno-0-412" name="__codelineno-0-412"></a>    <span class="k">if</span> <span class="n">face_t_names</span><span class="p">:</span>
 <a id="__codelineno-0-413" name="__codelineno-0-413"></a>        <span class="n">face_t_args</span> <span class="o">=</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">face_t_names</span><span class="p">)</span>
-<a id="__codelineno-0-414" name="__codelineno-0-414"></a>        <span class="n">expr_lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;final_t = nth_1 (</span><span class="si">{</span><span class="n">face_t_args</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-414" name="__codelineno-0-414"></a>        <span class="n">expr_lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;final_t = nth_1(</span><span class="si">{</span><span class="n">face_t_args</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
 <a id="__codelineno-0-415" name="__codelineno-0-415"></a>    <span class="k">else</span><span class="p">:</span>
 <a id="__codelineno-0-416" name="__codelineno-0-416"></a>        <span class="n">expr_lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;final_t = huge&quot;</span><span class="p">)</span>
 <a id="__codelineno-0-417" name="__codelineno-0-417"></a>
@@ -3410,13 +3409,12 @@
 <a id="__codelineno-0-422" name="__codelineno-0-422"></a>        <span class="p">)</span>
 <a id="__codelineno-0-423" name="__codelineno-0-423"></a>        <span class="n">select_terms</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;select_</span><span class="si">{</span><span class="n">f_idx</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 <a id="__codelineno-0-424" name="__codelineno-0-424"></a>    <span class="n">selects_sum</span> <span class="o">=</span> <span class="s2">&quot; + &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">select_terms</span><span class="p">)</span>
-<a id="__codelineno-0-425" name="__codelineno-0-425"></a>    <span class="n">expr_lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;final_shading = final_t &lt; huge ? (</span><span class="si">{</span><span class="n">selects_sum</span><span class="si">}</span><span class="s2">) : background&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-426" name="__codelineno-0-426"></a>    <span class="n">expr_lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;RESULT = final_shading&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-427" name="__codelineno-0-427"></a>
-<a id="__codelineno-0-428" name="__codelineno-0-428"></a>    <span class="n">full_expr</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">expr_lines</span><span class="p">)</span>
-<a id="__codelineno-0-429" name="__codelineno-0-429"></a>    <span class="n">converted_expr</span> <span class="o">=</span> <span class="n">infix2postfix</span><span class="p">(</span><span class="n">full_expr</span><span class="p">)</span>
-<a id="__codelineno-0-430" name="__codelineno-0-430"></a>
-<a id="__codelineno-0-431" name="__codelineno-0-431"></a>    <span class="k">return</span> <span class="n">clip</span><span class="o">.</span><span class="n">akarin</span><span class="o">.</span><span class="n">Expr</span><span class="p">(</span><span class="n">converted_expr</span><span class="p">)</span>
+<a id="__codelineno-0-425" name="__codelineno-0-425"></a>    <span class="n">expr_lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;RESULT = final_t &lt; huge ? (</span><span class="si">{</span><span class="n">selects_sum</span><span class="si">}</span><span class="s2">) : background&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-426" name="__codelineno-0-426"></a>
+<a id="__codelineno-0-427" name="__codelineno-0-427"></a>    <span class="n">full_expr</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">expr_lines</span><span class="p">)</span>
+<a id="__codelineno-0-428" name="__codelineno-0-428"></a>    <span class="n">converted_expr</span> <span class="o">=</span> <span class="n">infix2postfix</span><span class="p">(</span><span class="n">full_expr</span><span class="p">)</span>
+<a id="__codelineno-0-429" name="__codelineno-0-429"></a>
+<a id="__codelineno-0-430" name="__codelineno-0-430"></a>    <span class="k">return</span> <span class="n">clip</span><span class="o">.</span><span class="n">akarin</span><span class="o">.</span><span class="n">Expr</span><span class="p">(</span><span class="n">converted_expr</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -3439,7 +3437,8 @@
 
             <details class="quote">
               <summary>Source code in <code>y5gfunc/vfx/draw_3d.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-434">434</a></span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-433">433</a></span>
+<span class="normal"><a href="#__codelineno-0-434">434</a></span>
 <span class="normal"><a href="#__codelineno-0-435">435</a></span>
 <span class="normal"><a href="#__codelineno-0-436">436</a></span>
 <span class="normal"><a href="#__codelineno-0-437">437</a></span>
@@ -3476,46 +3475,45 @@
 <span class="normal"><a href="#__codelineno-0-468">468</a></span>
 <span class="normal"><a href="#__codelineno-0-469">469</a></span>
 <span class="normal"><a href="#__codelineno-0-470">470</a></span>
-<span class="normal"><a href="#__codelineno-0-471">471</a></span>
-<span class="normal"><a href="#__codelineno-0-472">472</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-434" name="__codelineno-0-434"></a><span class="k">def</span><span class="w"> </span><span class="nf">load_mesh</span><span class="p">(</span>
-<a id="__codelineno-0-435" name="__codelineno-0-435"></a>    <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-<a id="__codelineno-0-436" name="__codelineno-0-436"></a>    <span class="n">default_color</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;1&quot;</span><span class="p">,</span>
-<a id="__codelineno-0-437" name="__codelineno-0-437"></a>    <span class="n">axis_transform</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;+xz-y&quot;</span><span class="p">,</span>
-<a id="__codelineno-0-438" name="__codelineno-0-438"></a>    <span class="n">rotation</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">),</span>
-<a id="__codelineno-0-439" name="__codelineno-0-439"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">],</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">]]:</span>
-<a id="__codelineno-0-440" name="__codelineno-0-440"></a>    <span class="n">mesh</span> <span class="o">=</span> <span class="n">trimesh</span><span class="o">.</span><span class="n">load_mesh</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="n">force</span><span class="o">=</span><span class="s2">&quot;mesh&quot;</span><span class="p">,</span> <span class="n">process</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<a id="__codelineno-0-441" name="__codelineno-0-441"></a>
-<a id="__codelineno-0-442" name="__codelineno-0-442"></a>    <span class="k">if</span> <span class="n">axis_transform</span> <span class="o">==</span> <span class="s2">&quot;+xz-y&quot;</span><span class="p">:</span>
-<a id="__codelineno-0-443" name="__codelineno-0-443"></a>        <span class="n">mesh</span><span class="o">.</span><span class="n">vertices</span><span class="p">[:,</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]]</span> <span class="o">=</span> <span class="n">mesh</span><span class="o">.</span><span class="n">vertices</span><span class="p">[:,</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">]]</span>
-<a id="__codelineno-0-444" name="__codelineno-0-444"></a>        <span class="n">mesh</span><span class="o">.</span><span class="n">vertices</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">*=</span> <span class="o">-</span><span class="mi">1</span>
-<a id="__codelineno-0-445" name="__codelineno-0-445"></a>    <span class="k">elif</span> <span class="n">axis_transform</span> <span class="o">==</span> <span class="s2">&quot;xyz&quot;</span><span class="p">:</span>
-<a id="__codelineno-0-446" name="__codelineno-0-446"></a>        <span class="k">pass</span>
-<a id="__codelineno-0-447" name="__codelineno-0-447"></a>
-<a id="__codelineno-0-448" name="__codelineno-0-448"></a>    <span class="k">if</span> <span class="n">rotation</span> <span class="o">!=</span> <span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">):</span>
-<a id="__codelineno-0-449" name="__codelineno-0-449"></a>        <span class="n">rx</span><span class="p">,</span> <span class="n">ry</span><span class="p">,</span> <span class="n">rz</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">deg2rad</span><span class="p">(</span><span class="n">angle</span><span class="p">)</span> <span class="k">for</span> <span class="n">angle</span> <span class="ow">in</span> <span class="n">rotation</span><span class="p">]</span>
-<a id="__codelineno-0-450" name="__codelineno-0-450"></a>        <span class="n">R_x</span> <span class="o">=</span> <span class="n">trimesh</span><span class="o">.</span><span class="n">transformations</span><span class="o">.</span><span class="n">rotation_matrix</span><span class="p">(</span><span class="n">rx</span><span class="p">,</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
-<a id="__codelineno-0-451" name="__codelineno-0-451"></a>        <span class="n">R_y</span> <span class="o">=</span> <span class="n">trimesh</span><span class="o">.</span><span class="n">transformations</span><span class="o">.</span><span class="n">rotation_matrix</span><span class="p">(</span><span class="n">ry</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
-<a id="__codelineno-0-452" name="__codelineno-0-452"></a>        <span class="n">R_z</span> <span class="o">=</span> <span class="n">trimesh</span><span class="o">.</span><span class="n">transformations</span><span class="o">.</span><span class="n">rotation_matrix</span><span class="p">(</span><span class="n">rz</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
-<a id="__codelineno-0-453" name="__codelineno-0-453"></a>        <span class="n">R</span> <span class="o">=</span> <span class="n">trimesh</span><span class="o">.</span><span class="n">transformations</span><span class="o">.</span><span class="n">concatenate_matrices</span><span class="p">(</span><span class="n">R_z</span><span class="p">,</span> <span class="n">R_y</span><span class="p">,</span> <span class="n">R_x</span><span class="p">)</span>
-<a id="__codelineno-0-454" name="__codelineno-0-454"></a>        <span class="n">mesh</span><span class="o">.</span><span class="n">apply_transform</span><span class="p">(</span><span class="n">R</span><span class="p">)</span>
-<a id="__codelineno-0-455" name="__codelineno-0-455"></a>
-<a id="__codelineno-0-456" name="__codelineno-0-456"></a>    <span class="n">points</span> <span class="o">=</span> <span class="p">[</span>
-<a id="__codelineno-0-457" name="__codelineno-0-457"></a>        <span class="p">{</span><span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">v</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;y&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">v</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;z&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">v</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">}</span>
-<a id="__codelineno-0-458" name="__codelineno-0-458"></a>        <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">mesh</span><span class="o">.</span><span class="n">vertices</span>
-<a id="__codelineno-0-459" name="__codelineno-0-459"></a>    <span class="p">]</span>
-<a id="__codelineno-0-460" name="__codelineno-0-460"></a>
-<a id="__codelineno-0-461" name="__codelineno-0-461"></a>    <span class="n">faces</span> <span class="o">=</span> <span class="p">[]</span>
-<a id="__codelineno-0-462" name="__codelineno-0-462"></a>    <span class="k">for</span> <span class="n">face</span> <span class="ow">in</span> <span class="n">mesh</span><span class="o">.</span><span class="n">faces</span><span class="p">:</span>
-<a id="__codelineno-0-463" name="__codelineno-0-463"></a>        <span class="n">faces</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-<a id="__codelineno-0-464" name="__codelineno-0-464"></a>            <span class="p">{</span>
-<a id="__codelineno-0-465" name="__codelineno-0-465"></a>                <span class="s2">&quot;a&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">face</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span>
-<a id="__codelineno-0-466" name="__codelineno-0-466"></a>                <span class="s2">&quot;b&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">face</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span>
-<a id="__codelineno-0-467" name="__codelineno-0-467"></a>                <span class="s2">&quot;c&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">face</span><span class="p">[</span><span class="mi">2</span><span class="p">]),</span>
-<a id="__codelineno-0-468" name="__codelineno-0-468"></a>                <span class="s2">&quot;color&quot;</span><span class="p">:</span> <span class="n">default_color</span><span class="p">,</span>
-<a id="__codelineno-0-469" name="__codelineno-0-469"></a>            <span class="p">}</span>
-<a id="__codelineno-0-470" name="__codelineno-0-470"></a>        <span class="p">)</span>
-<a id="__codelineno-0-471" name="__codelineno-0-471"></a>
-<a id="__codelineno-0-472" name="__codelineno-0-472"></a>    <span class="k">return</span> <span class="n">points</span><span class="p">,</span> <span class="n">faces</span>
+<span class="normal"><a href="#__codelineno-0-471">471</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-433" name="__codelineno-0-433"></a><span class="k">def</span><span class="w"> </span><span class="nf">load_mesh</span><span class="p">(</span>
+<a id="__codelineno-0-434" name="__codelineno-0-434"></a>    <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+<a id="__codelineno-0-435" name="__codelineno-0-435"></a>    <span class="n">default_color</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;1&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-436" name="__codelineno-0-436"></a>    <span class="n">axis_transform</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;+xz-y&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-437" name="__codelineno-0-437"></a>    <span class="n">rotation</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">),</span>
+<a id="__codelineno-0-438" name="__codelineno-0-438"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">],</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">]]:</span>
+<a id="__codelineno-0-439" name="__codelineno-0-439"></a>    <span class="n">mesh</span> <span class="o">=</span> <span class="n">trimesh</span><span class="o">.</span><span class="n">load_mesh</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="n">force</span><span class="o">=</span><span class="s2">&quot;mesh&quot;</span><span class="p">,</span> <span class="n">process</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<a id="__codelineno-0-440" name="__codelineno-0-440"></a>
+<a id="__codelineno-0-441" name="__codelineno-0-441"></a>    <span class="k">if</span> <span class="n">axis_transform</span> <span class="o">==</span> <span class="s2">&quot;+xz-y&quot;</span><span class="p">:</span>
+<a id="__codelineno-0-442" name="__codelineno-0-442"></a>        <span class="n">mesh</span><span class="o">.</span><span class="n">vertices</span><span class="p">[:,</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]]</span> <span class="o">=</span> <span class="n">mesh</span><span class="o">.</span><span class="n">vertices</span><span class="p">[:,</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">]]</span>
+<a id="__codelineno-0-443" name="__codelineno-0-443"></a>        <span class="n">mesh</span><span class="o">.</span><span class="n">vertices</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">*=</span> <span class="o">-</span><span class="mi">1</span>
+<a id="__codelineno-0-444" name="__codelineno-0-444"></a>    <span class="k">elif</span> <span class="n">axis_transform</span> <span class="o">==</span> <span class="s2">&quot;xyz&quot;</span><span class="p">:</span>
+<a id="__codelineno-0-445" name="__codelineno-0-445"></a>        <span class="k">pass</span>
+<a id="__codelineno-0-446" name="__codelineno-0-446"></a>
+<a id="__codelineno-0-447" name="__codelineno-0-447"></a>    <span class="k">if</span> <span class="n">rotation</span> <span class="o">!=</span> <span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">):</span>
+<a id="__codelineno-0-448" name="__codelineno-0-448"></a>        <span class="n">rx</span><span class="p">,</span> <span class="n">ry</span><span class="p">,</span> <span class="n">rz</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">deg2rad</span><span class="p">(</span><span class="n">angle</span><span class="p">)</span> <span class="k">for</span> <span class="n">angle</span> <span class="ow">in</span> <span class="n">rotation</span><span class="p">]</span>
+<a id="__codelineno-0-449" name="__codelineno-0-449"></a>        <span class="n">R_x</span> <span class="o">=</span> <span class="n">trimesh</span><span class="o">.</span><span class="n">transformations</span><span class="o">.</span><span class="n">rotation_matrix</span><span class="p">(</span><span class="n">rx</span><span class="p">,</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+<a id="__codelineno-0-450" name="__codelineno-0-450"></a>        <span class="n">R_y</span> <span class="o">=</span> <span class="n">trimesh</span><span class="o">.</span><span class="n">transformations</span><span class="o">.</span><span class="n">rotation_matrix</span><span class="p">(</span><span class="n">ry</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+<a id="__codelineno-0-451" name="__codelineno-0-451"></a>        <span class="n">R_z</span> <span class="o">=</span> <span class="n">trimesh</span><span class="o">.</span><span class="n">transformations</span><span class="o">.</span><span class="n">rotation_matrix</span><span class="p">(</span><span class="n">rz</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
+<a id="__codelineno-0-452" name="__codelineno-0-452"></a>        <span class="n">R</span> <span class="o">=</span> <span class="n">trimesh</span><span class="o">.</span><span class="n">transformations</span><span class="o">.</span><span class="n">concatenate_matrices</span><span class="p">(</span><span class="n">R_z</span><span class="p">,</span> <span class="n">R_y</span><span class="p">,</span> <span class="n">R_x</span><span class="p">)</span>
+<a id="__codelineno-0-453" name="__codelineno-0-453"></a>        <span class="n">mesh</span><span class="o">.</span><span class="n">apply_transform</span><span class="p">(</span><span class="n">R</span><span class="p">)</span>
+<a id="__codelineno-0-454" name="__codelineno-0-454"></a>
+<a id="__codelineno-0-455" name="__codelineno-0-455"></a>    <span class="n">points</span> <span class="o">=</span> <span class="p">[</span>
+<a id="__codelineno-0-456" name="__codelineno-0-456"></a>        <span class="p">{</span><span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">v</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;y&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">v</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;z&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">v</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">}</span>
+<a id="__codelineno-0-457" name="__codelineno-0-457"></a>        <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">mesh</span><span class="o">.</span><span class="n">vertices</span>
+<a id="__codelineno-0-458" name="__codelineno-0-458"></a>    <span class="p">]</span>
+<a id="__codelineno-0-459" name="__codelineno-0-459"></a>
+<a id="__codelineno-0-460" name="__codelineno-0-460"></a>    <span class="n">faces</span> <span class="o">=</span> <span class="p">[]</span>
+<a id="__codelineno-0-461" name="__codelineno-0-461"></a>    <span class="k">for</span> <span class="n">face</span> <span class="ow">in</span> <span class="n">mesh</span><span class="o">.</span><span class="n">faces</span><span class="p">:</span>
+<a id="__codelineno-0-462" name="__codelineno-0-462"></a>        <span class="n">faces</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+<a id="__codelineno-0-463" name="__codelineno-0-463"></a>            <span class="p">{</span>
+<a id="__codelineno-0-464" name="__codelineno-0-464"></a>                <span class="s2">&quot;a&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">face</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span>
+<a id="__codelineno-0-465" name="__codelineno-0-465"></a>                <span class="s2">&quot;b&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">face</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span>
+<a id="__codelineno-0-466" name="__codelineno-0-466"></a>                <span class="s2">&quot;c&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">face</span><span class="p">[</span><span class="mi">2</span><span class="p">]),</span>
+<a id="__codelineno-0-467" name="__codelineno-0-467"></a>                <span class="s2">&quot;color&quot;</span><span class="p">:</span> <span class="n">default_color</span><span class="p">,</span>
+<a id="__codelineno-0-468" name="__codelineno-0-468"></a>            <span class="p">}</span>
+<a id="__codelineno-0-469" name="__codelineno-0-469"></a>        <span class="p">)</span>
+<a id="__codelineno-0-470" name="__codelineno-0-470"></a>
+<a id="__codelineno-0-471" name="__codelineno-0-471"></a>    <span class="k">return</span> <span class="n">points</span><span class="p">,</span> <span class="n">faces</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -3538,7 +3536,8 @@
 
             <details class="quote">
               <summary>Source code in <code>y5gfunc/vfx/draw_3d.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-475">475</a></span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-474">474</a></span>
+<span class="normal"><a href="#__codelineno-0-475">475</a></span>
 <span class="normal"><a href="#__codelineno-0-476">476</a></span>
 <span class="normal"><a href="#__codelineno-0-477">477</a></span>
 <span class="normal"><a href="#__codelineno-0-478">478</a></span>
@@ -3564,35 +3563,34 @@
 <span class="normal"><a href="#__codelineno-0-498">498</a></span>
 <span class="normal"><a href="#__codelineno-0-499">499</a></span>
 <span class="normal"><a href="#__codelineno-0-500">500</a></span>
-<span class="normal"><a href="#__codelineno-0-501">501</a></span>
-<span class="normal"><a href="#__codelineno-0-502">502</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-475" name="__codelineno-0-475"></a><span class="k">def</span><span class="w"> </span><span class="nf">render_model_scene</span><span class="p">(</span>
-<a id="__codelineno-0-476" name="__codelineno-0-476"></a>    <span class="n">clip</span><span class="p">:</span> <span class="n">vs</span><span class="o">.</span><span class="n">VideoNode</span><span class="p">,</span>
-<a id="__codelineno-0-477" name="__codelineno-0-477"></a>    <span class="n">model_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-<a id="__codelineno-0-478" name="__codelineno-0-478"></a>    <span class="n">lights</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span>
-<a id="__codelineno-0-479" name="__codelineno-0-479"></a>    <span class="n">camX</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-<a id="__codelineno-0-480" name="__codelineno-0-480"></a>    <span class="n">camY</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-<a id="__codelineno-0-481" name="__codelineno-0-481"></a>    <span class="n">camZ</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-<a id="__codelineno-0-482" name="__codelineno-0-482"></a>    <span class="n">rotationX</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-<a id="__codelineno-0-483" name="__codelineno-0-483"></a>    <span class="n">rotationY</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-<a id="__codelineno-0-484" name="__codelineno-0-484"></a>    <span class="n">focal</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-<a id="__codelineno-0-485" name="__codelineno-0-485"></a>    <span class="n">background</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;0&quot;</span><span class="p">,</span>
-<a id="__codelineno-0-486" name="__codelineno-0-486"></a>    <span class="o">**</span><span class="n">mesh_kwargs</span><span class="p">,</span>
-<a id="__codelineno-0-487" name="__codelineno-0-487"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">vs</span><span class="o">.</span><span class="n">VideoNode</span><span class="p">:</span>
-<a id="__codelineno-0-488" name="__codelineno-0-488"></a>    <span class="n">points</span><span class="p">,</span> <span class="n">faces</span> <span class="o">=</span> <span class="n">load_mesh</span><span class="p">(</span><span class="n">model_path</span><span class="p">,</span> <span class="o">**</span><span class="n">mesh_kwargs</span><span class="p">)</span>
-<a id="__codelineno-0-489" name="__codelineno-0-489"></a>
-<a id="__codelineno-0-490" name="__codelineno-0-490"></a>    <span class="k">return</span> <span class="n">render_triangle_scene</span><span class="p">(</span>
-<a id="__codelineno-0-491" name="__codelineno-0-491"></a>        <span class="n">clip</span><span class="o">=</span><span class="n">clip</span><span class="p">,</span>
-<a id="__codelineno-0-492" name="__codelineno-0-492"></a>        <span class="n">points</span><span class="o">=</span><span class="n">points</span><span class="p">,</span>
-<a id="__codelineno-0-493" name="__codelineno-0-493"></a>        <span class="n">faces</span><span class="o">=</span><span class="n">faces</span><span class="p">,</span>
-<a id="__codelineno-0-494" name="__codelineno-0-494"></a>        <span class="n">lights</span><span class="o">=</span><span class="n">lights</span><span class="p">,</span>
-<a id="__codelineno-0-495" name="__codelineno-0-495"></a>        <span class="n">camX</span><span class="o">=</span><span class="n">camX</span><span class="p">,</span>
-<a id="__codelineno-0-496" name="__codelineno-0-496"></a>        <span class="n">camY</span><span class="o">=</span><span class="n">camY</span><span class="p">,</span>
-<a id="__codelineno-0-497" name="__codelineno-0-497"></a>        <span class="n">camZ</span><span class="o">=</span><span class="n">camZ</span><span class="p">,</span>
-<a id="__codelineno-0-498" name="__codelineno-0-498"></a>        <span class="n">rotationX</span><span class="o">=</span><span class="n">rotationX</span><span class="p">,</span>
-<a id="__codelineno-0-499" name="__codelineno-0-499"></a>        <span class="n">rotationY</span><span class="o">=</span><span class="n">rotationY</span><span class="p">,</span>
-<a id="__codelineno-0-500" name="__codelineno-0-500"></a>        <span class="n">focal</span><span class="o">=</span><span class="n">focal</span><span class="p">,</span>
-<a id="__codelineno-0-501" name="__codelineno-0-501"></a>        <span class="n">background</span><span class="o">=</span><span class="n">background</span><span class="p">,</span>
-<a id="__codelineno-0-502" name="__codelineno-0-502"></a>    <span class="p">)</span>
+<span class="normal"><a href="#__codelineno-0-501">501</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-474" name="__codelineno-0-474"></a><span class="k">def</span><span class="w"> </span><span class="nf">render_model_scene</span><span class="p">(</span>
+<a id="__codelineno-0-475" name="__codelineno-0-475"></a>    <span class="n">clip</span><span class="p">:</span> <span class="n">vs</span><span class="o">.</span><span class="n">VideoNode</span><span class="p">,</span>
+<a id="__codelineno-0-476" name="__codelineno-0-476"></a>    <span class="n">model_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+<a id="__codelineno-0-477" name="__codelineno-0-477"></a>    <span class="n">lights</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span>
+<a id="__codelineno-0-478" name="__codelineno-0-478"></a>    <span class="n">camX</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+<a id="__codelineno-0-479" name="__codelineno-0-479"></a>    <span class="n">camY</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+<a id="__codelineno-0-480" name="__codelineno-0-480"></a>    <span class="n">camZ</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+<a id="__codelineno-0-481" name="__codelineno-0-481"></a>    <span class="n">rotationX</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+<a id="__codelineno-0-482" name="__codelineno-0-482"></a>    <span class="n">rotationY</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+<a id="__codelineno-0-483" name="__codelineno-0-483"></a>    <span class="n">focal</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+<a id="__codelineno-0-484" name="__codelineno-0-484"></a>    <span class="n">background</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;0&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-485" name="__codelineno-0-485"></a>    <span class="o">**</span><span class="n">mesh_kwargs</span><span class="p">,</span>
+<a id="__codelineno-0-486" name="__codelineno-0-486"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">vs</span><span class="o">.</span><span class="n">VideoNode</span><span class="p">:</span>
+<a id="__codelineno-0-487" name="__codelineno-0-487"></a>    <span class="n">points</span><span class="p">,</span> <span class="n">faces</span> <span class="o">=</span> <span class="n">load_mesh</span><span class="p">(</span><span class="n">model_path</span><span class="p">,</span> <span class="o">**</span><span class="n">mesh_kwargs</span><span class="p">)</span>
+<a id="__codelineno-0-488" name="__codelineno-0-488"></a>
+<a id="__codelineno-0-489" name="__codelineno-0-489"></a>    <span class="k">return</span> <span class="n">render_triangle_scene</span><span class="p">(</span>
+<a id="__codelineno-0-490" name="__codelineno-0-490"></a>        <span class="n">clip</span><span class="o">=</span><span class="n">clip</span><span class="p">,</span>
+<a id="__codelineno-0-491" name="__codelineno-0-491"></a>        <span class="n">points</span><span class="o">=</span><span class="n">points</span><span class="p">,</span>
+<a id="__codelineno-0-492" name="__codelineno-0-492"></a>        <span class="n">faces</span><span class="o">=</span><span class="n">faces</span><span class="p">,</span>
+<a id="__codelineno-0-493" name="__codelineno-0-493"></a>        <span class="n">lights</span><span class="o">=</span><span class="n">lights</span><span class="p">,</span>
+<a id="__codelineno-0-494" name="__codelineno-0-494"></a>        <span class="n">camX</span><span class="o">=</span><span class="n">camX</span><span class="p">,</span>
+<a id="__codelineno-0-495" name="__codelineno-0-495"></a>        <span class="n">camY</span><span class="o">=</span><span class="n">camY</span><span class="p">,</span>
+<a id="__codelineno-0-496" name="__codelineno-0-496"></a>        <span class="n">camZ</span><span class="o">=</span><span class="n">camZ</span><span class="p">,</span>
+<a id="__codelineno-0-497" name="__codelineno-0-497"></a>        <span class="n">rotationX</span><span class="o">=</span><span class="n">rotationX</span><span class="p">,</span>
+<a id="__codelineno-0-498" name="__codelineno-0-498"></a>        <span class="n">rotationY</span><span class="o">=</span><span class="n">rotationY</span><span class="p">,</span>
+<a id="__codelineno-0-499" name="__codelineno-0-499"></a>        <span class="n">focal</span><span class="o">=</span><span class="n">focal</span><span class="p">,</span>
+<a id="__codelineno-0-500" name="__codelineno-0-500"></a>        <span class="n">background</span><span class="o">=</span><span class="n">background</span><span class="p">,</span>
+<a id="__codelineno-0-501" name="__codelineno-0-501"></a>    <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -3667,10 +3665,10 @@
     
     
       
-      <script id="__config" type="application/json">{"base": "../../..", "features": ["navigation.tabs", "navigation.sections", "toc.integrate", "navigation.top", "search.suggest", "search.highlight", "content.code.copy"], "search": "../../../assets/javascripts/workers/search.f8cc74c7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"base": "../../..", "features": ["navigation.tabs", "navigation.sections", "toc.integrate", "navigation.top", "search.suggest", "search.highlight", "content.code.copy"], "search": "../../../assets/javascripts/workers/search.d50fe291.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../../../assets/javascripts/bundle.c8b220af.min.js"></script>
+      <script src="../../../assets/javascripts/bundle.13a4f30d.min.js"></script>
       
     
   </body>
