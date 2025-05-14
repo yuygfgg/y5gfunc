@@ -411,7 +411,7 @@ def render_triangle_scene(
 
     if face_t_names:
         face_t_args = ", ".join(face_t_names)
-        expr_lines.append(f"final_t = nth_1 ({face_t_args})")
+        expr_lines.append(f"final_t = nth_1({face_t_args})")
     else:
         expr_lines.append("final_t = huge")
 
@@ -422,8 +422,7 @@ def render_triangle_scene(
         )
         select_terms.append(f"select_{f_idx}")
     selects_sum = " + ".join(select_terms)
-    expr_lines.append(f"final_shading = final_t < huge ? ({selects_sum}) : background")
-    expr_lines.append("RESULT = final_shading")
+    expr_lines.append(f"RESULT = final_t < huge ? ({selects_sum}) : background")
 
     full_expr = "\n".join(expr_lines)
     converted_expr = infix2postfix(full_expr)

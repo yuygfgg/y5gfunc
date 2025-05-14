@@ -1,5 +1,6 @@
 import functools
 from varname.core import argname
+from varname.utils import ImproperUseError
 from vsdenoise.prefilters import PrefilterPartial
 from vstools import vs
 from vstools import core
@@ -184,7 +185,12 @@ def Fast_BM3DWrapper(
         ]:
             raise ValueError(f"Fast_BM3DWrapper: Unknown preset {preset}.")
 
-    if "cpu" in argname("bm3d"):
+    try:
+        bm3d_s = argname("bm3d")
+    except ImproperUseError:
+        bm3d_s = "bm3dcpu"
+
+    if "cpu" in bm3d_s:
         params = {
             "y_basic": bm3d_presets["vbasic" if radius_Y > 0 else "basic"][
                 preset_Y_basic
