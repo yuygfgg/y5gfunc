@@ -102,6 +102,7 @@ def Fast_BM3DWrapper(
     preset_chroma_final: BM3DPreset = BM3DPreset.FAST,
     ref: Optional[vs.VideoNode] = None,
     opp_matrix: ColorMatrixManager = default_opp,
+    fast: Optional[bool] = None,
 ) -> vs.VideoNode:
     """
     BM3D/V-BM3D denoising
@@ -128,6 +129,7 @@ def Fast_BM3DWrapper(
         preset_chroma_final: BM3D parameter preset for the chroma final step.
         ref: Ref for final BM3D step. If provided, basic step is bypassed.
         opp_matrix: OPP transform type to use.
+        fast: Multi-threaded copy between CPU and GPU at the expense of 4x memory consumption.
 
     Returns:
         Denoised video clip in YUV420P16 format.
@@ -135,6 +137,7 @@ def Fast_BM3DWrapper(
     Raises:
         ValueError: If the input clip format is not YUV420P16.
         ValueError: If any provided preset name is invalid.
+        ValueError: If `fast` is set for non-gpu backend.
 
     Notes:
         - The `delta_sigma_xxx` value is added to `sigma_xxx` only for the 'basic' denoising step. The 'final' step uses `sigma_xxx` directly.
@@ -191,6 +194,10 @@ def Fast_BM3DWrapper(
         bm3d_s = "bm3dcpu"
 
     if "cpu" in bm3d_s:
+        if fast is not None:
+            raise ValueError(
+                "Fast_BM3DWrapper: bm3dcpu does not support argument `fast`"
+            )
         params = {
             "y_basic": bm3d_presets["vbasic" if radius_Y > 0 else "basic"][
                 preset_Y_basic
@@ -206,23 +213,25 @@ def Fast_BM3DWrapper(
             ],
         }
     else:
+        if fast is None:
+            fast = True
         params = {
             "y_basic": bm3d_presets["vbasic" if radius_Y > 0 else "basic"][
                 preset_Y_basic
             ]
-            | {"fast": True},
+            | {"fast": fast},
             "y_final": bm3d_presets["vfinal" if radius_Y > 0 else "final"][
                 preset_Y_final
             ]
-            | {"fast": True},
+            | {"fast": fast},
             "chroma_basic": bm3d_presets["vbasic" if radius_chroma > 0 else "basic"][
                 preset_chroma_basic
             ]
-            | {"fast": True},
+            | {"fast": fast},
             "chroma_final": bm3d_presets["vfinal" if radius_chroma > 0 else "final"][
                 preset_chroma_final
             ]
-            | {"fast": True},
+            | {"fast": fast},
         }
 
     half_width = clip.width // 2
