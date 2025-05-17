@@ -1,4 +1,4 @@
-from .deband import SynDeband
+from .deband import sakiko_deband
 from .denoise import (
     BM3DPreset,
     Fast_BM3DWrapper,
@@ -49,7 +49,7 @@ from .tonemap import (
 from .utils import get_peak_value_full, is_optimized_cpu
 
 __all__ = [
-    "SynDeband",
+    "sakiko_deband",
     "BM3DPreset",
     "Fast_BM3DWrapper",
     "hybrid_denoise",

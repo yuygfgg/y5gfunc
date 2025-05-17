@@ -11,7 +11,7 @@ from .morpho import inflate as _inflate  # Fucking nameing conflict
 
 
 # modified from rksfunc.SynDeband()
-def SynDeband(
+def sakiko_deband(
     clip: vs.VideoNode,
     r1: int = 14,
     y1: int = 72,
@@ -29,6 +29,7 @@ def SynDeband(
     limit_thrc: float = 0.1,
     limit_elast: float = 20,
 ) -> Union[vs.VideoNode, tuple[vs.VideoNode, vs.VideoNode]]:
+    """Sakiko Togawa is good at de-band"""
     assert clip.format.id == vs.YUV420P16
 
     if kill is None:

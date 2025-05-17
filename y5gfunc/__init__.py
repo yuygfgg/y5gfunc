@@ -10,7 +10,7 @@ from .expr import (
     ex_planes,
 )
 from .filter import (
-    SynDeband,
+    sakiko_deband,
     BM3DPreset,
     Fast_BM3DWrapper,
     hybrid_denoise,
@@ -109,6 +109,7 @@ __version__ = "0.0.1"
 
 # aliases
 output = set_preview
+SynDeband = sakiko_deband
 
 __all__ = [
     "convolution",
@@ -123,6 +124,7 @@ __all__ = [
     "optimize_akarin_expr",
     "math_functions",
     "ex_planes",
+    "sakiko_deband",
     "SynDeband",
     "BM3DPreset",
     "Fast_BM3DWrapper",
