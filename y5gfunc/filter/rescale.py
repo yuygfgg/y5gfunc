@@ -97,7 +97,17 @@ def rescale(
             "Debilinear",
             "Depoint",
         ],
-        list[str],
+        list[
+            Literal[
+                "Debicubic",
+                "Delanczos",
+                "Despline16",
+                "Despline36",
+                "Despline64",
+                "Debilinear",
+                "Depoint",
+            ]
+        ],
     ] = "Debicubic",
     src_height: Union[Union[float, int], list[Union[float, int]]] = 720,
     bw: Optional[Union[int, list[int]]] = None,
