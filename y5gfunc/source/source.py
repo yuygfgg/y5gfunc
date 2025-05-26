@@ -4,7 +4,7 @@ from .wobbly import load_and_process
 from typing import Optional, Union
 from pathlib import Path
 from ..utils import resolve_path
-from vssource import BestSource
+from vssource import BestSource, FFMS2
 from vstools import Matrix, Primaries, Transfer
 from ..filter import tonemap, ColorSpace
 
@@ -136,7 +136,9 @@ def load_dv_p7(file_path: Union[Path, str], bl_index: int = 0, el_index: int = 1
     file_path = resolve_path(file_path)
     bl = BestSource.source(file_path, track=bl_index, chroma_location=vs.CHROMA_TOP_LEFT).resize2.Spline36(format=vs.YUV420P16)
     el = BestSource.source(file_path, track=el_index).resize2.Point(width=bl.width, height=bl.height, format=vs.YUV420P10).std.PlaneStats()
-    bl = bl.std.CopyFrameProps(el, 'DolbyVisionRPU')
+    rpu = FFMS2.source(file_path, track=el_index)
+    bl = bl.std.CopyFrameProps(rpu, 'DolbyVisionRPU')
+    el = el.std.CopyFrameProps(rpu, 'DolbyVisionRPU')
     bl = tonemap(bl, src_csp=ColorSpace.DOLBY_VISION, dst_csp=ColorSpace.HDR10).resize2.Spline36(format=vs.YUV420P16)
     hdr = core.vsnlq.MapNLQ(bl, el).std.SetFrameProps(_Matrix=Matrix.BT2020NCL, _Primaries=PRIMARIES_BT2020, _Transfer=Transfer.ST2084.value_vs)
     hdr = core.akarin.PropExpr([hdr, el], lambda: {"_FEL": "y.PlaneStatsAverage 0 >"})
