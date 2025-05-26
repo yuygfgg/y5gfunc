@@ -74,7 +74,13 @@ from .vfx import (
     ZoomMode,
 )
 from .preview import reset_output_index, set_preview, screen_shot
-from .source import WobblySource, load_source, get_frame_timestamp, clip_to_timecodes
+from .source import (
+    WobblySource,
+    load_source,
+    get_frame_timestamp,
+    clip_to_timecodes,
+    load_dv_p7,
+)
 from .encode import (
     encode_audio,
     extract_audio_tracks,
@@ -184,6 +190,7 @@ __all__ = [
     "screen_shot",
     "WobblySource",
     "load_source",
+    "load_dv_p7",
     "get_frame_timestamp",
     "clip_to_timecodes",
     "encode_audio",

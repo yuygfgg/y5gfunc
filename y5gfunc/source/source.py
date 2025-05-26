@@ -1,10 +1,12 @@
-from vstools import vs
+from vstools import vs, core
+from vstools.utils.vs_proxy import PRIMARIES_BT2020
 from .wobbly import load_and_process
 from typing import Optional, Union
 from pathlib import Path
 from ..utils import resolve_path
-from vssource import BestSource
+from vssource import BestSource, FFMS2, LSMAS
 from vstools import Matrix, Primaries, Transfer
+from ..filter import tonemap, ColorSpace
 
 
 def wobbly_source(
@@ -118,8 +120,8 @@ def load_source(
     
     primaries = Primaries.from_matrix(matrix)
     primaries_in = Primaries.from_matrix(matrix_in)
-    transfer = Transfer.from_matrix(matrix)
-    transfer_in = Transfer.from_matrix(matrix)
+    transfer = Transfer.from_matrix(matrix).value_vs
+    transfer_in = Transfer.from_matrix(matrix).value_vs
     
     return clip.resize2.Spline36(
         matrix=matrix,
@@ -129,3 +131,13 @@ def load_source(
         transfer=transfer,
         transfer_in=transfer_in,
     )
+
+def load_dv_p7(file_path: Union[Path, str], bl_index: int = 0, el_index: int = 1) -> vs.VideoNode:
+    file_path = resolve_path(file_path)
+    bl = FFMS2.source(file_path, track=bl_index, chroma_location=vs.CHROMA_TOP_LEFT).resize2.Spline36(format=vs.YUV420P16)
+    el = FFMS2.source(file_path, track=el_index).resize2.Point(width=bl.width, height=bl.height, format=vs.YUV420P10).std.PlaneStats()
+    bl = bl.std.CopyFrameProps(el, 'DolbyVisionRPU')
+    bl = tonemap(bl, src_csp=ColorSpace.DOLBY_VISION, dst_csp=ColorSpace.HDR10).resize2.Spline36(format=vs.YUV420P16)
+    hdr = core.vsnlq.MapNLQ(bl, el).std.SetFrameProps(_Matrix=Matrix.BT2020NCL, _Primaries=PRIMARIES_BT2020, _Transfer=Transfer.ST2084.value_vs)
+    hdr = core.akarin.PropExpr([hdr, el], lambda: {"_FEL": "y.PlaneStatsAverage 0 >"})
+    return hdr
