@@ -41,7 +41,7 @@ def infix2postfix(infix_code: str) -> str:
     - **Identifiers (Variable and Function Names):**
     - Must start with a letter or an underscore and can be composed of letters, digits, and underscores (matching `[a-zA-Z_]\w*`).
     - Identifiers starting with the reserved prefix `__internal_` are not allowed in user code (they are used internally for parameter renaming and temporary variables).
-    - Some names are “built-in constants” (see below) and cannot be reassigned.
+    - Some names are "built-in constants" (see below) and cannot be reassigned.
 
     - **Built-in Constants:**
     The language defines the following reserved identifiers: (Refer to std.Expr and akarin.Expr documents for more information)
@@ -51,7 +51,7 @@ def infix2postfix(infix_code: str) -> str:
     - **Numeric Literals:**
     The language supports:  (Refer to akarin.Expr documents for more information)
     - **Decimal numbers:** Integers (e.g. `123`, `-42`) and floating‑point numbers (e.g. `3.14`, `-0.5` with optional scientific notation).
-    - **Hexadecimal numbers:** Starting with `0x` followed by hexadecimal digits (optionally with a fractional part and a “p‑exponent”).
+    - **Hexadecimal numbers:** Starting with `0x` followed by hexadecimal digits (optionally with a fractional part and a "p‑exponent").
     - **Octal numbers:** A leading zero followed by octal digits (e.g. `0755`).
 
     ---
@@ -127,18 +127,15 @@ def infix2postfix(infix_code: str) -> str:
     Some functions are specially handled and have fixed argument counts:
 
     - **Unary Functions:**
-        `sin(x)`, `cos(x)`, `round(x)`, `floor(x)`, `abs(x)`, `sqrt(x)`, `trunc(x)`, `bitnot(x)`, `not(x)`, `str(x)`
-        > **Note:** `str(x)` acts like "x" or 'x' in python, and is only used in get_prop* functions (see below).
+        `sin(x)`, `cos(x)`, `round(x)`, `floor(x)`, `abs(x)`, `sqrt(x)`, `trunc(x)`, `bitnot(x)`, `not(x)`
 
     - **Binary Functions:**
-        `min(a, b)`, `max(a, b)`, `get_prop(clip, prop)`, `get_prop_safe(clip, prop)`
-        For the `get_prop*` functions, the first argument must be a valid source clip, and the second argument must be a string. (e.g. To get frame prop 'abc' from src0, call get_prop(_safe)(src0, str(abc)))
-        `get_prop_safe` ensures returns are numbers, while `get_prop` returns a `nan` if fetching a non-exist prop.
+        `min(a, b)`, `max(a, b)`
 
     - **Ternary Functions:**
         `clamp(a, b, c)`, `dyn(a, b, c)`
         Again, in the case of `dyn` the first argument must be a valid source clip.
-        In addidion, an extra optimizing will be performed to convert dynamic access (`dyn`) to static access (see below) if possible for potentially higher performance.
+        In addition, an extra optimizing will be performed to convert dynamic access (`dyn`) to static access (see below) if possible for potentially higher performance.
 
     - **Special Pattern – nth_N Functions:**
         Function names matching the pattern `nth_<number>` (for example, `nth_2`) are supported. They require at least N arguments and returns the Nth smallest of the arguments (e.g. `nth_1(a, b, c, d)` returns the smallest one of `a`, `b`, `c` and `d`).
@@ -187,6 +184,16 @@ def infix2postfix(infix_code: str) -> str:
     ---
 
     ## Special Constructs
+
+    ### Frame Property Access
+
+    - **Syntax:**
+    To access a frame property from a source clip, use dot notation:
+    ```
+    clip.propname
+    ```
+    - `clip` must be a valid source clip.
+    - `propname` is the name of the property.
 
     ### Static Relative Pixel Access
 
@@ -468,8 +475,8 @@ func_pattern = re.compile(r"function\s+(\w+)")
 global_decl_pattern = re.compile(r"^<global((?:<[a-zA-Z_]\w*>)+)>$")
 function_def_pattern = re.compile(r"^\s*function\s+(\w+)\s*\(([^)]*)\)\s*\{")
 m_call_pattern = re.compile(r"^(\w+)\s*\(")
-m_str_pattern = re.compile(r"^str\(([^)]+)\)$")
-valid_str_pattern = re.compile(r"\b([a-zA-Z_]\w*)\b")
+prop_access_pattern = re.compile(r"^(\w+)\.([a-zA-Z_]\w*)$")
+prop_access_generic_pattern = re.compile(r"([a-zA-Z_]\w*)\.([a-zA-Z_]\w*)")
 number_pattern = re.compile(
     r"^(0x[0-9A-Fa-f]+(\.[0-9A-Fa-f]+(p[+\-]?\d+)?)?|0[0-7]*|[+\-]?(\d+(\.\d+)?([eE][+\-]?\d+)?))$"
 )
@@ -803,6 +810,14 @@ def check_variable_usage(
     Check that all variables in the expression have been defined.
     In function scope, if local_vars is provided, only local variables are checked.
     """
+
+    def prop_repl(m: re.Match[str]) -> str:
+        clip_candidate = m.group(1)
+        if is_clip(clip_candidate):
+            return " "
+        return m.group(0)
+
+    expr = prop_access_generic_pattern.sub(prop_repl, expr)
     expr = func_sub_pattern.sub("", expr)
     identifiers = identifier_pattern.finditer(expr)
     for match in identifiers:
@@ -843,20 +858,11 @@ def convert_expr(
     """
     expr = expr.strip()
 
-    m_str = m_str_pattern.match(expr)
-    if m_str:
-        args = parse_args(m_str.group(1))
-        if len(args) != 1:
-            raise SyntaxError(
-                f"str() requires 1 arguments, but {len(args)} were provided.",
-                line_num,
-                current_function,
-            )
-        if not valid_str_pattern.match(args[0]):
-            raise SyntaxError(
-                f"Unsupported string content '{args[0]}'", line_num, current_function
-            )
-        return f"{args[0]}"
+    prop_access_match = prop_access_pattern.match(expr)
+    if prop_access_match:
+        clip_name = prop_access_match.group(1)
+        if is_clip(clip_name):
+            return expr
 
     # Check variable usage and validate static relative pixel indices.
     check_variable_usage(expr, variables, line_num, current_function, local_vars)
@@ -940,32 +946,6 @@ def convert_expr(
                     f"{args[0]} is not a source clip.", line_num, current_function
                 )
             return f"{args_postfix[1]} {args_postfix[2]} {args[0]}[]"
-
-        if func_name == "get_prop":
-            if len(args) != 2:
-                raise SyntaxError(
-                    f"Built-in function {func_name} requires 2 arguments, but {len(args)} were provided.",
-                    line_num,
-                    current_function,
-                )
-            if not is_clip(args[0]):
-                raise SyntaxError(
-                    f"{args[0]} is not a source clip.", line_num, current_function
-                )
-            return f"{args_postfix[0]}.{args_postfix[1]}"
-
-        if func_name == "get_prop_safe":
-            if len(args) != 2:
-                raise SyntaxError(
-                    f"Built-in function {func_name} requires 2 arguments, but {len(args)} were provided.",
-                    line_num,
-                    current_function,
-                )
-            if not is_clip(args[0]):
-                raise SyntaxError(
-                    f"{args[0]} is not a source clip.", line_num, current_function
-                )
-            return f"{args_postfix[0]}.{args_postfix[1]} __internal_get_prop_safe_tmp! __internal_get_prop_safe_tmp@"  # Ensure 0 is returned if prop doesn't exist.
 
         if func_name in ["min", "max"]:
             if len(args) != 2:
@@ -1347,9 +1327,8 @@ def is_builtin_function(func_name: str) -> bool:
         "trunc",
         "bitnot",
         "not",
-        "str",
     ]
-    builtin_binary = ["min", "max", "get_prop", "get_prop_safe"]
+    builtin_binary = ["min", "max"]
     builtin_ternary = ["clamp", "dyn"]
     if any(r.match(func_name) for r in build_in_func_patterns):
         return True
