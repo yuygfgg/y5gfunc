@@ -7,7 +7,7 @@ import mvsfunc as mvf
 
 from .mask import retinex_edgemask
 from vsrgtools import remove_grain
-from .morpho import inflate as _inflate  # Fucking nameing conflict
+from .morpho import inflate as _inflate  # Fucking naming conflict
 
 
 # modified from rksfunc.SynDeband()

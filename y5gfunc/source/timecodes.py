@@ -12,7 +12,19 @@ def get_frame_timestamp(
     clip: vs.VideoNode,
     precision: Literal['second', 'millisecond', 'microsecond' ,'nanosecond'] = 'millisecond',
     timecodes_v2_file: Optional[str] = None
-)-> str:    
+)-> str:
+    """
+    Get the timestamp of a frame in a video clip.
+
+    Args:
+        frame_num: The frame number to get the timestamp for.
+        clip: The video clip to get the timestamp for.
+        precision: The precision of the timestamp.
+        timecodes_v2_file: The optional path to the timecodes file. If provided, the timestamp will be read from the file.
+
+    Returns:
+        The timestamp of the frame.
+    """
     assert frame_num >= 0
     assert timecodes_v2_file is None or resolve_path(timecodes_v2_file).exists()
     
@@ -46,6 +58,16 @@ def get_frame_timestamp(
 # modified from https://github.com/OrangeChannel/acsuite/blob/e40f50354a2fc26f2a29bf3a2fe76b96b2983624/acsuite/__init__.py#L305
 @functools.lru_cache
 def clip_to_timecodes(clip: vs.VideoNode, path: Optional[str] = None) -> deque[float]:
+    """
+    Generate timecodes for a video clip.
+
+    Args:
+        clip: The video clip to generate timecodes for.
+        path: The optional path to the timecodes file. If provided, the timecodes will be written to the file.
+
+    Returns:
+        A deque of timecodes.
+    """
     if path:
         path = resolve_path(path) # type: ignore
 
@@ -57,7 +79,7 @@ def clip_to_timecodes(clip: vs.VideoNode, path: Optional[str] = None) -> deque[f
         if file:
             file.write("# timecode format v2\n")
 
-        for i, frame in enumerate(clip.frames()):
+        for _, frame in enumerate(clip.frames()):
             num: int = frame.props["_DurationNum"] # type: ignore
             den: int = frame.props["_DurationDen"] # type: ignore
             curr_time += fractions.Fraction(num, den)

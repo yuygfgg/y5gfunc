@@ -292,7 +292,7 @@ def rescale(
             scene_start = n
             while i >= 0:
                 frame = prefetch.get_frame(i)
-                if frame.props["_SceneChangePrev"] == 1:  # scene srart
+                if frame.props["_SceneChangePrev"] == 1:  # scene start
                     scene_start = i
                     break
                 i -= 1
@@ -441,7 +441,7 @@ def rescale(
         return final_clip
 
     def _fft(clip: vs.VideoNode) -> vs.VideoNode:
-        return core.fftspectrum_rs.FFTSpectrum(clip=vstools.depth(clip, 8))
+        return core.fftspectrum_rs.FFTSpectrum(clip=vstools.depth(clip, 32))
 
     upscaled_clips: list[vs.VideoNode] = []
     rescaled_clips: list[vs.VideoNode] = []
@@ -551,7 +551,7 @@ def rescale(
     else:
         # detail mask: matched one when descaling, otherwise blank clip
         # upscaled clip: matched one when descaling, otherwise frame level decision
-        # rescaled clip: mostly-choosed index in a scene when descaling, otherwise src_luma
+        # rescaled clip: mostly-chosen index in a scene when descaling, otherwise src_luma
         # 'Descaled', 'SceneMinIndex': scene-level information
         # other props: frame-level information
         per_frame = _select_per_frame(

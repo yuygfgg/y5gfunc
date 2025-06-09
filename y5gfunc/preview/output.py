@@ -40,7 +40,7 @@ def set_preview(*args, debug: bool = True) -> None:
     Outputs VapourSynth clips in vspreview.
 
     This function handles assigning output indices automatically or allows for explicit index specification.
-    Nodes are named in `vspreview` as `{index}: {variable_name}`. When debug=True, node name is overlayed onto the video.
+    Nodes are named in `vspreview` as `{index}: {variable_name}`. When debug=True, node name is overlaid onto the video.
 
     Args:
         *args: A variable number of arguments representing the clips to output.

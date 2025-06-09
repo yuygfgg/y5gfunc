@@ -17,6 +17,28 @@ def draw_3d_cube(
     focal: str = "500",
     factor: str = "1",
 ) -> vs.VideoNode:
+    """
+    Draw a 3D cube on a video clip.
+
+    Args:
+        clip: The video clip to draw the cube on.
+        centerX: The x-coordinate of the center of the projection screen.
+        centerY: The y-coordinate of the center of the projection screen.
+        cubeSize: The size of the cube.
+        color: The color of the cube's edges.
+        rotationX: The rotation angle around the X-axis (in radians).
+        rotationY: The rotation angle around the Y-axis (in radians).
+        thickness: The thickness of the cube's edges.
+        translateZ: The translation along the Z-axis, affecting perspective.
+        focal: The focal length for the projection.
+        factor: The blending factor for the color.
+
+    Returns:
+        The video clip with the 3D cube drawn on it.
+
+    Raises:
+        AssertionError: If the format of the video clip has more than 1 plane.
+    """
     assert clip.format.num_planes == 1
 
     expr = infix2postfix(f"""
@@ -135,6 +157,31 @@ def render_triangle_scene(
     background: str = "0",
 ) -> vs.VideoNode:
     """
+    Renders a scene composed of triangles on a video clip.
+
+    This function performs 3D rendering of a mesh of triangles with lighting and camera transformations.
+
+    Args:
+        clip: The video clip to render on.
+        points: A list of dictionaries, each representing a vertex in the scene.
+                Each dictionary should have "x", "y", and "z" keys.
+        faces: A list of dictionaries, each representing a triangle. Each should
+               have "a", "b", "c" keys (indices to the points list) and an
+               optional "color" key.
+        lights: A list of dictionaries, each representing a directional (parallel) light.
+                This type of light has a direction but no position, and its
+                intensity does not decay with distance. Each dictionary should have
+                "lx", "ly", "lz" for direction and "intensity".
+        camX: The camera's X position.
+        camY: The camera's Y position.
+        camZ: The camera's Z position.
+        rotationX: The camera's rotation around the X-axis.
+        rotationY: The camera's rotation around the Y-axis.
+        focal: The camera's focal length.
+        background: The background color value.
+
+    Returns:
+        A video clip with the 3D scene rendered on it.
 
     Example:
 
@@ -436,6 +483,18 @@ def load_mesh(
     axis_transform: str = "+xz-y",
     rotation: tuple[float, float, float] = (0.0, 0.0, 0.0),
 ) -> tuple[list[dict], list[dict]]:
+    """
+    Load a 3D model from a file and apply transformations.
+
+    Args:
+        file_path: The path to the model file.
+        default_color: The default color for the model's faces.
+        axis_transform: The axis transformation to apply. Supports "+xz-y" and "xyz".
+        rotation: A tuple of (rx, ry, rz) rotation angles in degrees.
+
+    Returns:
+        A tuple containing the list of points and the list of faces.
+    """
     mesh = trimesh.load_mesh(file_path, force="mesh", process=True)
 
     if axis_transform == "+xz-y":
@@ -484,6 +543,28 @@ def render_model_scene(
     background: str = "0",
     **mesh_kwargs,
 ) -> vs.VideoNode:
+    """
+    Render a 3D model scene.
+
+    Args:
+        clip: The video clip to render on.
+        model_path: The path to the 3D model file.
+        lights: A list of dictionaries, each representing a **directional (parallel) light**.
+                This type of light has a direction but no position, and its
+                intensity does not decay with distance. Each dictionary should have
+                "lx", "ly", "lz" for direction and "intensity".
+        camX: The x-coordinate of the camera position.
+        camY: The y-coordinate of the camera position.
+        camZ: The z-coordinate of the camera position.
+        rotationX: The camera rotation angle around the X-axis.
+        rotationY: The camera rotation angle around the Y-axis.
+        focal: The focal length for the projection.
+        background: The background color.
+        **mesh_kwargs: Additional keyword arguments for `load_mesh`.
+
+    Returns:
+        The video clip with the rendered 3D model.
+    """
     points, faces = load_mesh(model_path, **mesh_kwargs)
 
     return render_triangle_scene(

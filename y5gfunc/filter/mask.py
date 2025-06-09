@@ -201,7 +201,7 @@ def retinex_edgemask(src: vs.VideoNode) -> vs.VideoNode:
     return core.akarin.Expr([kirsch(luma), tcanny], f"x y + {max_value} min")
 
 
-# modified from kegefunc._generate_descale_mask()
+# modified from kagefunc._generate_descale_mask()
 def generate_detail_mask(
     source: vs.VideoNode, upscaled: vs.VideoNode, threshold: float = 0.05
 ) -> vs.VideoNode:

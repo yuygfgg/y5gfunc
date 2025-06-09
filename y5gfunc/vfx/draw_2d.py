@@ -12,6 +12,25 @@ def draw_line(
     color: str,
     factor: str = "1",
 ) -> vs.VideoNode:
+    """
+    Draw a line on a video clip.
+
+    Args:
+        clip: The video clip to draw the line on.
+        sx: The x-coordinate of the start point.
+        sy: The y-coordinate of the start point.
+        ex: The x-coordinate of the end point.
+        ey: The y-coordinate of the end point.
+        thickness: The thickness of the line.
+        color: The color of the line.
+        factor: The factor of the line.
+
+    Returns:
+        The video clip with the line drawn on it.
+
+    Raises:
+        AssertionError: If the format of the video clip has more than 1 plane.
+    """
     assert clip.format.num_planes == 1
 
     expr = infix2postfix(f"""
@@ -48,6 +67,24 @@ def draw_circle(
     color: str,
     factor: str = "1",
 ) -> vs.VideoNode:
+    """
+    Draw a circle on a video clip.
+
+    Args:
+        clip: The video clip to draw the circle on.
+        cx: The x-coordinate of the circle's center.
+        cy: The y-coordinate of the circle's center.
+        radius: The radius of the circle.
+        thickness: The thickness of the circle's line.
+        color: The color of the circle.
+        factor: The blending factor for the color.
+
+    Returns:
+        The video clip with the circle drawn on it.
+
+    Raises:
+        AssertionError: If the format of the video clip has more than 1 plane.
+    """
     assert clip.format.num_planes == 1
 
     expr = infix2postfix(f"""
@@ -83,6 +120,26 @@ def draw_ellipse(
     color: str,
     factor: str = "1",
 ) -> vs.VideoNode:
+    """
+    Draw an ellipse on a video clip, defined by its two focal points.
+
+    Args:
+        clip: The video clip to draw the ellipse on.
+        f1x: The x-coordinate of the first focal point.
+        f1y: The y-coordinate of the first focal point.
+        f2x: The x-coordinate of the second focal point.
+        f2y: The y-coordinate of the second focal point.
+        ellipse_sum: The sum of the distances from any point on the ellipse to the two focal points.
+        thickness: The thickness of the ellipse's line.
+        color: The color of the ellipse.
+        factor: The blending factor for the color.
+
+    Returns:
+        The video clip with the ellipse drawn on it.
+
+    Raises:
+        AssertionError: If the format of the video clip has more than 1 plane.
+    """
     assert clip.format.num_planes == 1
 
     expr = infix2postfix(f"""
@@ -126,6 +183,32 @@ def draw_bezier_curve(
     sample_count: int = 100,
     factor: str = "1",
 ) -> vs.VideoNode:
+    """
+    Draw a cubic Bezier curve on a video clip.
+
+    The curve is defined by four control points.
+
+    Args:
+        clip: The video clip to draw the curve on.
+        controlPoint0X: The x-coordinate of the first control point (start).
+        controlPoint0Y: The y-coordinate of the first control point (start).
+        controlPoint1X: The x-coordinate of the second control point.
+        controlPoint1Y: The y-coordinate of the second control point.
+        controlPoint2X: The x-coordinate of the third control point.
+        controlPoint2Y: The y-coordinate of the third control point.
+        controlPoint3X: The x-coordinate of the fourth control point (end).
+        controlPoint3Y: The y-coordinate of the fourth control point (end).
+        thickness: The thickness of the curve.
+        color: The color of the curve.
+        sample_count: The number of line segments to approximate the curve.
+        factor: The blending factor for the color.
+
+    Returns:
+        The video clip with the Bezier curve drawn on it.
+
+    Raises:
+        AssertionError: If `sample_count` is less than 2 or if the clip has more than one plane.
+    """
     assert sample_count >= 2
     assert clip.format.num_planes == 1
 
@@ -228,6 +311,30 @@ def draw_mandelbrot_zoomer(
     maxIter: int = 350,
     escapeRadius: str = "2",
 ) -> vs.VideoNode:
+    """
+    Draw a zooming animation into the Mandelbrot set.
+
+    Args:
+        clip: The video clip to draw on.
+        centerX: The x-coordinate for the center of the fractal on screen.
+        centerY: The y-coordinate for the center of the fractal on screen.
+        color: The base color for the fractal rendering.
+        initialZoom: The initial zoom level.
+        zoomSpeed: The speed of zooming in.
+        centerMoveSpeed: The speed at which the center of the view moves from C0 to C1.
+        fractalC0_re: The real part of the starting complex number for the center.
+        fractalC0_im: The imaginary part of the starting complex number for the center.
+        fractalC1_re: The real part of the ending complex number for the center.
+        fractalC1_im: The imaginary part of the ending complex number for the center.
+        maxIter: The maximum number of iterations for the Mandelbrot calculation.
+        escapeRadius: The escape radius for the Mandelbrot calculation.
+
+    Returns:
+        The video clip with the Mandelbrot animation.
+
+    Raises:
+        AssertionError: If `maxIter` is less than 1.
+    """
     assert maxIter >= 1
 
     expr_lines = []
@@ -290,6 +397,30 @@ def draw_spiral(
     factor: str = "1",
     sample_count=500,
 ) -> vs.VideoNode:
+    """
+    Draw a spiral on a video clip.
+
+    The spiral is defined by the equation r = a + b * theta.
+
+    Args:
+        clip: The video clip to draw the spiral on.
+        centerX: The x-coordinate of the spiral's center.
+        centerY: The y-coordinate of the spiral's center.
+        a: The 'a' parameter in the spiral equation, affecting the starting radius.
+        b: The 'b' parameter in the spiral equation, affecting the distance between arms.
+        startAngle: The starting angle of the spiral in radians.
+        endAngle: The ending angle of the spiral in radians.
+        thickness: The thickness of the spiral line.
+        color: The color of the spiral.
+        factor: The blending factor for the color.
+        sample_count: The number of line segments to approximate the spiral.
+
+    Returns:
+        The video clip with the spiral drawn on it.
+
+    Raises:
+        AssertionError: If the format of the video clip has more than 1 plane.
+    """
     assert clip.format.num_planes == 1
 
     expr_lines = []

@@ -51,7 +51,7 @@ def is_stripe(
             scene_start = n
             while i >= 0:
                 frame = prefetch.get_frame(i)
-                if frame.props["_SceneChangePrev"] == 1:  # scene srart
+                if frame.props["_SceneChangePrev"] == 1:  # scene start
                     scene_start = i
                     break
                 i -= 1

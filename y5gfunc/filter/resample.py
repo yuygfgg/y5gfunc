@@ -430,7 +430,7 @@ def SSIM_downsample(
     curve: str = "709",
     sigmoid: bool = True,
     epsilon: float = 1e-6,
-    **rersample_args: Any,
+    **resample_args: Any,
 ) -> vs.VideoNode:
     """
     SSIM downsampler
@@ -449,7 +449,7 @@ def SSIM_downsample(
         width: The width of the output clip.
         height: The height of the output clip
         smooth: The method to smooth the image.
-            If it's an int, it specifies the "radius" of the internel used boxfilter, i.e. the window has a size of (2*smooth+1)x(2*smooth+1).
+            If it's an int, it specifies the "radius" of the internal used boxfilter, i.e. the window has a size of (2*smooth+1)x(2*smooth+1).
             If it's a float, it specifies the "sigma" of core.tcanny.TCanny, i.e. the standard deviation of gaussian blur.
             If it's a function, it acs as a general smoother.
         gamma: Set to true to turn on gamma correction for the y channel.
@@ -457,14 +457,14 @@ def SSIM_downsample(
         fulld: Same as fulls, but for output.
         curve: Type of gamma mapping.
         sigmoid: When True, applies a sigmoidal curve after the power-like curve (or before when converting from linear to gamma-corrected).
-            This helps reducing the dark halo artefacts around sharp edges caused by resizing in linear luminance.
+            This helps reducing the dark halo artifacts around sharp edges caused by resizing in linear luminance.
         resample_args: Additional arguments passed to `core.resize2` in the form of keyword arguments.
 
     Returns:
         Downsampled clip in 32-bit format.
 
     Raises:
-        TypeError: If `smooth` is neigher a int, float nor a function.
+        TypeError: If `smooth` is neither a int, float nor a function.
 
     Ref:
         [1] Oeztireli, A. C., & Gross, M. (2015). Perceptually based downscaling of images. ACM Transactions on Graphics (TOG), 34(4), 77.
@@ -493,12 +493,12 @@ def SSIM_downsample(
 
     clip = depth(clip, 32)
 
-    l1 = core.resize2.Bicubic(clip, width, height, **rersample_args)  # type: ignore
+    l1 = core.resize2.Bicubic(clip, width, height, **resample_args)  # type: ignore
     l2 = core.resize2.Bicubic(
         core.akarin.Expr([clip], ["x 2 **"]),
         width,
         height,
-        **rersample_args,  # type: ignore
+        **resample_args,  # type: ignore
     )
 
     m = Filter(l1)
@@ -551,19 +551,19 @@ def Descale(
     force_v: bool = False,
     opt: int = 0,
 ) -> vs.VideoNode:
-    def _get_resize_name(kernal_name: str) -> str:
-        if kernal_name == "Decustom":
+    def _get_resize_name(kernel_name: str) -> str:
+        if kernel_name == "Decustom":
             return "ScaleCustom"
-        if kernal_name.startswith("De"):
-            return kernal_name[2:].capitalize()
-        return kernal_name
+        if kernel_name.startswith("De"):
+            return kernel_name[2:].capitalize()
+        return kernel_name
 
-    def _get_descaler_name(kernal_name: str) -> str:
-        if kernal_name == "ScaleCustom":
+    def _get_descaler_name(kernel_name: str) -> str:
+        if kernel_name == "ScaleCustom":
             return "Decustom"
-        if kernal_name.startswith("De"):
-            return kernal_name
-        return "De" + kernal_name[0].lower() + kernal_name[1:]
+        if kernel_name.startswith("De"):
+            return kernel_name
+        return "De" + kernel_name[0].lower() + kernel_name[1:]
 
     assert width > 0 and height > 0
     assert opt in [0, 1, 2]

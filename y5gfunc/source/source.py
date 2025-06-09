@@ -77,16 +77,16 @@ def load_source(
 
     This function acts as a primary interface for loading video sources.
     It checks the file extension:
-        - If it's a ".wob" file, it uses `_wobbly_source`.
-        - Otherwise, it uses `_bestsource`, attempting to automatically detect if the source uses RFF (Repeat First Field) based on frame counts.
+        - If it's a ".wob" file, it uses `wobbly_source`.
+        - Otherwise, it uses `bestsource`, attempting to automatically detect if the source uses RFF (Repeat First Field) based on frame counts.
 
     After loading, it applies a color matrix conversion.
 
     Args:
         file_path: Path to the video file or .wob project file.
         track: Index of the video track to load. Ignored for .wob files.
-        matrix_s: Target color matrix.
-        matrix_in_s: Input color matrix.
+        matrix: Target color matrix.
+        matrix_in: Input color matrix.
         timecodes_v2_path: Path to a V2 timecodes file.
 
     Returns:
@@ -133,6 +133,16 @@ def load_source(
     )
 
 def load_dv_p7(file_path: Union[Path, str], bl_index: int = 0, el_index: int = 1) -> vs.VideoNode:
+    """
+    Loads a Dolby Vision P7 video file.
+
+    Args:
+        file_path: Path to the video file.
+        bl_index: Index of the BL stream.
+        el_index: Index of the EL stream.
+    Returns:
+        A VapourSynth VideoNode representing the Dolby Vision P7 video clip.
+    """
     file_path = resolve_path(file_path)
     bl = LSMAS.source(file_path, stream_index=bl_index, chroma_location=vs.CHROMA_TOP_LEFT).resize2.Spline36(format=vs.YUV420P16)
     el = LSMAS.source(file_path, stream_index=el_index).resize2.Point(width=bl.width, height=bl.height, format=vs.YUV420P10).std.PlaneStats()
