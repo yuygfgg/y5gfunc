@@ -605,7 +605,7 @@ def extract_function_info(
     internal_var: str, current_function: Optional[str] = None
 ) -> tuple[Optional[str], Optional[str]]:
     """
-    Given a renamed internal variable (e.g. __internal_funcname_varname),
+    Given a renamed internal variable (i.e. __internal_funcname_varname),
     extract the original function name and variable name.
     """
     if current_function is not None and internal_var.startswith(
@@ -998,9 +998,7 @@ def convert_expr(
             param_map = {p: f"__internal_{func_name}_{p}" for p in params}
             body_lines = [line.strip() for line in body.split("\n")]
             body_lines_strip = [
-                line.strip()
-                for line in body.split("\n")
-                if line.strip()
+                line.strip() for line in body.split("\n") if line.strip()
             ]
             return_indices = [
                 i

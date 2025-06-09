@@ -17,6 +17,17 @@ class ZoomMode(IntEnum):
     ZOOM_TO_FIT = 1
     CONSTANT_MAX_ZOOM = 2
 
+class BoundaryMode(IntEnum):
+    """
+    Controls how boundary pixels are handled in `rotate_image` function.
+
+    Attributes:
+        CLAMPED: Edge pixels are extended beyond the boundary.
+        MIRRORED: The image is mirrored at the boundaries.
+    """
+
+    CLAMPED = 0
+    MIRRORED = 1
 
 def rotate_image(
     clip: vs.VideoNode,
@@ -26,6 +37,7 @@ def rotate_image(
     bicubic_c: str = "1 / 3",
     center_x: str = "width / 2",
     center_y: str = "height / 2",
+    boundary: BoundaryMode = BoundaryMode.CLAMPED,
 ) -> vs.VideoNode:
     """
     Rotate a video clip
@@ -41,6 +53,7 @@ def rotate_image(
         bicubic_c: The 'c' parameter for bicubic interpolation.
         center_x: The x-coordinate of the rotation center, can be an expression to evaluate in run-time
         center_y: The y-coordinate of the rotation center, can be an expression to evaluate in run-time
+        boundary: The boundary mode to handle pixels outside the frame.
 
     Returns:
         The rotated video clip.
@@ -178,4 +191,4 @@ def rotate_image(
     full_expr_str = setup + source_coord_calc + interpolate
 
     expr_postfix = infix2postfix(full_expr_str)
-    return clip.akarin.Expr(expr_postfix)
+    return clip.akarin.Expr(expr_postfix, boundary=boundary)

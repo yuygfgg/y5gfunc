@@ -7,7 +7,7 @@ from .draw_2d import (
     draw_spiral,
 )
 from .draw_3d import draw_3d_cube, render_triangle_scene, render_model_scene, load_mesh
-from .misc import rotate_image, ZoomMode
+from .misc import rotate_image, ZoomMode, BoundaryMode
 
 __all__ = [
     "draw_line",
@@ -22,4 +22,5 @@ __all__ = [
     "load_mesh",
     "rotate_image",
     "ZoomMode",
+    "BoundaryMode",
 ]

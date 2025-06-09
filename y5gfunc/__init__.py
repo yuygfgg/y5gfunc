@@ -72,6 +72,7 @@ from .vfx import (
     load_mesh,
     rotate_image,
     ZoomMode,
+    BoundaryMode,
 )
 from .preview import reset_output_index, set_preview, screen_shot
 from .source import (
@@ -172,6 +173,7 @@ __all__ = [
     "render_model_scene",
     "load_mesh",
     "ZoomMode",
+    "BoundaryMode",
     "rotate_image",
     "nn2x",
     "double_aa",
