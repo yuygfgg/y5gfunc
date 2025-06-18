@@ -81,6 +81,8 @@ from .source import (
     get_frame_timestamp,
     clip_to_timecodes,
     load_dv_p7,
+    RpuFile,
+    write_rpu,
 )
 from .encode import (
     encode_audio,
@@ -195,6 +197,8 @@ __all__ = [
     "load_dv_p7",
     "get_frame_timestamp",
     "clip_to_timecodes",
+    "RpuFile",
+    "write_rpu",
     "encode_audio",
     "extract_audio_tracks",
     "ProcessMode",

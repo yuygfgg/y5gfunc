@@ -7,6 +7,7 @@ from ..utils import resolve_path
 from vssource import BestSource, FFMS2, LSMAS
 from vstools import Matrix, Primaries, Transfer
 from ..filter import tonemap, ColorSpace
+from .rpu import write_rpu
 
 
 def wobbly_source(
@@ -114,15 +115,15 @@ def load_source(
 
     if matrix is None:
         matrix = Matrix.from_res(clip)
-    
+
     if matrix_in is None:
         matrix_in = Matrix.from_res(clip)
-    
+
     primaries = Primaries.from_matrix(matrix)
     primaries_in = Primaries.from_matrix(matrix_in)
     transfer = Transfer.from_matrix(matrix).value_vs
     transfer_in = Transfer.from_matrix(matrix).value_vs
-    
+
     return clip.resize2.Spline36(
         matrix=matrix,
         matrix_in=matrix_in,
@@ -132,24 +133,68 @@ def load_source(
         transfer_in=transfer_in,
     )
 
-def load_dv_p7(file_path: Union[Path, str], bl_index: int = 0, el_index: int = 1) -> vs.VideoNode:
+
+def load_dv_p7(
+    file_path: Union[Path, str],
+    bl_index: int = 0,
+    el_index: int = 1,
+    rpu_file_path: Optional[Union[Path, str]] = None,
+) -> vs.VideoNode:
     """
-    Loads a Dolby Vision P7 video file.
+    Loads a Dolby Vision Profile 7 video file.
+
+    This function incorporates workarounds for an underlying FFmpeg issue that causes source filters
+    (e.g., bestsource) to fail to extract the `DolbyVisionRpu` frame property from the last few
+    frames of a video. For more details, see: https://github.com/vapoursynth/bestsource/issues/97
+
+    Workarounds:
+    1.  Default method (rpu_file_path=None): It uses FFMS2 to extract the RPU data from the video file.
+        While convenient, this method has a significant caveat: FFMS2 might return stale RPU data for the final frames.
+        Specifically, it carries over the RPU from the last valid frame even after seeking. This behavior is documented
+        in the discussion of the linked issue.
+
+    2.  External RPU file (rpu_file_path is provided): This method uses an externally supplied RPU file.
+        This is the most reliable workaround as it completely bypasses reliance on FFmpeg for RPU extraction.
+        RPU data is required to be extracted into a file first using dovi_tool and then provided to this function.
 
     Args:
         file_path: Path to the video file.
-        bl_index: Index of the BL stream.
-        el_index: Index of the EL stream.
+        bl_index: Index of the Base Layer (BL) stream.
+        el_index: Index of the Enhancement Layer (EL) stream.
+        rpu_file_path: Optional path to the RPU file.
+
     Returns:
         A VapourSynth VideoNode representing the Dolby Vision P7 video clip.
     """
     file_path = resolve_path(file_path)
-    bl = LSMAS.source(file_path, stream_index=bl_index, chroma_location=vs.CHROMA_TOP_LEFT).resize2.Spline36(format=vs.YUV420P16)
-    el = LSMAS.source(file_path, stream_index=el_index).resize2.Point(width=bl.width, height=bl.height, format=vs.YUV420P10).std.PlaneStats()
-    rpu = FFMS2.source(file_path, track=el_index)
-    bl = bl.std.CopyFrameProps(rpu, 'DolbyVisionRPU')
-    el = el.std.CopyFrameProps(rpu, 'DolbyVisionRPU')
-    bl = tonemap(bl, src_csp=ColorSpace.DOLBY_VISION, dst_csp=ColorSpace.HDR10).resize2.Spline36(format=vs.YUV420P16)
-    hdr = core.vsnlq.MapNLQ(bl, el).std.SetFrameProps(_Matrix=Matrix.BT2020NCL, _Primaries=PRIMARIES_BT2020, _Transfer=Transfer.ST2084.value_vs)
+    
+    bl = LSMAS.source(
+        file_path, stream_index=bl_index, chroma_location=vs.CHROMA_TOP_LEFT
+    ).resize2.Spline36(format=vs.YUV420P16)
+    
+    el = (
+        LSMAS.source(file_path, stream_index=el_index)
+        .resize2.Point(width=bl.width, height=bl.height, format=vs.YUV420P10)
+        .std.PlaneStats()
+    )
+
+    if rpu_file_path:
+        bl = write_rpu(rpu_file_path, bl)
+        el = write_rpu(rpu_file_path, el)
+    else:
+        rpu = FFMS2.source(file_path, track=el_index)
+        bl = bl.std.CopyFrameProps(rpu, "DolbyVisionRPU")
+        el = el.std.CopyFrameProps(rpu, "DolbyVisionRPU")
+
+    bl = tonemap(
+        bl, src_csp=ColorSpace.DOLBY_VISION, dst_csp=ColorSpace.HDR10
+    ).resize2.Spline36(format=vs.YUV420P16)
+    
+    hdr = core.vsnlq.MapNLQ(bl, el).std.SetFrameProps(
+        _Matrix=Matrix.BT2020NCL,
+        _Primaries=PRIMARIES_BT2020,
+        _Transfer=Transfer.ST2084.value_vs,
+    )
+    
     hdr = core.akarin.PropExpr([hdr, el], lambda: {"_FEL": "y.PlaneStatsAverage 0 >"})
     return hdr
