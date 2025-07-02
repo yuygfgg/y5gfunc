@@ -204,6 +204,7 @@ def infix2postfix(infix_code: str) -> str:
 
     - **Variable Usage Rules:**
     Variables must be defined (assigned) before they are referenced in expressions. Otherwise, a syntax error will be raised.
+
     ---
 
     ## Special Constructs
