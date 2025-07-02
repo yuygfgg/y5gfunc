@@ -202,6 +202,8 @@ def infix2postfix(infix_code: str) -> str:
     ```
     The left-hand side (`variable`) must not be a built-in constant or otherwise reserved. The expression on the right-hand side is converted to its postfix form. Internally, the assignment is marked by appending an exclamation mark (`!`) to indicate that the result is stored in that variable.
 
+    - **Variable Usage Rules:**
+    Variables must be defined (assigned) before they are referenced in expressions. Otherwise, a syntax error will be raised.
     ---
 
     ## Special Constructs
