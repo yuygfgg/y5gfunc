@@ -1116,17 +1116,24 @@ def convert_expr(
                             new_local_vars,
                         )
                     )
-            if return_count == 0 or return_count > 1:
+            if return_count > 1:
                 raise SyntaxError(
-                    f"Function {func_name} must return exactly one value, got {return_count}",
+                    f"Function {func_name} must return at most one value, got {return_count}",
                     func_line_num,
                     func_name,
                 )
             result_expr = " ".join(param_assignments + function_tokens)
             net_effect = compute_stack_effect(result_expr, line_num, func_name)
-            if net_effect != 1:
+            if return_count == 1:
+                if net_effect != 1:
+                    raise SyntaxError(
+                        f"The return value stack of function {func_name} is unbalanced; expected 1 but got {net_effect}.",
+                        func_line_num,
+                        func_name,
+                    )
+            elif net_effect != 0:
                 raise SyntaxError(
-                    f"The return value stack of function {func_name} is unbalanced; expected 1 but got {net_effect}.",
+                    f"The function {func_name} should not return a value, but stack is not empty. Stack effect: {net_effect}.",
                     func_line_num,
                     func_name,
                 )
