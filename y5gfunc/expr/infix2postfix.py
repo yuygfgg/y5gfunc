@@ -3,8 +3,15 @@ from functools import reduce, lru_cache
 from .optimize import optimize_akarin_expr
 from typing import Optional
 import sys
+from enum import StrEnum
 
 sys.setrecursionlimit(5000)
+
+
+class GlobalMode(StrEnum):
+    ALL = "all"
+    NONE = "none"
+    SPECIFIC = "specific"
 
 
 def infix2postfix(infix_code: str) -> str:
@@ -147,13 +154,13 @@ def infix2postfix(infix_code: str) -> str:
     ```
     function functionName(param1, param2, …) {
         // function body
-        return expression
+        return expression // optional
     }
     ```
     - **Requirements and Checks:**
     - The parameter names must be unique, and none may begin with the reserved prefix `__internal_`.
     - The function body may span several lines. It can contain assignment statements and expression evaluations.
-    - There must be exactly one return statement, and it must be the last (non-empty) statement in the function body.
+    - There must be at most one return statement, and if it exists, it must be the last (non-empty) statement in the function body.
     - Defining functions inside another function is not currently supported.
 
     ---
@@ -163,11 +170,28 @@ def infix2postfix(infix_code: str) -> str:
     ### Global Declarations
 
     - **Syntax:**
-    Global variables may be declared on a dedicated line with the format:
-    ```
-    <global<var1><var2>…>
-    ```
-    This declaration must immediately precede a function definition, and the declared names are recorded as global variables associated with that function.
+    Global variables may be declared on a dedicated line immediately preceding a function definition. Three formats are supported:
+
+    1.  **Specific Globals:** To declare a specific set of global variables for a function:
+        ```
+        <global<var1><var2>…>
+        ```
+        The declared names (`var1`, `var2`, etc.) are recorded as the only global variables accessible by that function.
+
+    2.  **All Globals:** To allow a function to access all currently defined global variables:
+        ```
+        <global.all>
+        ```
+        This makes any global variable defined in the top-level scope available within the function.
+
+    3.  **No Globals:** To explicitly prevent a function from accessing any global variables:
+        ```
+        <global.none>
+        ```
+        This is the **default behavior** if no global declaration is provided for a function.
+
+    - **Placement:**
+    A global declaration must immediately precede the `function` definition it applies to.
 
     ### Assignment Statements
 
@@ -180,6 +204,18 @@ def infix2postfix(infix_code: str) -> str:
 
     - **Variable Usage Rules:**
     Variables must be defined (assigned) before they are referenced in expressions. Otherwise, a syntax error will be raised.
+
+    - **Naming Restrictions:**
+    Variables, function names, and parameters must not use reserved names (such as built-in constants or names beginning with `__internal_`).
+
+    - **Global Dependencies:**
+    For functions that use global variables (declared using `<global<...>>` or `<global.all>`), the referenced global variables must be defined in the global scope before any call to that function.
+
+    - **Function Return:**
+    Each function definition must have exactly one return statement, and that return must be the last statement in the function.
+
+    - **Argument Counts:**
+    Function calls (both built-in and custom) check that the exact number of required arguments is provided; otherwise, a syntax error is raised.
 
     ---
 
@@ -243,7 +279,7 @@ def infix2postfix(infix_code: str) -> str:
     Variables, function names, and parameters must not use reserved names (such as built-in constants or names beginning with `__internal_`).
 
     - **Global Dependencies:**
-    For functions that use global variables (declared using the `<global<...>>` syntax), the globals must be defined before any function call that depends on them.
+    For functions that use global variables (declared using `<global<...>>` or `<global.all>`), the referenced global variables must be defined in the global scope before any call to that function.
 
     - **Function Return:**
     Each function definition must have exactly one return statement, and that return must be the last statement in the function.
@@ -269,10 +305,11 @@ def infix2postfix(infix_code: str) -> str:
     # Process global declarations.
     # global declaration syntax: <global<var1><var2>...>
     # Also record for functions if global declaration appears immediately before function definition.
-    declared_globals: dict[
-        str, int
-    ] = {}  # mapping: global variable -> declaration line number
+    declared_globals: dict[str, int] = (
+        {}
+    )  # mapping: global variable -> declaration line number
     global_vars_for_functions: dict[str, set[str]] = {}
+    global_mode_for_functions: dict[str, GlobalMode] = {}  # "all", "none", "specific"
     lines = infix_code.split("\n")
     modified_lines: list[str] = []
 
@@ -290,13 +327,8 @@ def infix2postfix(infix_code: str) -> str:
 
         global_decl_match = global_decl_pattern.match(line)
         if global_decl_match:
+            content = global_decl_match.group(1).strip()
             # Extract all global variable names from this line.
-            globals_list = global_match_pattern.findall(global_decl_match.group(1))
-            for gv in globals_list:
-                if gv not in declared_globals:
-                    declared_globals[gv] = (
-                        i + 1
-                    )  # store declaration line number (1-indexed)
             j = i + 1
             # If the next non-global line is a function definition, apply these globals for that function.
             if j < len(lines):
@@ -304,17 +336,35 @@ def infix2postfix(infix_code: str) -> str:
                 if function_match:
                     func_name = function_match.group(1)
                     args = function_match.group(2)
-                    if func_name not in global_vars_for_functions:
-                        global_vars_for_functions[func_name] = set("")
-                    global_vars_for_functions[func_name].update(globals_list)
-                    function_params = parse_args(args)
-                    if any(
-                        global_var in function_params for global_var in globals_list
-                    ):
-                        raise SyntaxError(
-                            "Function param must not duplicate with global declarations.",
-                            j,
-                        )
+                    if content == ".all":
+                        global_mode_for_functions[func_name] = GlobalMode.ALL
+                    elif content == ".none":
+                        global_mode_for_functions[func_name] = GlobalMode.NONE
+                    else:
+                        global_mode_for_functions[func_name] = GlobalMode.SPECIFIC
+                        globals_list = global_match_pattern.findall(content)
+
+                        if not globals_list and content:
+                            raise SyntaxError(
+                                f"Invalid global declaration syntax: <global{content}>",
+                                i + 1,
+                            )
+                        for gv in globals_list:
+                            if gv not in declared_globals:
+                                declared_globals[gv] = (
+                                    i + 1
+                                )  # store declaration line number (1-indexed)
+                        if func_name not in global_vars_for_functions:
+                            global_vars_for_functions[func_name] = set()
+                        global_vars_for_functions[func_name].update(globals_list)
+                        function_params = parse_args(args)
+                        if any(
+                            global_var in function_params for global_var in globals_list
+                        ):
+                            raise SyntaxError(
+                                "Function param must not duplicate with global declarations.",
+                                j,
+                            )
                 else:
                     raise SyntaxError(
                         "Global declaration must be followed by a function definition.",
@@ -326,9 +376,8 @@ def infix2postfix(infix_code: str) -> str:
                     j,
                 )
             # Replace the global declaration lines with empty line.
-            for k in range(i, j):
-                modified_lines.append("\n")
-            i = j
+            modified_lines.append("\n")
+            i += 1
         else:
             modified_lines.append(lines[i])
             i += 1
@@ -348,11 +397,13 @@ def infix2postfix(infix_code: str) -> str:
 
         try:
             dup1, dup2, dupc = reduce(  # type: ignore
-                lambda a, i: a  # type: ignore
-                if a[1] is not None  # type: ignore
-                else (
-                    {**a[0], i[1]: i[0]} if i[1] not in a[0] else a[0],  # type: ignore
-                    (a[0][i[1]], i[0], i[1]) if i[1] in a[0] else None,  # type: ignore
+                lambda a, i: (
+                    a  # type: ignore
+                    if a[1] is not None  # type: ignore
+                    else (
+                        {**a[0], i[1]: i[0]} if i[1] not in a[0] else a[0],  # type: ignore
+                        (a[0][i[1]], i[0], i[1]) if i[1] in a[0] else None,  # type: ignore
+                    )
                 ),
                 enumerate(params),
                 ({}, None),  # type: ignore
@@ -414,13 +465,19 @@ def infix2postfix(infix_code: str) -> str:
             if m_call:
                 func_name = m_call.group(1)
                 if func_name in functions:
-                    for gv in functions[func_name][3]:
-                        if gv not in current_globals:
-                            raise SyntaxError(
-                                f"Global variable '{gv}' used in function '{func_name}' is not defined before its first call.",
-                                line_num,
-                                func_name,
-                            )
+                    func_global_mode = global_mode_for_functions.get(
+                        func_name, GlobalMode.NONE
+                    )
+                    if func_global_mode == GlobalMode.SPECIFIC:
+                        for gv in functions[func_name][3]:
+                            if gv not in current_globals:
+                                raise SyntaxError(
+                                    f"Global variable '{gv}' used in function '{func_name}' is not defined before its first call.",
+                                    line_num,
+                                    func_name,
+                                )
+                    elif func_global_mode == GlobalMode.ALL:
+                        pass  # All globals are implicitly available
             # Check self-reference in definition.
             if var_name not in current_globals and re.search(
                 r"\b" + re.escape(var_name) + r"\b", expr
@@ -432,7 +489,9 @@ def infix2postfix(infix_code: str) -> str:
             if var_name not in global_assignments:
                 global_assignments[var_name] = line_num
             current_globals.add(var_name)
-            postfix_expr = convert_expr(expr, current_globals, functions, line_num)
+            postfix_expr = convert_expr(
+                expr, current_globals, functions, line_num, global_mode_for_functions
+            )
             postfix_tokens.append(f"{postfix_expr} {var_name}!")
         else:
             # For standalone expression statements, check if they directly call a function.
@@ -440,14 +499,22 @@ def infix2postfix(infix_code: str) -> str:
             if m_call:
                 func_name = m_call.group(1)
                 if func_name in functions:
-                    for gv in functions[func_name][3]:
-                        if gv not in current_globals:
-                            raise SyntaxError(
-                                f"Global variable '{gv}' used in function '{func_name}' is not defined before its first call.",
-                                line_num,
-                                func_name,
-                            )
-            postfix_expr = convert_expr(stmt, current_globals, functions, line_num)
+                    func_global_mode = global_mode_for_functions.get(
+                        func_name, GlobalMode.NONE
+                    )
+                    if func_global_mode == GlobalMode.SPECIFIC:
+                        for gv in functions[func_name][3]:
+                            if gv not in current_globals:
+                                raise SyntaxError(
+                                    f"Global variable '{gv}' used in function '{func_name}' is not defined before its first call.",
+                                    line_num,
+                                    func_name,
+                                )
+                    elif func_global_mode == GlobalMode.ALL:
+                        pass
+            postfix_expr = convert_expr(
+                stmt, current_globals, functions, line_num, global_mode_for_functions
+            )
             if compute_stack_effect(postfix_expr, line_num) != 0:
                 raise SyntaxError(f"Unused global expression: {stmt}", line_num)
             postfix_tokens.append(postfix_expr)
@@ -472,7 +539,7 @@ func_call_pattern = re.compile(r"(\w+)\s*\(")
 clip_pattern = re.compile(r"(?:[a-zA-Z]|src\d+)$")
 func_info_pattern = re.compile(r"__internal_([a-zA-Z_]\w*)_([a-zA-Z_]\w+)$")
 func_pattern = re.compile(r"function\s+(\w+)")
-global_decl_pattern = re.compile(r"^<global((?:<[a-zA-Z_]\w*>)+)>$")
+global_decl_pattern = re.compile(r"^<global(.*)>$")
 function_def_pattern = re.compile(r"^\s*function\s+(\w+)\s*\(([^)]*)\)\s*\{")
 m_call_pattern = re.compile(r"^(\w+)\s*\(")
 prop_access_pattern = re.compile(r"^(\w+)\.([a-zA-Z_]\w*)$")
@@ -849,6 +916,7 @@ def convert_expr(
     variables: set[str],
     functions: dict[str, tuple[list[str], str, int, set[str]]],
     line_num: int,
+    global_mode_for_functions: dict[str, GlobalMode],
     current_function: Optional[str] = None,
     local_vars: Optional[set[str]] = None,
 ) -> str:
@@ -908,7 +976,13 @@ def convert_expr(
                 )
             args_postfix = [
                 convert_expr(
-                    arg, variables, functions, line_num, current_function, local_vars
+                    arg,
+                    variables,
+                    functions,
+                    line_num,
+                    global_mode_for_functions,
+                    current_function,
+                    local_vars,
                 )
                 for arg in args
             ]
@@ -929,7 +1003,13 @@ def convert_expr(
         args = parse_args(args_str)
         args_postfix = [
             convert_expr(
-                arg, variables, functions, line_num, current_function, local_vars
+                arg,
+                variables,
+                functions,
+                line_num,
+                global_mode_for_functions,
+                current_function,
+                local_vars,
             )
             for arg in args
         ]
@@ -1013,6 +1093,13 @@ def convert_expr(
                 )
 
             local_map: dict[str, str] = {}
+            func_global_mode = global_mode_for_functions.get(func_name, GlobalMode.NONE)
+            effective_globals = set[str]()
+            if func_global_mode == GlobalMode.ALL:
+                effective_globals = variables
+            elif func_global_mode == GlobalMode.SPECIFIC:
+                effective_globals = global_vars
+
             for offset, body_line in enumerate(body_lines):
                 if body_line.startswith("return"):
                     continue
@@ -1035,7 +1122,7 @@ def convert_expr(
                     if (
                         var not in param_map
                         and not var.startswith(f"__internal_{func_name}_")
-                        and var not in global_vars
+                        and var not in effective_globals
                     ):
                         local_map[var] = f"__internal_{func_name}_{var}"
 
@@ -1043,7 +1130,9 @@ def convert_expr(
             rename_map.update(param_map)
             rename_map.update(local_map)
             new_local_vars = (
-                set(param_map.keys()).union(set(local_map.keys())).union(global_vars)
+                set(param_map.keys())
+                .union(set(local_map.keys()))
+                .union(effective_globals)
             )
             param_assignments: list[str] = []
             for i, p in enumerate(params):
@@ -1051,13 +1140,13 @@ def convert_expr(
                 if is_constant(arg_orig):
                     rename_map[p] = args_postfix[i]
                 else:
-                    if p not in global_vars:
+                    if p not in effective_globals:
                         param_assignments.append(f"{args_postfix[i]} {rename_map[p]}!")
             new_lines: list[str] = []
             for line_text in body_lines:
                 new_line = line_text
                 for old, new in rename_map.items():
-                    if old not in global_vars:
+                    if old not in effective_globals:
                         new_line = re.sub(
                             rf"(?<!\w){re.escape(old)}(?!\w)", new, new_line
                         )
@@ -1077,6 +1166,7 @@ def convert_expr(
                             variables,
                             functions,
                             effective_line_num,
+                            global_mode_for_functions,
                             func_name,
                             new_local_vars,
                         )
@@ -1103,7 +1193,7 @@ def convert_expr(
                     if var_name not in new_local_vars:
                         new_local_vars.add(var_name)
                     function_tokens.append(
-                        f"{convert_expr(expr_line, variables, functions, effective_line_num, func_name, new_local_vars)} {var_name}!"
+                        f"{convert_expr(expr_line, variables, functions, effective_line_num, global_mode_for_functions, func_name, new_local_vars)} {var_name}!"
                     )
                 else:
                     function_tokens.append(
@@ -1112,6 +1202,7 @@ def convert_expr(
                             variables,
                             functions,
                             effective_line_num,
+                            global_mode_for_functions,
                             func_name,
                             new_local_vars,
                         )
@@ -1142,7 +1233,13 @@ def convert_expr(
     stripped = strip_outer_parentheses(expr)
     if stripped != expr:
         return convert_expr(
-            stripped, variables, functions, line_num, current_function, local_vars
+            stripped,
+            variables,
+            functions,
+            line_num,
+            global_mode_for_functions,
+            current_function,
+            local_vars,
         )
 
     m_static = m_static_pattern.match(expr)
@@ -1168,13 +1265,31 @@ def convert_expr(
     if ternary_parts is not None:
         cond, true_expr, false_expr = ternary_parts
         cond_conv = convert_expr(
-            cond, variables, functions, line_num, current_function, local_vars
+            cond,
+            variables,
+            functions,
+            line_num,
+            global_mode_for_functions,
+            current_function,
+            local_vars,
         )
         true_conv = convert_expr(
-            true_expr, variables, functions, line_num, current_function, local_vars
+            true_expr,
+            variables,
+            functions,
+            line_num,
+            global_mode_for_functions,
+            current_function,
+            local_vars,
         )
         false_conv = convert_expr(
-            false_expr, variables, functions, line_num, current_function, local_vars
+            false_expr,
+            variables,
+            functions,
+            line_num,
+            global_mode_for_functions,
+            current_function,
+            local_vars,
         )
         return f"{cond_conv} {true_conv} {false_conv} ?"
 
@@ -1201,10 +1316,22 @@ def convert_expr(
         left, right = find_binary_op(expr, op_str)
         if left is not None and right is not None:
             left_postfix = convert_expr(
-                left, variables, functions, line_num, current_function, local_vars
+                left,
+                variables,
+                functions,
+                line_num,
+                global_mode_for_functions,
+                current_function,
+                local_vars,
             )
             right_postfix = convert_expr(
-                right, variables, functions, line_num, current_function, local_vars
+                right,
+                variables,
+                functions,
+                line_num,
+                global_mode_for_functions,
+                current_function,
+                local_vars,
             )
             if letter_pattern.fullmatch(
                 left.strip()
@@ -1222,13 +1349,25 @@ def convert_expr(
 
     if expr.startswith("!"):
         operand = convert_expr(
-            expr[1:], variables, functions, line_num, current_function, local_vars
+            expr[1:],
+            variables,
+            functions,
+            line_num,
+            global_mode_for_functions,
+            current_function,
+            local_vars,
         )
         return f"{operand} not"
 
     if expr.startswith("-"):
         operand = convert_expr(
-            expr[1:], variables, functions, line_num, current_function, local_vars
+            expr[1:],
+            variables,
+            functions,
+            line_num,
+            global_mode_for_functions,
+            current_function,
+            local_vars,
         )
         return f"{operand} -1 *"
 
