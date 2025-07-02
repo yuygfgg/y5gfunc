@@ -202,21 +202,6 @@ def infix2postfix(infix_code: str) -> str:
     ```
     The left-hand side (`variable`) must not be a built-in constant or otherwise reserved. The expression on the right-hand side is converted to its postfix form. Internally, the assignment is marked by appending an exclamation mark (`!`) to indicate that the result is stored in that variable.
 
-    - **Variable Usage Rules:**
-    Variables must be defined (assigned) before they are referenced in expressions. Otherwise, a syntax error will be raised.
-
-    - **Naming Restrictions:**
-    Variables, function names, and parameters must not use reserved names (such as built-in constants or names beginning with `__internal_`).
-
-    - **Global Dependencies:**
-    For functions that use global variables (declared using `<global<...>>` or `<global.all>`), the referenced global variables must be defined in the global scope before any call to that function.
-
-    - **Function Return:**
-    Each function definition must have exactly one return statement, and that return must be the last statement in the function.
-
-    - **Argument Counts:**
-    Function calls (both built-in and custom) check that the exact number of required arguments is provided; otherwise, a syntax error is raised.
-
     ---
 
     ## Special Constructs
@@ -282,7 +267,7 @@ def infix2postfix(infix_code: str) -> str:
     For functions that use global variables (declared using `<global<...>>` or `<global.all>`), the referenced global variables must be defined in the global scope before any call to that function.
 
     - **Function Return:**
-    Each function definition must have exactly one return statement, and that return must be the last statement in the function.
+    Each function definition must have at most one return statement, and if it exists, it must be the last statement in the function.
 
     - **Argument Counts:**
     Function calls (both built-in and custom) check that the exact number of required arguments is provided; otherwise, a syntax error is raised.
