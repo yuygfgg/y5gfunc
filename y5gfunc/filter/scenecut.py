@@ -133,7 +133,9 @@ def scd_koala(
 
             last_cut = current_frame
 
-    def set_scenecut_prop(n: int, f: vs.VideoFrame, scene_cuts: list[int]) -> vs.VideoFrame:
+    def set_scenecut_prop(
+        n: int, f: vs.VideoFrame, scene_cuts: list[int]
+    ) -> vs.VideoFrame:
         fout = f.copy()
         if n in scene_cuts:
             fout.props._Scenecut = 1

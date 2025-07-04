@@ -17,6 +17,7 @@ class ZoomMode(IntEnum):
     ZOOM_TO_FIT = 1
     CONSTANT_MAX_ZOOM = 2
 
+
 class BoundaryMode(IntEnum):
     """
     Controls how boundary pixels are handled in `rotate_image` function.
@@ -28,6 +29,7 @@ class BoundaryMode(IntEnum):
 
     CLAMPED = 0
     MIRRORED = 1
+
 
 def rotate_image(
     clip: vs.VideoNode,

@@ -1,10 +1,4 @@
 .DS_Store
 checks.json
 *.pyc
-doc/*
-!doc/conf.py
-!doc/index.rst
-!doc/make.bat
-!doc/Makefile
-!doc/_templates/
 y5gfunc.egg-info/*

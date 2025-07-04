@@ -1,4 +1,5 @@
 """A lazy loader for remote resources."""
+
 import requests
 import time
 from typing import Optional, Union, cast

@@ -167,11 +167,11 @@ def load_dv_p7(
         A VapourSynth VideoNode representing the Dolby Vision P7 video clip.
     """
     file_path = resolve_path(file_path)
-    
+
     bl = LSMAS.source(
         file_path, stream_index=bl_index, chroma_location=vs.CHROMA_TOP_LEFT
     ).resize2.Spline36(format=vs.YUV420P16)
-    
+
     el = (
         LSMAS.source(file_path, stream_index=el_index)
         .resize2.Point(width=bl.width, height=bl.height, format=vs.YUV420P10)
@@ -189,12 +189,12 @@ def load_dv_p7(
     bl = tonemap(
         bl, src_csp=ColorSpace.DOLBY_VISION, dst_csp=ColorSpace.HDR10
     ).resize2.Spline36(format=vs.YUV420P16)
-    
+
     hdr = core.vsnlq.MapNLQ(bl, el).std.SetFrameProps(
         _Matrix=Matrix.BT2020NCL,
         _Primaries=PRIMARIES_BT2020,
         _Transfer=Transfer.ST2084.value_vs,
     )
-    
+
     hdr = core.akarin.PropExpr([hdr, el], lambda: {"_FEL": "y.PlaneStatsAverage 0 >"})
     return hdr

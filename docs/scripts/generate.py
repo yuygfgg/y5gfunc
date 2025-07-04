@@ -45,9 +45,11 @@ for path in sorted(src_package_dir.rglob("*.py")):
 
     mkdocs_gen_files.set_edit_path(
         doc_path,
-        Path("../..") / path
-        if src_package_dir.name == package_name
-        else Path("../../..") / path,
+        (
+            Path("../..") / path
+            if src_package_dir.name == package_name
+            else Path("../../..") / path
+        ),
     )
 
 

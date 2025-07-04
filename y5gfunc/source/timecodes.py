@@ -6,13 +6,16 @@ import fractions
 import collections
 from ..utils import resolve_path
 
+
 # modified from https://github.com/OrangeChannel/acsuite/blob/e40f50354a2fc26f2a29bf3a2fe76b96b2983624/acsuite/__init__.py#L252
 def get_frame_timestamp(
     frame_num: int,
     clip: vs.VideoNode,
-    precision: Literal['second', 'millisecond', 'microsecond' ,'nanosecond'] = 'millisecond',
-    timecodes_v2_file: Optional[str] = None
-)-> str:
+    precision: Literal[
+        "second", "millisecond", "microsecond", "nanosecond"
+    ] = "millisecond",
+    timecodes_v2_file: Optional[str] = None,
+) -> str:
     """
     Get the timestamp of a frame in a video clip.
 
@@ -27,15 +30,18 @@ def get_frame_timestamp(
     """
     assert frame_num >= 0
     assert timecodes_v2_file is None or resolve_path(timecodes_v2_file).exists()
-    
+
     if frame_num == 0:
         s = 0.0
     elif clip.fps != fractions.Fraction(0, 1):
-        t = round(float(10 ** 9 * frame_num * clip.fps ** -1))
-        s = t / 10 ** 9
+        t = round(float(10**9 * frame_num * clip.fps**-1))
+        s = t / 10**9
     else:
         if timecodes_v2_file is not None:
-            timecodes = [float(x) / 1000 for x in open(timecodes_v2_file, "r").read().splitlines()[1:]]
+            timecodes = [
+                float(x) / 1000
+                for x in open(timecodes_v2_file, "r").read().splitlines()[1:]
+            ]
             s = timecodes[frame_num]
         else:
             s = clip_to_timecodes(clip)[frame_num]
@@ -45,14 +51,15 @@ def get_frame_timestamp(
     h = m // 60
     m %= 60
 
-    if precision == 'second':
+    if precision == "second":
         return f"{h:02.0f}:{m:02.0f}:{round(s):02}"
-    elif precision == 'millisecond':
+    elif precision == "millisecond":
         return f"{h:02.0f}:{m:02.0f}:{s:06.3f}"
-    elif precision == 'microsecond':
+    elif precision == "microsecond":
         return f"{h:02.0f}:{m:02.0f}:{s:09.6f}"
-    elif precision == 'nanosecond':
+    elif precision == "nanosecond":
         return f"{h:02.0f}:{m:02.0f}:{s:012.9f}"
+
 
 # TODO: use fps for CFR clips
 # modified from https://github.com/OrangeChannel/acsuite/blob/e40f50354a2fc26f2a29bf3a2fe76b96b2983624/acsuite/__init__.py#L305
@@ -69,19 +76,19 @@ def clip_to_timecodes(clip: vs.VideoNode, path: Optional[str] = None) -> deque[f
         A deque of timecodes.
     """
     if path:
-        path = resolve_path(path) # type: ignore
+        path = resolve_path(path)  # type: ignore
 
     timecodes = collections.deque([0.0], maxlen=clip.num_frames + 1)
     curr_time = fractions.Fraction()
     init_percentage = 0
 
-    with open(path, "w", encoding="utf-8") if path else None as file: # type: ignore
+    with open(path, "w", encoding="utf-8") if path else None as file:  # type: ignore
         if file:
             file.write("# timecode format v2\n")
 
         for _, frame in enumerate(clip.frames()):
-            num: int = frame.props["_DurationNum"] # type: ignore
-            den: int = frame.props["_DurationDen"] # type: ignore
+            num: int = frame.props["_DurationNum"]  # type: ignore
+            den: int = frame.props["_DurationDen"]  # type: ignore
             curr_time += fractions.Fraction(num, den)
             timecode = float(curr_time)
             timecodes.append(timecode)
@@ -91,7 +98,9 @@ def clip_to_timecodes(clip: vs.VideoNode, path: Optional[str] = None) -> deque[f
 
             percentage_done = round(100 * len(timecodes) / clip.num_frames)
             if percentage_done % 10 == 0 and percentage_done != init_percentage:
-                print(f"Finding timecodes for variable-framerate clip: {percentage_done}% done")
+                print(
+                    f"Finding timecodes for variable-framerate clip: {percentage_done}% done"
+                )
                 init_percentage = percentage_done
 
     return timecodes

@@ -33,7 +33,8 @@ def draw_line(
     """
     assert clip.format.num_planes == 1
 
-    expr = infix2postfix(f"""
+    expr = infix2postfix(
+        f"""
             sx = {sx}
             sy = {sy}
             ex = {ex}
@@ -53,7 +54,8 @@ def draw_line(
             d2 = (X - proj_x) * (X - proj_x) + (Y - proj_y) * (Y - proj_y)
             do = d2 <= half_thickness_sq
             RESULT = do ? ((1 - factor) * src0 + factor * color) : src0
-            """)
+            """
+    )
 
     return clip.akarin.Expr(expr)
 
@@ -87,7 +89,8 @@ def draw_circle(
     """
     assert clip.format.num_planes == 1
 
-    expr = infix2postfix(f"""
+    expr = infix2postfix(
+        f"""
             cx = {cx}
             cy = {cy}
             radius = {radius}
@@ -104,7 +107,8 @@ def draw_circle(
             upper_sq = (radius + half_thickness) ** 2
             do = distance_sq >= lower_sq && distance_sq <= upper_sq
             RESULT = do ? ((1 - factor) * src0 + factor * color) : src0
-            """)
+            """
+    )
 
     return clip.akarin.Expr(expr)
 
@@ -142,7 +146,8 @@ def draw_ellipse(
     """
     assert clip.format.num_planes == 1
 
-    expr = infix2postfix(f"""
+    expr = infix2postfix(
+        f"""
             f1x = {f1x}
             f1y = {f1y}
             f2x = {f2x}
@@ -163,7 +168,8 @@ def draw_ellipse(
             norm_thresh = thickness / ellipse_sum
             do = abs(value - 1) <= norm_thresh
             RESULT = do ? ((1 - factor) * src0 + factor * color) : src0
-            """)
+            """
+    )
 
     return clip.akarin.Expr(expr)
 

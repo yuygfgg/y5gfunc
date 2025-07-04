@@ -4,6 +4,7 @@ from vstools import vs
 from vstools import core
 import vstools
 
+
 class ColorSpace(IntEnum):
     """
     Color spaces used in tonemapping operations.
@@ -203,14 +204,14 @@ def tonemap(
     """
     src_csp_int = int(src_csp)
     dst_csp_int = int(dst_csp)
-    
+
     if isinstance(dst_prim, ColorPrimaries):
         dst_prim_int = int(dst_prim)
     elif isinstance(dst_prim, vstools.Primaries):
         dst_prim_int = dst_prim.value_libplacebo
     else:
         dst_prim_int = None
-    
+
     gamut_mapping_int = int(gamut_mapping)
     metadata_int = int(metadata)
 
