@@ -2772,12 +2772,12 @@
 <span class="normal"><a href="#__codelineno-0-36">36</a></span>
 <span class="normal"><a href="#__codelineno-0-37">37</a></span>
 <span class="normal"><a href="#__codelineno-0-38">38</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-17" name="__codelineno-0-17"></a><span class="k">def</span><span class="w"> </span><span class="nf">process</span><span class="p">(</span>
-<a id="__codelineno-0-18" name="__codelineno-0-18"></a>    <span class="bp">self</span><span class="p">,</span> 
-<a id="__codelineno-0-19" name="__codelineno-0-19"></a>    <span class="n">clip</span><span class="p">:</span> <span class="n">vs</span><span class="o">.</span><span class="n">VideoNode</span><span class="p">,</span> 
+<a id="__codelineno-0-18" name="__codelineno-0-18"></a>    <span class="bp">self</span><span class="p">,</span>
+<a id="__codelineno-0-19" name="__codelineno-0-19"></a>    <span class="n">clip</span><span class="p">:</span> <span class="n">vs</span><span class="o">.</span><span class="n">VideoNode</span><span class="p">,</span>
 <a id="__codelineno-0-20" name="__codelineno-0-20"></a>    <span class="n">project</span><span class="p">:</span> <span class="n">ProjectData</span><span class="p">,</span>
 <a id="__codelineno-0-21" name="__codelineno-0-21"></a>    <span class="n">frame_props</span><span class="p">:</span> <span class="n">FramePropertyMap</span><span class="p">,</span>
 <a id="__codelineno-0-22" name="__codelineno-0-22"></a>    <span class="n">frame_mapping</span><span class="p">:</span> <span class="n">FrameMap</span><span class="p">,</span>
-<a id="__codelineno-0-23" name="__codelineno-0-23"></a>    <span class="n">presets</span><span class="p">:</span> <span class="n">PresetDict</span>
+<a id="__codelineno-0-23" name="__codelineno-0-23"></a>    <span class="n">presets</span><span class="p">:</span> <span class="n">PresetDict</span><span class="p">,</span>
 <a id="__codelineno-0-24" name="__codelineno-0-24"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">vs</span><span class="o">.</span><span class="n">VideoNode</span><span class="p">,</span> <span class="n">FramePropertyMap</span><span class="p">,</span> <span class="n">FrameMap</span><span class="p">]:</span>
 <a id="__codelineno-0-25" name="__codelineno-0-25"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <a id="__codelineno-0-26" name="__codelineno-0-26"></a><span class="sd">    Process a video clip</span>
@@ -3098,12 +3098,12 @@
 <span class="normal"><a href="#__codelineno-0-65">65</a></span>
 <span class="normal"><a href="#__codelineno-0-66">66</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-44" name="__codelineno-0-44"></a><span class="nd">@abstractmethod</span>
 <a id="__codelineno-0-45" name="__codelineno-0-45"></a><span class="k">def</span><span class="w"> </span><span class="nf">process</span><span class="p">(</span>
-<a id="__codelineno-0-46" name="__codelineno-0-46"></a>    <span class="bp">self</span><span class="p">,</span> 
-<a id="__codelineno-0-47" name="__codelineno-0-47"></a>    <span class="n">clip</span><span class="p">:</span> <span class="n">vs</span><span class="o">.</span><span class="n">VideoNode</span><span class="p">,</span> 
+<a id="__codelineno-0-46" name="__codelineno-0-46"></a>    <span class="bp">self</span><span class="p">,</span>
+<a id="__codelineno-0-47" name="__codelineno-0-47"></a>    <span class="n">clip</span><span class="p">:</span> <span class="n">vs</span><span class="o">.</span><span class="n">VideoNode</span><span class="p">,</span>
 <a id="__codelineno-0-48" name="__codelineno-0-48"></a>    <span class="n">project</span><span class="p">:</span> <span class="n">ProjectData</span><span class="p">,</span>
 <a id="__codelineno-0-49" name="__codelineno-0-49"></a>    <span class="n">frame_props</span><span class="p">:</span> <span class="n">FramePropertyMap</span><span class="p">,</span>
 <a id="__codelineno-0-50" name="__codelineno-0-50"></a>    <span class="n">frame_mapping</span><span class="p">:</span> <span class="n">FrameMap</span><span class="p">,</span>
-<a id="__codelineno-0-51" name="__codelineno-0-51"></a>    <span class="n">presets</span><span class="p">:</span> <span class="n">PresetDict</span>
+<a id="__codelineno-0-51" name="__codelineno-0-51"></a>    <span class="n">presets</span><span class="p">:</span> <span class="n">PresetDict</span><span class="p">,</span>
 <a id="__codelineno-0-52" name="__codelineno-0-52"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">vs</span><span class="o">.</span><span class="n">VideoNode</span><span class="p">,</span> <span class="n">FramePropertyMap</span><span class="p">,</span> <span class="n">FrameMap</span><span class="p">]:</span>
 <a id="__codelineno-0-53" name="__codelineno-0-53"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <a id="__codelineno-0-54" name="__codelineno-0-54"></a><span class="sd">    Abstract method for processing a video clip</span>
