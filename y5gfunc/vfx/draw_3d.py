@@ -41,7 +41,8 @@ def draw_3d_cube(
     """
     assert clip.format.num_planes == 1
 
-    expr = infix2postfix(f"""
+    expr = infix2postfix(
+        f"""
             centerX = {centerX}
             centerY = {centerY}
             cubeSize = {cubeSize}
@@ -138,7 +139,8 @@ def draw_3d_cube(
             doDraw = finalMinDistanceSquared <= halfThicknessSq
             
             RESULT = doDraw ? ((1 - factor) * src0 + factor * color) : src0
-            """)
+            """
+    )
 
     return clip.akarin.Expr(expr)
 
@@ -251,7 +253,7 @@ def render_triangle_scene(
         background="0"
     )
     ```
-    
+
     Renders a rotating and vibrating cubic.
     """
 
@@ -456,20 +458,26 @@ def render_triangle_scene(
         face_t_names.append(f"t_face_{f_idx}")
         face_shading_names.append(f"shading_face_{f_idx}")
 
-    if face_t_names:
-        face_t_args = ", ".join(face_t_names)
-        expr_lines.append(f"final_t = nth_1({face_t_args})")
-    else:
-        expr_lines.append("final_t = huge")
+    if face_count > 0:
+        expr_lines.append(f"closest_t_0 = t_face_0")
+        expr_lines.append(f"closest_shading_0 = shading_face_0")
 
-    select_terms = []
-    for f_idx in range(face_count):
-        expr_lines.append(
-            f"select_{f_idx} = abs(t_face_{f_idx} - final_t) < epsilon ? shading_face_{f_idx} : 0"
-        )
-        select_terms.append(f"select_{f_idx}")
-    selects_sum = " + ".join(select_terms)
-    expr_lines.append(f"RESULT = final_t < huge ? ({selects_sum}) : background")
+        for i in range(1, face_count):
+            prev_i = i - 1
+            expr_lines.append(f"is_closer_{i} = t_face_{i} < closest_t_{prev_i}")
+            expr_lines.append(
+                f"closest_t_{i} = is_closer_{i} ? t_face_{i} : closest_t_{prev_i}"
+            )
+            expr_lines.append(
+                f"closest_shading_{i} = is_closer_{i} ? shading_face_{i} : closest_shading_{prev_i}"
+            )
+
+        final_idx = face_count - 1
+        expr_lines.append(f"final_t = closest_t_{final_idx}")
+        expr_lines.append(f"final_shading = closest_shading_{final_idx}")
+        expr_lines.append("RESULT = final_t < huge ? final_shading : background")
+    else:
+        expr_lines.append("RESULT = background")
 
     full_expr = "\n".join(expr_lines)
     converted_expr = infix2postfix(full_expr)

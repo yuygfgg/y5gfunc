@@ -9,6 +9,15 @@ sys.setrecursionlimit(5000)
 
 
 class GlobalMode(StrEnum):
+    """
+    Global mode for a function.
+
+    Attributes:
+        ALL: All global variables are available.
+        NONE: No global variables are available. (default)
+        SPECIFIC: Only the global variables declared are available.
+    """
+
     ALL = "all"
     NONE = "none"
     SPECIFIC = "specific"
@@ -291,13 +300,13 @@ def infix2postfix(infix_code: str) -> str:
     find_duplicate_functions(infix_code)
 
     # Process global declarations.
-    # global declaration syntax: <global<var1><var2>...>
+    # global declaration syntax: <global<var1><var2>...> or <global.all> or <global.none>
     # Also record for functions if global declaration appears immediately before function definition.
     declared_globals: dict[str, int] = (
         {}
     )  # mapping: global variable -> declaration line number
     global_vars_for_functions: dict[str, set[str]] = {}
-    global_mode_for_functions: dict[str, GlobalMode] = {}  # "all", "none", "specific"
+    global_mode_for_functions: dict[str, GlobalMode] = {}
     lines = infix_code.split("\n")
     modified_lines: list[str] = []
 
@@ -373,7 +382,7 @@ def infix2postfix(infix_code: str) -> str:
     expanded_code = "\n".join(modified_lines)
 
     # Replace function definitions with newlines to preserve line numbers.
-    functions: dict[str, tuple[list[str], str, int, set[str]]] = {}
+    functions: dict[str, tuple[list[str], str, int, set[str], bool]] = {}
 
     def replace_function(match: re.Match[str]) -> str:
         func_name = match.group(1)
@@ -383,26 +392,15 @@ def infix2postfix(infix_code: str) -> str:
         line_num = 1 + expanded_code[:func_start_index].count("\n")
         params = [p.strip() for p in params_str.split(",") if p.strip()]
 
-        try:
-            dup1, dup2, dupc = reduce(  # type: ignore
-                lambda a, i: (
-                    a  # type: ignore
-                    if a[1] is not None  # type: ignore
-                    else (
-                        {**a[0], i[1]: i[0]} if i[1] not in a[0] else a[0],  # type: ignore
-                        (a[0][i[1]], i[0], i[1]) if i[1] in a[0] else None,  # type: ignore
-                    )
-                ),
-                enumerate(params),
-                ({}, None),  # type: ignore
-            )[1]
-            if any([dup1, dup2, dupc]):  # type: ignore
+        seen_params: dict[str, int] = {}
+        for i, p in enumerate(params):
+            if p in seen_params:
+                first_i = seen_params[p]
                 raise SyntaxError(
-                    f"{dup1}th argument and {dup2}th argument '{dupc}' duplicated in function definition.",
+                    f"Duplicate parameter name '{p}' at position {i + 1}. It was first declared at position {first_i + 1}.",
                     line_num,
                 )
-        except (TypeError, UnboundLocalError):
-            pass
+            seen_params[p] = i
 
         if is_builtin_function(func_name):
             raise SyntaxError(
@@ -417,7 +415,9 @@ def infix2postfix(infix_code: str) -> str:
                 )
         # Get globals declared for this function if any.
         global_vars = global_vars_for_functions.get(func_name, set())
-        functions[func_name] = (params, body, line_num, global_vars)
+        body_lines_strip = [line.strip() for line in body.split("\n") if line.strip()]
+        has_return = any(line.startswith("return") for line in body_lines_strip)
+        functions[func_name] = (params, body, line_num, global_vars, has_return)
         return "\n" * match.group(0).count("\n")
 
     cleaned_code = function_pattern.sub(replace_function, expanded_code)
@@ -453,6 +453,12 @@ def infix2postfix(infix_code: str) -> str:
             if m_call:
                 func_name = m_call.group(1)
                 if func_name in functions:
+                    # If assigning the result of a function call, check if the function returns a value.
+                    if not functions[func_name][4]:  # has_return is False
+                        raise SyntaxError(
+                            f"Function '{func_name}' does not return a value and cannot be used in an assignment.",
+                            line_num,
+                        )
                     func_global_mode = global_mode_for_functions.get(
                         func_name, GlobalMode.NONE
                     )
@@ -480,7 +486,13 @@ def infix2postfix(infix_code: str) -> str:
             postfix_expr = convert_expr(
                 expr, current_globals, functions, line_num, global_mode_for_functions
             )
-            postfix_tokens.append(f"{postfix_expr} {var_name}!")
+            full_postfix_expr = f"{postfix_expr} {var_name}!"
+            if compute_stack_effect(full_postfix_expr, line_num) != 0:
+                raise SyntaxError(
+                    "Assignment statement has unbalanced stack.",
+                    line_num,
+                )
+            postfix_tokens.append(full_postfix_expr)
         else:
             # For standalone expression statements, check if they directly call a function.
             m_call = m_call_pattern.match(stmt)
@@ -504,7 +516,10 @@ def infix2postfix(infix_code: str) -> str:
                 stmt, current_globals, functions, line_num, global_mode_for_functions
             )
             if compute_stack_effect(postfix_expr, line_num) != 0:
-                raise SyntaxError(f"Unused global expression: {stmt}", line_num)
+                raise SyntaxError(
+                    "Expression statement has unbalanced stack. Maybe you forgot to assign it to a variable?",
+                    line_num,
+                )
             postfix_tokens.append(postfix_expr)
 
     # Check that all declared global variables are defined.
@@ -902,7 +917,7 @@ def check_variable_usage(
 def convert_expr(
     expr: str,
     variables: set[str],
-    functions: dict[str, tuple[list[str], str, int, set[str]]],
+    functions: dict[str, tuple[list[str], str, int, set[str], bool]],
     line_num: int,
     global_mode_for_functions: dict[str, GlobalMode],
     current_function: Optional[str] = None,
@@ -1055,7 +1070,7 @@ def convert_expr(
                 return f"{args_postfix[0]} {func_name}"
         # Handle custom function calls.
         if func_name in functions:
-            params, body, func_line_num, global_vars = functions[func_name]
+            params, body, func_line_num, global_vars, _ = functions[func_name]
             if len(args) != len(params):
                 raise SyntaxError(
                     f"Function {func_name} requires {len(params)} parameters, but {len(args)} were provided.",
@@ -1148,6 +1163,21 @@ def convert_expr(
                 ):  # Return does nothing, but it looks better to have one.
                     return_count += 1
                     ret_expr = body_line[len("return") :].strip()
+
+                    # Check if a function that does not return a value is being returned.
+                    m_call = m_call_pattern.match(ret_expr)
+                    if m_call:
+                        called_func_name = m_call.group(1)
+                        if called_func_name in functions:
+                            if not functions[called_func_name][
+                                4
+                            ]:  # has_return is False
+                                raise SyntaxError(
+                                    f"Function '{called_func_name}' does not return a value and cannot be used in a return statement.",
+                                    effective_line_num,
+                                    func_name,
+                                )
+
                     function_tokens.append(
                         convert_expr(
                             ret_expr,
@@ -1180,21 +1210,43 @@ def convert_expr(
                         )
                     if var_name not in new_local_vars:
                         new_local_vars.add(var_name)
-                    function_tokens.append(
-                        f"{convert_expr(expr_line, variables, functions, effective_line_num, global_mode_for_functions, func_name, new_local_vars)} {var_name}!"
-                    )
-                else:
-                    function_tokens.append(
-                        convert_expr(
-                            body_line,
-                            variables,
-                            functions,
-                            effective_line_num,
-                            global_mode_for_functions,
-                            func_name,
-                            new_local_vars,
+
+                    postfix_line = f"{convert_expr(expr_line, variables, functions, effective_line_num, global_mode_for_functions, func_name, new_local_vars)} {var_name}!"
+                    if (
+                        compute_stack_effect(
+                            postfix_line, effective_line_num, func_name
                         )
+                        != 0
+                    ):
+                        raise SyntaxError(
+                            "Assignment statement has unbalanced stack.",
+                            effective_line_num,
+                            func_name,
+                        )
+
+                    function_tokens.append(postfix_line)
+                else:
+                    postfix_line = convert_expr(
+                        body_line,
+                        variables,
+                        functions,
+                        effective_line_num,
+                        global_mode_for_functions,
+                        func_name,
+                        new_local_vars,
                     )
+                    if (
+                        compute_stack_effect(
+                            postfix_line, effective_line_num, func_name
+                        )
+                        != 0
+                    ):
+                        raise SyntaxError(
+                            "Expression statement has unbalanced stack. Maybe you forgot to assign it to a variable?",
+                            effective_line_num,
+                            func_name,
+                        )
+                    function_tokens.append(postfix_line)
             if return_count > 1:
                 raise SyntaxError(
                     f"Function {func_name} must return at most one value, got {return_count}",
@@ -1374,48 +1426,28 @@ def find_binary_op(expr: str, op: str):
     if not op:
         return None, None
 
-    prefix = [0] * len(op)
-    j = 0
-    for i in range(1, len(op)):
-        while j > 0 and op[i] != op[j]:
-            j = prefix[j - 1]
-        if op[i] == op[j]:
-            j += 1
-            prefix[i] = j
-
-    candidate_index = -1
-    level = 0
-    kmp_state = 0
+    paren_level = 0
     levels = [0] * len(expr)
+    for i, char in enumerate(expr):
+        levels[i] = paren_level
+        if char == "(":
+            paren_level += 1
+        elif char == ")":
+            paren_level -= 1
 
-    for i, c in enumerate(expr):
-        if c == "(":
-            level += 1
-        elif c == ")":
-            level -= 1
-        levels[i] = level
+    for i in range(len(expr) - len(op), -1, -1):
+        if levels[i] == 0 and expr.startswith(op, i):
+            candidate = i
+            left_valid = (candidate == 0) or (expr[candidate - 1] in " (,\t")
+            after = candidate + len(op)
+            right_valid = (after == len(expr)) or (expr[after] in " )\t,")
 
-        while kmp_state > 0 and c != op[kmp_state]:
-            kmp_state = prefix[kmp_state - 1]
-        if c == op[kmp_state]:
-            kmp_state += 1
+            if left_valid and right_valid:
+                left = expr[:candidate].strip()
+                right = expr[candidate + len(op) :].strip()
+                return left, right
 
-        if kmp_state == len(op):
-            candidate = i - len(op) + 1
-            if levels[candidate] == 0:
-                left_valid = (candidate == 0) or (expr[candidate - 1] in " (,\t")
-                after = candidate + len(op)
-                right_valid = (after == len(expr)) or (expr[after] in " )\t,")
-                if left_valid and right_valid:
-                    candidate_index = candidate
-            kmp_state = prefix[kmp_state - 1]
-
-    if candidate_index == -1:
-        return None, None
-
-    left = expr[:candidate_index].strip()
-    right = expr[candidate_index + len(op) :].strip()
-    return left, right
+    return None, None
 
 
 def parse_args(args_str: str) -> list[str]:
