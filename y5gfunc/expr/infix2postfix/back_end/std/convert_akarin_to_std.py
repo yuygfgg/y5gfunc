@@ -1,5 +1,6 @@
 from ...util import _UNARY_OPS, _BINARY_OPS, _TERNARY_OPS, _CLIP_OPS
 from ...middle_end import tokenize_expr, is_token_numeric, token_pattern
+import regex as re
 
 
 def convert_var_expr(expr: str) -> str:
@@ -143,9 +144,7 @@ def convert_var_expr(expr: str) -> str:
             if stack_size < old_stack_size:
                 # stack has shrunk, remove dropped items
                 for v_name, copies in list(loads_to_serve.items()):
-                    updated_copies = [
-                        c for c in copies if c["stack_pos"] < stack_size
-                    ]
+                    updated_copies = [c for c in copies if c["stack_pos"] < stack_size]
                     if not updated_copies:
                         del loads_to_serve[v_name]
                     else:
@@ -167,5 +166,111 @@ def convert_var_expr(expr: str) -> str:
     real_vals = stack_size - len(abandoned)
     if real_vals > 1:
         new_tokens.extend(["drop"] * (real_vals - 1))
+
+    return " ".join(new_tokens)
+
+
+def expand_rpn_sort(expr: str) -> str:
+    """
+    Expand sortN instructions in an RPN string to their equivalent min/max/swap/dup sequences.
+    """
+
+    def adjacent_compare_swap(i: int) -> list[str]:
+        """
+        Generate RPN code to compare and swap the elements at stack depth i and i+1.
+        """
+        CS_TOP_SEQUENCE = ["dup1", "dup0", "max", "swap2", "min"]
+
+        if i < 0:
+            raise ValueError("Stack depth must be non-negative.")
+
+        commands = []
+
+        for k in range(i, 0, -1):
+            commands.append(f"swap{k}")
+
+        commands.extend(CS_TOP_SEQUENCE)
+
+        for k in range(1, i + 1):
+            commands.append(f"swap{k}")
+
+        return commands
+
+    def generate_sort_rpn(n: int) -> list[str]:
+        """
+        Generate a complete RPN instruction sequence for sortN.
+        """
+        if n < 1:
+            return []
+        if n == 1:
+            return []
+
+        if n == 2:
+            return adjacent_compare_swap(0)
+
+        total_commands = []
+        for phase in range(n):
+            if phase % 2 == 0:
+                for i in range(0, n - 1, 2):
+                    total_commands.extend(adjacent_compare_swap(i))
+            else:
+                for i in range(1, n - 1, 2):
+                    total_commands.extend(adjacent_compare_swap(i))
+
+        return total_commands
+
+    sort_pattern = re.compile(r"\bsort(\d+)\b")
+
+    tokens = expr.split()
+
+    final_rpn = []
+    for token in tokens:
+        match = sort_pattern.match(token)
+        if match:
+            n = int(match.group(1))
+            sort_commands = generate_sort_rpn(n)
+            final_rpn.extend(sort_commands)
+        else:
+            final_rpn.append(token)
+
+    return " ".join(final_rpn)
+
+
+def replace_drop_in_expr(expr: str) -> str:
+    """
+    Replaces all 'drop' and 'dropN' operations in an expression string with their std.Expr emulated equivalents.
+    """
+
+    def emulate_drop(n: int) -> str:
+        """
+        Emulate the 'dropN' operation from akarin.Expr using std.Expr operators.
+        """
+        if n < 0:
+            raise ValueError("Drop count cannot be negative.")
+        if n == 0:
+            return ""
+
+        drop_one = "0 * +"
+
+        return " ".join([drop_one] * n)
+
+    tokens = expr.split()
+    new_tokens = []
+    for token in tokens:
+        if token.startswith("drop"):
+            n_str = token[4:]
+            n = 1
+            if n_str:
+                try:
+                    n = int(n_str)
+                except ValueError:
+                    new_tokens.append(token)
+                    continue
+
+            replacement = emulate_drop(n)
+            if replacement:
+                new_tokens.append(replacement)
+        else:
+            new_tokens.append(token)
 
     return " ".join(new_tokens)

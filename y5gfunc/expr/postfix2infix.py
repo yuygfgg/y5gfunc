@@ -4,7 +4,7 @@ if sys.version_info >= (3, 11):
     from typing import LiteralString
 else:
     LiteralString = str
-import re
+import regex as re
 
 
 # inspired by mvf.postfix2infix
@@ -279,7 +279,6 @@ def postfix2infix(expr: str) -> LiteralString:
     if len(stack) == 1:
         output_lines.append(f"RESULT = {stack[0]}")
         ret = "\n".join(output_lines)
-        print(ret)
     else:
         for idx, item in enumerate(stack):
             output_lines.append(f"# stack[{idx}]: {item}")

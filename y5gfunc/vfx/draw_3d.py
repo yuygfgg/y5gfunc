@@ -1,6 +1,6 @@
 import trimesh
 from vstools import vs
-from ..expr import infix2postfix
+from ..expr import compile
 import numpy as np
 
 
@@ -41,7 +41,7 @@ def draw_3d_cube(
     """
     assert clip.format.num_planes == 1
 
-    expr = infix2postfix(
+    expr = compile(
         f"""
             centerX = {centerX}
             centerY = {centerY}
@@ -480,7 +480,7 @@ def render_triangle_scene(
         expr_lines.append("RESULT = background")
 
     full_expr = "\n".join(expr_lines)
-    converted_expr = infix2postfix(full_expr)
+    converted_expr = compile(full_expr)
 
     return clip.akarin.Expr(converted_expr)
 
