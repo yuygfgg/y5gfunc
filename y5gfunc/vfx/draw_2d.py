@@ -1,5 +1,5 @@
 from vstools import vs
-from ..expr import infix2postfix
+from ..expr import compile
 
 
 def draw_line(
@@ -33,7 +33,7 @@ def draw_line(
     """
     assert clip.format.num_planes == 1
 
-    expr = infix2postfix(
+    expr = compile(
         f"""
             sx = {sx}
             sy = {sy}
@@ -89,7 +89,7 @@ def draw_circle(
     """
     assert clip.format.num_planes == 1
 
-    expr = infix2postfix(
+    expr = compile(
         f"""
             cx = {cx}
             cy = {cy}
@@ -146,7 +146,7 @@ def draw_ellipse(
     """
     assert clip.format.num_planes == 1
 
-    expr = infix2postfix(
+    expr = compile(
         f"""
             f1x = {f1x}
             f1y = {f1y}
@@ -298,7 +298,7 @@ def draw_bezier_curve(
 
     full_expression = "\n".join(expr_lines)
 
-    converted_expression = infix2postfix(full_expression)
+    converted_expression = compile(full_expression)
     return clip.akarin.Expr(converted_expression)
 
 
@@ -386,7 +386,7 @@ def draw_mandelbrot_zoomer(
     expr_lines.append("RESULT = (iterResult / maxIter) * color")
 
     full_expr = "\n".join(expr_lines)
-    converted_expr = infix2postfix(full_expr)
+    converted_expr = compile(full_expr)
     return clip.akarin.Expr(converted_expr)
 
 
@@ -476,5 +476,5 @@ def draw_spiral(
     expr_lines.append("RESULT = doDraw ? ((1 - factor) * src0 + factor * color) : src0")
 
     full_expr = "\n".join(expr_lines)
-    converted_expr = infix2postfix(full_expr)
+    converted_expr = compile(full_expr)
     return clip.akarin.Expr(converted_expr)

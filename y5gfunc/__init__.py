@@ -3,8 +3,11 @@ Yuygfgg's collection for vapoursynth video filtering and encoding stuff.
 """
 
 from .expr import (
+    compile,
+    BackEnd,
     postfix2infix,
-    infix2postfix,
+    parse_infix_to_postfix,
+    to_std_expr,
     optimize_akarin_expr,
     math_functions,
     ex_planes,
@@ -128,8 +131,11 @@ __all__ = [
     "deflate",
     "scd_koala",
     "temporal_stabilize",
+    "compile",
+    "BackEnd",
     "postfix2infix",
-    "infix2postfix",
+    "parse_infix_to_postfix",
+    "to_std_expr",
     "optimize_akarin_expr",
     "math_functions",
     "ex_planes",

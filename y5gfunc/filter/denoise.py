@@ -24,7 +24,7 @@ from vsdenoise import (
 from vsrgtools import remove_grain
 import vsrgtools
 from vsmasktools import adg_mask
-from typing import Callable, Optional, Union, Any, Tuple
+from typing import Callable, Optional, Union, Tuple
 from enum import StrEnum
 from .resample import (
     ColorMatrixManager,

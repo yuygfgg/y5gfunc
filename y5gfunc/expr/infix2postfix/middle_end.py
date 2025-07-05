@@ -1,6 +1,7 @@
 import regex as re
 from typing import Optional, Union, Any
 import math
+from .util import _UNARY_OPS, _BINARY_OPS, _TERNARY_OPS, _CLIP_OPS
 
 token_pattern = re.compile(r"(\w+)\[\s*(-?\d+)\s*,\s*(-?\d+)\s*\](?::(?:c|m))?")
 split_pattern = re.compile(r"\s+")
@@ -17,7 +18,6 @@ hex_parts_pattern = re.compile(
     r"^(0x[0-9A-Fa-f]+)(?:\.([0-9A-Fa-f]+))?(?:p([+\-]?\d+))?$"
 )
 octal_pattern = re.compile(r"^0[0-7]")
-
 
 def is_token_numeric(token: str) -> bool:
     """Check if a token string represents a numeric constant."""
@@ -324,20 +324,7 @@ def fold_constants(expr: str) -> str:
             i += 1
             continue
 
-        unary_ops = {
-            "exp",
-            "log",
-            "sqrt",
-            "sin",
-            "cos",
-            "abs",
-            "not",
-            "bitnot",
-            "trunc",
-            "round",
-            "floor",
-        }
-        if token in unary_ops:
+        if token in _UNARY_OPS:
             can_fold = False
             if stack and result_tokens:  # Need operand on stack and its token in result
                 op1_stack_val = stack[-1]
@@ -363,29 +350,7 @@ def fold_constants(expr: str) -> str:
             i += 1
             continue
 
-        BINARY_OPS = {
-            "+",
-            "-",
-            "*",
-            "/",
-            "max",
-            "min",
-            "pow",
-            "**",
-            ">",
-            "<",
-            "=",
-            ">=",
-            "<=",
-            "and",
-            "or",
-            "xor",
-            "%",
-            "bitand",
-            "bitor",
-            "bitxor",
-        }
-        if token in BINARY_OPS:
+        if token in _BINARY_OPS:
             can_fold = False
             if len(stack) >= 2 and len(result_tokens) >= 2:
                 op2_stack_val = stack[-1]
@@ -423,7 +388,7 @@ def fold_constants(expr: str) -> str:
             i += 1
             continue
 
-        if token == "?":
+        if token in _TERNARY_OPS:
             can_fold = False
             if len(stack) >= 3 and len(result_tokens) >= 3:
                 false_val_stack = stack[-1]
@@ -469,7 +434,7 @@ def fold_constants(expr: str) -> str:
             i += 1
             continue
 
-        if token in {"clamp", "clip"}:
+        if token in _CLIP_OPS:
             can_fold = False
             if len(stack) >= 3 and len(result_tokens) >= 3:
                 max_val_stack = stack[-1]
@@ -583,6 +548,7 @@ def fold_constants(expr: str) -> str:
                 raise ValueError("Sort count must be positive")
             if len(stack) < n:
                 raise ValueError(f"Stack underflow for {token}")
+            removed = stack[-n:]
             del stack[-n:]
             for _ in range(n):
                 stack.append(None)

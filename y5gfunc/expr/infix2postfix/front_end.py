@@ -1,6 +1,5 @@
 import regex as re
-from functools import reduce, lru_cache
-from .optimize import optimize_akarin_expr
+from functools import lru_cache
 from typing import Optional
 import sys
 from enum import StrEnum
@@ -23,7 +22,7 @@ class GlobalMode(StrEnum):
     SPECIFIC = "specific"
 
 
-def infix2postfix(infix_code: str) -> str:
+def parse_infix_to_postfix(infix_code: str) -> str:
     R"""
     Convert infix expressions to postfix expressions.
 
@@ -534,8 +533,7 @@ def infix2postfix(infix_code: str) -> str:
     if "RESULT!" not in final_result:
         raise SyntaxError("Final result must be assigned to variable 'RESULT!'")
 
-    optimized = optimize_akarin_expr(final_result + " RESULT@")
-    return optimized
+    return final_result + " RESULT@"
 
 
 func_call_pattern = re.compile(r"(\w+)\s*\(")
