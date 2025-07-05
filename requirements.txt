@@ -4,3 +4,4 @@ sympy>=1.13.1
 trimesh>=4.6.6
 vsjetpack>=0.4.0
 varname>=0.14.0
+torch>=2.4.0
