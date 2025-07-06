@@ -1,6 +1,6 @@
 from .front_end import parse_infix_to_postfix
 from .middle_end import optimize_akarin_expr
-from .back_end.std import  to_std_expr
+from .back_end import to_std_expr, verify_akarin_expr, verify_std_expr
 from .api import compile, BackEnd
 
 __all__ = [
@@ -9,4 +9,6 @@ __all__ = [
     "parse_infix_to_postfix",
     "optimize_akarin_expr",
     "to_std_expr",
+    "verify_akarin_expr",
+    "verify_std_expr",
 ]
