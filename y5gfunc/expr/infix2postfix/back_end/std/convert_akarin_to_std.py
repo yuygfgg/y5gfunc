@@ -1,3 +1,4 @@
+from ...front_end import is_constant
 from ...util import _UNARY_OPS, _BINARY_OPS, _TERNARY_OPS, _CLIP_OPS
 from ...middle_end import tokenize_expr, is_token_numeric, token_pattern
 import regex as re
@@ -241,21 +242,31 @@ def replace_drop_in_expr(expr: str) -> str:
     Replaces all 'drop' and 'dropN' operations in an expression string with their std.Expr emulated equivalents.
     """
 
-    def emulate_drop(n: int) -> str:
-        """
-        Emulate the 'dropN' operation from akarin.Expr using std.Expr operators.
-        """
-        if n < 0:
-            raise ValueError("Drop count cannot be negative.")
-        if n == 0:
-            return ""
-
-        drop_one = "0 * +"
-
-        return " ".join([drop_one] * n)
+    def get_stack_effect(tk: str) -> int:
+        """Return net stack delta for a token."""
+        if (
+            is_token_numeric(tk)
+            or token_pattern.match(tk)
+            or is_constant(tk)
+        ):
+            return 1
+        if tk in _UNARY_OPS or tk.startswith(("swap", "sort")):
+            return 0
+        if tk in _BINARY_OPS:
+            return -1
+        if tk in _TERNARY_OPS or tk in _CLIP_OPS:
+            return -2
+        if tk.endswith("[]") and len(tk) > 2 and not token_pattern.match(tk):
+            return -1
+        if tk.startswith("dup"):
+            return 1
+        return 0
 
     tokens = expr.split()
     new_tokens = []
+    stack_size = 0
+    pending_plus_count = 0
+
     for token in tokens:
         if token.startswith("drop"):
             n_str = token[4:]
@@ -264,29 +275,45 @@ def replace_drop_in_expr(expr: str) -> str:
                 try:
                     n = int(n_str)
                 except ValueError:
+                    # Not a valid dropN, treat as normal token.
                     new_tokens.append(token)
+                    stack_size += get_stack_effect(token)
                     continue
 
-            replacement = emulate_drop(n)
-            if replacement:
-                new_tokens.append(replacement)
+            for _ in range(n):
+                if stack_size >= 2:
+                    new_tokens.extend(["0", "*", "+"])
+                    stack_size -= 1
+                elif stack_size == 1:
+                    new_tokens.extend(["0", "*"])
+                    # stack: [v1] -> [v1, 0] -> [0]. size remains 1.
+                    pending_plus_count += 1
         else:
             new_tokens.append(token)
+            stack_size += get_stack_effect(token)
+
+        while pending_plus_count > 0 and stack_size >= 2:
+            new_tokens.append("+")
+            stack_size -= 1
+            pending_plus_count -= 1
 
     return " ".join(new_tokens)
+
 
 def replace_clip_names(expr: str) -> str:
     """
     Replace clip names with their std.Expr equivalents.
     """
 
-    pattern = re.compile(r'\bsrc(\d+)\b')
+    pattern = re.compile(r"\bsrc(\d+)\b")
     clip_vars = "xyzabcdefghijklmnopqrstuvw"
 
     def get_replacement(match) -> str:
         n = int(match.group(1))
         if 0 <= n < len(clip_vars):
             return clip_vars[n]
-        raise ValueError(f"Clip index {n} is out of range. std.Expr supports up to {len(clip_vars)} clips (src0 ~ src{len(clip_vars)-1}).")
+        raise ValueError(
+            f"Clip index {n} is out of range. std.Expr supports up to {len(clip_vars)} clips (src0 ~ src{len(clip_vars)-1})."
+        )
 
     return pattern.sub(get_replacement, expr)
