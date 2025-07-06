@@ -274,3 +274,19 @@ def replace_drop_in_expr(expr: str) -> str:
             new_tokens.append(token)
 
     return " ".join(new_tokens)
+
+def replace_clip_names(expr: str) -> str:
+    """
+    Replace clip names with their std.Expr equivalents.
+    """
+
+    pattern = re.compile(r'\bsrc(\d+)\b')
+    clip_vars = "xyzabcdefghijklmnopqrstuvw"
+
+    def get_replacement(match) -> str:
+        n = int(match.group(1))
+        if 0 <= n < len(clip_vars):
+            return clip_vars[n]
+        raise ValueError(f"Clip index {n} is out of range. std.Expr supports up to {len(clip_vars)} clips (src0 ~ src{len(clip_vars)-1}).")
+
+    return pattern.sub(get_replacement, expr)
