@@ -42,12 +42,41 @@ import torch
 def _get_bm3d_backend() -> Tuple[Callable, str]:
     if torch.cuda.is_available():
         device_name = torch.cuda.get_device_name(0).lower()
-        if "nvidia" in device_name:
+        if any(
+            s in device_name
+            for s in [
+                "nvidia",
+                "geforce",
+                "quadro",
+                "tesla",
+                "rtx",
+                "gtx",
+                "rt",
+                "gt",
+                "titan",
+            ]
+        ):
             if hasattr(core, "bm3dcuda_rtc"):
                 return core.lazy.bm3dcuda_rtc, "bm3dcuda_rtc"  # type: ignore
             if hasattr(core, "bm3dcuda"):
                 return core.lazy.bm3dcuda, "bm3dcuda"  # type: ignore
-        elif "amd" in device_name or "radeon" in device_name:
+        elif any(
+            s in device_name
+            for s in [
+                "amd",
+                "radeon",
+                "vega",
+                "firepro",
+                "rx",
+                "r9",
+                "r7",
+                "r5",
+                "r3",
+                "r2",
+                "r1",
+                "r0",
+            ]
+        ):
             if hasattr(core, "bm3dhip"):
                 return core.lazy.bm3dhip, "bm3dhip"  # type: ignore
 
