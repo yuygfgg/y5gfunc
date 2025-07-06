@@ -208,7 +208,7 @@ def postfix2infix(expr: str) -> LiteralString:
             if token == "%":
                 push(f"({a} % {b})")
             elif token in ("**", "pow"):
-                push(f"pow({a}, {b})")
+                push(f"({a} ** {b})")
             elif token == "bitand":
                 push(f"({a} & {b})")
             elif token == "bitor":
