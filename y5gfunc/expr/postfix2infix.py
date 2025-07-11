@@ -1,4 +1,6 @@
 import sys
+from .utils import tokenize_expr
+
 
 if sys.version_info >= (3, 11):
     from typing import LiteralString
@@ -8,37 +10,49 @@ import regex as re
 
 
 # inspired by mvf.postfix2infix
-def postfix2infix(expr: str) -> LiteralString:
+_PREPROCESS_PATTERN = re.compile(r"\[\s*(\w+)\s*,\s*(\w+)\s*\]")
+_NUMBER_PATTERN = re.compile(
+    r"^("
+    r"0x[0-9A-Fa-f]+(\.[0-9A-Fa-f]+(p[+\-]?\d+)?)?"
+    r"|"
+    r"0[0-7]*"
+    r"|"
+    r"[+\-]?(\d+(\.\d+)?([eE][+\-]?\d+)?)"
+    r")$"
+)
+_SRC_PATTERN = re.compile(r"^src\d+$")
+_FRAME_PROP_PATTERN = re.compile(r"^[a-zA-Z]\w*\.[a-zA-Z]\w*$")
+_STATIC_PIXEL_PATTERN = re.compile(r"^([a-zA-Z]\w*)\[\s*(-?\d+)\s*,\s*(-?\d+)\s*\](\:\w+)?$")
+_VAR_STORE_PATTERN = re.compile(r"^([a-zA-Z_]\w*)\!$")
+_VAR_LOAD_PATTERN = re.compile(r"^([a-zA-Z_]\w*)\@$")
+_DROP_PATTERN = re.compile(r"^drop(\d*)$")
+_SORT_PATTERN = re.compile(r"^sort(\d+)$")
+_DUP_PATTERN = re.compile(r"^dup(\d*)$")
+_SWAP_PATTERN = re.compile(r"^swap(\d*)$")
+
+
+def postfix2infix(expr: str, check_mode: bool = False) -> LiteralString:
     """
     Convert postfix expr to infix code
+    If check_mode is True, it only checks for expression validity without building the result.
 
     Args:
         expr: Input postfix expr.
+        check_mode: If True, only perform validation.
 
     Returns:
-        Converted infix code.
+        Converted infix code. Or an empty string if check_mode is True and expr is valid.
 
     Raises:
         ValueError: If an error was found in the input expr.
     """
     # Preprocessing
     expr = expr.strip()
-    expr = re.sub(r"\[\s*(\w+)\s*,\s*(\w+)\s*\]", r"[\1,\2]", expr)  # [x, y] => [x,y]
-    tokens = re.split(r"\s+", expr)
+    expr = _PREPROCESS_PATTERN.sub(r"[\1,\2]", expr)  # [x, y] => [x,y]
+    tokens = tokenize_expr(expr)
 
     stack = []
     output_lines = []
-
-    # Regex patterns for numbers
-    number_pattern = re.compile(
-        r"^("
-        r"0x[0-9A-Fa-f]+(\.[0-9A-Fa-f]+(p[+\-]?\d+)?)?"
-        r"|"
-        r"0[0-7]*"
-        r"|"
-        r"[+\-]?(\d+(\.\d+)?([eE][+\-]?\d+)?)"
-        r")$"
-    )
 
     i = 0
     while i < len(tokens):
@@ -56,7 +70,10 @@ def postfix2infix(expr: str) -> LiteralString:
                 )
 
         def push(item):
-            stack.append(item)
+            if not check_mode:
+                stack.append(item)
+            else:
+                stack.append(None)
 
         token = tokens[i]
 
@@ -67,19 +84,19 @@ def postfix2infix(expr: str) -> LiteralString:
             continue
 
         # Numbers
-        if number_pattern.match(token):
+        if _NUMBER_PATTERN.match(token):
             push(token)
             i += 1
             continue
 
         # Source clips (srcN)
-        if re.match(r"^src\d+$", token):
+        if _SRC_PATTERN.match(token):
             push(token)
             i += 1
             continue
 
         # Frame property
-        if re.match(r"^[a-zA-Z]\w*\.[a-zA-Z]\w*$", token):
+        if _FRAME_PROP_PATTERN.match(token):
             push(token)
             i += 1
             continue
@@ -94,7 +111,7 @@ def postfix2infix(expr: str) -> LiteralString:
             continue
 
         # Static relative pixel access
-        m = re.match(r"^([a-zA-Z]\w*)\[\s*(-?\d+)\s*,\s*(-?\d+)\s*\](\:\w+)?$", token)
+        m = _STATIC_PIXEL_PATTERN.match(token)
         if m:
             clip_identifier = m.group(1)
             statX = int(m.group(2))
@@ -109,12 +126,13 @@ def postfix2infix(expr: str) -> LiteralString:
             continue
 
         # Variable operations
-        var_store_match = re.match(r"^([a-zA-Z_]\w*)\!$", token)
-        var_load_match = re.match(r"^([a-zA-Z_]\w*)\@$", token)
+        var_store_match = _VAR_STORE_PATTERN.match(token)
+        var_load_match = _VAR_LOAD_PATTERN.match(token)
         if var_store_match:
             var_name = var_store_match.group(1)
             val = pop()
-            output_lines.append(f"{var_name} = {val}")
+            if not check_mode:
+                output_lines.append(f"{var_name} = {val}")
             i += 1
             continue
         elif var_load_match:
@@ -124,7 +142,7 @@ def postfix2infix(expr: str) -> LiteralString:
             continue
 
         # Drop operations
-        drop_match = re.match(r"^drop(\d*)$", token)
+        drop_match = _DROP_PATTERN.match(token)
         if drop_match:
             num = int(drop_match.group(1)) if drop_match.group(1) else 1
             pop(num)
@@ -132,7 +150,7 @@ def postfix2infix(expr: str) -> LiteralString:
             continue
 
         # Sort operations
-        sort_match = re.match(r"^sort(\d+)$", token)
+        sort_match = _SORT_PATTERN.match(token)
         if sort_match:
             num = int(sort_match.group(1))
             items = pop(num)
@@ -143,7 +161,7 @@ def postfix2infix(expr: str) -> LiteralString:
             continue
 
         # Duplicate operations
-        dup_match = re.match(r"^dup(\d*)$", token)
+        dup_match = _DUP_PATTERN.match(token)
         if dup_match:
             n = int(dup_match.group(1)) if dup_match.group(1) else 0
             if len(stack) <= n:
@@ -156,7 +174,7 @@ def postfix2infix(expr: str) -> LiteralString:
             continue
 
         # Swap operations
-        swap_match = re.match(r"^swap(\d*)$", token)
+        swap_match = _SWAP_PATTERN.match(token)
         if swap_match:
             n = int(swap_match.group(1)) if swap_match.group(1) else 1
             if len(stack) <= n:
@@ -271,19 +289,24 @@ def postfix2infix(expr: str) -> LiteralString:
             continue
 
         # Unknown tokens
-        output_lines.append(f"# [Unknown token]: {token}  (Push as-is)")
+        if not check_mode:
+            output_lines.append(f"# [Unknown token]: {token}  (Push as-is)")
         push(token)
         i += 1
 
     # Handle remaining stack items
     if len(stack) == 1:
+        if check_mode:
+            return ""
         output_lines.append(f"RESULT = {stack[0]}")
         ret = "\n".join(output_lines)
     else:
-        for idx, item in enumerate(stack):
-            output_lines.append(f"# stack[{idx}]: {item}")
-        ret = "\n".join(output_lines)
-        raise ValueError(
-            f"postfix2infix: Invalid expression: the stack contains not exactly one value after evaluation. \n {ret}"
-        )
+        if check_mode:
+            msg = f"postfix2infix: Invalid expression: the stack contains {len(stack)} value(s), but should contain exactly one."
+        else:
+            for idx, item in enumerate(stack):
+                output_lines.append(f"# stack[{idx}]: {item}")
+            ret = "\n".join(output_lines)
+            msg = f"postfix2infix: Invalid expression: the stack contains not exactly one value after evaluation. \n {ret}"
+        raise ValueError(msg)
     return ret

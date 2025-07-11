@@ -55,7 +55,7 @@ def parse_infix_to_postfix(infix_code: str) -> str:
     # Build a mapping from line number to function name for function declarations.
     function_lines = {}
     for i, line in enumerate(lines):
-        func_match = func_pattern.match(line.strip())
+        func_match = _FUNC_PATTERN.match(line.strip())
         if func_match:
             func_name = func_match.group(1)
             function_lines[i] = func_name
@@ -64,14 +64,14 @@ def parse_infix_to_postfix(infix_code: str) -> str:
     while i < len(lines):
         line = lines[i].strip()
 
-        global_decl_match = global_decl_pattern.match(line)
+        global_decl_match = _GLOBAL_DECL_PATTERN.match(line)
         if global_decl_match:
             content = global_decl_match.group(1).strip()
             # Extract all global variable names from this line.
             j = i + 1
             # If the next non-global line is a function definition, apply these globals for that function.
             if j < len(lines):
-                function_match = function_def_pattern.match(lines[j])
+                function_match = _FUNCTION_DEF_PATTERN.match(lines[j])
                 if function_match:
                     func_name = function_match.group(1)
                     args = function_match.group(2)
@@ -81,7 +81,7 @@ def parse_infix_to_postfix(infix_code: str) -> str:
                         global_mode_for_functions[func_name] = GlobalMode.NONE
                     else:
                         global_mode_for_functions[func_name] = GlobalMode.SPECIFIC
-                        globals_list = global_match_pattern.findall(content)
+                        globals_list = _GLOBAL_MATCH_PATTERN.findall(content)
 
                         if not globals_list and content:
                             raise SyntaxError(
@@ -162,7 +162,7 @@ def parse_infix_to_postfix(infix_code: str) -> str:
         functions[func_name] = (params, body, line_num, global_vars, has_return)
         return "\n" * match.group(0).count("\n")
 
-    cleaned_code = function_pattern.sub(replace_function, expanded_code)
+    cleaned_code = _FUNCTION_PATTERN.sub(replace_function, expanded_code)
 
     # Process global code by splitting on physical newlines.
     global_statements: list[tuple[str, int]] = []
@@ -179,7 +179,7 @@ def parse_infix_to_postfix(infix_code: str) -> str:
     # Process global statements in order and check function call global dependencies.
     for stmt, line_num in global_statements:
         # Process assignment statements.
-        if assign_pattern.search(stmt):
+        if _ASSIGN_PATTERN.search(stmt):
             var_name, expr = stmt.split("=", 1)
             var_name = var_name.strip()
             if var_name.startswith("__internal_"):
@@ -191,7 +191,7 @@ def parse_infix_to_postfix(infix_code: str) -> str:
                 raise SyntaxError(f"Cannot assign to constant '{var_name}'.", line_num)
             expr = expr.strip()
             # If the right-hand side is a function call, check that its global dependencies are defined.
-            m_call = m_call_pattern.match(expr)
+            m_call = _M_CALL_PATTERN.match(expr)
             if m_call:
                 func_name = m_call.group(1)
                 if func_name in functions:
@@ -237,7 +237,7 @@ def parse_infix_to_postfix(infix_code: str) -> str:
             postfix_tokens.append(full_postfix_expr)
         else:
             # For standalone expression statements, check if they directly call a function.
-            m_call = m_call_pattern.match(stmt)
+            m_call = _M_CALL_PATTERN.match(stmt)
             if m_call:
                 func_name = m_call.group(1)
                 if func_name in functions:
@@ -279,34 +279,34 @@ def parse_infix_to_postfix(infix_code: str) -> str:
     return final_result + " RESULT@"
 
 
-func_call_pattern = re.compile(r"(\w+)\s*\(")
-clip_pattern = re.compile(r"(?:[a-zA-Z]|src\d+)$")
-func_info_pattern = re.compile(r"__internal_([a-zA-Z_]\w*)_([a-zA-Z_]\w+)$")
-func_pattern = re.compile(r"function\s+(\w+)")
-global_decl_pattern = re.compile(r"^<global(.*)>$")
-function_def_pattern = re.compile(r"^\s*function\s+(\w+)\s*\(([^)]*)\)\s*\{")
-m_call_pattern = re.compile(r"^(\w+)\s*\(")
-prop_access_pattern = re.compile(r"^(\w+)\.([a-zA-Z_]\w*)$")
-prop_access_generic_pattern = re.compile(r"([a-zA-Z_]\w*)\.([a-zA-Z_]\w*)")
-number_pattern = re.compile(
+_FUNC_CALL_PATTERN = re.compile(r"(\w+)\s*\(")
+_CLIP_PATTERN = re.compile(r"(?:[a-zA-Z]|src\d+)$")
+_FUNC_INFO_PATTERN = re.compile(r"__internal_([a-zA-Z_]\w*)_([a-zA-Z_]\w+)$")
+_FUNC_PATTERN = re.compile(r"function\s+(\w+)")
+_GLOBAL_DECL_PATTERN = re.compile(r"^<global(.*)>$")
+_FUNCTION_DEF_PATTERN = re.compile(r"^\s*function\s+(\w+)\s*\(([^)]*)\)\s*\{")
+_M_CALL_PATTERN = re.compile(r"^(\w+)\s*\(")
+_PROP_ACCESS_PATTERN = re.compile(r"^(\w+)\.([a-zA-Z_]\w*)$")
+_PROP_ACCESS_GENERIC_PATTERN = re.compile(r"([a-zA-Z_]\w*)\.([a-zA-Z_]\w*)")
+_NUMBER_PATTERN = re.compile(
     r"^(0x[0-9A-Fa-f]+(\.[0-9A-Fa-f]+(p[+\-]?\d+)?)?|0[0-7]*|[+\-]?(\d+(\.\d+)?([eE][+\-]?\d+)?))$"
 )
-nth_pattern = re.compile(r"^nth_(\d+)$")
-m_line_pattern = re.compile(r"^([a-zA-Z_]\w*)\s*=\s*(.+)$")
-m_static_pattern = re.compile(r"^(\w+)\[(-?\d+),\s*(-?\d+)\](\:\w)?$")
-find_duplicate_functions_pattern = re.compile(r"\bfunction\s+(\w+)\s*\(.*?\)")
-drop_pattern = re.compile(r"drop(\d*)")
-sort_pattern = re.compile(r"sort(\d+)")
-global_match_pattern = re.compile(r"<([a-zA-Z_]\w*)>")
-assign_pattern = re.compile(r"(?<![<>!])=(?![=])")
-rel_pattern = re.compile(r"\w+\[(.*?)\]")
-func_sub_pattern = re.compile(r"\w+\([^)]*\)|\[[^\]]*\]")
-identifier_pattern = re.compile(r"\b([a-zA-Z_]\w*)\b(?!\s*\()")
-letter_pattern = re.compile(r"[a-zA-Z_]\w*")
-function_pattern = re.compile(
+_NTH_PATTERN = re.compile(r"^nth_(\d+)$")
+_M_LINE_PATTERN = re.compile(r"^([a-zA-Z_]\w*)\s*=\s*(.+)$")
+_M_STATIC_PATTERN = re.compile(r"^(\w+)\[(-?\d+),\s*(-?\d+)\](\:\w)?$")
+_FIND_DUPLICATE_FUNCTIONS_PATTERN = re.compile(r"\bfunction\s+(\w+)\s*\(.*?\)")
+_DROP_PATTERN = re.compile(r"drop(\d*)")
+_SORT_PATTERN = re.compile(r"sort(\d+)")
+_GLOBAL_MATCH_PATTERN = re.compile(r"<([a-zA-Z_]\w*)>")
+_ASSIGN_PATTERN = re.compile(r"(?<![<>!])=(?![=])")
+_REL_PATTERN = re.compile(r"\w+\[(.*?)\]")
+_FUNC_SUB_PATTERN = re.compile(r"\w+\([^)]*\)|\[[^\]]*\]")
+_IDENTIFIER_PATTERN = re.compile(r"\b([a-zA-Z_]\w*)\b(?!\s*\()")
+_LETTER_PATTERN = re.compile(r"[a-zA-Z_]\w*")
+_FUNCTION_PATTERN = re.compile(
     r"function\s+(\w+)\s*\(([^)]*)\)\s*\{([^{}]*(?:\{[^{}]*\}[^{}]*)*)\}"
 )
-build_in_func_patterns = [
+_BUILD_IN_FUNC_PATTERNS = [
     re.compile(r)
     for r in [rf"^{prefix}\d+$" for prefix in ["nth_", "sort", "dup", "drop", "swap"]]
 ]
@@ -339,7 +339,7 @@ def is_clip(token: str) -> bool:
     Determine whether token is a source clip.
     (std.Expr: single letter; or akarin.Expr: srcN)
     """
-    return bool(clip_pattern.fullmatch(token))
+    return bool(_CLIP_PATTERN.fullmatch(token))
 
 
 @lru_cache
@@ -391,7 +391,7 @@ def match_full_function_call(expr: str) -> Optional[tuple[str, str]]:
     Returns (func_name, args_str) if matched; otherwise returns None.
     """
     expr = expr.strip()
-    m = func_call_pattern.match(expr)
+    m = _FUNC_CALL_PATTERN.match(expr)
     if not m:
         return None
     func_name = m.group(1)
@@ -423,7 +423,7 @@ def extract_function_info(
         f"__internal_{current_function}_"
     ):
         return current_function, internal_var[len(f"__internal_{current_function}_") :]
-    match = func_info_pattern.match(internal_var)
+    match = _FUNC_INFO_PATTERN.match(internal_var)
     if match:
         return match.group(1), match.group(2)
     return None, None
@@ -436,7 +436,7 @@ def find_duplicate_functions(code: str):
     function_lines = {}
     lines = code.split("\n")
     for line_num, line in enumerate(lines, start=1):
-        match = find_duplicate_functions_pattern.search(line)
+        match = _FIND_DUPLICATE_FUNCTIONS_PATTERN.search(line)
         if match:
             func_name = match.group(1)
             if func_name in function_lines:
@@ -506,7 +506,7 @@ def compute_stack_effect(
             continue
 
         # dropN operator (default is drop1)
-        m_drop = drop_pattern.fullmatch(token)
+        m_drop = _DROP_PATTERN.fullmatch(token)
         if m_drop:
             n_str = m_drop.group(1)
             n = int(n_str) if n_str != "" else 1
@@ -519,7 +519,7 @@ def compute_stack_effect(
             continue
 
         # sortN operator: reorder top N items without changing the stack count.
-        m_sort = sort_pattern.fullmatch(token)
+        m_sort = _SORT_PATTERN.fullmatch(token)
         if m_sort:
             n = int(m_sort.group(1))
             if len(stack) < n:
@@ -598,11 +598,11 @@ def validate_static_relative_pixel_indices(
     """
     Validate that the static relative pixel access indices are numeric constants.
     """
-    static_relative_pixel_indices = rel_pattern.finditer(expr)
+    static_relative_pixel_indices = _REL_PATTERN.finditer(expr)
     for match in static_relative_pixel_indices:
         indices = match.group(1).split(",")
         for idx in indices:
-            if not number_pattern.fullmatch(idx.strip()):
+            if not _NUMBER_PATTERN.fullmatch(idx.strip()):
                 raise SyntaxError(
                     f"Static relative pixel access index must be a numeric constant, got '{idx.strip()}'",
                     line_num,
@@ -628,9 +628,9 @@ def check_variable_usage(
             return " "
         return m.group(0)
 
-    expr = prop_access_generic_pattern.sub(prop_repl, expr)
-    expr = func_sub_pattern.sub("", expr)
-    identifiers = identifier_pattern.finditer(expr)
+    expr = _PROP_ACCESS_GENERIC_PATTERN.sub(prop_repl, expr)
+    expr = _FUNC_SUB_PATTERN.sub("", expr)
+    identifiers = _IDENTIFIER_PATTERN.finditer(expr)
     for match in identifiers:
         var_name = match.group(1)
         if is_constant(var_name) or (
@@ -670,7 +670,7 @@ def convert_expr(
     """
     expr = expr.strip()
 
-    prop_access_match = prop_access_pattern.match(expr)
+    prop_access_match = _PROP_ACCESS_PATTERN.match(expr)
     if prop_access_match:
         clip_name = prop_access_match.group(1)
         if is_clip(clip_name):
@@ -680,7 +680,7 @@ def convert_expr(
     check_variable_usage(expr, variables, line_num, current_function, local_vars)
     validate_static_relative_pixel_indices(expr, line_num, current_function)
 
-    if number_pattern.match(expr):
+    if _NUMBER_PATTERN.match(expr):
         return expr
 
     constants_map = {
@@ -701,7 +701,7 @@ def convert_expr(
             raise SyntaxError(
                 f"Undefined function '{func_name}'", line_num, current_function
             )
-        m_nth = nth_pattern.match(func_name)
+        m_nth = _NTH_PATTERN.match(func_name)
         if m_nth:
             N_val = int(m_nth.group(1))
             args = parse_args(args_str)
@@ -847,7 +847,7 @@ def convert_expr(
             for offset, body_line in enumerate(body_lines):
                 if body_line.startswith("return"):
                     continue
-                m_line = m_line_pattern.match(body_line)
+                m_line = _M_LINE_PATTERN.match(body_line)
                 if m_line:
                     var = m_line.group(1)
                     if var.startswith("__internal_"):
@@ -906,7 +906,7 @@ def convert_expr(
                     ret_expr = body_line[len("return") :].strip()
 
                     # Check if a function that does not return a value is being returned.
-                    m_call = m_call_pattern.match(ret_expr)
+                    m_call = _M_CALL_PATTERN.match(ret_expr)
                     if m_call:
                         called_func_name = m_call.group(1)
                         if called_func_name in functions:
@@ -931,7 +931,7 @@ def convert_expr(
                         )
                     )
                 # Process assignment statements.
-                elif assign_pattern.search(body_line):
+                elif _ASSIGN_PATTERN.search(body_line):
                     var_name, expr_line = body_line.split("=", 1)
                     var_name = var_name.strip()
                     if is_constant(var_name):
@@ -1023,7 +1023,7 @@ def convert_expr(
             local_vars,
         )
 
-    m_static = m_static_pattern.match(expr)
+    m_static = _M_STATIC_PATTERN.match(expr)
     if m_static:
         clip = m_static.group(1)
         statX = m_static.group(2)
@@ -1114,13 +1114,13 @@ def convert_expr(
                 current_function,
                 local_vars,
             )
-            if letter_pattern.fullmatch(
+            if _LETTER_PATTERN.fullmatch(
                 left.strip()
             ) and not left_postfix.strip().endswith("@"):
                 left_postfix = left_postfix.strip() + (
                     "@" if not is_constant(left_postfix) else ""
                 )
-            if letter_pattern.fullmatch(
+            if _LETTER_PATTERN.fullmatch(
                 right.strip()
             ) and not right_postfix.strip().endswith("@"):
                 right_postfix = right_postfix.strip() + (
@@ -1154,7 +1154,7 @@ def convert_expr(
 
     if is_constant(expr):
         return expr
-    if letter_pattern.fullmatch(expr):
+    if _LETTER_PATTERN.fullmatch(expr):
         return expr if expr.endswith("@") else expr + "@"
 
     return expr
@@ -1235,7 +1235,7 @@ def is_builtin_function(func_name: str) -> bool:
     ]
     builtin_binary = ["min", "max"]
     builtin_ternary = ["clamp", "dyn"]
-    if any(r.match(func_name) for r in build_in_func_patterns):
+    if any(r.match(func_name) for r in _BUILD_IN_FUNC_PATTERNS):
         return True
     return (
         func_name in builtin_unary

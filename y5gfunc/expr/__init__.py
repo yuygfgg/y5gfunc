@@ -11,6 +11,8 @@ from .infix2postfix import (
     convert_clip_names,
     convert_pow,
     convert_clip_clamp,
+    verify_akarin_expr,
+    verify_std_expr,
 )
 
 from .expr_utils import math_functions
@@ -31,4 +33,6 @@ __all__ = [
     "convert_clip_clamp",
     "ex_planes",
     "math_functions",
+    "verify_akarin_expr",
+    "verify_std_expr",
 ]

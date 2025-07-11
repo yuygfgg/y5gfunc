@@ -1,6 +1,13 @@
 from ...front_end import is_constant
-from ...util import _UNARY_OPS, _BINARY_OPS, _TERNARY_OPS, _CLIP_OPS
-from ...middle_end import tokenize_expr, is_token_numeric, token_pattern
+from ....utils import (
+    _UNARY_OPS,
+    _BINARY_OPS,
+    _TERNARY_OPS,
+    _CLIP_OPS,
+    tokenize_expr,
+    is_token_numeric,
+    token_pattern,
+)
 import regex as re
 
 
@@ -161,7 +168,7 @@ def convert_var(expr: str) -> str:
             if depth > 0:
                 new_tokens.append(f"swap{depth}")
             new_tokens.append("drop")
-            if depth > 0:
+            if depth > 1:
                 new_tokens.append(f"swap{depth-1}")
 
     real_vals = stack_size - len(abandoned)
@@ -180,7 +187,7 @@ def convert_sort(expr: str) -> str:
         """
         Generate RPN code to compare and swap the elements at stack depth i and i+1.
         """
-        CS_TOP_SEQUENCE = ["dup1", "dup0", "max", "swap2", "min"]
+        CS_TOP_SEQUENCE = ["dup1", "dup", "max", "swap2", "min"]
 
         if i < 0:
             raise ValueError("Stack depth must be non-negative.")
@@ -258,7 +265,7 @@ def convert_drop(expr: str) -> str:
             return 1
         return 0
 
-    tokens = expr.split()
+    tokens = tokenize_expr(expr)
     new_tokens = []
     stack_size = 0
     pending_plus_count = 0
@@ -319,7 +326,7 @@ def convert_pow(expr: str) -> str:
     """
     Replace ** with pow.
     """
-    return " ".join("pow" if token == "**" else token for token in expr.split())
+    return " ".join("pow" if token == "**" else token for token in tokenize_expr(expr))
 
 
 def convert_clip_clamp(expr: str) -> str:
@@ -327,13 +334,27 @@ def convert_clip_clamp(expr: str) -> str:
     Replace clip and clamp operators with their std.Expr equivalents.
     """
 
-    tokens = expr.split()
+    tokens = tokenize_expr(expr)
     new_tokens = []
-    
+
     for token in tokens:
         if token in ("clip", "clamp"):
             new_tokens.extend(["swap2", "swap", "max", "min"])
         else:
             new_tokens.append(token)
-            
+
     return " ".join(new_tokens)
+
+
+def to_std_expr(expr: str) -> str:
+    """
+    Convert an akarin.Expr expression to a std.Expr expression.
+    """
+    # FIXME: convert math functions (trunc / round / floor / fmod) (possible?)
+    ret =  convert_drop(
+        convert_clip_names(
+            convert_var(convert_sort(convert_pow(convert_clip_clamp(expr))))
+        )
+    )
+
+    return ret

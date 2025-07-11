@@ -17,6 +17,8 @@ from .expr import (
     convert_clip_names,
     convert_pow,
     convert_clip_clamp,
+    verify_akarin_expr,
+    verify_std_expr,
 )
 from .filter import (
     sakiko_deband,
@@ -243,4 +245,6 @@ __all__ = [
     "convert_clip_names",
     "convert_pow",
     "convert_clip_clamp",
+    "verify_akarin_expr",
+    "verify_std_expr",
 ]

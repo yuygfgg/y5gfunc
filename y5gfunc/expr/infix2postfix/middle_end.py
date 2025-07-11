@@ -1,35 +1,18 @@
-import regex as re
 from typing import Optional, Union, Any
 import math
-from .util import _UNARY_OPS, _BINARY_OPS, _TERNARY_OPS, _CLIP_OPS
-
-token_pattern = re.compile(r"(\w+)\[\s*(-?\d+)\s*,\s*(-?\d+)\s*\](?::(?:c|m))?")
-split_pattern = re.compile(r"\s+")
-number_patterns = [
-    re.compile(pattern)
-    for pattern in [
-        r"^0x[0-9A-Fa-f]+(\.[0-9A-Fa-f]+(p[+\-]?\d+)?)?$",  # Hexadecimal
-        r"^0[0-7]+$",  # Octal
-        r"^[+\-]?(\d+(\.\d+)?([eE][+\-]?\d+)?)$",  # Decimal and scientific notation
-    ]
-]
-hex_pattern = re.compile(r"^0x")
-hex_parts_pattern = re.compile(
-    r"^(0x[0-9A-Fa-f]+)(?:\.([0-9A-Fa-f]+))?(?:p([+\-]?\d+))?$"
+from ..utils import (
+    _UNARY_OPS,
+    _BINARY_OPS,
+    _TERNARY_OPS,
+    _CLIP_OPS,
+    token_pattern,
+    hex_pattern,
+    hex_parts_pattern,
+    octal_pattern,
+    is_token_numeric,
+    tokenize_expr,
 )
-octal_pattern = re.compile(r"^0[0-7]")
-
-def is_token_numeric(token: str) -> bool:
-    """Check if a token string represents a numeric constant."""
-    if token.isdigit() or (
-        token.startswith("-") and len(token) > 1 and token[1:].isdigit()
-    ):
-        return True
-
-    for pattern in number_patterns:
-        if pattern.match(token):
-            return True
-    return False
+from .back_end.std.convert_akarin_to_std import to_std_expr
 
 
 def optimize_akarin_expr(expr: str) -> str:
@@ -38,50 +21,17 @@ def optimize_akarin_expr(expr: str) -> str:
     if not expr:
         return expr
 
-    expr = eliminate_immediate_store_load(expr)
-
     prev_expr = None
     current_expr = expr
 
     while prev_expr != current_expr:
         prev_expr = current_expr
-        current_expr = fold_constants(current_expr)
+        current_expr = eliminate_immediate_store_load(
+            fold_constants(to_std_expr(current_expr))
+        )
 
     optimized_expr = convert_dynamic_to_static(current_expr)
-
     return optimized_expr
-
-
-def tokenize_expr(expr: str) -> list[str]:
-    """Convert expression string to a list of tokens"""
-    expr = expr.strip()
-    if not expr:
-        return []
-
-    placeholders = {}
-    placeholder_prefix = "__PXACCESS"
-    placeholder_suffix = "__"
-    count = 0
-
-    def repl(matchobj):
-        nonlocal count
-        key = f"{placeholder_prefix}{count}{placeholder_suffix}"
-        placeholders[key] = matchobj.group(0)
-        count += 1
-        return key
-
-    expr_with_placeholders = token_pattern.sub(repl, expr)
-
-    raw_tokens = split_pattern.split(expr_with_placeholders)
-
-    tokens = []
-    for token in raw_tokens:
-        if token in placeholders:
-            tokens.append(placeholders[token])
-        elif token:
-            tokens.append(token)
-
-    return tokens
 
 
 def parse_numeric(token: str) -> Union[int, float]:
@@ -375,6 +325,67 @@ def fold_constants(expr: str) -> str:
                             format_number(result)
                         )  # Append result token
                         can_fold = True
+                # # Identity and null element optimizations
+                # elif token in ["+", "-", "*", "/"]:
+                #     op1_is_num = isinstance(
+                #         op1_stack_val, (int, float)
+                #     ) and is_token_numeric(op1_token)
+                #     op2_is_num = isinstance(
+                #         op2_stack_val, (int, float)
+                #     ) and is_token_numeric(op2_token)
+
+                #     # x * 1 -> x
+                #     if token == "*" and op2_is_num and op2_stack_val == 1:
+                #         stack.pop()
+                #         result_tokens.pop()
+                #         can_fold = True
+                #     # 1 * x -> x
+                #     elif token == "*" and op1_is_num and op1_stack_val == 1:
+                #         stack[-2] = stack[-1]
+                #         stack.pop()
+                #         result_tokens[-2] = result_tokens[-1]
+                #         result_tokens.pop()
+                #         can_fold = True
+                #     # x / 1 -> x
+                #     elif token == "/" and op2_is_num and op2_stack_val == 1:
+                #         stack.pop()
+                #         result_tokens.pop()
+                #         can_fold = True
+                #     # x + 0 -> x
+                #     elif token == "+" and op2_is_num and op2_stack_val == 0:
+                #         stack.pop()
+                #         result_tokens.pop()
+                #         can_fold = True
+                #     # 0 + x -> x
+                #     elif token == "+" and op1_is_num and op1_stack_val == 0:
+                #         stack[-2] = stack[-1]
+                #         stack.pop()
+                #         result_tokens[-2] = result_tokens[-1]
+                #         result_tokens.pop()
+                #         can_fold = True
+                #     # x - 0 -> x
+                #     elif token == "-" and op2_is_num and op2_stack_val == 0:
+                #         stack.pop()
+                #         result_tokens.pop()
+                #         can_fold = True
+                #     # x * 0 -> 0
+                #     elif token == "*" and op2_is_num and op2_stack_val == 0:
+                #         stack.pop()
+                #         stack.pop()
+                #         stack.append(0)
+                #         result_tokens.pop()
+                #         result_tokens.pop()
+                #         result_tokens.append("0")
+                #         can_fold = True
+                #     # 0 * x -> 0
+                #     elif token == "*" and op1_is_num and op1_stack_val == 0:
+                #         stack.pop()
+                #         stack.pop()
+                #         stack.append(0)
+                #         result_tokens.pop()
+                #         result_tokens.pop()
+                #         result_tokens.append("0")
+                #         can_fold = True
 
             if not can_fold:
                 if len(stack) >= 2:

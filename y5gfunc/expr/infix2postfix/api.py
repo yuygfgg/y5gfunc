@@ -272,11 +272,13 @@ def compile(expr: str, back_end: BackEnd = BackEnd.AKARIN) -> str:
     """
     postfix = parse_infix_to_postfix(expr)
     optimized = optimize_akarin_expr(postfix)
+
     if back_end == BackEnd.STD:
-        optimized = to_std_expr(postfix)
+        optimized = to_std_expr(optimized)
         if not verify_std_expr(optimized):
             raise ValueError("Invalid expression")
     elif back_end == BackEnd.AKARIN:
         if not verify_akarin_expr(optimized):
             raise ValueError("Invalid expression")
-    return optimized
+
+    return optimize_akarin_expr(optimized)
