@@ -325,67 +325,6 @@ def fold_constants(expr: str) -> str:
                             format_number(result)
                         )  # Append result token
                         can_fold = True
-                # # Identity and null element optimizations
-                # elif token in ["+", "-", "*", "/"]:
-                #     op1_is_num = isinstance(
-                #         op1_stack_val, (int, float)
-                #     ) and is_token_numeric(op1_token)
-                #     op2_is_num = isinstance(
-                #         op2_stack_val, (int, float)
-                #     ) and is_token_numeric(op2_token)
-
-                #     # x * 1 -> x
-                #     if token == "*" and op2_is_num and op2_stack_val == 1:
-                #         stack.pop()
-                #         result_tokens.pop()
-                #         can_fold = True
-                #     # 1 * x -> x
-                #     elif token == "*" and op1_is_num and op1_stack_val == 1:
-                #         stack[-2] = stack[-1]
-                #         stack.pop()
-                #         result_tokens[-2] = result_tokens[-1]
-                #         result_tokens.pop()
-                #         can_fold = True
-                #     # x / 1 -> x
-                #     elif token == "/" and op2_is_num and op2_stack_val == 1:
-                #         stack.pop()
-                #         result_tokens.pop()
-                #         can_fold = True
-                #     # x + 0 -> x
-                #     elif token == "+" and op2_is_num and op2_stack_val == 0:
-                #         stack.pop()
-                #         result_tokens.pop()
-                #         can_fold = True
-                #     # 0 + x -> x
-                #     elif token == "+" and op1_is_num and op1_stack_val == 0:
-                #         stack[-2] = stack[-1]
-                #         stack.pop()
-                #         result_tokens[-2] = result_tokens[-1]
-                #         result_tokens.pop()
-                #         can_fold = True
-                #     # x - 0 -> x
-                #     elif token == "-" and op2_is_num and op2_stack_val == 0:
-                #         stack.pop()
-                #         result_tokens.pop()
-                #         can_fold = True
-                #     # x * 0 -> 0
-                #     elif token == "*" and op2_is_num and op2_stack_val == 0:
-                #         stack.pop()
-                #         stack.pop()
-                #         stack.append(0)
-                #         result_tokens.pop()
-                #         result_tokens.pop()
-                #         result_tokens.append("0")
-                #         can_fold = True
-                #     # 0 * x -> 0
-                #     elif token == "*" and op1_is_num and op1_stack_val == 0:
-                #         stack.pop()
-                #         stack.pop()
-                #         stack.append(0)
-                #         result_tokens.pop()
-                #         result_tokens.pop()
-                #         result_tokens.append("0")
-                #         can_fold = True
 
             if not can_fold:
                 if len(stack) >= 2:
