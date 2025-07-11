@@ -1,8 +1,10 @@
 from .convert_akarin_to_std import (
-    replace_drop_in_expr,
-    expand_rpn_sort,
-    convert_var_expr,
-    replace_clip_names,
+    convert_drop,
+    convert_sort,
+    convert_var,
+    convert_clip_names,
+    convert_pow,
+    convert_clip_clamp,
 )
 from .verify import verify_std_expr
 
@@ -12,16 +14,20 @@ def to_std_expr(expr: str) -> str:
     Convert an infix expression to a std.Expr expression.
     """
     # FIXME: convert math functions (trunc / round / floor / sin / cos / fmod) (possible?)
-    return replace_drop_in_expr(
-        replace_clip_names(convert_var_expr(expand_rpn_sort(expr)))
+    return convert_drop(
+        convert_clip_names(
+            convert_var(convert_sort(convert_pow(convert_clip_clamp(expr))))
+        )
     )
 
 
 __all__ = [
-    "replace_drop_in_expr",
-    "expand_rpn_sort",
-    "convert_var_expr",
+    "convert_drop",
+    "convert_sort",
+    "convert_var",
     "to_std_expr",
     "verify_std_expr",
-    "replace_clip_names",
+    "convert_clip_names",
+    "convert_pow",
+    "convert_clip_clamp",
 ]

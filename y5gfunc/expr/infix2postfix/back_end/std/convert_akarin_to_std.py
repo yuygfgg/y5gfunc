@@ -4,7 +4,7 @@ from ...middle_end import tokenize_expr, is_token_numeric, token_pattern
 import regex as re
 
 
-def convert_var_expr(expr: str) -> str:
+def convert_var(expr: str) -> str:
     """Rewrite variable store/load (`x!`, `x@`) to stack ops (`dup`, `swap`, `drop`)."""
     tokens = tokenize_expr(expr)
     if not tokens:
@@ -171,7 +171,7 @@ def convert_var_expr(expr: str) -> str:
     return " ".join(new_tokens)
 
 
-def expand_rpn_sort(expr: str) -> str:
+def convert_sort(expr: str) -> str:
     """
     Expand sortN instructions in an RPN string to their equivalent min/max/swap/dup sequences.
     """
@@ -237,18 +237,14 @@ def expand_rpn_sort(expr: str) -> str:
     return " ".join(final_rpn)
 
 
-def replace_drop_in_expr(expr: str) -> str:
+def convert_drop(expr: str) -> str:
     """
     Replaces all 'drop' and 'dropN' operations in an expression string with their std.Expr emulated equivalents.
     """
 
     def get_stack_effect(tk: str) -> int:
         """Return net stack delta for a token."""
-        if (
-            is_token_numeric(tk)
-            or token_pattern.match(tk)
-            or is_constant(tk)
-        ):
+        if is_token_numeric(tk) or token_pattern.match(tk) or is_constant(tk):
             return 1
         if tk in _UNARY_OPS or tk.startswith(("swap", "sort")):
             return 0
@@ -300,7 +296,7 @@ def replace_drop_in_expr(expr: str) -> str:
     return " ".join(new_tokens)
 
 
-def replace_clip_names(expr: str) -> str:
+def convert_clip_names(expr: str) -> str:
     """
     Replace clip names with their std.Expr equivalents.
     """
@@ -317,3 +313,27 @@ def replace_clip_names(expr: str) -> str:
         )
 
     return pattern.sub(get_replacement, expr)
+
+
+def convert_pow(expr: str) -> str:
+    """
+    Replace ** with pow.
+    """
+    return " ".join("pow" if token == "**" else token for token in expr.split())
+
+
+def convert_clip_clamp(expr: str) -> str:
+    """
+    Replace clip and clamp operators with their std.Expr equivalents.
+    """
+
+    tokens = expr.split()
+    new_tokens = []
+    
+    for token in tokens:
+        if token in ("clip", "clamp"):
+            new_tokens.extend(["swap2", "swap", "max", "min"])
+        else:
+            new_tokens.append(token)
+            
+    return " ".join(new_tokens)

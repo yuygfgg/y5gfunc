@@ -11,6 +11,12 @@ from .expr import (
     optimize_akarin_expr,
     math_functions,
     ex_planes,
+    convert_drop,
+    convert_sort,
+    convert_var,
+    convert_clip_names,
+    convert_pow,
+    convert_clip_clamp,
 )
 from .filter import (
     sakiko_deband,
@@ -231,4 +237,10 @@ __all__ = [
     "LazyVariable",
     "ranger",
     "PickFrames",
+    "convert_drop",
+    "convert_sort",
+    "convert_var",
+    "convert_clip_names",
+    "convert_pow",
+    "convert_clip_clamp",
 ]
