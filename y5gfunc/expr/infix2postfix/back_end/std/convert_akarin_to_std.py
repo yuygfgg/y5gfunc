@@ -1,12 +1,7 @@
-from ...front_end import is_constant
 from ....utils import (
-    _UNARY_OPS,
-    _BINARY_OPS,
-    _TERNARY_OPS,
-    _CLIP_OPS,
+    get_stack_effect,
     tokenize_expr,
-    is_token_numeric,
-    token_pattern,
+    _TOKEN_PATTERN,
 )
 import regex as re
 
@@ -26,7 +21,7 @@ def convert_var(expr: str) -> str:
             tk.endswith("!")
             and len(tk) > 1
             and not tk.startswith("[")
-            and not token_pattern.match(tk)
+            and not _TOKEN_PATTERN.match(tk)
         )
         if is_store:
             name = tk[:-1]
@@ -48,7 +43,7 @@ def convert_var(expr: str) -> str:
             tk.endswith("@")
             and len(tk) > 1
             and not tk.startswith("[")
-            and not token_pattern.match(tk)
+            and not _TOKEN_PATTERN.match(tk)
         )
         if is_load:
             name = tk[:-1]
@@ -58,34 +53,6 @@ def convert_var(expr: str) -> str:
                         v_def["load_indices"].append(idx)
                         var_map[idx] = v_def
                         break
-
-    def get_stack_effect(tk: str) -> int:
-        """Return net stack delta for a token."""
-        if (
-            is_token_numeric(tk)
-            or token_pattern.match(tk)
-            or tk in ("X", "Y", "N", "width", "height")
-        ):
-            return 1
-        if tk in _UNARY_OPS or tk.startswith(("swap", "sort")):
-            return 0
-        if tk in _BINARY_OPS:
-            return -1
-        if tk in _TERNARY_OPS or tk in _CLIP_OPS:
-            return -2
-        if tk.endswith("[]") and len(tk) > 2 and not token_pattern.match(tk):
-            return -1
-        if tk.startswith("dup"):
-            return 1
-        if tk.startswith("drop"):
-            n = 1
-            if len(tk) > 4:
-                try:
-                    n = int(tk[4:])
-                except ValueError:
-                    pass
-            return -n
-        return 0
 
     # ---------- transformation ----------
     new_tokens: list[str] = []
@@ -98,13 +65,13 @@ def convert_var(expr: str) -> str:
             tk.endswith("!")
             and len(tk) > 1
             and not tk.startswith("[")
-            and not token_pattern.match(tk)
+            and not _TOKEN_PATTERN.match(tk)
         )
         is_load = (
             tk.endswith("@")
             and len(tk) > 1
             and not tk.startswith("[")
-            and not token_pattern.match(tk)
+            and not _TOKEN_PATTERN.match(tk)
         )
 
         if is_store:
@@ -187,20 +154,24 @@ def convert_sort(expr: str) -> str:
         """
         Generate RPN code to compare and swap the elements at stack depth i and i+1.
         """
-        CS_TOP_SEQUENCE = ["dup1", "dup", "max", "swap2", "min"]
+        CS_TOP_SEQUENCE = ["dup1", "dup1", "max", "swap2", "min"]
 
         if i < 0:
             raise ValueError("Stack depth must be non-negative.")
 
-        commands = []
+        if i == 0:
+            return CS_TOP_SEQUENCE
 
-        for k in range(i, 0, -1):
-            commands.append(f"swap{k}")
+        commands = []
+        # Bring s_i and s_{i+1} to top
+        commands.append(f"swap{i+1}")
+        commands.append(f"swap{i}")
 
         commands.extend(CS_TOP_SEQUENCE)
 
-        for k in range(1, i + 1):
-            commands.append(f"swap{k}")
+        # Put them back
+        commands.append(f"swap{i}")
+        commands.append(f"swap{i+1}")
 
         return commands
 
@@ -248,22 +219,6 @@ def convert_drop(expr: str) -> str:
     """
     Replaces all 'drop' and 'dropN' operations in an expression string with their std.Expr emulated equivalents.
     """
-
-    def get_stack_effect(tk: str) -> int:
-        """Return net stack delta for a token."""
-        if is_token_numeric(tk) or token_pattern.match(tk) or is_constant(tk):
-            return 1
-        if tk in _UNARY_OPS or tk.startswith(("swap", "sort")):
-            return 0
-        if tk in _BINARY_OPS:
-            return -1
-        if tk in _TERNARY_OPS or tk in _CLIP_OPS:
-            return -2
-        if tk.endswith("[]") and len(tk) > 2 and not token_pattern.match(tk):
-            return -1
-        if tk.startswith("dup"):
-            return 1
-        return 0
 
     tokens = tokenize_expr(expr)
     new_tokens = []
@@ -351,7 +306,7 @@ def to_std_expr(expr: str) -> str:
     Convert an akarin.Expr expression to a std.Expr expression.
     """
     # FIXME: convert math functions (trunc / round / floor / fmod) (possible?)
-    ret =  convert_drop(
+    ret = convert_drop(
         convert_clip_names(
             convert_var(convert_sort(convert_pow(convert_clip_clamp(expr))))
         )

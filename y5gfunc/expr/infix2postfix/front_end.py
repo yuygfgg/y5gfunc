@@ -6,6 +6,8 @@ from enum import StrEnum
 
 sys.setrecursionlimit(5000)
 
+from ..utils import get_op_arity, get_stack_effect
+
 
 class GlobalMode(StrEnum):
     """
@@ -295,8 +297,6 @@ _NTH_PATTERN = re.compile(r"^nth_(\d+)$")
 _M_LINE_PATTERN = re.compile(r"^([a-zA-Z_]\w*)\s*=\s*(.+)$")
 _M_STATIC_PATTERN = re.compile(r"^(\w+)\[(-?\d+),\s*(-?\d+)\](\:\w)?$")
 _FIND_DUPLICATE_FUNCTIONS_PATTERN = re.compile(r"\bfunction\s+(\w+)\s*\(.*?\)")
-_DROP_PATTERN = re.compile(r"drop(\d*)")
-_SORT_PATTERN = re.compile(r"sort(\d+)")
 _GLOBAL_MATCH_PATTERN = re.compile(r"<([a-zA-Z_]\w*)>")
 _ASSIGN_PATTERN = re.compile(r"(?<![<>!])=(?![=])")
 _REL_PATTERN = re.compile(r"\w+\[(.*?)\]")
@@ -454,95 +454,19 @@ def compute_stack_effect(
     Compute the net stack effect of a postfix expression.
     """
     tokens = postfix_expr.split()
-    op_arity = {
-        "+": 2,
-        "-": 2,
-        "*": 2,
-        "/": 2,
-        "%": 2,
-        "pow": 2,
-        "and": 2,
-        "or": 2,
-        "=": 2,
-        "<": 2,
-        ">": 2,
-        "<=": 2,
-        ">=": 2,
-        "bitand": 2,
-        "bitor": 2,
-        "bitxor": 2,
-        "min": 2,
-        "max": 2,
-        "clamp": 3,
-        "?": 3,
-        "not": 1,
-        "sin": 1,
-        "cos": 1,
-        "round": 1,
-        "floor": 1,
-        "abs": 1,
-        "sqrt": 1,
-        "trunc": 1,
-        "bitnot": 1,
-    }
-
-    stack: list[int] = []
+    stack_size = 0
     for i, token in enumerate(tokens):
-        if token.endswith("!"):
-            if not stack:
-                raise SyntaxError("Stack underflow in assignment", line_num, func_name)
-            stack.pop()
-            continue
-        elif token.endswith("[]"):  # dynamic access operator
-            if len(stack) < 2:
-                raise SyntaxError(
-                    f"Stack underflow for operator {token} at token index {i}",
-                    line_num,
-                    func_name,
-                )
-            stack.pop()
-            stack.pop()
-            stack.append(1)
-            continue
+        arity = get_op_arity(token)
+        if stack_size < arity:
+            raise SyntaxError(
+                f"Stack underflow for operator {token} at token index {i}",
+                line_num,
+                func_name,
+            )
 
-        # dropN operator (default is drop1)
-        m_drop = _DROP_PATTERN.fullmatch(token)
-        if m_drop:
-            n_str = m_drop.group(1)
-            n = int(n_str) if n_str != "" else 1
-            if len(stack) < n:
-                raise SyntaxError(
-                    f"Stack underflow for operator {token}", line_num, func_name
-                )
-            for _ in range(n):
-                stack.pop()
-            continue
+        stack_size += get_stack_effect(token)
 
-        # sortN operator: reorder top N items without changing the stack count.
-        m_sort = _SORT_PATTERN.fullmatch(token)
-        if m_sort:
-            n = int(m_sort.group(1))
-            if len(stack) < n:
-                raise SyntaxError(
-                    f"Stack underflow for operator {token}", line_num, func_name
-                )
-            # Sorting reorders items but does not change the stack count.
-            continue
-
-        if token in op_arity:
-            arity = op_arity[token]
-            if len(stack) < arity:
-                raise SyntaxError(
-                    f"Stack underflow for operator {token} at token index {i}",
-                    line_num,
-                    func_name,
-                )
-            for _ in range(arity):
-                stack.pop()
-            stack.append(1)
-        else:
-            stack.append(1)
-    return len(stack)
+    return stack_size
 
 
 def parse_ternary(

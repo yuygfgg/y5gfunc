@@ -5,10 +5,10 @@ from ..utils import (
     _BINARY_OPS,
     _TERNARY_OPS,
     _CLIP_OPS,
-    token_pattern,
-    hex_pattern,
-    hex_parts_pattern,
-    octal_pattern,
+    _TOKEN_PATTERN,
+    _HEX_PATTERN,
+    _HEX_PARTS_PATTERN,
+    _OCTAL_PATTERN,
     is_token_numeric,
     tokenize_expr,
 )
@@ -39,12 +39,12 @@ def parse_numeric(token: str) -> Union[int, float]:
     if not is_token_numeric(token):
         raise ValueError(f"Token '{token}' is not a valid numeric format for parsing.")
 
-    if hex_pattern.match(token):  # Hexadecimal
+    if _HEX_PATTERN.match(token):  # Hexadecimal
         if "." in token or "p" in token.lower():
             try:
                 return float.fromhex(token)
             except ValueError:
-                parts = hex_parts_pattern.match(token.lower())
+                parts = _HEX_PARTS_PATTERN.match(token.lower())
                 if parts:
                     integer_part = int(parts.group(1), 16)
                     fractional_part = 0
@@ -62,7 +62,7 @@ def parse_numeric(token: str) -> Union[int, float]:
         else:
             return int(token, 16)  # Simple hex integer
     elif (
-        octal_pattern.match(token)
+        _OCTAL_PATTERN.match(token)
         and len(token) > 1
         and all(c in "01234567" for c in token[1:])
     ):  # Octal
@@ -237,7 +237,7 @@ def fold_constants(expr: str) -> str:
             token.endswith("!")
             and len(token) > 1
             and not token.startswith("[")
-            and not token_pattern.match(token)
+            and not _TOKEN_PATTERN.match(token)
         )
         if is_store:
             var_name = token[:-1]
@@ -257,7 +257,7 @@ def fold_constants(expr: str) -> str:
             token.endswith("@")
             and len(token) > 1
             and not token.startswith("[")
-            and not token_pattern.match(token)
+            and not _TOKEN_PATTERN.match(token)
         )
         if is_load:
             var_name = token[:-1]
@@ -510,7 +510,7 @@ def fold_constants(expr: str) -> str:
             token.endswith("[]")
             and len(token) > 2
             and not token.startswith("[")
-            and not token_pattern.match(token)
+            and not _TOKEN_PATTERN.match(token)
             and not is_token_numeric(token)
         )  # Heuristic check
         if is_dynamic_access:
@@ -523,7 +523,7 @@ def fold_constants(expr: str) -> str:
             i += 1
             continue
 
-        match = token_pattern.match(token)
+        match = _TOKEN_PATTERN.match(token)
         if match:
             stack.append(None)  # Result is unknown during folding pass
             result_tokens.append(token)  # Keep the token
@@ -553,7 +553,7 @@ def convert_dynamic_to_static(expr: str) -> str:
             token.endswith("[]")
             and len(token) > 2
             and not token.startswith("[")
-            and not token_pattern.match(token)
+            and not _TOKEN_PATTERN.match(token)
             and not is_token_numeric(token)
         )  # Heuristic check
 
@@ -621,7 +621,7 @@ def eliminate_immediate_store_load(expr: str) -> str:
             token.endswith("!")
             and len(token) > 1
             and not token.startswith("[")
-            and not token_pattern.match(token)
+            and not _TOKEN_PATTERN.match(token)
         )
 
         if is_store and i + 1 < len(tokens):

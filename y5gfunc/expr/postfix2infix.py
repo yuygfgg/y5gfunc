@@ -156,7 +156,7 @@ def postfix2infix(expr: str, check_mode: bool = False) -> LiteralString:
             items = pop(num)
             sorted_items_expr = f"nth_{{}}({', '.join(items)})"
             for idx in range(len(items)):
-                push(sorted_items_expr.format(idx))
+                push(sorted_items_expr.format(len(items) - idx))
             i += 1
             continue
 
