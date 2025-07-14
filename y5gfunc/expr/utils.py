@@ -1,5 +1,5 @@
 import regex as re
-
+from functools import lru_cache
 from vstools import vs
 from typing import Union, Optional
 
@@ -68,6 +68,31 @@ _HEX_PARTS_PATTERN = re.compile(
 )
 _OCTAL_PATTERN = re.compile(r"^0[0-7]")
 _DROP_PATTERN = re.compile(r"^drop([1-9]\d*)?$")
+_CLIP_PATTERN = re.compile(r"(?:[a-zA-Z]|src\d+)$")
+
+@lru_cache
+def is_clip(token: str) -> bool:
+    """Check if a token string represents a clip."""
+    return _CLIP_PATTERN.match(token) is not None
+
+@lru_cache
+def is_constant(token: str) -> bool:
+    """
+    Check if the token is a built-in constant.
+    """
+    constants_set = {
+        "N",
+        "X",
+        "Y",
+        "width",
+        "height",
+        "pi",
+    }
+    if token in constants_set:
+        return True
+    if is_clip(token):
+        return True
+    return False
 
 
 def is_token_numeric(token: str) -> bool:
@@ -94,7 +119,7 @@ def tokenize_expr(expr: str) -> list[str]:
     placeholder_suffix = "__"
     count = 0
 
-    def repl(matchobj):
+    def repl(matchobj: re.Match[str]) -> str:
         nonlocal count
         key = f"{placeholder_prefix}{count}{placeholder_suffix}"
         placeholders[key] = matchobj.group(0)
@@ -121,6 +146,7 @@ def get_stack_effect(tk: str) -> int:
         is_token_numeric(tk)
         or _TOKEN_PATTERN.match(tk)
         or tk in _CONSTANTS
+        or is_clip(tk)
         or (tk.startswith("dup") and not (tk.endswith("!") or tk.endswith("@")))
     ):
         return 1

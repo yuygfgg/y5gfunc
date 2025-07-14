@@ -187,15 +187,8 @@ def postfix2infix(expr: str, check_mode: bool = False) -> LiteralString:
             continue
 
         # Special constants
-        if token in ("N", "X", "Y", "width", "height"):
-            constants = {
-                "N": "current_frame_number",
-                "X": "current_x",
-                "Y": "current_y",
-                "width": "current_width",
-                "height": "current_height",
-            }
-            push(constants[token])
+        if token in ("N", "X", "Y", "width", "height", "pi"):
+            push(token)
             i += 1
             continue
 

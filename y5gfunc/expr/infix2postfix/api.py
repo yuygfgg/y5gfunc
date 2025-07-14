@@ -47,7 +47,7 @@ def compile(expr: str, back_end: BackEnd = BackEnd.AKARIN) -> str:
 
     - **Built-in Constants:**
     The language defines the following reserved identifiers: (Refer to std.Expr and akarin.Expr documents for more information)
-    - `N`, `X`, `current_x`, `Y`, `current_y`, `width`, `current_width`, `height`, `current_height`, `pi`
+    - `N`, `X`, `Y`, `width`, `height`, `pi`
     In addition, any token that is a single letter (e.g. `a`, `b`) or a string matching `src` followed by digits (e.g. `src1`, `src42`) is considered a source clip.
 
     - **Numeric Literals:**

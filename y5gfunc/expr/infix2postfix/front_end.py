@@ -6,7 +6,7 @@ from enum import StrEnum
 
 sys.setrecursionlimit(5000)
 
-from ..utils import get_op_arity, get_stack_effect, tokenize_expr
+from ..utils import get_op_arity, get_stack_effect, tokenize_expr, is_clip, is_constant, is_token_numeric
 
 
 class GlobalMode(StrEnum):
@@ -282,7 +282,6 @@ def parse_infix_to_postfix(infix_code: str) -> str:
 
 
 _FUNC_CALL_PATTERN = re.compile(r"(\w+)\s*\(")
-_CLIP_PATTERN = re.compile(r"(?:[a-zA-Z]|src\d+)$")
 _FUNC_INFO_PATTERN = re.compile(r"__internal_([a-zA-Z_]\w*)_([a-zA-Z_]\w+)$")
 _FUNC_PATTERN = re.compile(r"function\s+(\w+)")
 _GLOBAL_DECL_PATTERN = re.compile(r"^<global(.*)>$")
@@ -290,9 +289,6 @@ _FUNCTION_DEF_PATTERN = re.compile(r"^\s*function\s+(\w+)\s*\(([^)]*)\)\s*\{")
 _M_CALL_PATTERN = re.compile(r"^(\w+)\s*\(")
 _PROP_ACCESS_PATTERN = re.compile(r"^(\w+)\.([a-zA-Z_]\w*)$")
 _PROP_ACCESS_GENERIC_PATTERN = re.compile(r"([a-zA-Z_]\w*)\.([a-zA-Z_]\w*)")
-_NUMBER_PATTERN = re.compile(
-    r"^(0x[0-9A-Fa-f]+(\.[0-9A-Fa-f]+(p[+\-]?\d+)?)?|0[0-7]*|[+\-]?(\d+(\.\d+)?([eE][+\-]?\d+)?))$"
-)
 _NTH_PATTERN = re.compile(r"^nth_(\d+)$")
 _M_LINE_PATTERN = re.compile(r"^([a-zA-Z_]\w*)\s*=\s*(.+)$")
 _M_STATIC_PATTERN = re.compile(r"^(\w+)\[(-?\d+),\s*(-?\d+)\](\:\w)?$")
@@ -331,39 +327,6 @@ class SyntaxError(Exception):
             super().__init__(f"Line {line_num}: {message}")
         else:
             super().__init__(message)
-
-
-@lru_cache
-def is_clip(token: str) -> bool:
-    """
-    Determine whether token is a source clip.
-    (std.Expr: single letter; or akarin.Expr: srcN)
-    """
-    return bool(_CLIP_PATTERN.fullmatch(token))
-
-
-@lru_cache
-def is_constant(token: str) -> bool:
-    """
-    Check if the token is a built-in constant.
-    """
-    constants_set = {
-        "N",
-        "X",
-        "current_x",
-        "Y",
-        "current_y",
-        "width",
-        "current_width",
-        "height",
-        "current_height",
-        "pi",
-    }
-    if token in constants_set:
-        return True
-    if is_clip(token):
-        return True
-    return False
 
 
 @lru_cache
@@ -528,7 +491,7 @@ def validate_static_relative_pixel_indices(
     for match in static_relative_pixel_indices:
         indices = match.group(1).split(",")
         for idx in indices:
-            if not _NUMBER_PATTERN.fullmatch(idx.strip()):
+            if not is_token_numeric(idx.strip()):
                 raise SyntaxError(
                     f"Static relative pixel access index must be a numeric constant, got '{idx.strip()}'",
                     line_num,
@@ -606,19 +569,8 @@ def convert_expr(
     check_variable_usage(expr, variables, line_num, current_function, local_vars)
     validate_static_relative_pixel_indices(expr, line_num, current_function)
 
-    if _NUMBER_PATTERN.match(expr):
+    if is_token_numeric(expr):
         return expr
-
-    constants_map = {
-        "current_frame_number": "N",
-        "current_x": "X",
-        "current_y": "Y",
-        "current_width": "width",
-        "current_height": "height",
-        "pi": "pi",
-    }
-    if expr in constants_map:
-        return constants_map[expr]
 
     func_call_full = match_full_function_call(expr)
     if func_call_full:
