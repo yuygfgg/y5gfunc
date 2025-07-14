@@ -2823,8 +2823,7 @@ If check_mode is True, it only checks for expression validity without building t
 
             <details class="quote">
               <summary>Source code in <code>y5gfunc/expr/postfix2infix.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-34"> 34</a></span>
-<span class="normal"><a href="#__codelineno-0-35"> 35</a></span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-35"> 35</a></span>
 <span class="normal"><a href="#__codelineno-0-36"> 36</a></span>
 <span class="normal"><a href="#__codelineno-0-37"> 37</a></span>
 <span class="normal"><a href="#__codelineno-0-38"> 38</a></span>
@@ -3094,24 +3093,23 @@ If check_mode is True, it only checks for expression validity without building t
 <span class="normal"><a href="#__codelineno-0-302">302</a></span>
 <span class="normal"><a href="#__codelineno-0-303">303</a></span>
 <span class="normal"><a href="#__codelineno-0-304">304</a></span>
-<span class="normal"><a href="#__codelineno-0-305">305</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-34" name="__codelineno-0-34"></a><span class="k">def</span><span class="w"> </span><span class="nf">postfix2infix</span><span class="p">(</span><span class="n">expr</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">check_mode</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">LiteralString</span><span class="p">:</span>
-<a id="__codelineno-0-35" name="__codelineno-0-35"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<a id="__codelineno-0-36" name="__codelineno-0-36"></a><span class="sd">    Convert postfix expr to infix code</span>
-<a id="__codelineno-0-37" name="__codelineno-0-37"></a><span class="sd">    If check_mode is True, it only checks for expression validity without building the result.</span>
-<a id="__codelineno-0-38" name="__codelineno-0-38"></a>
-<a id="__codelineno-0-39" name="__codelineno-0-39"></a><span class="sd">    Args:</span>
-<a id="__codelineno-0-40" name="__codelineno-0-40"></a><span class="sd">        expr: Input postfix expr.</span>
-<a id="__codelineno-0-41" name="__codelineno-0-41"></a><span class="sd">        check_mode: If True, only perform validation.</span>
-<a id="__codelineno-0-42" name="__codelineno-0-42"></a>
-<a id="__codelineno-0-43" name="__codelineno-0-43"></a><span class="sd">    Returns:</span>
-<a id="__codelineno-0-44" name="__codelineno-0-44"></a><span class="sd">        Converted infix code. Or an empty string if check_mode is True and expr is valid.</span>
-<a id="__codelineno-0-45" name="__codelineno-0-45"></a>
-<a id="__codelineno-0-46" name="__codelineno-0-46"></a><span class="sd">    Raises:</span>
-<a id="__codelineno-0-47" name="__codelineno-0-47"></a><span class="sd">        ValueError: If an error was found in the input expr.</span>
-<a id="__codelineno-0-48" name="__codelineno-0-48"></a><span class="sd">    &quot;&quot;&quot;</span>
-<a id="__codelineno-0-49" name="__codelineno-0-49"></a>    <span class="c1"># Preprocessing</span>
-<a id="__codelineno-0-50" name="__codelineno-0-50"></a>    <span class="n">expr</span> <span class="o">=</span> <span class="n">expr</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
-<a id="__codelineno-0-51" name="__codelineno-0-51"></a>    <span class="n">expr</span> <span class="o">=</span> <span class="n">_PREPROCESS_PATTERN</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;[\1,\2]&quot;</span><span class="p">,</span> <span class="n">expr</span><span class="p">)</span>  <span class="c1"># [x, y] =&gt; [x,y]</span>
+<span class="normal"><a href="#__codelineno-0-305">305</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-35" name="__codelineno-0-35"></a><span class="k">def</span><span class="w"> </span><span class="nf">postfix2infix</span><span class="p">(</span><span class="n">expr</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">check_mode</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">LiteralString</span><span class="p">:</span>
+<a id="__codelineno-0-36" name="__codelineno-0-36"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<a id="__codelineno-0-37" name="__codelineno-0-37"></a><span class="sd">    Convert postfix expr to infix code</span>
+<a id="__codelineno-0-38" name="__codelineno-0-38"></a><span class="sd">    If check_mode is True, it only checks for expression validity without building the result.</span>
+<a id="__codelineno-0-39" name="__codelineno-0-39"></a>
+<a id="__codelineno-0-40" name="__codelineno-0-40"></a><span class="sd">    Args:</span>
+<a id="__codelineno-0-41" name="__codelineno-0-41"></a><span class="sd">        expr: Input postfix expr.</span>
+<a id="__codelineno-0-42" name="__codelineno-0-42"></a><span class="sd">        check_mode: If True, only perform validation.</span>
+<a id="__codelineno-0-43" name="__codelineno-0-43"></a>
+<a id="__codelineno-0-44" name="__codelineno-0-44"></a><span class="sd">    Returns:</span>
+<a id="__codelineno-0-45" name="__codelineno-0-45"></a><span class="sd">        Converted infix code. Or an empty string if check_mode is True and expr is valid.</span>
+<a id="__codelineno-0-46" name="__codelineno-0-46"></a>
+<a id="__codelineno-0-47" name="__codelineno-0-47"></a><span class="sd">    Raises:</span>
+<a id="__codelineno-0-48" name="__codelineno-0-48"></a><span class="sd">        ValueError: If an error was found in the input expr.</span>
+<a id="__codelineno-0-49" name="__codelineno-0-49"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="__codelineno-0-50" name="__codelineno-0-50"></a>    <span class="c1"># Preprocessing</span>
+<a id="__codelineno-0-51" name="__codelineno-0-51"></a>    <span class="n">expr</span> <span class="o">=</span> <span class="n">expr</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
 <a id="__codelineno-0-52" name="__codelineno-0-52"></a>    <span class="n">tokens</span> <span class="o">=</span> <span class="n">tokenize_expr</span><span class="p">(</span><span class="n">expr</span><span class="p">)</span>
 <a id="__codelineno-0-53" name="__codelineno-0-53"></a>
 <a id="__codelineno-0-54" name="__codelineno-0-54"></a>    <span class="n">stack</span> <span class="o">=</span> <span class="p">[]</span>
@@ -3229,7 +3227,7 @@ If check_mode is True, it only checks for expression validity without building t
 <a id="__codelineno-0-166" name="__codelineno-0-166"></a>            <span class="n">n</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">dup_match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span> <span class="k">if</span> <span class="n">dup_match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="k">else</span> <span class="mi">0</span>
 <a id="__codelineno-0-167" name="__codelineno-0-167"></a>            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">stack</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">n</span><span class="p">:</span>
 <a id="__codelineno-0-168" name="__codelineno-0-168"></a>                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-<a id="__codelineno-0-169" name="__codelineno-0-169"></a>                    <span class="sa">f</span><span class="s2">&quot;postfix2infix: </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">th token </span><span class="si">{</span><span class="n">token</span><span class="si">}</span><span class="s2"> needs at least </span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="s2"> values, while only </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">stack</span><span class="p">)</span><span class="si">}</span><span class="s2"> in stack.&quot;</span>
+<a id="__codelineno-0-169" name="__codelineno-0-169"></a>                    <span class="sa">f</span><span class="s2">&quot;postfix2infix: </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">th token </span><span class="si">{</span><span class="n">token</span><span class="si">}</span><span class="s2"> needs at least </span><span class="si">{</span><span class="n">n</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2"> values, while only </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">stack</span><span class="p">)</span><span class="si">}</span><span class="s2"> in stack.&quot;</span>
 <a id="__codelineno-0-170" name="__codelineno-0-170"></a>                <span class="p">)</span>
 <a id="__codelineno-0-171" name="__codelineno-0-171"></a>            <span class="k">else</span><span class="p">:</span>
 <a id="__codelineno-0-172" name="__codelineno-0-172"></a>                <span class="n">push</span><span class="p">(</span><span class="n">stack</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span> <span class="o">-</span> <span class="n">n</span><span class="p">])</span>
@@ -3242,7 +3240,7 @@ If check_mode is True, it only checks for expression validity without building t
 <a id="__codelineno-0-179" name="__codelineno-0-179"></a>            <span class="n">n</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">swap_match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span> <span class="k">if</span> <span class="n">swap_match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="k">else</span> <span class="mi">1</span>
 <a id="__codelineno-0-180" name="__codelineno-0-180"></a>            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">stack</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">n</span><span class="p">:</span>
 <a id="__codelineno-0-181" name="__codelineno-0-181"></a>                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-<a id="__codelineno-0-182" name="__codelineno-0-182"></a>                    <span class="sa">f</span><span class="s2">&quot;postfix2infix: </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">th token </span><span class="si">{</span><span class="n">token</span><span class="si">}</span><span class="s2"> needs at least </span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="s2"> values, while only </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">stack</span><span class="p">)</span><span class="si">}</span><span class="s2"> in stack.&quot;</span>
+<a id="__codelineno-0-182" name="__codelineno-0-182"></a>                    <span class="sa">f</span><span class="s2">&quot;postfix2infix: </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">th token </span><span class="si">{</span><span class="n">token</span><span class="si">}</span><span class="s2"> needs at least </span><span class="si">{</span><span class="n">n</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2"> values, while only </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">stack</span><span class="p">)</span><span class="si">}</span><span class="s2"> in stack.&quot;</span>
 <a id="__codelineno-0-183" name="__codelineno-0-183"></a>                <span class="p">)</span>
 <a id="__codelineno-0-184" name="__codelineno-0-184"></a>            <span class="k">else</span><span class="p">:</span>
 <a id="__codelineno-0-185" name="__codelineno-0-185"></a>                <span class="n">stack</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">stack</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span> <span class="o">-</span> <span class="n">n</span><span class="p">]</span> <span class="o">=</span> <span class="n">stack</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span> <span class="o">-</span> <span class="n">n</span><span class="p">],</span> <span class="n">stack</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
