@@ -10,7 +10,6 @@ import regex as re
 
 
 # inspired by mvf.postfix2infix
-_PREPROCESS_PATTERN = re.compile(r"\[\s*(\w+)\s*,\s*(\w+)\s*\]")
 _NUMBER_PATTERN = re.compile(
     r"^("
     r"0x[0-9A-Fa-f]+(\.[0-9A-Fa-f]+(p[+\-]?\d+)?)?"
@@ -22,7 +21,9 @@ _NUMBER_PATTERN = re.compile(
 )
 _SRC_PATTERN = re.compile(r"^src\d+$")
 _FRAME_PROP_PATTERN = re.compile(r"^[a-zA-Z]\w*\.[a-zA-Z]\w*$")
-_STATIC_PIXEL_PATTERN = re.compile(r"^([a-zA-Z]\w*)\[\s*(-?\d+)\s*,\s*(-?\d+)\s*\](\:\w+)?$")
+_STATIC_PIXEL_PATTERN = re.compile(
+    r"^([a-zA-Z]\w*)\[\s*(-?\d+)\s*,\s*(-?\d+)\s*\](\:\w+)?$"
+)
 _VAR_STORE_PATTERN = re.compile(r"^([a-zA-Z_]\w*)\!$")
 _VAR_LOAD_PATTERN = re.compile(r"^([a-zA-Z_]\w*)\@$")
 _DROP_PATTERN = re.compile(r"^drop(\d*)$")
@@ -48,7 +49,6 @@ def postfix2infix(expr: str, check_mode: bool = False) -> LiteralString:
     """
     # Preprocessing
     expr = expr.strip()
-    expr = _PREPROCESS_PATTERN.sub(r"[\1,\2]", expr)  # [x, y] => [x,y]
     tokens = tokenize_expr(expr)
 
     stack = []
@@ -166,7 +166,7 @@ def postfix2infix(expr: str, check_mode: bool = False) -> LiteralString:
             n = int(dup_match.group(1)) if dup_match.group(1) else 0
             if len(stack) <= n:
                 raise ValueError(
-                    f"postfix2infix: {i}th token {token} needs at least {n} values, while only {len(stack)} in stack."
+                    f"postfix2infix: {i}th token {token} needs at least {n+1} values, while only {len(stack)} in stack."
                 )
             else:
                 push(stack[-1 - n])
@@ -179,7 +179,7 @@ def postfix2infix(expr: str, check_mode: bool = False) -> LiteralString:
             n = int(swap_match.group(1)) if swap_match.group(1) else 1
             if len(stack) <= n:
                 raise ValueError(
-                    f"postfix2infix: {i}th token {token} needs at least {n} values, while only {len(stack)} in stack."
+                    f"postfix2infix: {i}th token {token} needs at least {n+1} values, while only {len(stack)} in stack."
                 )
             else:
                 stack[-1], stack[-1 - n] = stack[-1 - n], stack[-1]

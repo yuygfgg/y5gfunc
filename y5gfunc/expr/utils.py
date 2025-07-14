@@ -50,9 +50,9 @@ _CONSTANTS = {
 }
 
 _TERNARY_OPS = {"?"}
-_CLIP_OPS = {"clip", "clamp"}
+_CLAMP_OPS = {"clip", "clamp"}
 
-_TOKEN_PATTERN = re.compile(r"(\w+)\[\s*(-?\d+)\s*,\s*(-?\d+)\s*\](?::(?:c|m))?")
+_REL_STATIC_PATTERN = re.compile(r"(\w+)\[\s*(-?\d+)\s*,\s*(-?\d+)\s*\](?::(?:c|m))?")
 _SPLIT_PATTERN = re.compile(r"\s+")
 _NUMBER_PATTERNS = [
     re.compile(pattern)
@@ -68,12 +68,14 @@ _HEX_PARTS_PATTERN = re.compile(
 )
 _OCTAL_PATTERN = re.compile(r"^0[0-7]")
 _DROP_PATTERN = re.compile(r"^drop([1-9]\d*)?$")
-_CLIP_PATTERN = re.compile(r"(?:[a-zA-Z]|src\d+)$")
+_CLIP_NAME_PATTERN = re.compile(r"(?:[a-zA-Z]|src\d+)$")
+
 
 @lru_cache
 def is_clip(token: str) -> bool:
     """Check if a token string represents a clip."""
-    return _CLIP_PATTERN.match(token) is not None
+    return _CLIP_NAME_PATTERN.match(token) is not None
+
 
 @lru_cache
 def is_constant(token: str) -> bool:
@@ -126,7 +128,7 @@ def tokenize_expr(expr: str) -> list[str]:
         count += 1
         return key
 
-    expr_with_placeholders = _TOKEN_PATTERN.sub(repl, expr)
+    expr_with_placeholders = _REL_STATIC_PATTERN.sub(repl, expr)
 
     raw_tokens = _SPLIT_PATTERN.split(expr_with_placeholders)
 
@@ -135,7 +137,20 @@ def tokenize_expr(expr: str) -> list[str]:
         if token in placeholders:
             tokens.append(placeholders[token])
         elif token:
-            tokens.append(token)
+            reconstructed = False
+            if token.startswith(placeholder_prefix):
+                # This token is a placeholder that may have extra characters appended,
+                # like __PXACCESS0__:x. We need to find the original placeholder
+                # and reconstruct the original malformed token.
+                for p_key, p_val in placeholders.items():
+                    if token.startswith(p_key):
+                        # Reconstruct the token, e.g., 'x[1, 1]' + ':x'
+                        reconstructed_token = p_val + token[len(p_key) :]
+                        tokens.append(reconstructed_token)
+                        reconstructed = True
+                        break
+            if not reconstructed:
+                tokens.append(token)
 
     return tokens
 
@@ -144,7 +159,7 @@ def get_stack_effect(tk: str) -> int:
     """Return net stack delta for a token."""
     if (
         is_token_numeric(tk)
-        or _TOKEN_PATTERN.match(tk)
+        or _REL_STATIC_PATTERN.match(tk)
         or tk in _CONSTANTS
         or is_clip(tk)
         or (tk.startswith("dup") and not (tk.endswith("!") or tk.endswith("@")))
@@ -154,22 +169,22 @@ def get_stack_effect(tk: str) -> int:
         return 0
     if tk in _BINARY_OPS:
         return -1
-    if tk in _TERNARY_OPS or tk in _CLIP_OPS:
+    if tk in _TERNARY_OPS or tk in _CLAMP_OPS:
         return -2
-    if tk.endswith("[]") and len(tk) > 2 and not _TOKEN_PATTERN.match(tk):
+    if tk.endswith("[]") and len(tk) > 2 and not _REL_STATIC_PATTERN.match(tk):
         return -1
     if (
         tk.endswith("!")
         and len(tk) > 1
         and not tk.startswith("[")
-        and not _TOKEN_PATTERN.match(tk)
+        and not _REL_STATIC_PATTERN.match(tk)
     ):
         return -1
     if (
         tk.endswith("@")
         and len(tk) > 1
         and not tk.startswith("[")
-        and not _TOKEN_PATTERN.match(tk)
+        and not _REL_STATIC_PATTERN.match(tk)
     ):
         return 1
 
@@ -188,15 +203,15 @@ def get_op_arity(token: str) -> int:
         return 1
     if token in _BINARY_OPS:
         return 2
-    if token in _TERNARY_OPS or token in _CLIP_OPS:
+    if token in _TERNARY_OPS or token in _CLAMP_OPS:
         return 3
-    if token.endswith("[]") and len(token) > 2 and not _TOKEN_PATTERN.match(token):
+    if token.endswith("[]") and len(token) > 2 and not _REL_STATIC_PATTERN.match(token):
         return 2
     if (
         token.endswith("!")
         and len(token) > 1
         and not token.startswith("[")
-        and not _TOKEN_PATTERN.match(token)
+        and not _REL_STATIC_PATTERN.match(token)
     ):
         return 1
 

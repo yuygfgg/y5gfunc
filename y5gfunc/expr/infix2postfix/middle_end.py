@@ -4,8 +4,8 @@ from ..utils import (
     _UNARY_OPS,
     _BINARY_OPS,
     _TERNARY_OPS,
-    _CLIP_OPS,
-    _TOKEN_PATTERN,
+    _CLAMP_OPS,
+    _REL_STATIC_PATTERN,
     _HEX_PATTERN,
     _HEX_PARTS_PATTERN,
     _OCTAL_PATTERN,
@@ -237,7 +237,7 @@ def fold_constants(expr: str) -> str:
             token.endswith("!")
             and len(token) > 1
             and not token.startswith("[")
-            and not _TOKEN_PATTERN.match(token)
+            and not _REL_STATIC_PATTERN.match(token)
         )
         if is_store:
             var_name = token[:-1]
@@ -257,7 +257,7 @@ def fold_constants(expr: str) -> str:
             token.endswith("@")
             and len(token) > 1
             and not token.startswith("[")
-            and not _TOKEN_PATTERN.match(token)
+            and not _REL_STATIC_PATTERN.match(token)
         )
         if is_load:
             var_name = token[:-1]
@@ -384,7 +384,7 @@ def fold_constants(expr: str) -> str:
             i += 1
             continue
 
-        if token in _CLIP_OPS:
+        if token in _CLAMP_OPS:
             can_fold = False
             if len(stack) >= 3 and len(result_tokens) >= 3:
                 max_val_stack = stack[-1]
@@ -510,7 +510,7 @@ def fold_constants(expr: str) -> str:
             token.endswith("[]")
             and len(token) > 2
             and not token.startswith("[")
-            and not _TOKEN_PATTERN.match(token)
+            and not _REL_STATIC_PATTERN.match(token)
             and not is_token_numeric(token)
         )  # Heuristic check
         if is_dynamic_access:
@@ -523,7 +523,7 @@ def fold_constants(expr: str) -> str:
             i += 1
             continue
 
-        match = _TOKEN_PATTERN.match(token)
+        match = _REL_STATIC_PATTERN.match(token)
         if match:
             stack.append(None)  # Result is unknown during folding pass
             result_tokens.append(token)  # Keep the token
@@ -553,7 +553,7 @@ def convert_dynamic_to_static(expr: str) -> str:
             token.endswith("[]")
             and len(token) > 2
             and not token.startswith("[")
-            and not _TOKEN_PATTERN.match(token)
+            and not _REL_STATIC_PATTERN.match(token)
             and not is_token_numeric(token)
         )  # Heuristic check
 
@@ -621,7 +621,7 @@ def eliminate_immediate_store_load(expr: str) -> str:
             token.endswith("!")
             and len(token) > 1
             and not token.startswith("[")
-            and not _TOKEN_PATTERN.match(token)
+            and not _REL_STATIC_PATTERN.match(token)
         )
 
         if is_store and i + 1 < len(tokens):

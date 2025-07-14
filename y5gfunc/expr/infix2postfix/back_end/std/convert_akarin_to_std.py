@@ -1,8 +1,8 @@
 from ....utils import (
     get_stack_effect,
     tokenize_expr,
-    _TOKEN_PATTERN,
-    _CLIP_OPS,
+    _REL_STATIC_PATTERN,
+    _CLAMP_OPS,
 )
 import regex as re
 
@@ -22,7 +22,7 @@ def convert_var(expr: str) -> str:
             tk.endswith("!")
             and len(tk) > 1
             and not tk.startswith("[")
-            and not _TOKEN_PATTERN.match(tk)
+            and not _REL_STATIC_PATTERN.match(tk)
         )
         if is_store:
             name = tk[:-1]
@@ -44,7 +44,7 @@ def convert_var(expr: str) -> str:
             tk.endswith("@")
             and len(tk) > 1
             and not tk.startswith("[")
-            and not _TOKEN_PATTERN.match(tk)
+            and not _REL_STATIC_PATTERN.match(tk)
         )
         if is_load:
             name = tk[:-1]
@@ -66,13 +66,13 @@ def convert_var(expr: str) -> str:
             tk.endswith("!")
             and len(tk) > 1
             and not tk.startswith("[")
-            and not _TOKEN_PATTERN.match(tk)
+            and not _REL_STATIC_PATTERN.match(tk)
         )
         is_load = (
             tk.endswith("@")
             and len(tk) > 1
             and not tk.startswith("[")
-            and not _TOKEN_PATTERN.match(tk)
+            and not _REL_STATIC_PATTERN.match(tk)
         )
 
         if is_store:
@@ -372,7 +372,7 @@ def convert_clip_clamp(expr: str) -> str:
     new_tokens = []
 
     for token in tokens:
-        if token in _CLIP_OPS:
+        if token in _CLAMP_OPS:
             new_tokens.extend(["swap2", "swap", "max", "min"])
         else:
             new_tokens.append(token)
