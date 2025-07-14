@@ -26,8 +26,8 @@ def optimize_akarin_expr(expr: str) -> str:
 
     while prev_expr != current_expr:
         prev_expr = current_expr
-        current_expr = eliminate_immediate_store_load(
-            fold_constants(to_std_expr(current_expr))
+        current_expr = fold_constants(
+            to_std_expr(eliminate_immediate_store_load(current_expr))
         )
 
     optimized_expr = convert_dynamic_to_static(current_expr)

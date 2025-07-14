@@ -6,7 +6,7 @@ from enum import StrEnum
 
 sys.setrecursionlimit(5000)
 
-from ..utils import get_op_arity, get_stack_effect
+from ..utils import get_op_arity, get_stack_effect, tokenize_expr
 
 
 class GlobalMode(StrEnum):
@@ -453,13 +453,15 @@ def compute_stack_effect(
     """
     Compute the net stack effect of a postfix expression.
     """
-    tokens = postfix_expr.split()
+    tokens = tokenize_expr(postfix_expr)
     stack_size = 0
     for i, token in enumerate(tokens):
         arity = get_op_arity(token)
         if stack_size < arity:
             raise SyntaxError(
-                f"Stack underflow for operator {token} at token index {i}",
+                f"Stack underflow for operator {token} at token index {i} \n"
+                f"Stack size: {stack_size}, arity: {arity} \n"
+                f"Tokens: {' '.join(tokens)}",
                 line_num,
                 func_name,
             )

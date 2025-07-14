@@ -40,12 +40,21 @@ _BINARY_OPS = {
     "bitxor",
 }
 
+_CONSTANTS = {
+    "N",
+    "X",
+    "Y",
+    "width",
+    "height",
+    "pi",
+}
+
 _TERNARY_OPS = {"?"}
 _CLIP_OPS = {"clip", "clamp"}
 
 _TOKEN_PATTERN = re.compile(r"(\w+)\[\s*(-?\d+)\s*,\s*(-?\d+)\s*\](?::(?:c|m))?")
 _SPLIT_PATTERN = re.compile(r"\s+")
-number_patterns = [
+_NUMBER_PATTERNS = [
     re.compile(pattern)
     for pattern in [
         r"^0x[0-9A-Fa-f]+(\.[0-9A-Fa-f]+(p[+\-]?\d+)?)?$",  # Hexadecimal
@@ -68,7 +77,7 @@ def is_token_numeric(token: str) -> bool:
     ):
         return True
 
-    for pattern in number_patterns:
+    for pattern in _NUMBER_PATTERNS:
         if pattern.match(token):
             return True
     return False
@@ -108,7 +117,12 @@ def tokenize_expr(expr: str) -> list[str]:
 
 def get_stack_effect(tk: str) -> int:
     """Return net stack delta for a token."""
-    if is_token_numeric(tk) or _TOKEN_PATTERN.match(tk) or tk.startswith("dup"):
+    if (
+        is_token_numeric(tk)
+        or _TOKEN_PATTERN.match(tk)
+        or tk in _CONSTANTS
+        or (tk.startswith("dup") and not (tk.endswith("!") or tk.endswith("@")))
+    ):
         return 1
     if tk in _UNARY_OPS or tk.startswith(("swap", "sort")):
         return 0

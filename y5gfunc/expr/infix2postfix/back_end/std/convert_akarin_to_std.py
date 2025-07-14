@@ -2,6 +2,7 @@ from ....utils import (
     get_stack_effect,
     tokenize_expr,
     _TOKEN_PATTERN,
+    _CLIP_OPS,
 )
 import regex as re
 
@@ -79,21 +80,24 @@ def convert_var(expr: str) -> str:
             if not v_def:
                 continue
             k = len(v_def["load_indices"])
-            stack_size -= 1  # pop stored value
             if k == 0:
+                stack_size -= 1  # pop stored value
                 new_tokens.append("drop")
-            else:
-                if k > 1:
-                    new_tokens.extend(["dup"] * (k - 1))
-                stack_size += k
-                base = stack_size - k
-                copies = [
-                    {"def_name": v_def["name"], "stack_pos": base + j} for j in range(k)
-                ]
-                abandoned.extend(copies)
-                loads_to_serve[v_def["name"]] = sorted(
-                    copies, key=lambda c: c["stack_pos"], reverse=True
-                )
+                continue
+
+            if k > 1:
+                new_tokens.extend(["dup"] * (k - 1))
+
+            stack_size += k - 1
+
+            base = stack_size - k
+            copies = [
+                {"def_name": v_def["name"], "stack_pos": base + j} for j in range(k)
+            ]
+            abandoned.extend(copies)
+            loads_to_serve[v_def["name"]] = sorted(
+                copies, key=lambda c: c["stack_pos"], reverse=True
+            )
         elif is_load:
             v_def = var_map.get(idx)
             if not v_def:
@@ -102,7 +106,6 @@ def convert_var(expr: str) -> str:
                 continue
             copies = loads_to_serve.get(v_def["name"])
             if not copies:
-                # The value was dropped, so this load is a no-op.
                 continue
             copy_use = copies.pop(0)
             depth = (stack_size - 1) - copy_use["stack_pos"]
@@ -114,10 +117,86 @@ def convert_var(expr: str) -> str:
             stack_size += 1
         else:
             old_stack_size = stack_size
-            new_tokens.append(tk)
-            stack_size += get_stack_effect(tk)
+
+            # --- Parse stack ops ---
+            is_drop_op, drop_count = False, 0
+            if tk.startswith("drop"):
+                n_str = tk[4:]
+                if not n_str:
+                    drop_count = 1
+                else:
+                    try:
+                        drop_count = int(n_str)
+                    except ValueError:
+                        pass
+                if drop_count > 0:
+                    is_drop_op = True
+
+            is_swap_op, swap_depth = False, 0
+            if tk.startswith("swap"):
+                n_str = tk[4:]
+                if not n_str:
+                    swap_depth = 1
+                else:
+                    try:
+                        swap_depth = int(n_str)
+                    except ValueError:
+                        pass
+                if swap_depth > 0:
+                    is_swap_op = True
+
+            # Protected Drop
+            is_protected_drop = False
+            if is_drop_op:
+                top_pos = old_stack_size - 1
+                if any(
+                    c["stack_pos"] == top_pos
+                    for copies in loads_to_serve.values()
+                    for c in copies
+                ):
+                    is_protected_drop = True
+
+            if is_drop_op and is_protected_drop and (old_stack_size - 1) >= drop_count:
+                new_tokens.extend([f"swap{drop_count}", f"drop{drop_count}"])
+                stack_size = old_stack_size - drop_count
+
+                top_pos = old_stack_size - 1
+                all_tracked = [
+                    c for copies in loads_to_serve.values() for c in copies
+                ] + abandoned
+                for var in all_tracked:
+                    if var["stack_pos"] == top_pos:
+                        var["stack_pos"] -= drop_count
+
+            # Swap
+            elif is_swap_op:
+                new_tokens.append(tk)
+                # stack_size is unchanged by swap
+                if old_stack_size > swap_depth:
+                    pos1 = old_stack_size - 1
+                    pos2 = old_stack_size - 1 - swap_depth
+
+                    all_tracked = [
+                        c for copies in loads_to_serve.values() for c in copies
+                    ] + abandoned
+                    var1, var2 = None, None
+                    for v in all_tracked:
+                        if v["stack_pos"] == pos1:
+                            var1 = v
+                        elif v["stack_pos"] == pos2:
+                            var2 = v
+                    if var1:
+                        var1["stack_pos"] = pos2
+                    if var2:
+                        var2["stack_pos"] = pos1
+
+            # Normal Op (including unprotected drops)
+            else:
+                new_tokens.append(tk)
+                stack_size += get_stack_effect(tk)
+
+            # --- Cleanup for stack shrinking ---
             if stack_size < old_stack_size:
-                # stack has shrunk, remove dropped items
                 for v_name, copies in list(loads_to_serve.items()):
                     updated_copies = [c for c in copies if c["stack_pos"] < stack_size]
                     if not updated_copies:
@@ -293,7 +372,7 @@ def convert_clip_clamp(expr: str) -> str:
     new_tokens = []
 
     for token in tokens:
-        if token in ("clip", "clamp"):
+        if token in _CLIP_OPS:
             new_tokens.extend(["swap2", "swap", "max", "min"])
         else:
             new_tokens.append(token)
