@@ -10,8 +10,23 @@ import regex as re
 def convert_var(expr: str) -> str:
     """Rewrite variable store/load (`x!`, `x@`) to stack ops (`dup`, `swap`, `drop`)."""
     tokens = tokenize_expr(expr)
+
     if not tokens:
         return ""
+    
+    # Expand dropN to N * drop
+    new_tokens = []
+    for token in tokens:
+        if token.startswith("drop") and not token.endswith("!") and not token.startswith("@"):
+            n_str = token[4:]
+            if not n_str:
+                new_tokens.append("drop")
+            else:
+                new_tokens.extend(["drop"] * int(n_str))
+        else:
+            new_tokens.append(token)
+
+    tokens = new_tokens
 
     # ---------- static analysis ----------
     var_defs: dict[str, list[dict]] = {}
