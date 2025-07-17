@@ -3561,8 +3561,7 @@ Function calls (both built-in and custom) check that the exact number of require
 <span class="normal"><a href="#__codelineno-0-286">286</a></span>
 <span class="normal"><a href="#__codelineno-0-287">287</a></span>
 <span class="normal"><a href="#__codelineno-0-288">288</a></span>
-<span class="normal"><a href="#__codelineno-0-289">289</a></span>
-<span class="normal"><a href="#__codelineno-0-290">290</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-12" name="__codelineno-0-12"></a><span class="k">def</span><span class="w"> </span><span class="nf">compile</span><span class="p">(</span><span class="n">expr</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">back_end</span><span class="p">:</span> <span class="n">BackEnd</span> <span class="o">=</span> <span class="n">BackEnd</span><span class="o">.</span><span class="n">AKARIN</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="normal"><a href="#__codelineno-0-289">289</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-12" name="__codelineno-0-12"></a><span class="k">def</span><span class="w"> </span><span class="nf">compile</span><span class="p">(</span><span class="n">expr</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">back_end</span><span class="p">:</span> <span class="n">BackEnd</span> <span class="o">=</span> <span class="n">BackEnd</span><span class="o">.</span><span class="n">AKARIN</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <a id="__codelineno-0-13" name="__codelineno-0-13"></a><span class="w">    </span><span class="sa">R</span><span class="sd">&quot;&quot;&quot;</span>
 <a id="__codelineno-0-14" name="__codelineno-0-14"></a><span class="sd">    Convert infix expressions to postfix expressions.</span>
 <a id="__codelineno-0-15" name="__codelineno-0-15"></a>
@@ -3837,10 +3836,9 @@ Function calls (both built-in and custom) check that the exact number of require
 <a id="__codelineno-0-284" name="__codelineno-0-284"></a>            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid expression&quot;</span><span class="p">)</span>
 <a id="__codelineno-0-285" name="__codelineno-0-285"></a>    <span class="k">elif</span> <span class="n">back_end</span> <span class="o">==</span> <span class="n">BackEnd</span><span class="o">.</span><span class="n">AKARIN</span><span class="p">:</span>
 <a id="__codelineno-0-286" name="__codelineno-0-286"></a>        <span class="k">if</span> <span class="ow">not</span> <span class="n">verify_akarin_expr</span><span class="p">(</span><span class="n">optimized</span><span class="p">):</span>
-<a id="__codelineno-0-287" name="__codelineno-0-287"></a>            <span class="c1"># raise ValueError(&quot;Invalid expression&quot;)</span>
-<a id="__codelineno-0-288" name="__codelineno-0-288"></a>            <span class="k">pass</span>
-<a id="__codelineno-0-289" name="__codelineno-0-289"></a>
-<a id="__codelineno-0-290" name="__codelineno-0-290"></a>    <span class="k">return</span> <span class="n">optimize_akarin_expr</span><span class="p">(</span><span class="n">optimized</span><span class="p">)</span>
+<a id="__codelineno-0-287" name="__codelineno-0-287"></a>            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid expression&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-288" name="__codelineno-0-288"></a>
+<a id="__codelineno-0-289" name="__codelineno-0-289"></a>    <span class="k">return</span> <span class="n">optimize_akarin_expr</span><span class="p">(</span><span class="n">optimized</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
