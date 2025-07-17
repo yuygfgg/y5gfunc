@@ -5,6 +5,7 @@ from ....utils import (
     _CLAMP_OPS,
 )
 import regex as re
+from itertools import groupby
 
 
 def convert_var(expr: str) -> str:
@@ -235,6 +236,19 @@ def convert_var(expr: str) -> str:
     real_vals = stack_size - len(abandoned)
     if real_vals > 1:
         new_tokens.extend(["drop"] * (real_vals - 1))
+    
+    # Merge consecutive drops into a single dropN
+    merged_tokens = []
+    for key, group in groupby(new_tokens):
+        if key == "drop":
+            count = len(list(group))
+            if count > 1:
+                merged_tokens.append(f"drop{count}")
+            elif count == 1:
+                merged_tokens.append("drop")
+        else:
+            merged_tokens.extend(list(group))
+    new_tokens = merged_tokens
 
     return " ".join(new_tokens)
 
