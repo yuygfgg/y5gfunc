@@ -1,38 +1,23 @@
 import sys
-from .utils import tokenize_expr
-
-
-if sys.version_info >= (3, 11):
-    from typing import LiteralString
-else:
-    LiteralString = str
-import regex as re
+from .utils import (
+    tokenize_expr,
+    _NUMBER_PATTERNS,
+    _SRC_PATTERN,
+    _FRAME_PROP_PATTERN,
+    _STATIC_PIXEL_PATTERN,
+    _VAR_STORE_PATTERN,
+    _VAR_LOAD_PATTERN,
+    _DROP_PATTERN,
+    _SORT_PATTERN,
+    _DUP_PATTERN,
+    _SWAP_PATTERN,
+    is_clip_postfix,
+    is_constant_postfix,
+)
 
 
 # inspired by mvf.postfix2infix
-_NUMBER_PATTERN = re.compile(
-    r"^("
-    r"0x[0-9A-Fa-f]+(\.[0-9A-Fa-f]+(p[+\-]?\d+)?)?"
-    r"|"
-    r"0[0-7]*"
-    r"|"
-    r"[+\-]?(\d+(\.\d+)?([eE][+\-]?\d+)?)"
-    r")$"
-)
-_SRC_PATTERN = re.compile(r"^src\d+$")
-_FRAME_PROP_PATTERN = re.compile(r"^[a-zA-Z]\w*\.[a-zA-Z]\w*$")
-_STATIC_PIXEL_PATTERN = re.compile(
-    r"^([a-zA-Z]\w*)\[\s*(-?\d+)\s*,\s*(-?\d+)\s*\](\:\w+)?$"
-)
-_VAR_STORE_PATTERN = re.compile(r"^([a-zA-Z_]\w*)\!$")
-_VAR_LOAD_PATTERN = re.compile(r"^([a-zA-Z_]\w*)\@$")
-_DROP_PATTERN = re.compile(r"^drop(\d*)$")
-_SORT_PATTERN = re.compile(r"^sort(\d+)$")
-_DUP_PATTERN = re.compile(r"^dup(\d*)$")
-_SWAP_PATTERN = re.compile(r"^swap(\d*)$")
-
-
-def postfix2infix(expr: str, check_mode: bool = False) -> LiteralString:
+def postfix2infix(expr: str, check_mode: bool = False) -> str:
     """
     Convert postfix expr to infix code
     If check_mode is True, it only checks for expression validity without building the result.
@@ -79,19 +64,21 @@ def postfix2infix(expr: str, check_mode: bool = False) -> LiteralString:
 
         # Single letter
         if token.isalpha() and len(token) == 1:
-            push(token)
+            # Add $ prefix for clip identifiers
+            token_name = f"${token}" if is_clip_postfix(token) else token
+            push(token_name)
             i += 1
             continue
 
         # Numbers
-        if _NUMBER_PATTERN.match(token):
+        if any(pattern.match(token) for pattern in _NUMBER_PATTERNS):
             push(token)
             i += 1
             continue
 
         # Source clips (srcN)
         if _SRC_PATTERN.match(token):
-            push(token)
+            push(f"${token}")
             i += 1
             continue
 
@@ -106,7 +93,15 @@ def postfix2infix(expr: str, check_mode: bool = False) -> LiteralString:
             clip_identifier = token[:-2]
             absY = pop()
             absX = pop()
-            push(f"dyn({clip_identifier}({absX}, {absY}))")
+
+            if not is_clip_postfix(clip_identifier):
+                raise ValueError(
+                    f"postfix2infix: {i}th token {token} expected a clip identifier, but got {clip_identifier}."
+                )
+            
+            # Add $ prefix for clip identifiers
+            clip_name = f"${clip_identifier}"
+            push(f"dyn({clip_name},{absX},{absY})")
             i += 1
             continue
 
@@ -121,7 +116,13 @@ def postfix2infix(expr: str, check_mode: bool = False) -> LiteralString:
                 raise ValueError(
                     f"postfix2infix: unknown boundary_suffix {boundary_suffix} at {i}th token {token}"
                 )
-            push(f"{clip_identifier}[{statX},{statY}]{boundary_suffix or ""}")
+            if not is_clip_postfix(clip_identifier):
+                raise ValueError(
+                    f"postfix2infix: {i}th token {token} expected a clip identifier, but got {clip_identifier}."
+                )
+            # Add $ prefix for clip identifiers
+            clip_name = f"${clip_identifier}"
+            push(f"{clip_name}[{statX},{statY}]{boundary_suffix or ""}")
             i += 1
             continue
 
@@ -186,8 +187,8 @@ def postfix2infix(expr: str, check_mode: bool = False) -> LiteralString:
             i += 1
             continue
 
-        # Special constants
-        if token in ("N", "X", "Y", "width", "height", "pi"):
+        # Special constants (now with $ prefix)
+        if is_constant_postfix(token):
             push(token)
             i += 1
             continue

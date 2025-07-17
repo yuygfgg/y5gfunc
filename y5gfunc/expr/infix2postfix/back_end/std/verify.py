@@ -1,5 +1,5 @@
 import regex as re
-from ....utils import tokenize_expr
+from ....utils import tokenize_expr, _DUP_PATTERN, _SWAP_PATTERN
 
 
 def verify_std_expr(expr: str) -> bool:
@@ -71,7 +71,7 @@ def verify_std_expr(expr: str) -> bool:
                 stack_size -= 2
                 continue
 
-            dup_match = re.match(r"^dup(\d*)$", token)
+            dup_match = _DUP_PATTERN.match(token)
             if dup_match:
                 n = int(dup_match.group(1)) if dup_match.group(1) else 0
                 if stack_size <= n:
@@ -81,7 +81,7 @@ def verify_std_expr(expr: str) -> bool:
                 stack_size += 1
                 continue
 
-            swap_match = re.match(r"^swap(\d*)$", token)
+            swap_match = _SWAP_PATTERN.match(token)
             if swap_match:
                 n = int(swap_match.group(1)) if swap_match.group(1) else 1
                 if stack_size <= n:

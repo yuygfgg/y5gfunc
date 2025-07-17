@@ -88,11 +88,11 @@ def draw_3d_cube(
                 dx = x1 - x0
                 dy = y1 - y0
                 segLenSq = dx * dx + dy * dy
-                tt = ((X - x0) * dx + (Y - y0) * dy) / segLenSq
+                tt = (($X - x0) * dx + ($Y - y0) * dy) / segLenSq
                 t_clamped = clamp(tt, 0, 1)
                 projX = x0 + t_clamped * dx
                 projY = y0 + t_clamped * dy
-                return (X - projX) ** 2 + (Y - projY) ** 2
+                return ($X - projX) ** 2 + ($Y - projY) ** 2
             }}
             
             v0projX = project3d_x(-half, -half, -half)
@@ -138,7 +138,7 @@ def draw_3d_cube(
             halfThicknessSq = halfThickness ** 2
             doDraw = finalMinDistanceSquared <= halfThicknessSq
             
-            RESULT = doDraw ? ((1 - factor) * src0 + factor * color) : src0
+            RESULT = doDraw ? ((1 - factor) * $src0 + factor * color) : $src0
             """
     )
 
@@ -204,9 +204,9 @@ def render_triangle_scene(
     transformed_points = []
     for pt in orig_points:
         new_pt = {
-            "x": f"(({pt['x']}) * cos(N * 0.02) - ({pt['z']}) * sin(N * 0.02) + 20 * sin(N * 0.015))",
-            "y": f"(({pt['y']}) + 20 * cos(N * 0.015))",
-            "z": f"(({pt['x']}) * sin(N * 0.02) + ({pt['z']}) * cos(N * 0.02))"
+            "x": f"(({pt['x']}) * cos($N * 0.02) - ({pt['z']}) * sin($N * 0.02) + 20 * sin($N * 0.015))",
+            "y": f"(({pt['y']}) + 20 * cos($N * 0.015))",
+            "z": f"(({pt['x']}) * sin($N * 0.02) + ({pt['z']}) * cos($N * 0.02))"
         }
         transformed_points.append(new_pt)
 
@@ -226,15 +226,15 @@ def render_triangle_scene(
     ]
 
     lights = [
-        { "lx" : "cos(N * 0.02)", "ly" : "0.5", "lz" : "sin(N * 0.02)", "intensity" : "0.8" },
+        { "lx" : "cos($N * 0.02)", "ly" : "0.5", "lz" : "sin($N * 0.02)", "intensity" : "0.8" },
         { "lx" : "-0.5",          "ly" : "1",   "lz" : "0.5",           "intensity" : "0.6" }
     ]
 
     camX = "20 * sin(241 * 0.015) + 500 * cos(241 * 0.01)"
-    camY = "20 * cos(241 * 0.015) + 200 + 4 - 2 * abs(N % 8 - 4)"
-    camZ = "500 * sin(241 * 0.01) - 4 - 2 * abs(N % 8 - 4)"
+    camY = "20 * cos(241 * 0.015) + 200 + 4 - 2 * abs($N % 8 - 4)"
+    camZ = "500 * sin(241 * 0.01) - 4 - 2 * abs($N % 8 - 4)"
 
-    rotationX = "0.38 + (40 - 2 * abs(N % 80 - 40)) / 500"
+    rotationX = "0.38 + (40 - 2 * abs($N % 80 - 40)) / 500"
     rotationY = "-2.41"
 
     focal = "500"
@@ -314,8 +314,8 @@ def render_triangle_scene(
     expr_lines.append(f"rotationY = {rotationY}")
     expr_lines.append(f"focal = {focal}")
     expr_lines.append(f"background = {background}")
-    expr_lines.append("screenCenterX = width / 2")
-    expr_lines.append("screenCenterY = height / 2")
+    expr_lines.append("screenCenterX = $width / 2")
+    expr_lines.append("screenCenterY = $height / 2")
     expr_lines.append("epsilon = 0.0001")
     expr_lines.append("huge = 1e9")
     expr_lines.append("ambient = 0.2")
@@ -370,13 +370,13 @@ def render_triangle_scene(
         c_idx = face["c"]
         face_color = face.get("color", "1")
         expr_lines.append(
-            f"E0_{f_idx} = (X - projX_{a_idx}) * (projY_{b_idx} - projY_{a_idx}) - (Y - projY_{a_idx}) * (projX_{b_idx} - projX_{a_idx})"
+            f"E0_{f_idx} = ($X - projX_{a_idx}) * (projY_{b_idx} - projY_{a_idx}) - ($Y - projY_{a_idx}) * (projX_{b_idx} - projX_{a_idx})"
         )
         expr_lines.append(
-            f"E1_{f_idx} = (X - projX_{b_idx}) * (projY_{c_idx} - projY_{b_idx}) - (Y - projY_{b_idx}) * (projX_{c_idx} - projX_{b_idx})"
+            f"E1_{f_idx} = ($X - projX_{b_idx}) * (projY_{c_idx} - projY_{b_idx}) - ($Y - projY_{b_idx}) * (projX_{c_idx} - projX_{b_idx})"
         )
         expr_lines.append(
-            f"E2_{f_idx} = (X - projX_{c_idx}) * (projY_{a_idx} - projY_{c_idx}) - (Y - projY_{c_idx}) * (projX_{a_idx} - projX_{c_idx})"
+            f"E2_{f_idx} = ($X - projX_{c_idx}) * (projY_{a_idx} - projY_{c_idx}) - ($Y - projY_{c_idx}) * (projX_{a_idx} - projX_{c_idx})"
         )
         expr_lines.append(
             f"inside_pos_{f_idx} = E0_{f_idx} >= 0 && E1_{f_idx} >= 0 && E2_{f_idx} >= 0"
@@ -395,10 +395,10 @@ def render_triangle_scene(
             f"area_{f_idx} = (projX_{b_idx} - projX_{a_idx}) * (projY_{c_idx} - projY_{a_idx}) - (projX_{c_idx} - projX_{a_idx}) * (projY_{b_idx} - projY_{a_idx})"
         )
         expr_lines.append(
-            f"alpha_{f_idx} = ((projX_{b_idx} - X) * (projY_{c_idx} - Y) - (projX_{c_idx} - X) * (projY_{b_idx} - Y)) / area_{f_idx}"
+            f"alpha_{f_idx} = ((projX_{b_idx} - $X) * (projY_{c_idx} - $Y) - (projX_{c_idx} - $X) * (projY_{b_idx} - $Y)) / area_{f_idx}"
         )
         expr_lines.append(
-            f"beta_{f_idx} = ((projX_{c_idx} - X) * (projY_{a_idx} - Y) - (projX_{a_idx} - X) * (projY_{c_idx} - Y)) / area_{f_idx}"
+            f"beta_{f_idx} = ((projX_{c_idx} - $X) * (projY_{a_idx} - $Y) - (projX_{a_idx} - $X) * (projY_{c_idx} - $Y)) / area_{f_idx}"
         )
         expr_lines.append(f"gamma_{f_idx} = 1 - alpha_{f_idx} - beta_{f_idx}")
         expr_lines.append(

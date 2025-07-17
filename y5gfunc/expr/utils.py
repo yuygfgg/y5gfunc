@@ -52,7 +52,8 @@ _CONSTANTS = {
 _TERNARY_OPS = {"?"}
 _CLAMP_OPS = {"clip", "clamp"}
 
-_REL_STATIC_PATTERN = re.compile(r"(\w+)\[\s*(-?\d+)\s*,\s*(-?\d+)\s*\](?::(?:c|m))?")
+_REL_STATIC_PATTERN_INFIX = re.compile(r"(\$?\w+)\[\s*(-?\d+)\s*,\s*(-?\d+)\s*\](?::(?:c|m))?")
+_REL_STATIC_PATTERN_POSTFIX = re.compile(r"(\w+)\[\s*(-?\d+)\s*,\s*(-?\d+)\s*\](?::(?:c|m))?")
 _SPLIT_PATTERN = re.compile(r"\s+")
 _NUMBER_PATTERNS = [
     re.compile(pattern)
@@ -69,16 +70,56 @@ _HEX_PARTS_PATTERN = re.compile(
 _OCTAL_PATTERN = re.compile(r"^0[0-7]")
 _DROP_PATTERN = re.compile(r"^drop([1-9]\d*)?$")
 _CLIP_NAME_PATTERN = re.compile(r"(?:[a-zA-Z]|src\d+)$")
+_SRC_PATTERN = re.compile(r"^src\d+$")
+_FRAME_PROP_PATTERN = re.compile(r"^[a-zA-Z]\w*\.[a-zA-Z]\w*$")
+_STATIC_PIXEL_PATTERN = re.compile(
+    r"^([a-zA-Z]\w*)\[\s*(-?\d+)\s*,\s*(-?\d+)\s*\](\:\w+)?$"
+)
+_VAR_STORE_PATTERN = re.compile(r"^([a-zA-Z_]\w*)\!$")
+_VAR_LOAD_PATTERN = re.compile(r"^([a-zA-Z_]\w*)\@$")
+_DROP_PATTERN = re.compile(r"^drop(\d*)$")
+_SORT_PATTERN = re.compile(r"^sort(\d+)$")
+_DUP_PATTERN = re.compile(r"^dup(\d*)$")
+_SWAP_PATTERN = re.compile(r"^swap(\d*)$")
 
 
 @lru_cache
-def is_clip(token: str) -> bool:
+def is_clip_postfix(token: str) -> bool:
     """Check if a token string represents a clip."""
     return _CLIP_NAME_PATTERN.match(token) is not None
 
+@lru_cache
+def is_clip_infix(token: str) -> bool:
+    """Check if a token string represents a clip."""
+    return _CLIP_NAME_PATTERN.match(token.lstrip("$")) is not None and token.startswith("$")
+
 
 @lru_cache
-def is_constant(token: str) -> bool:
+def is_constant_infix(token: str) -> bool:
+    """
+    Check if the token is a built-in constant (must start with $).
+    """
+    if not token.startswith("$"):
+        return False
+    
+    # Remove the $ prefix and check if it's a valid constant
+    constant_name = token[1:]
+    constants_set = {
+        "N",
+        "X",
+        "Y",
+        "width",
+        "height",
+        "pi",
+    }
+    if constant_name in constants_set:
+        return True
+    if is_clip_postfix(constant_name):
+        return True
+    return False
+
+@lru_cache
+def is_constant_postfix(token: str) -> bool:
     """
     Check if the token is a built-in constant.
     """
@@ -92,11 +133,12 @@ def is_constant(token: str) -> bool:
     }
     if token in constants_set:
         return True
-    if is_clip(token):
+    if is_clip_postfix(token):
         return True
     return False
 
 
+@lru_cache
 def is_token_numeric(token: str) -> bool:
     """Check if a token string represents a numeric constant."""
     if token.isdigit() or (
@@ -128,7 +170,7 @@ def tokenize_expr(expr: str) -> list[str]:
         count += 1
         return key
 
-    expr_with_placeholders = _REL_STATIC_PATTERN.sub(repl, expr)
+    expr_with_placeholders = _REL_STATIC_PATTERN_POSTFIX.sub(repl, expr)
 
     raw_tokens = _SPLIT_PATTERN.split(expr_with_placeholders)
 
@@ -155,13 +197,13 @@ def tokenize_expr(expr: str) -> list[str]:
     return tokens
 
 
+@lru_cache
 def get_stack_effect(tk: str) -> int:
     """Return net stack delta for a token."""
     if (
         is_token_numeric(tk)
-        or _REL_STATIC_PATTERN.match(tk)
-        or tk in _CONSTANTS
-        or is_clip(tk)
+        or _REL_STATIC_PATTERN_POSTFIX.match(tk)
+        or is_constant_postfix(tk)
         or (tk.startswith("dup") and not (tk.endswith("!") or tk.endswith("@")))
     ):
         return 1
@@ -171,20 +213,20 @@ def get_stack_effect(tk: str) -> int:
         return -1
     if tk in _TERNARY_OPS or tk in _CLAMP_OPS:
         return -2
-    if tk.endswith("[]") and len(tk) > 2 and not _REL_STATIC_PATTERN.match(tk):
+    if tk.endswith("[]") and len(tk) > 2 and not _REL_STATIC_PATTERN_POSTFIX.match(tk):
         return -1
     if (
         tk.endswith("!")
         and len(tk) > 1
         and not tk.startswith("[")
-        and not _REL_STATIC_PATTERN.match(tk)
+        and not _REL_STATIC_PATTERN_POSTFIX.match(tk)
     ):
         return -1
     if (
         tk.endswith("@")
         and len(tk) > 1
         and not tk.startswith("[")
-        and not _REL_STATIC_PATTERN.match(tk)
+        and not _REL_STATIC_PATTERN_POSTFIX.match(tk)
     ):
         return 1
 
@@ -197,6 +239,7 @@ def get_stack_effect(tk: str) -> int:
     return 0
 
 
+@lru_cache
 def get_op_arity(token: str) -> int:
     """Return number of operands for a token."""
     if token in _UNARY_OPS:
@@ -205,13 +248,13 @@ def get_op_arity(token: str) -> int:
         return 2
     if token in _TERNARY_OPS or token in _CLAMP_OPS:
         return 3
-    if token.endswith("[]") and len(token) > 2 and not _REL_STATIC_PATTERN.match(token):
+    if token.endswith("[]") and len(token) > 2 and not _REL_STATIC_PATTERN_POSTFIX.match(token):
         return 2
     if (
         token.endswith("!")
         and len(token) > 1
         and not token.startswith("[")
-        and not _REL_STATIC_PATTERN.match(token)
+        and not _REL_STATIC_PATTERN_POSTFIX.match(token)
     ):
         return 1
 

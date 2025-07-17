@@ -1,11 +1,12 @@
 from typing import Optional, Union, Any
 import math
+from functools import lru_cache
 from ..utils import (
     _UNARY_OPS,
     _BINARY_OPS,
     _TERNARY_OPS,
     _CLAMP_OPS,
-    _REL_STATIC_PATTERN,
+    _REL_STATIC_PATTERN_POSTFIX,
     _HEX_PATTERN,
     _HEX_PARTS_PATTERN,
     _OCTAL_PATTERN,
@@ -26,8 +27,8 @@ def optimize_akarin_expr(expr: str) -> str:
 
     while prev_expr != current_expr:
         prev_expr = current_expr
-        current_expr = fold_constants(
-            to_std_expr(eliminate_immediate_store_load(current_expr))
+        current_expr = to_std_expr(
+            eliminate_immediate_store_load(fold_constants(current_expr))
         )
 
     optimized_expr = convert_dynamic_to_static(current_expr)
@@ -37,7 +38,9 @@ def optimize_akarin_expr(expr: str) -> str:
 def parse_numeric(token: str) -> Union[int, float]:
     """Parse a numeric token string to its actual value (int or float)."""
     if not is_token_numeric(token):
-        raise ValueError(f"Token '{token}' is not a valid numeric format for parsing.")
+        raise ValueError(
+            f"parse_numeric: Token '{token}' is not a valid numeric format for parsing."
+        )
 
     if _HEX_PATTERN.match(token):  # Hexadecimal
         if "." in token or "p" in token.lower():
@@ -57,7 +60,7 @@ def parse_numeric(token: str) -> Union[int, float]:
                     return (integer_part + fractional_part) * (2**exponent)
                 else:
                     raise ValueError(
-                        f"Could not parse complex hex token: {token}"
+                        f"parse_numeric: Could not parse complex hex token: {token}"
                     )  # Should not happen
         else:
             return int(token, 16)  # Simple hex integer
@@ -74,10 +77,11 @@ def parse_numeric(token: str) -> Union[int, float]:
             return int(token)
         except ValueError:
             raise ValueError(
-                f"Internal error: Could not parse supposedly numeric token: {token}"
+                f"parse_numeric: Internal error: Could not parse supposedly numeric token: {token}"
             )
 
 
+@lru_cache
 def calculate_unary(op: str, a: Union[int, float]) -> Optional[Union[int, float]]:
     """Calculate result of unary operation"""
     operators = {
@@ -121,6 +125,7 @@ def calculate_unary(op: str, a: Union[int, float]) -> Optional[Union[int, float]
         return None
 
 
+@lru_cache
 def calculate_binary(
     op: str, a: Union[int, float], b: Union[int, float]
 ) -> Optional[Union[int, float]]:
@@ -191,6 +196,7 @@ def calculate_binary(
         return None
 
 
+@lru_cache
 def calculate_ternary(
     cond: Union[int, float], true_val: Union[int, float], false_val: Union[int, float]
 ) -> Union[int, float]:
@@ -198,8 +204,9 @@ def calculate_ternary(
     return true_val if float(cond) > 0 else false_val
 
 
+@lru_cache
 def format_number(num: Union[int, float]) -> str:
-    """Format number back to string representation for expression (more robust)."""
+    """Format number back to string representation for expression"""
     if isinstance(num, int):
         return str(num)
     if isinstance(num, float):
@@ -233,16 +240,22 @@ def fold_constants(expr: str) -> str:
             i += 1
             continue
 
+        if token == "pi":
+            stack.append(math.pi)
+            result_tokens.append(token)
+            i += 1
+            continue
+
         is_store = (
             token.endswith("!")
             and len(token) > 1
             and not token.startswith("[")
-            and not _REL_STATIC_PATTERN.match(token)
+            and not _REL_STATIC_PATTERN_POSTFIX.match(token)
         )
         if is_store:
             var_name = token[:-1]
             if not stack:
-                raise ValueError(f"Stack underflow at store '{token}'")
+                raise ValueError(f"fold_constants: Stack underflow at store '{token}'")
 
             value_to_store = stack.pop()
             variable_values[var_name] = (
@@ -257,7 +270,7 @@ def fold_constants(expr: str) -> str:
             token.endswith("@")
             and len(token) > 1
             and not token.startswith("[")
-            and not _REL_STATIC_PATTERN.match(token)
+            and not _REL_STATIC_PATTERN_POSTFIX.match(token)
         )
         if is_load:
             var_name = token[:-1]
@@ -440,10 +453,10 @@ def fold_constants(expr: str) -> str:
                 except ValueError:
                     pass  # Treat as unknown token if N is invalid
             if n < 0:
-                raise ValueError("Swap count cannot be negative")
+                raise ValueError("fold_constants: Swap count cannot be negative")
 
             if len(stack) <= n:
-                raise ValueError(f"Stack underflow for {token}")
+                raise ValueError(f"fold_constants: Stack underflow for {token}")
 
             if n > 0:  # Simulate swap on evaluation stack
                 stack[-1], stack[-(n + 1)] = stack[-(n + 1)], stack[-1]
@@ -459,10 +472,10 @@ def fold_constants(expr: str) -> str:
                 except ValueError:
                     pass
             if n < 0:
-                raise ValueError("Dup index cannot be negative")
+                raise ValueError("fold_constants: Dup index cannot be negative")
 
             if len(stack) <= n:
-                raise ValueError(f"Stack underflow for {token}")
+                raise ValueError(f"fold_constants: Stack underflow for {token}")
             stack.append(stack[-(n + 1)])
             result_tokens.append(token)
             i += 1
@@ -476,11 +489,11 @@ def fold_constants(expr: str) -> str:
                 except ValueError:
                     pass
             if n < 0:
-                raise ValueError("Drop count cannot be negative")
+                raise ValueError("fold_constants: Drop count cannot be negative")
             if n == 0:  # drop0 is no-op, just keep token
                 pass
             elif len(stack) < n:
-                raise ValueError(f"Stack underflow for {token}")
+                raise ValueError(f"fold_constants: Stack underflow for {token}")
             else:  # Simulate drop on evaluation stack
                 del stack[-n:]
             result_tokens.append(token)
@@ -495,9 +508,9 @@ def fold_constants(expr: str) -> str:
                 except ValueError:
                     pass
             if n <= 0:
-                raise ValueError("Sort count must be positive")
+                raise ValueError("fold_constants: Sort count must be positive")
             if len(stack) < n:
-                raise ValueError(f"Stack underflow for {token}")
+                raise ValueError(f"fold_constants: Stack underflow for {token}")
             removed = stack[-n:]
             del stack[-n:]
             for _ in range(n):
@@ -510,12 +523,14 @@ def fold_constants(expr: str) -> str:
             token.endswith("[]")
             and len(token) > 2
             and not token.startswith("[")
-            and not _REL_STATIC_PATTERN.match(token)
+            and not _REL_STATIC_PATTERN_POSTFIX.match(token)
             and not is_token_numeric(token)
-        )  # Heuristic check
+        )
         if is_dynamic_access:
             if len(stack) < 2:
-                raise ValueError(f"Stack underflow for dynamic access '{token}'")
+                raise ValueError(
+                    f"fold_constants: Stack underflow for dynamic access '{token}'"
+                )
             stack.pop()
             stack.pop()  # Consume y, x coords from stack
             stack.append(None)  # Result is unknown
@@ -523,7 +538,7 @@ def fold_constants(expr: str) -> str:
             i += 1
             continue
 
-        match = _REL_STATIC_PATTERN.match(token)
+        match = _REL_STATIC_PATTERN_POSTFIX.match(token)
         if match:
             stack.append(None)  # Result is unknown during folding pass
             result_tokens.append(token)  # Keep the token
@@ -539,7 +554,7 @@ def fold_constants(expr: str) -> str:
 
 def convert_dynamic_to_static(expr: str) -> str:
     """Convert dynamic pixel access to static when possible"""
-    tokens = tokenize_expr(expr)  # Re-tokenize the folded expression
+    tokens = tokenize_expr(expr)
     if not tokens:
         return ""
 
@@ -553,9 +568,9 @@ def convert_dynamic_to_static(expr: str) -> str:
             token.endswith("[]")
             and len(token) > 2
             and not token.startswith("[")
-            and not _REL_STATIC_PATTERN.match(token)
+            and not _REL_STATIC_PATTERN_POSTFIX.match(token)
             and not is_token_numeric(token)
-        )  # Heuristic check
+        )
 
         if is_dynamic_access and len(result_tokens) >= 2:
             y_token = result_tokens[-1]
@@ -621,7 +636,7 @@ def eliminate_immediate_store_load(expr: str) -> str:
             token.endswith("!")
             and len(token) > 1
             and not token.startswith("[")
-            and not _REL_STATIC_PATTERN.match(token)
+            and not _REL_STATIC_PATTERN_POSTFIX.match(token)
         )
 
         if is_store and i + 1 < len(tokens):

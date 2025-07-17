@@ -1,7 +1,7 @@
 from ....utils import (
     get_stack_effect,
     tokenize_expr,
-    _REL_STATIC_PATTERN,
+    _REL_STATIC_PATTERN_INFIX,
     _CLAMP_OPS,
 )
 import regex as re
@@ -37,7 +37,7 @@ def convert_var(expr: str) -> str:
             tk.endswith("!")
             and len(tk) > 1
             and not tk.startswith("[")
-            and not _REL_STATIC_PATTERN.match(tk)
+            and not _REL_STATIC_PATTERN_INFIX.match(tk)
         )
         if is_store:
             name = tk[:-1]
@@ -59,7 +59,7 @@ def convert_var(expr: str) -> str:
             tk.endswith("@")
             and len(tk) > 1
             and not tk.startswith("[")
-            and not _REL_STATIC_PATTERN.match(tk)
+            and not _REL_STATIC_PATTERN_INFIX.match(tk)
         )
         if is_load:
             name = tk[:-1]
@@ -81,13 +81,13 @@ def convert_var(expr: str) -> str:
             tk.endswith("!")
             and len(tk) > 1
             and not tk.startswith("[")
-            and not _REL_STATIC_PATTERN.match(tk)
+            and not _REL_STATIC_PATTERN_INFIX.match(tk)
         )
         is_load = (
             tk.endswith("@")
             and len(tk) > 1
             and not tk.startswith("[")
-            and not _REL_STATIC_PATTERN.match(tk)
+            and not _REL_STATIC_PATTERN_INFIX.match(tk)
         )
 
         if is_store:

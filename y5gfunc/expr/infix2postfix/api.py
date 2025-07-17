@@ -45,6 +45,11 @@ def compile(expr: str, back_end: BackEnd = BackEnd.AKARIN) -> str:
     - Identifiers starting with the reserved prefix `__internal_` are not allowed in user code (they are used internally for parameter renaming and temporary variables).
     - Some names are "built-in constants" (see below) and cannot be reassigned.
 
+    - **Constants vs. Variables:**
+    A distinction is made between variables and constants based on a `$` prefix.
+    - **Variables:** Standard identifiers (e.g., `my_var`) are treated as variables. They must be assigned a value before being used.
+    - **Constants:** Identifiers prefixed with a `$` (i.e., `$X`, `$Y`, `$width`, `$height`, `$pi`, etc.) are treated as constants. They are passed as literal values and do not require prior assignment.
+
     - **Built-in Constants:**
     The language defines the following reserved identifiers: (Refer to std.Expr and akarin.Expr documents for more information)
     - `N`, `X`, `Y`, `width`, `height`, `pi`
@@ -222,7 +227,7 @@ def compile(expr: str, back_end: BackEnd = BackEnd.AKARIN) -> str:
     clip[statX, statY]
     ```
     where:
-    - `clip` is a valid source clip,
+    - `clip` is a valid source clip. The clip can be specified as a constant (e.g., `$src1`).
     - `statX` and `statY` are integer literals specifying the x and y offsets, and
     - An optional suffix (`:m` or `:c`) may follow the closing bracket.
 

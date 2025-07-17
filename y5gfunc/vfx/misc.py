@@ -37,8 +37,8 @@ def rotate_image(
     zoom: ZoomMode = ZoomMode.NO_ZOOM,
     bicubic_b: str = "1 / 3",
     bicubic_c: str = "1 / 3",
-    center_x: str = "width / 2",
-    center_y: str = "height / 2",
+    center_x: str = "$width / 2",
+    center_y: str = "$height / 2",
     boundary: BoundaryMode = BoundaryMode.CLAMPED,
 ) -> vs.VideoNode:
     """
@@ -86,22 +86,22 @@ def rotate_image(
         }}
         
         angle_degrees = {angle_degrees}
-        angle_rad = angle_degrees * pi / 180
+        angle_rad = angle_degrees * $pi / 180
         center_x = {center_x}
         center_y = {center_y}
         cos_a = cos(angle_rad)
         sin_a = sin(angle_rad)
 
-        out_rel_x = X - center_x
-        out_rel_y = Y - center_y
+        out_rel_x = $X - center_x
+        out_rel_y = $Y - center_y
     """
 
     if zoom == ZoomMode.CONSTANT_MAX_ZOOM:
         source_coord_calc = """
             qq = 0.7071067811865476
-            w_bound_const = width * qq + height * qq
-            h_bound_const = width * qq + height * qq
-            shrink_scale = min(width / max(w_bound_const, 1e-9), height / max(h_bound_const, 1e-9))
+            w_bound_const = $width * qq + $height * qq
+            h_bound_const = $width * qq + $height * qq
+            shrink_scale = min($width / max(w_bound_const, 1e-9), $height / max(h_bound_const, 1e-9))
 
             src_rel_x_unscaled = out_rel_x * cos_a + out_rel_y * sin_a
             src_rel_y_unscaled = -out_rel_x * sin_a + out_rel_y * cos_a
@@ -116,10 +116,10 @@ def rotate_image(
         source_coord_calc = """
             ca = abs(cos_a)
             sa = abs(sin_a)
-            w_bound = width * ca + height * sa
-            h_bound = width * sa + height * ca
-            shrink_scale_x = width / max(w_bound, 1e-9)
-            shrink_scale_y = height / max(h_bound, 1e-9)
+            w_bound = $width * ca + $height * sa
+            h_bound = $width * sa + $height * ca
+            shrink_scale_x = $width / max(w_bound, 1e-9)
+            shrink_scale_y = $height / max(h_bound, 1e-9)
             shrink_scale = min(shrink_scale_x, shrink_scale_y)
 
             src_rel_x_unscaled = out_rel_x * cos_a + out_rel_y * sin_a
@@ -165,22 +165,22 @@ def rotate_image(
         wy1 = bicubic_weight(fy - 1) 
         wy2 = bicubic_weight(fy - 2)
 
-        p_m1_m1 = dyn(src0, x_m1, y_m1) 
-        p0_m1 = dyn(src0, x0, y_m1)
-        p1_m1 = dyn(src0, x1, y_m1)   
-        p2_m1 = dyn(src0, x2, y_m1)
-        p_m1_0 = dyn(src0, x_m1, y0)  
-        p0_0 = dyn(src0, x0, y0)
-        p1_0 = dyn(src0, x1, y0)    
-        p2_0 = dyn(src0, x2, y0)
-        p_m1_1 = dyn(src0, x_m1, y1)  
-        p0_1 = dyn(src0, x0, y1)
-        p1_1 = dyn(src0, x1, y1)    
-        p2_1 = dyn(src0, x2, y1)
-        p_m1_2 = dyn(src0, x_m1, y2)  
-        p0_2 = dyn(src0, x0, y2)
-        p1_2 = dyn(src0, x1, y2)    
-        p2_2 = dyn(src0, x2, y2)
+        p_m1_m1 = dyn($src0, x_m1, y_m1) 
+        p0_m1 = dyn($src0, x0, y_m1)
+        p1_m1 = dyn($src0, x1, y_m1)   
+        p2_m1 = dyn($src0, x2, y_m1)
+        p_m1_0 = dyn($src0, x_m1, y0)  
+        p0_0 = dyn($src0, x0, y0)
+        p1_0 = dyn($src0, x1, y0)    
+        p2_0 = dyn($src0, x2, y0)
+        p_m1_1 = dyn($src0, x_m1, y1)  
+        p0_1 = dyn($src0, x0, y1)
+        p1_1 = dyn($src0, x1, y1)    
+        p2_1 = dyn($src0, x2, y1)
+        p_m1_2 = dyn($src0, x_m1, y2)  
+        p0_2 = dyn($src0, x0, y2)
+        p1_2 = dyn($src0, x1, y2)    
+        p2_2 = dyn($src0, x2, y2)
 
         row_m1 = p_m1_m1 * wx_m1 + p0_m1 * wx0 + p1_m1 * wx1 + p2_m1 * wx2
         row_0  = p_m1_0 * wx_m1 + p0_0 * wx0 + p1_0 * wx1 + p2_0 * wx2

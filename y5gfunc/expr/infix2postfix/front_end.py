@@ -6,7 +6,15 @@ from enum import StrEnum
 
 sys.setrecursionlimit(5000)
 
-from ..utils import get_op_arity, get_stack_effect, tokenize_expr, is_clip, is_constant, is_token_numeric
+from ..utils import (
+    get_op_arity,
+    get_stack_effect,
+    is_clip_postfix,
+    tokenize_expr,
+    is_clip_infix,
+    is_constant_infix,
+    is_token_numeric,
+)
 
 
 class GlobalMode(StrEnum):
@@ -189,7 +197,7 @@ def parse_infix_to_postfix(infix_code: str) -> str:
                     f"Variable name '{var_name}' cannot start with '__internal_' (reserved prefix)",
                     line_num,
                 )
-            if is_constant(var_name):
+            if is_constant_infix(var_name):
                 raise SyntaxError(f"Cannot assign to constant '{var_name}'.", line_num)
             expr = expr.strip()
             # If the right-hand side is a function call, check that its global dependencies are defined.
@@ -291,13 +299,13 @@ _PROP_ACCESS_PATTERN = re.compile(r"^(\w+)\.([a-zA-Z_]\w*)$")
 _PROP_ACCESS_GENERIC_PATTERN = re.compile(r"([a-zA-Z_]\w*)\.([a-zA-Z_]\w*)")
 _NTH_PATTERN = re.compile(r"^nth_(\d+)$")
 _M_LINE_PATTERN = re.compile(r"^([a-zA-Z_]\w*)\s*=\s*(.+)$")
-_M_STATIC_PATTERN = re.compile(r"^(\w+)\[(-?\d+),\s*(-?\d+)\](\:\w)?$")
+_M_STATIC_PATTERN = re.compile(r"^\$?(\w+)\[\s*(-?\d+)\s*,\s*(-?\d+)\s*\](\:\w+)?$")
 _FIND_DUPLICATE_FUNCTIONS_PATTERN = re.compile(r"\bfunction\s+(\w+)\s*\(.*?\)")
 _GLOBAL_MATCH_PATTERN = re.compile(r"<([a-zA-Z_]\w*)>")
 _ASSIGN_PATTERN = re.compile(r"(?<![<>!])=(?![=])")
 _REL_PATTERN = re.compile(r"\w+\[(.*?)\]")
 _FUNC_SUB_PATTERN = re.compile(r"\w+\([^)]*\)|\[[^\]]*\]")
-_IDENTIFIER_PATTERN = re.compile(r"\b([a-zA-Z_]\w*)\b(?!\s*\()")
+_IDENTIFIER_PATTERN = re.compile(r"([\$a-zA-Z_]\w*)(?!\s*\()")
 _LETTER_PATTERN = re.compile(r"[a-zA-Z_]\w*")
 _FUNCTION_PATTERN = re.compile(
     r"function\s+(\w+)\s*\(([^)]*)\)\s*\{([^{}]*(?:\{[^{}]*\}[^{}]*)*)\}"
@@ -505,6 +513,7 @@ def check_variable_usage(
     line_num: int,
     function_name: Optional[str] = None,
     local_vars: Optional[set[str]] = None,
+    literals_in_scope: Optional[set[str]] = None,
 ) -> None:
     """
     Check that all variables in the expression have been defined.
@@ -513,7 +522,7 @@ def check_variable_usage(
 
     def prop_repl(m: re.Match[str]) -> str:
         clip_candidate = m.group(1)
-        if is_clip(clip_candidate):
+        if is_clip_infix(clip_candidate):
             return " "
         return m.group(0)
 
@@ -522,9 +531,13 @@ def check_variable_usage(
     identifiers = _IDENTIFIER_PATTERN.finditer(expr)
     for match in identifiers:
         var_name = match.group(1)
-        if is_constant(var_name) or (
-            (local_vars is not None and var_name in local_vars)
-            or (local_vars is None and var_name in variables)
+        if (
+            (literals_in_scope and var_name in literals_in_scope)
+            or is_constant_infix(var_name)
+            or (
+                (local_vars is not None and var_name in local_vars)
+                or (local_vars is None and var_name in variables)
+            )
         ):
             continue
         if var_name.startswith("__internal_"):
@@ -539,8 +552,14 @@ def check_variable_usage(
                 func_name_extracted,
             )
         if not re.search(rf"{re.escape(var_name)}\s*=", expr):
+            if var_name.startswith("$"):
+                raise SyntaxError(
+                    f"Unknown constant '{var_name}'", line_num, function_name
+                )
             raise SyntaxError(
-                f"Variable '{var_name}' used before definition", line_num, function_name
+                f"Variable '{var_name}' used before definition",
+                line_num,
+                function_name,
             )
 
 
@@ -552,6 +571,7 @@ def convert_expr(
     global_mode_for_functions: dict[str, GlobalMode],
     current_function: Optional[str] = None,
     local_vars: Optional[set[str]] = None,
+    literals_in_scope: Optional[set[str]] = None,
 ) -> str:
     """
     Convert a single infix expression to a postfix expression.
@@ -559,18 +579,20 @@ def convert_expr(
     """
     expr = expr.strip()
 
+    if is_token_numeric(expr):
+        return expr
+
     prop_access_match = _PROP_ACCESS_PATTERN.match(expr)
     if prop_access_match:
         clip_name = prop_access_match.group(1)
-        if is_clip(clip_name):
+        if is_clip_infix(clip_name):
             return expr
 
     # Check variable usage and validate static relative pixel indices.
-    check_variable_usage(expr, variables, line_num, current_function, local_vars)
+    check_variable_usage(
+        expr, variables, line_num, current_function, local_vars, literals_in_scope
+    )
     validate_static_relative_pixel_indices(expr, line_num, current_function)
-
-    if is_token_numeric(expr):
-        return expr
 
     func_call_full = match_full_function_call(expr)
     if func_call_full:
@@ -605,6 +627,7 @@ def convert_expr(
                     global_mode_for_functions,
                     current_function,
                     local_vars,
+                    literals_in_scope,
                 )
                 for arg in args
             ]
@@ -632,6 +655,7 @@ def convert_expr(
                 global_mode_for_functions,
                 current_function,
                 local_vars,
+                literals_in_scope,
             )
             for arg in args
         ]
@@ -643,11 +667,13 @@ def convert_expr(
                     line_num,
                     current_function,
                 )
-            if not is_clip(args[0]):
+            # Check if the first argument is a clip
+            clip_arg = args[0]
+            if not is_clip_infix(clip_arg):
                 raise SyntaxError(
                     f"{args[0]} is not a source clip.", line_num, current_function
                 )
-            return f"{args_postfix[1]} {args_postfix[2]} {args[0]}[]"
+            return f"{args_postfix[1]} {args_postfix[2]} {clip_arg.lstrip('$')}[]"
 
         if func_name in ["min", "max"]:
             if len(args) != 2:
@@ -734,7 +760,7 @@ def convert_expr(
                             func_line_num + offset,
                             func_name,
                         )
-                    if is_constant(var):
+                    if is_constant_infix(f"${var}"):
                         raise SyntaxError(
                             f"Cannot assign to constant '{var}'.",
                             func_line_num + offset,
@@ -756,22 +782,41 @@ def convert_expr(
                 .union(set(local_map.keys()))
                 .union(effective_globals)
             )
+
+            literals_for_body = set()
             param_assignments: list[str] = []
             for i, p in enumerate(params):
                 arg_orig = args[i].strip()
-                if is_constant(arg_orig):
-                    rename_map[p] = args_postfix[i]
+                if is_constant_infix(arg_orig):
+                    literal_value = args_postfix[i]
+                    rename_map[p] = literal_value
+                    literals_for_body.add(literal_value)
                 else:
                     if p not in effective_globals:
                         param_assignments.append(f"{args_postfix[i]} {rename_map[p]}!")
+
             new_lines: list[str] = []
             for line_text in body_lines:
                 new_line = line_text
+                # Create a temporary mapping to avoid chain substitutions
+                temp_map = {}
                 for old, new in rename_map.items():
                     if old not in effective_globals:
-                        new_line = re.sub(
-                            rf"(?<!\w){re.escape(old)}(?!\w)", new, new_line
-                        )
+                        temp_map[old] = new
+
+                # Apply all substitutions simultaneously to avoid chain reactions
+                def replace_func(match):
+                    matched_word = match.group(0)
+                    return temp_map.get(matched_word, matched_word)
+
+                if temp_map:
+                    pattern = (
+                        r"\b("
+                        + "|".join(re.escape(k) for k in temp_map.keys())
+                        + r")\b"
+                    )
+                    new_line = re.sub(pattern, replace_func, new_line)
+
                 new_lines.append(new_line)
             function_tokens: list[str] = []
             return_count = 0
@@ -806,13 +851,14 @@ def convert_expr(
                             global_mode_for_functions,
                             func_name,
                             new_local_vars,
+                            literals_for_body,
                         )
                     )
                 # Process assignment statements.
                 elif _ASSIGN_PATTERN.search(body_line):
                     var_name, expr_line = body_line.split("=", 1)
                     var_name = var_name.strip()
-                    if is_constant(var_name):
+                    if is_constant_infix(f"${var_name}"):
                         raise SyntaxError(
                             f"Cannot assign to constant '{var_name}'.",
                             effective_line_num,
@@ -830,7 +876,7 @@ def convert_expr(
                     if var_name not in new_local_vars:
                         new_local_vars.add(var_name)
 
-                    postfix_line = f"{convert_expr(expr_line, variables, functions, effective_line_num, global_mode_for_functions, func_name, new_local_vars)} {var_name}!"
+                    postfix_line = f"{convert_expr(expr_line, variables, functions, effective_line_num, global_mode_for_functions, func_name, new_local_vars, literals_for_body)} {var_name}!"
                     if (
                         compute_stack_effect(
                             postfix_line, effective_line_num, func_name
@@ -853,6 +899,7 @@ def convert_expr(
                         global_mode_for_functions,
                         func_name,
                         new_local_vars,
+                        literals_for_body,
                     )
                     if (
                         compute_stack_effect(
@@ -899,6 +946,7 @@ def convert_expr(
             global_mode_for_functions,
             current_function,
             local_vars,
+            literals_in_scope,
         )
 
     m_static = _M_STATIC_PATTERN.match(expr)
@@ -907,7 +955,7 @@ def convert_expr(
         statX = m_static.group(2)
         statY = m_static.group(3)
         suffix = m_static.group(4) or ""
-        if not is_clip(clip):
+        if not is_clip_postfix(clip):
             raise SyntaxError(f"'{clip}' is not a clip!", line_num, current_function)
         try:
             int(statX)
@@ -931,6 +979,7 @@ def convert_expr(
             global_mode_for_functions,
             current_function,
             local_vars,
+            literals_in_scope,
         )
         true_conv = convert_expr(
             true_expr,
@@ -940,6 +989,7 @@ def convert_expr(
             global_mode_for_functions,
             current_function,
             local_vars,
+            literals_in_scope,
         )
         false_conv = convert_expr(
             false_expr,
@@ -949,6 +999,7 @@ def convert_expr(
             global_mode_for_functions,
             current_function,
             local_vars,
+            literals_in_scope,
         )
         return f"{cond_conv} {true_conv} {false_conv} ?"
 
@@ -982,6 +1033,7 @@ def convert_expr(
                 global_mode_for_functions,
                 current_function,
                 local_vars,
+                literals_in_scope,
             )
             right_postfix = convert_expr(
                 right,
@@ -991,19 +1043,23 @@ def convert_expr(
                 global_mode_for_functions,
                 current_function,
                 local_vars,
+                literals_in_scope,
             )
             if _LETTER_PATTERN.fullmatch(
                 left.strip()
             ) and not left_postfix.strip().endswith("@"):
-                left_postfix = left_postfix.strip() + (
-                    "@" if not is_constant(left_postfix) else ""
-                )
+                if not (is_constant_infix(f"${left_postfix.strip()}")) and not (
+                    literals_in_scope and left_postfix.strip() in literals_in_scope
+                ):
+                    left_postfix = left_postfix.strip() + "@"
             if _LETTER_PATTERN.fullmatch(
                 right.strip()
             ) and not right_postfix.strip().endswith("@"):
-                right_postfix = right_postfix.strip() + (
-                    "@" if not is_constant(right_postfix) else ""
-                )
+                if not (is_constant_infix(f"${right_postfix.strip()}")) and not (
+                    literals_in_scope and right_postfix.strip() in literals_in_scope
+                ):
+                    right_postfix = right_postfix.strip() + "@"
+
             return f"{left_postfix} {right_postfix} {postfix_op}"
 
     if expr.startswith("!"):
@@ -1015,6 +1071,7 @@ def convert_expr(
             global_mode_for_functions,
             current_function,
             local_vars,
+            literals_in_scope,
         )
         return f"{operand} not"
 
@@ -1027,13 +1084,37 @@ def convert_expr(
             global_mode_for_functions,
             current_function,
             local_vars,
+            literals_in_scope,
         )
         return f"{operand} -1 *"
 
-    if is_constant(expr):
-        return expr
+    if is_constant_infix(expr):
+        # Remove $ prefix from constants in postfix expression
+        return expr[1:]
     if _LETTER_PATTERN.fullmatch(expr):
-        return expr if expr.endswith("@") else expr + "@"
+        if literals_in_scope and expr in literals_in_scope:
+            return expr
+
+        # Only add '@' for known variables
+        is_var = False
+        if local_vars is not None:
+            # Function scope
+            is_var = expr in local_vars
+            if not is_var and expr.startswith("__internal_"):
+                _, orig_var = extract_function_info(expr, current_function)
+                if orig_var in local_vars:
+                    is_var = True
+        else:
+            # Global scope
+            if variables is not None:
+                is_var = expr in variables
+
+        if is_var:
+            return expr if expr.endswith("@") else expr + "@"
+
+        raise SyntaxError(
+            f"Variable '{expr}' used before definition", line_num, current_function
+        )
 
     return expr
 
