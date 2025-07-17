@@ -13,7 +13,12 @@ from ..utils import (
     is_token_numeric,
     tokenize_expr,
 )
-from .back_end.std.convert_akarin_to_std import to_std_expr
+from .back_end import (
+    convert_drop,
+    convert_sort,
+    convert_var,
+    convert_clip_clamp,
+)
 
 
 def optimize_akarin_expr(expr: str) -> str:
@@ -27,8 +32,14 @@ def optimize_akarin_expr(expr: str) -> str:
 
     while prev_expr != current_expr:
         prev_expr = current_expr
-        current_expr = to_std_expr(
-            eliminate_immediate_store_load(fold_constants(current_expr))
+        current_expr = convert_drop(
+            convert_var(
+                convert_sort(
+                    convert_clip_clamp(
+                        eliminate_immediate_store_load(fold_constants(current_expr))
+                    )
+                )
+            )
         )
 
     optimized_expr = convert_dynamic_to_static(current_expr)

@@ -287,9 +287,8 @@ def convert_sort(expr: str) -> str:
         """
         Generate a complete RPN instruction sequence for sortN.
         """
-        if n < 1:
-            return []
-        if n == 1:
+
+        if n <= 1:
             return []
 
         if n == 2:
