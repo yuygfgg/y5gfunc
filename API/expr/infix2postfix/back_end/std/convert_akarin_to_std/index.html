@@ -3358,8 +3358,7 @@
 <span class="normal"><a href="#__codelineno-0-319">319</a></span>
 <span class="normal"><a href="#__codelineno-0-320">320</a></span>
 <span class="normal"><a href="#__codelineno-0-321">321</a></span>
-<span class="normal"><a href="#__codelineno-0-322">322</a></span>
-<span class="normal"><a href="#__codelineno-0-323">323</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-256" name="__codelineno-0-256"></a><span class="k">def</span><span class="w"> </span><span class="nf">convert_sort</span><span class="p">(</span><span class="n">expr</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="normal"><a href="#__codelineno-0-322">322</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-256" name="__codelineno-0-256"></a><span class="k">def</span><span class="w"> </span><span class="nf">convert_sort</span><span class="p">(</span><span class="n">expr</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <a id="__codelineno-0-257" name="__codelineno-0-257"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <a id="__codelineno-0-258" name="__codelineno-0-258"></a><span class="sd">    Expand sortN instructions in an RPN string to their equivalent min/max/swap/dup sequences.</span>
 <a id="__codelineno-0-259" name="__codelineno-0-259"></a><span class="sd">    &quot;&quot;&quot;</span>
@@ -3393,40 +3392,39 @@
 <a id="__codelineno-0-287" name="__codelineno-0-287"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <a id="__codelineno-0-288" name="__codelineno-0-288"></a><span class="sd">        Generate a complete RPN instruction sequence for sortN.</span>
 <a id="__codelineno-0-289" name="__codelineno-0-289"></a><span class="sd">        &quot;&quot;&quot;</span>
-<a id="__codelineno-0-290" name="__codelineno-0-290"></a>        <span class="k">if</span> <span class="n">n</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
-<a id="__codelineno-0-291" name="__codelineno-0-291"></a>            <span class="k">return</span> <span class="p">[]</span>
-<a id="__codelineno-0-292" name="__codelineno-0-292"></a>        <span class="k">if</span> <span class="n">n</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-<a id="__codelineno-0-293" name="__codelineno-0-293"></a>            <span class="k">return</span> <span class="p">[]</span>
-<a id="__codelineno-0-294" name="__codelineno-0-294"></a>
-<a id="__codelineno-0-295" name="__codelineno-0-295"></a>        <span class="k">if</span> <span class="n">n</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
-<a id="__codelineno-0-296" name="__codelineno-0-296"></a>            <span class="k">return</span> <span class="n">adjacent_compare_swap</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
-<a id="__codelineno-0-297" name="__codelineno-0-297"></a>
-<a id="__codelineno-0-298" name="__codelineno-0-298"></a>        <span class="n">total_commands</span> <span class="o">=</span> <span class="p">[]</span>
-<a id="__codelineno-0-299" name="__codelineno-0-299"></a>        <span class="k">for</span> <span class="n">phase</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
-<a id="__codelineno-0-300" name="__codelineno-0-300"></a>            <span class="k">if</span> <span class="n">phase</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-<a id="__codelineno-0-301" name="__codelineno-0-301"></a>                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">n</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">):</span>
-<a id="__codelineno-0-302" name="__codelineno-0-302"></a>                    <span class="n">total_commands</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">adjacent_compare_swap</span><span class="p">(</span><span class="n">i</span><span class="p">))</span>
-<a id="__codelineno-0-303" name="__codelineno-0-303"></a>            <span class="k">else</span><span class="p">:</span>
-<a id="__codelineno-0-304" name="__codelineno-0-304"></a>                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">):</span>
-<a id="__codelineno-0-305" name="__codelineno-0-305"></a>                    <span class="n">total_commands</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">adjacent_compare_swap</span><span class="p">(</span><span class="n">i</span><span class="p">))</span>
-<a id="__codelineno-0-306" name="__codelineno-0-306"></a>
-<a id="__codelineno-0-307" name="__codelineno-0-307"></a>        <span class="k">return</span> <span class="n">total_commands</span>
-<a id="__codelineno-0-308" name="__codelineno-0-308"></a>
-<a id="__codelineno-0-309" name="__codelineno-0-309"></a>    <span class="n">sort_pattern</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;\bsort(\d+)\b&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-310" name="__codelineno-0-310"></a>
-<a id="__codelineno-0-311" name="__codelineno-0-311"></a>    <span class="n">tokens</span> <span class="o">=</span> <span class="n">expr</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
-<a id="__codelineno-0-312" name="__codelineno-0-312"></a>
-<a id="__codelineno-0-313" name="__codelineno-0-313"></a>    <span class="n">final_rpn</span> <span class="o">=</span> <span class="p">[]</span>
-<a id="__codelineno-0-314" name="__codelineno-0-314"></a>    <span class="k">for</span> <span class="n">token</span> <span class="ow">in</span> <span class="n">tokens</span><span class="p">:</span>
-<a id="__codelineno-0-315" name="__codelineno-0-315"></a>        <span class="n">match</span> <span class="o">=</span> <span class="n">sort_pattern</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">token</span><span class="p">)</span>
-<a id="__codelineno-0-316" name="__codelineno-0-316"></a>        <span class="k">if</span> <span class="n">match</span><span class="p">:</span>
-<a id="__codelineno-0-317" name="__codelineno-0-317"></a>            <span class="n">n</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
-<a id="__codelineno-0-318" name="__codelineno-0-318"></a>            <span class="n">sort_commands</span> <span class="o">=</span> <span class="n">generate_sort_rpn</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
-<a id="__codelineno-0-319" name="__codelineno-0-319"></a>            <span class="n">final_rpn</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">sort_commands</span><span class="p">)</span>
-<a id="__codelineno-0-320" name="__codelineno-0-320"></a>        <span class="k">else</span><span class="p">:</span>
-<a id="__codelineno-0-321" name="__codelineno-0-321"></a>            <span class="n">final_rpn</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">token</span><span class="p">)</span>
-<a id="__codelineno-0-322" name="__codelineno-0-322"></a>
-<a id="__codelineno-0-323" name="__codelineno-0-323"></a>    <span class="k">return</span> <span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">final_rpn</span><span class="p">)</span>
+<a id="__codelineno-0-290" name="__codelineno-0-290"></a>
+<a id="__codelineno-0-291" name="__codelineno-0-291"></a>        <span class="k">if</span> <span class="n">n</span> <span class="o">&lt;=</span> <span class="mi">1</span><span class="p">:</span>
+<a id="__codelineno-0-292" name="__codelineno-0-292"></a>            <span class="k">return</span> <span class="p">[]</span>
+<a id="__codelineno-0-293" name="__codelineno-0-293"></a>
+<a id="__codelineno-0-294" name="__codelineno-0-294"></a>        <span class="k">if</span> <span class="n">n</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+<a id="__codelineno-0-295" name="__codelineno-0-295"></a>            <span class="k">return</span> <span class="n">adjacent_compare_swap</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<a id="__codelineno-0-296" name="__codelineno-0-296"></a>
+<a id="__codelineno-0-297" name="__codelineno-0-297"></a>        <span class="n">total_commands</span> <span class="o">=</span> <span class="p">[]</span>
+<a id="__codelineno-0-298" name="__codelineno-0-298"></a>        <span class="k">for</span> <span class="n">phase</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+<a id="__codelineno-0-299" name="__codelineno-0-299"></a>            <span class="k">if</span> <span class="n">phase</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+<a id="__codelineno-0-300" name="__codelineno-0-300"></a>                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">n</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">):</span>
+<a id="__codelineno-0-301" name="__codelineno-0-301"></a>                    <span class="n">total_commands</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">adjacent_compare_swap</span><span class="p">(</span><span class="n">i</span><span class="p">))</span>
+<a id="__codelineno-0-302" name="__codelineno-0-302"></a>            <span class="k">else</span><span class="p">:</span>
+<a id="__codelineno-0-303" name="__codelineno-0-303"></a>                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">):</span>
+<a id="__codelineno-0-304" name="__codelineno-0-304"></a>                    <span class="n">total_commands</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">adjacent_compare_swap</span><span class="p">(</span><span class="n">i</span><span class="p">))</span>
+<a id="__codelineno-0-305" name="__codelineno-0-305"></a>
+<a id="__codelineno-0-306" name="__codelineno-0-306"></a>        <span class="k">return</span> <span class="n">total_commands</span>
+<a id="__codelineno-0-307" name="__codelineno-0-307"></a>
+<a id="__codelineno-0-308" name="__codelineno-0-308"></a>    <span class="n">sort_pattern</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;\bsort(\d+)\b&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-309" name="__codelineno-0-309"></a>
+<a id="__codelineno-0-310" name="__codelineno-0-310"></a>    <span class="n">tokens</span> <span class="o">=</span> <span class="n">expr</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+<a id="__codelineno-0-311" name="__codelineno-0-311"></a>
+<a id="__codelineno-0-312" name="__codelineno-0-312"></a>    <span class="n">final_rpn</span> <span class="o">=</span> <span class="p">[]</span>
+<a id="__codelineno-0-313" name="__codelineno-0-313"></a>    <span class="k">for</span> <span class="n">token</span> <span class="ow">in</span> <span class="n">tokens</span><span class="p">:</span>
+<a id="__codelineno-0-314" name="__codelineno-0-314"></a>        <span class="n">match</span> <span class="o">=</span> <span class="n">sort_pattern</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">token</span><span class="p">)</span>
+<a id="__codelineno-0-315" name="__codelineno-0-315"></a>        <span class="k">if</span> <span class="n">match</span><span class="p">:</span>
+<a id="__codelineno-0-316" name="__codelineno-0-316"></a>            <span class="n">n</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+<a id="__codelineno-0-317" name="__codelineno-0-317"></a>            <span class="n">sort_commands</span> <span class="o">=</span> <span class="n">generate_sort_rpn</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+<a id="__codelineno-0-318" name="__codelineno-0-318"></a>            <span class="n">final_rpn</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">sort_commands</span><span class="p">)</span>
+<a id="__codelineno-0-319" name="__codelineno-0-319"></a>        <span class="k">else</span><span class="p">:</span>
+<a id="__codelineno-0-320" name="__codelineno-0-320"></a>            <span class="n">final_rpn</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">token</span><span class="p">)</span>
+<a id="__codelineno-0-321" name="__codelineno-0-321"></a>
+<a id="__codelineno-0-322" name="__codelineno-0-322"></a>    <span class="k">return</span> <span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">final_rpn</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -3451,7 +3449,8 @@
 
             <details class="quote">
               <summary>Source code in <code>y5gfunc/expr/infix2postfix/back_end/std/convert_akarin_to_std.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-326">326</a></span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-325">325</a></span>
+<span class="normal"><a href="#__codelineno-0-326">326</a></span>
 <span class="normal"><a href="#__codelineno-0-327">327</a></span>
 <span class="normal"><a href="#__codelineno-0-328">328</a></span>
 <span class="normal"><a href="#__codelineno-0-329">329</a></span>
@@ -3490,48 +3489,47 @@
 <span class="normal"><a href="#__codelineno-0-362">362</a></span>
 <span class="normal"><a href="#__codelineno-0-363">363</a></span>
 <span class="normal"><a href="#__codelineno-0-364">364</a></span>
-<span class="normal"><a href="#__codelineno-0-365">365</a></span>
-<span class="normal"><a href="#__codelineno-0-366">366</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-326" name="__codelineno-0-326"></a><span class="k">def</span><span class="w"> </span><span class="nf">convert_drop</span><span class="p">(</span><span class="n">expr</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<a id="__codelineno-0-327" name="__codelineno-0-327"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<a id="__codelineno-0-328" name="__codelineno-0-328"></a><span class="sd">    Replaces all &#39;drop&#39; and &#39;dropN&#39; operations in an expression string with their std.Expr emulated equivalents.</span>
-<a id="__codelineno-0-329" name="__codelineno-0-329"></a><span class="sd">    &quot;&quot;&quot;</span>
-<a id="__codelineno-0-330" name="__codelineno-0-330"></a>
-<a id="__codelineno-0-331" name="__codelineno-0-331"></a>    <span class="n">tokens</span> <span class="o">=</span> <span class="n">tokenize_expr</span><span class="p">(</span><span class="n">expr</span><span class="p">)</span>
-<a id="__codelineno-0-332" name="__codelineno-0-332"></a>    <span class="n">new_tokens</span> <span class="o">=</span> <span class="p">[]</span>
-<a id="__codelineno-0-333" name="__codelineno-0-333"></a>    <span class="n">stack_size</span> <span class="o">=</span> <span class="mi">0</span>
-<a id="__codelineno-0-334" name="__codelineno-0-334"></a>    <span class="n">pending_plus_count</span> <span class="o">=</span> <span class="mi">0</span>
-<a id="__codelineno-0-335" name="__codelineno-0-335"></a>
-<a id="__codelineno-0-336" name="__codelineno-0-336"></a>    <span class="k">for</span> <span class="n">token</span> <span class="ow">in</span> <span class="n">tokens</span><span class="p">:</span>
-<a id="__codelineno-0-337" name="__codelineno-0-337"></a>        <span class="k">if</span> <span class="n">token</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;drop&quot;</span><span class="p">):</span>
-<a id="__codelineno-0-338" name="__codelineno-0-338"></a>            <span class="n">n_str</span> <span class="o">=</span> <span class="n">token</span><span class="p">[</span><span class="mi">4</span><span class="p">:]</span>
-<a id="__codelineno-0-339" name="__codelineno-0-339"></a>            <span class="n">n</span> <span class="o">=</span> <span class="mi">1</span>
-<a id="__codelineno-0-340" name="__codelineno-0-340"></a>            <span class="k">if</span> <span class="n">n_str</span><span class="p">:</span>
-<a id="__codelineno-0-341" name="__codelineno-0-341"></a>                <span class="k">try</span><span class="p">:</span>
-<a id="__codelineno-0-342" name="__codelineno-0-342"></a>                    <span class="n">n</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">n_str</span><span class="p">)</span>
-<a id="__codelineno-0-343" name="__codelineno-0-343"></a>                <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
-<a id="__codelineno-0-344" name="__codelineno-0-344"></a>                    <span class="c1"># Not a valid dropN, treat as normal token.</span>
-<a id="__codelineno-0-345" name="__codelineno-0-345"></a>                    <span class="n">new_tokens</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">token</span><span class="p">)</span>
-<a id="__codelineno-0-346" name="__codelineno-0-346"></a>                    <span class="n">stack_size</span> <span class="o">+=</span> <span class="n">get_stack_effect</span><span class="p">(</span><span class="n">token</span><span class="p">)</span>
-<a id="__codelineno-0-347" name="__codelineno-0-347"></a>                    <span class="k">continue</span>
-<a id="__codelineno-0-348" name="__codelineno-0-348"></a>
-<a id="__codelineno-0-349" name="__codelineno-0-349"></a>            <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
-<a id="__codelineno-0-350" name="__codelineno-0-350"></a>                <span class="k">if</span> <span class="n">stack_size</span> <span class="o">&gt;=</span> <span class="mi">2</span><span class="p">:</span>
-<a id="__codelineno-0-351" name="__codelineno-0-351"></a>                    <span class="n">new_tokens</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="s2">&quot;0&quot;</span><span class="p">,</span> <span class="s2">&quot;*&quot;</span><span class="p">,</span> <span class="s2">&quot;+&quot;</span><span class="p">])</span>
-<a id="__codelineno-0-352" name="__codelineno-0-352"></a>                    <span class="n">stack_size</span> <span class="o">-=</span> <span class="mi">1</span>
-<a id="__codelineno-0-353" name="__codelineno-0-353"></a>                <span class="k">elif</span> <span class="n">stack_size</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-<a id="__codelineno-0-354" name="__codelineno-0-354"></a>                    <span class="n">new_tokens</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="s2">&quot;0&quot;</span><span class="p">,</span> <span class="s2">&quot;*&quot;</span><span class="p">])</span>
-<a id="__codelineno-0-355" name="__codelineno-0-355"></a>                    <span class="c1"># stack: [v1] -&gt; [v1, 0] -&gt; [0]. size remains 1.</span>
-<a id="__codelineno-0-356" name="__codelineno-0-356"></a>                    <span class="n">pending_plus_count</span> <span class="o">+=</span> <span class="mi">1</span>
-<a id="__codelineno-0-357" name="__codelineno-0-357"></a>        <span class="k">else</span><span class="p">:</span>
-<a id="__codelineno-0-358" name="__codelineno-0-358"></a>            <span class="n">new_tokens</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">token</span><span class="p">)</span>
-<a id="__codelineno-0-359" name="__codelineno-0-359"></a>            <span class="n">stack_size</span> <span class="o">+=</span> <span class="n">get_stack_effect</span><span class="p">(</span><span class="n">token</span><span class="p">)</span>
-<a id="__codelineno-0-360" name="__codelineno-0-360"></a>
-<a id="__codelineno-0-361" name="__codelineno-0-361"></a>        <span class="k">while</span> <span class="n">pending_plus_count</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">stack_size</span> <span class="o">&gt;=</span> <span class="mi">2</span><span class="p">:</span>
-<a id="__codelineno-0-362" name="__codelineno-0-362"></a>            <span class="n">new_tokens</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;+&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-363" name="__codelineno-0-363"></a>            <span class="n">stack_size</span> <span class="o">-=</span> <span class="mi">1</span>
-<a id="__codelineno-0-364" name="__codelineno-0-364"></a>            <span class="n">pending_plus_count</span> <span class="o">-=</span> <span class="mi">1</span>
-<a id="__codelineno-0-365" name="__codelineno-0-365"></a>
-<a id="__codelineno-0-366" name="__codelineno-0-366"></a>    <span class="k">return</span> <span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">new_tokens</span><span class="p">)</span>
+<span class="normal"><a href="#__codelineno-0-365">365</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-325" name="__codelineno-0-325"></a><span class="k">def</span><span class="w"> </span><span class="nf">convert_drop</span><span class="p">(</span><span class="n">expr</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<a id="__codelineno-0-326" name="__codelineno-0-326"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<a id="__codelineno-0-327" name="__codelineno-0-327"></a><span class="sd">    Replaces all &#39;drop&#39; and &#39;dropN&#39; operations in an expression string with their std.Expr emulated equivalents.</span>
+<a id="__codelineno-0-328" name="__codelineno-0-328"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="__codelineno-0-329" name="__codelineno-0-329"></a>
+<a id="__codelineno-0-330" name="__codelineno-0-330"></a>    <span class="n">tokens</span> <span class="o">=</span> <span class="n">tokenize_expr</span><span class="p">(</span><span class="n">expr</span><span class="p">)</span>
+<a id="__codelineno-0-331" name="__codelineno-0-331"></a>    <span class="n">new_tokens</span> <span class="o">=</span> <span class="p">[]</span>
+<a id="__codelineno-0-332" name="__codelineno-0-332"></a>    <span class="n">stack_size</span> <span class="o">=</span> <span class="mi">0</span>
+<a id="__codelineno-0-333" name="__codelineno-0-333"></a>    <span class="n">pending_plus_count</span> <span class="o">=</span> <span class="mi">0</span>
+<a id="__codelineno-0-334" name="__codelineno-0-334"></a>
+<a id="__codelineno-0-335" name="__codelineno-0-335"></a>    <span class="k">for</span> <span class="n">token</span> <span class="ow">in</span> <span class="n">tokens</span><span class="p">:</span>
+<a id="__codelineno-0-336" name="__codelineno-0-336"></a>        <span class="k">if</span> <span class="n">token</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;drop&quot;</span><span class="p">):</span>
+<a id="__codelineno-0-337" name="__codelineno-0-337"></a>            <span class="n">n_str</span> <span class="o">=</span> <span class="n">token</span><span class="p">[</span><span class="mi">4</span><span class="p">:]</span>
+<a id="__codelineno-0-338" name="__codelineno-0-338"></a>            <span class="n">n</span> <span class="o">=</span> <span class="mi">1</span>
+<a id="__codelineno-0-339" name="__codelineno-0-339"></a>            <span class="k">if</span> <span class="n">n_str</span><span class="p">:</span>
+<a id="__codelineno-0-340" name="__codelineno-0-340"></a>                <span class="k">try</span><span class="p">:</span>
+<a id="__codelineno-0-341" name="__codelineno-0-341"></a>                    <span class="n">n</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">n_str</span><span class="p">)</span>
+<a id="__codelineno-0-342" name="__codelineno-0-342"></a>                <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+<a id="__codelineno-0-343" name="__codelineno-0-343"></a>                    <span class="c1"># Not a valid dropN, treat as normal token.</span>
+<a id="__codelineno-0-344" name="__codelineno-0-344"></a>                    <span class="n">new_tokens</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">token</span><span class="p">)</span>
+<a id="__codelineno-0-345" name="__codelineno-0-345"></a>                    <span class="n">stack_size</span> <span class="o">+=</span> <span class="n">get_stack_effect</span><span class="p">(</span><span class="n">token</span><span class="p">)</span>
+<a id="__codelineno-0-346" name="__codelineno-0-346"></a>                    <span class="k">continue</span>
+<a id="__codelineno-0-347" name="__codelineno-0-347"></a>
+<a id="__codelineno-0-348" name="__codelineno-0-348"></a>            <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+<a id="__codelineno-0-349" name="__codelineno-0-349"></a>                <span class="k">if</span> <span class="n">stack_size</span> <span class="o">&gt;=</span> <span class="mi">2</span><span class="p">:</span>
+<a id="__codelineno-0-350" name="__codelineno-0-350"></a>                    <span class="n">new_tokens</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="s2">&quot;0&quot;</span><span class="p">,</span> <span class="s2">&quot;*&quot;</span><span class="p">,</span> <span class="s2">&quot;+&quot;</span><span class="p">])</span>
+<a id="__codelineno-0-351" name="__codelineno-0-351"></a>                    <span class="n">stack_size</span> <span class="o">-=</span> <span class="mi">1</span>
+<a id="__codelineno-0-352" name="__codelineno-0-352"></a>                <span class="k">elif</span> <span class="n">stack_size</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+<a id="__codelineno-0-353" name="__codelineno-0-353"></a>                    <span class="n">new_tokens</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="s2">&quot;0&quot;</span><span class="p">,</span> <span class="s2">&quot;*&quot;</span><span class="p">])</span>
+<a id="__codelineno-0-354" name="__codelineno-0-354"></a>                    <span class="c1"># stack: [v1] -&gt; [v1, 0] -&gt; [0]. size remains 1.</span>
+<a id="__codelineno-0-355" name="__codelineno-0-355"></a>                    <span class="n">pending_plus_count</span> <span class="o">+=</span> <span class="mi">1</span>
+<a id="__codelineno-0-356" name="__codelineno-0-356"></a>        <span class="k">else</span><span class="p">:</span>
+<a id="__codelineno-0-357" name="__codelineno-0-357"></a>            <span class="n">new_tokens</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">token</span><span class="p">)</span>
+<a id="__codelineno-0-358" name="__codelineno-0-358"></a>            <span class="n">stack_size</span> <span class="o">+=</span> <span class="n">get_stack_effect</span><span class="p">(</span><span class="n">token</span><span class="p">)</span>
+<a id="__codelineno-0-359" name="__codelineno-0-359"></a>
+<a id="__codelineno-0-360" name="__codelineno-0-360"></a>        <span class="k">while</span> <span class="n">pending_plus_count</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">stack_size</span> <span class="o">&gt;=</span> <span class="mi">2</span><span class="p">:</span>
+<a id="__codelineno-0-361" name="__codelineno-0-361"></a>            <span class="n">new_tokens</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;+&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-362" name="__codelineno-0-362"></a>            <span class="n">stack_size</span> <span class="o">-=</span> <span class="mi">1</span>
+<a id="__codelineno-0-363" name="__codelineno-0-363"></a>            <span class="n">pending_plus_count</span> <span class="o">-=</span> <span class="mi">1</span>
+<a id="__codelineno-0-364" name="__codelineno-0-364"></a>
+<a id="__codelineno-0-365" name="__codelineno-0-365"></a>    <span class="k">return</span> <span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">new_tokens</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -3556,7 +3554,8 @@
 
             <details class="quote">
               <summary>Source code in <code>y5gfunc/expr/infix2postfix/back_end/std/convert_akarin_to_std.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-369">369</a></span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-368">368</a></span>
+<span class="normal"><a href="#__codelineno-0-369">369</a></span>
 <span class="normal"><a href="#__codelineno-0-370">370</a></span>
 <span class="normal"><a href="#__codelineno-0-371">371</a></span>
 <span class="normal"><a href="#__codelineno-0-372">372</a></span>
@@ -3571,24 +3570,23 @@
 <span class="normal"><a href="#__codelineno-0-381">381</a></span>
 <span class="normal"><a href="#__codelineno-0-382">382</a></span>
 <span class="normal"><a href="#__codelineno-0-383">383</a></span>
-<span class="normal"><a href="#__codelineno-0-384">384</a></span>
-<span class="normal"><a href="#__codelineno-0-385">385</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-369" name="__codelineno-0-369"></a><span class="k">def</span><span class="w"> </span><span class="nf">convert_clip_names</span><span class="p">(</span><span class="n">expr</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<a id="__codelineno-0-370" name="__codelineno-0-370"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<a id="__codelineno-0-371" name="__codelineno-0-371"></a><span class="sd">    Replace clip names with their std.Expr equivalents.</span>
-<a id="__codelineno-0-372" name="__codelineno-0-372"></a><span class="sd">    &quot;&quot;&quot;</span>
-<a id="__codelineno-0-373" name="__codelineno-0-373"></a>
-<a id="__codelineno-0-374" name="__codelineno-0-374"></a>    <span class="n">pattern</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;\bsrc(\d+)\b&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-375" name="__codelineno-0-375"></a>    <span class="n">clip_vars</span> <span class="o">=</span> <span class="s2">&quot;xyzabcdefghijklmnopqrstuvw&quot;</span>
-<a id="__codelineno-0-376" name="__codelineno-0-376"></a>
-<a id="__codelineno-0-377" name="__codelineno-0-377"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">get_replacement</span><span class="p">(</span><span class="n">match</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<a id="__codelineno-0-378" name="__codelineno-0-378"></a>        <span class="n">n</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
-<a id="__codelineno-0-379" name="__codelineno-0-379"></a>        <span class="k">if</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">n</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">clip_vars</span><span class="p">):</span>
-<a id="__codelineno-0-380" name="__codelineno-0-380"></a>            <span class="k">return</span> <span class="n">clip_vars</span><span class="p">[</span><span class="n">n</span><span class="p">]</span>
-<a id="__codelineno-0-381" name="__codelineno-0-381"></a>        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-<a id="__codelineno-0-382" name="__codelineno-0-382"></a>            <span class="sa">f</span><span class="s2">&quot;Clip index </span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="s2"> is out of range. std.Expr supports up to </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">clip_vars</span><span class="p">)</span><span class="si">}</span><span class="s2"> clips (src0 ~ src</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">clip_vars</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="si">}</span><span class="s2">).&quot;</span>
-<a id="__codelineno-0-383" name="__codelineno-0-383"></a>        <span class="p">)</span>
-<a id="__codelineno-0-384" name="__codelineno-0-384"></a>
-<a id="__codelineno-0-385" name="__codelineno-0-385"></a>    <span class="k">return</span> <span class="n">pattern</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="n">get_replacement</span><span class="p">,</span> <span class="n">expr</span><span class="p">)</span>
+<span class="normal"><a href="#__codelineno-0-384">384</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-368" name="__codelineno-0-368"></a><span class="k">def</span><span class="w"> </span><span class="nf">convert_clip_names</span><span class="p">(</span><span class="n">expr</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<a id="__codelineno-0-369" name="__codelineno-0-369"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<a id="__codelineno-0-370" name="__codelineno-0-370"></a><span class="sd">    Replace clip names with their std.Expr equivalents.</span>
+<a id="__codelineno-0-371" name="__codelineno-0-371"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="__codelineno-0-372" name="__codelineno-0-372"></a>
+<a id="__codelineno-0-373" name="__codelineno-0-373"></a>    <span class="n">pattern</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;\bsrc(\d+)\b&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-374" name="__codelineno-0-374"></a>    <span class="n">clip_vars</span> <span class="o">=</span> <span class="s2">&quot;xyzabcdefghijklmnopqrstuvw&quot;</span>
+<a id="__codelineno-0-375" name="__codelineno-0-375"></a>
+<a id="__codelineno-0-376" name="__codelineno-0-376"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">get_replacement</span><span class="p">(</span><span class="n">match</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<a id="__codelineno-0-377" name="__codelineno-0-377"></a>        <span class="n">n</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+<a id="__codelineno-0-378" name="__codelineno-0-378"></a>        <span class="k">if</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">n</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">clip_vars</span><span class="p">):</span>
+<a id="__codelineno-0-379" name="__codelineno-0-379"></a>            <span class="k">return</span> <span class="n">clip_vars</span><span class="p">[</span><span class="n">n</span><span class="p">]</span>
+<a id="__codelineno-0-380" name="__codelineno-0-380"></a>        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+<a id="__codelineno-0-381" name="__codelineno-0-381"></a>            <span class="sa">f</span><span class="s2">&quot;Clip index </span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="s2"> is out of range. std.Expr supports up to </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">clip_vars</span><span class="p">)</span><span class="si">}</span><span class="s2"> clips (src0 ~ src</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">clip_vars</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="si">}</span><span class="s2">).&quot;</span>
+<a id="__codelineno-0-382" name="__codelineno-0-382"></a>        <span class="p">)</span>
+<a id="__codelineno-0-383" name="__codelineno-0-383"></a>
+<a id="__codelineno-0-384" name="__codelineno-0-384"></a>    <span class="k">return</span> <span class="n">pattern</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="n">get_replacement</span><span class="p">,</span> <span class="n">expr</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -3613,15 +3611,15 @@
 
             <details class="quote">
               <summary>Source code in <code>y5gfunc/expr/infix2postfix/back_end/std/convert_akarin_to_std.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-388">388</a></span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-387">387</a></span>
+<span class="normal"><a href="#__codelineno-0-388">388</a></span>
 <span class="normal"><a href="#__codelineno-0-389">389</a></span>
 <span class="normal"><a href="#__codelineno-0-390">390</a></span>
-<span class="normal"><a href="#__codelineno-0-391">391</a></span>
-<span class="normal"><a href="#__codelineno-0-392">392</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-388" name="__codelineno-0-388"></a><span class="k">def</span><span class="w"> </span><span class="nf">convert_pow</span><span class="p">(</span><span class="n">expr</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<a id="__codelineno-0-389" name="__codelineno-0-389"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<a id="__codelineno-0-390" name="__codelineno-0-390"></a><span class="sd">    Replace ** with pow.</span>
-<a id="__codelineno-0-391" name="__codelineno-0-391"></a><span class="sd">    &quot;&quot;&quot;</span>
-<a id="__codelineno-0-392" name="__codelineno-0-392"></a>    <span class="k">return</span> <span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s2">&quot;pow&quot;</span> <span class="k">if</span> <span class="n">token</span> <span class="o">==</span> <span class="s2">&quot;**&quot;</span> <span class="k">else</span> <span class="n">token</span> <span class="k">for</span> <span class="n">token</span> <span class="ow">in</span> <span class="n">tokenize_expr</span><span class="p">(</span><span class="n">expr</span><span class="p">))</span>
+<span class="normal"><a href="#__codelineno-0-391">391</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-387" name="__codelineno-0-387"></a><span class="k">def</span><span class="w"> </span><span class="nf">convert_pow</span><span class="p">(</span><span class="n">expr</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<a id="__codelineno-0-388" name="__codelineno-0-388"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<a id="__codelineno-0-389" name="__codelineno-0-389"></a><span class="sd">    Replace ** with pow.</span>
+<a id="__codelineno-0-390" name="__codelineno-0-390"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="__codelineno-0-391" name="__codelineno-0-391"></a>    <span class="k">return</span> <span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s2">&quot;pow&quot;</span> <span class="k">if</span> <span class="n">token</span> <span class="o">==</span> <span class="s2">&quot;**&quot;</span> <span class="k">else</span> <span class="n">token</span> <span class="k">for</span> <span class="n">token</span> <span class="ow">in</span> <span class="n">tokenize_expr</span><span class="p">(</span><span class="n">expr</span><span class="p">))</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -3646,7 +3644,8 @@
 
             <details class="quote">
               <summary>Source code in <code>y5gfunc/expr/infix2postfix/back_end/std/convert_akarin_to_std.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-395">395</a></span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-394">394</a></span>
+<span class="normal"><a href="#__codelineno-0-395">395</a></span>
 <span class="normal"><a href="#__codelineno-0-396">396</a></span>
 <span class="normal"><a href="#__codelineno-0-397">397</a></span>
 <span class="normal"><a href="#__codelineno-0-398">398</a></span>
@@ -3659,22 +3658,21 @@
 <span class="normal"><a href="#__codelineno-0-405">405</a></span>
 <span class="normal"><a href="#__codelineno-0-406">406</a></span>
 <span class="normal"><a href="#__codelineno-0-407">407</a></span>
-<span class="normal"><a href="#__codelineno-0-408">408</a></span>
-<span class="normal"><a href="#__codelineno-0-409">409</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-395" name="__codelineno-0-395"></a><span class="k">def</span><span class="w"> </span><span class="nf">convert_clip_clamp</span><span class="p">(</span><span class="n">expr</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<a id="__codelineno-0-396" name="__codelineno-0-396"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<a id="__codelineno-0-397" name="__codelineno-0-397"></a><span class="sd">    Replace clip and clamp operators with their std.Expr equivalents.</span>
-<a id="__codelineno-0-398" name="__codelineno-0-398"></a><span class="sd">    &quot;&quot;&quot;</span>
-<a id="__codelineno-0-399" name="__codelineno-0-399"></a>
-<a id="__codelineno-0-400" name="__codelineno-0-400"></a>    <span class="n">tokens</span> <span class="o">=</span> <span class="n">tokenize_expr</span><span class="p">(</span><span class="n">expr</span><span class="p">)</span>
-<a id="__codelineno-0-401" name="__codelineno-0-401"></a>    <span class="n">new_tokens</span> <span class="o">=</span> <span class="p">[]</span>
-<a id="__codelineno-0-402" name="__codelineno-0-402"></a>
-<a id="__codelineno-0-403" name="__codelineno-0-403"></a>    <span class="k">for</span> <span class="n">token</span> <span class="ow">in</span> <span class="n">tokens</span><span class="p">:</span>
-<a id="__codelineno-0-404" name="__codelineno-0-404"></a>        <span class="k">if</span> <span class="n">token</span> <span class="ow">in</span> <span class="n">_CLAMP_OPS</span><span class="p">:</span>
-<a id="__codelineno-0-405" name="__codelineno-0-405"></a>            <span class="n">new_tokens</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="s2">&quot;swap2&quot;</span><span class="p">,</span> <span class="s2">&quot;swap&quot;</span><span class="p">,</span> <span class="s2">&quot;max&quot;</span><span class="p">,</span> <span class="s2">&quot;min&quot;</span><span class="p">])</span>
-<a id="__codelineno-0-406" name="__codelineno-0-406"></a>        <span class="k">else</span><span class="p">:</span>
-<a id="__codelineno-0-407" name="__codelineno-0-407"></a>            <span class="n">new_tokens</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">token</span><span class="p">)</span>
-<a id="__codelineno-0-408" name="__codelineno-0-408"></a>
-<a id="__codelineno-0-409" name="__codelineno-0-409"></a>    <span class="k">return</span> <span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">new_tokens</span><span class="p">)</span>
+<span class="normal"><a href="#__codelineno-0-408">408</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-394" name="__codelineno-0-394"></a><span class="k">def</span><span class="w"> </span><span class="nf">convert_clip_clamp</span><span class="p">(</span><span class="n">expr</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<a id="__codelineno-0-395" name="__codelineno-0-395"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<a id="__codelineno-0-396" name="__codelineno-0-396"></a><span class="sd">    Replace clip and clamp operators with their std.Expr equivalents.</span>
+<a id="__codelineno-0-397" name="__codelineno-0-397"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="__codelineno-0-398" name="__codelineno-0-398"></a>
+<a id="__codelineno-0-399" name="__codelineno-0-399"></a>    <span class="n">tokens</span> <span class="o">=</span> <span class="n">tokenize_expr</span><span class="p">(</span><span class="n">expr</span><span class="p">)</span>
+<a id="__codelineno-0-400" name="__codelineno-0-400"></a>    <span class="n">new_tokens</span> <span class="o">=</span> <span class="p">[]</span>
+<a id="__codelineno-0-401" name="__codelineno-0-401"></a>
+<a id="__codelineno-0-402" name="__codelineno-0-402"></a>    <span class="k">for</span> <span class="n">token</span> <span class="ow">in</span> <span class="n">tokens</span><span class="p">:</span>
+<a id="__codelineno-0-403" name="__codelineno-0-403"></a>        <span class="k">if</span> <span class="n">token</span> <span class="ow">in</span> <span class="n">_CLAMP_OPS</span><span class="p">:</span>
+<a id="__codelineno-0-404" name="__codelineno-0-404"></a>            <span class="n">new_tokens</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="s2">&quot;swap2&quot;</span><span class="p">,</span> <span class="s2">&quot;swap&quot;</span><span class="p">,</span> <span class="s2">&quot;max&quot;</span><span class="p">,</span> <span class="s2">&quot;min&quot;</span><span class="p">])</span>
+<a id="__codelineno-0-405" name="__codelineno-0-405"></a>        <span class="k">else</span><span class="p">:</span>
+<a id="__codelineno-0-406" name="__codelineno-0-406"></a>            <span class="n">new_tokens</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">token</span><span class="p">)</span>
+<a id="__codelineno-0-407" name="__codelineno-0-407"></a>
+<a id="__codelineno-0-408" name="__codelineno-0-408"></a>    <span class="k">return</span> <span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">new_tokens</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -3699,7 +3697,8 @@
 
             <details class="quote">
               <summary>Source code in <code>y5gfunc/expr/infix2postfix/back_end/std/convert_akarin_to_std.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-412">412</a></span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-411">411</a></span>
+<span class="normal"><a href="#__codelineno-0-412">412</a></span>
 <span class="normal"><a href="#__codelineno-0-413">413</a></span>
 <span class="normal"><a href="#__codelineno-0-414">414</a></span>
 <span class="normal"><a href="#__codelineno-0-415">415</a></span>
@@ -3709,19 +3708,18 @@
 <span class="normal"><a href="#__codelineno-0-419">419</a></span>
 <span class="normal"><a href="#__codelineno-0-420">420</a></span>
 <span class="normal"><a href="#__codelineno-0-421">421</a></span>
-<span class="normal"><a href="#__codelineno-0-422">422</a></span>
-<span class="normal"><a href="#__codelineno-0-423">423</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-412" name="__codelineno-0-412"></a><span class="k">def</span><span class="w"> </span><span class="nf">to_std_expr</span><span class="p">(</span><span class="n">expr</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<a id="__codelineno-0-413" name="__codelineno-0-413"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<a id="__codelineno-0-414" name="__codelineno-0-414"></a><span class="sd">    Convert an akarin.Expr expression to a std.Expr expression.</span>
-<a id="__codelineno-0-415" name="__codelineno-0-415"></a><span class="sd">    &quot;&quot;&quot;</span>
-<a id="__codelineno-0-416" name="__codelineno-0-416"></a>    <span class="c1"># FIXME: convert math functions (trunc / round / floor / fmod) (possible?)</span>
-<a id="__codelineno-0-417" name="__codelineno-0-417"></a>    <span class="n">ret</span> <span class="o">=</span> <span class="n">convert_drop</span><span class="p">(</span>
-<a id="__codelineno-0-418" name="__codelineno-0-418"></a>        <span class="n">convert_clip_names</span><span class="p">(</span>
-<a id="__codelineno-0-419" name="__codelineno-0-419"></a>            <span class="n">convert_var</span><span class="p">(</span><span class="n">convert_sort</span><span class="p">(</span><span class="n">convert_pow</span><span class="p">(</span><span class="n">convert_clip_clamp</span><span class="p">(</span><span class="n">expr</span><span class="p">))))</span>
-<a id="__codelineno-0-420" name="__codelineno-0-420"></a>        <span class="p">)</span>
-<a id="__codelineno-0-421" name="__codelineno-0-421"></a>    <span class="p">)</span>
-<a id="__codelineno-0-422" name="__codelineno-0-422"></a>
-<a id="__codelineno-0-423" name="__codelineno-0-423"></a>    <span class="k">return</span> <span class="n">ret</span>
+<span class="normal"><a href="#__codelineno-0-422">422</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-411" name="__codelineno-0-411"></a><span class="k">def</span><span class="w"> </span><span class="nf">to_std_expr</span><span class="p">(</span><span class="n">expr</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<a id="__codelineno-0-412" name="__codelineno-0-412"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<a id="__codelineno-0-413" name="__codelineno-0-413"></a><span class="sd">    Convert an akarin.Expr expression to a std.Expr expression.</span>
+<a id="__codelineno-0-414" name="__codelineno-0-414"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="__codelineno-0-415" name="__codelineno-0-415"></a>    <span class="c1"># FIXME: convert math functions (trunc / round / floor / fmod) (possible?)</span>
+<a id="__codelineno-0-416" name="__codelineno-0-416"></a>    <span class="n">ret</span> <span class="o">=</span> <span class="n">convert_drop</span><span class="p">(</span>
+<a id="__codelineno-0-417" name="__codelineno-0-417"></a>        <span class="n">convert_clip_names</span><span class="p">(</span>
+<a id="__codelineno-0-418" name="__codelineno-0-418"></a>            <span class="n">convert_var</span><span class="p">(</span><span class="n">convert_sort</span><span class="p">(</span><span class="n">convert_pow</span><span class="p">(</span><span class="n">convert_clip_clamp</span><span class="p">(</span><span class="n">expr</span><span class="p">))))</span>
+<a id="__codelineno-0-419" name="__codelineno-0-419"></a>        <span class="p">)</span>
+<a id="__codelineno-0-420" name="__codelineno-0-420"></a>    <span class="p">)</span>
+<a id="__codelineno-0-421" name="__codelineno-0-421"></a>
+<a id="__codelineno-0-422" name="__codelineno-0-422"></a>    <span class="k">return</span> <span class="n">ret</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
