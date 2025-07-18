@@ -3,7 +3,7 @@ Timecode generator base class and factory.
 """
 
 from abc import ABC, abstractmethod
-from typing import Callable, Dict, Type
+from typing import Callable, Type
 
 from ..types import ProjectData
 from ..utils import get_decimation_info
@@ -36,7 +36,7 @@ class TimecodeGenerator(ABC):
 class TimecodeGeneratorFactory:
     """Timecode generator factory"""
 
-    _generators: Dict[str, Type[TimecodeGenerator]] = {}
+    _generators: dict[str, Type[TimecodeGenerator]] = {}
 
     @classmethod
     def register(cls, version: str) -> Callable:

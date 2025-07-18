@@ -24,7 +24,7 @@ from vsdenoise import (
 from vsrgtools import remove_grain
 import vsrgtools
 from vsmasktools import adg_mask
-from typing import Callable, Optional, Union, Tuple
+from typing import Callable, Optional, Union
 from enum import StrEnum
 from .resample import (
     ColorMatrixManager,
@@ -39,7 +39,7 @@ from .morpho import maximum
 import torch
 
 
-def _get_bm3d_backend() -> Tuple[Callable, str]:
+def _get_bm3d_backend() -> tuple[Callable, str]:
     if torch.cuda.is_available():
         device_name = torch.cuda.get_device_name(0).lower()
         if any(

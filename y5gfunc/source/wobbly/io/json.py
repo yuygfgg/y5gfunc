@@ -3,13 +3,13 @@ JSON handling with orjson optimization.
 """
 
 from pathlib import Path
-from typing import Dict, Any, Union
+from typing import Any, Union
 
 # Try to import orjson for better performance, fall back to standard json
 try:
     import orjson
 
-    def load_json(file_path: Union[str, Path]) -> Dict[str, Any]:
+    def load_json(file_path: Union[str, Path]) -> dict[str, Any]:
         """
         Load JSON file with orjson for better performance
 
@@ -22,7 +22,7 @@ try:
         with open(file_path, "rb") as f:
             return orjson.loads(f.read())
 
-    def dump_json(data: Dict[str, Any]) -> bytes:  # type: ignore
+    def dump_json(data: dict[str, Any]) -> bytes:  # type: ignore
         """
         Dump data to JSON string with orjson
 
@@ -38,7 +38,7 @@ try:
 except ImportError:
     import json
 
-    def load_json(file_path: Union[str, Path]) -> Dict[str, Any]:
+    def load_json(file_path: Union[str, Path]) -> dict[str, Any]:
         """
         Load JSON file with standard json
 
@@ -51,7 +51,7 @@ except ImportError:
         with open(file_path, "r", encoding="utf-8") as f:
             return json.load(f)
 
-    def dump_json(data: Dict[str, Any], indent: bool = False) -> str:
+    def dump_json(data: dict[str, Any], indent: bool = False) -> str:
         """
         Dump data to JSON string with standard json
 

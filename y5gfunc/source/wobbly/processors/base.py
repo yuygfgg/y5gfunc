@@ -4,7 +4,7 @@ Processor base classes and protocol definitions.
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Protocol, Tuple
+from typing import Protocol
 
 from vstools import vs
 
@@ -21,7 +21,7 @@ class ProcessorProtocol(Protocol):
         frame_props: FramePropertyMap,
         frame_mapping: FrameMap,
         presets: PresetDict,
-    ) -> Tuple[vs.VideoNode, FramePropertyMap, FrameMap]:
+    ) -> tuple[vs.VideoNode, FramePropertyMap, FrameMap]:
         """
         Process a video clip
 
@@ -49,7 +49,7 @@ class BaseProcessor(ABC):
         frame_props: FramePropertyMap,
         frame_mapping: FrameMap,
         presets: PresetDict,
-    ) -> Tuple[vs.VideoNode, FramePropertyMap, FrameMap]:
+    ) -> tuple[vs.VideoNode, FramePropertyMap, FrameMap]:
         """
         Abstract method for processing a video clip
 

@@ -2,7 +2,7 @@
 Trim processor implementation.
 """
 
-from typing import Dict, Tuple, Any
+from typing import Any
 
 from vstools import vs
 
@@ -27,7 +27,7 @@ class TrimProcessor(BaseProcessor):
         frame_props: FramePropertyMap,
         frame_mapping: FrameMap,
         presets: PresetDict,
-    ) -> Tuple[vs.VideoNode, FramePropertyMap, FrameMap]:
+    ) -> tuple[vs.VideoNode, FramePropertyMap, FrameMap]:
         """
         Process trim operation
 
@@ -49,7 +49,7 @@ class TrimProcessor(BaseProcessor):
                 return clip, frame_props, frame_mapping
 
             segments = []
-            new_frame_props: Dict[int, Dict[str, Any]] = (
+            new_frame_props: dict[int, dict[str, Any]] = (
                 {}
             )  # Store new frame property map
             new_frame_idx = 0

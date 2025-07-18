@@ -2,7 +2,7 @@
 Special frames processing (frozen frames, decimation).
 """
 
-from typing import Dict, List, Set, Tuple, Any
+from typing import Any
 
 from vstools import vs
 
@@ -27,7 +27,7 @@ class FrozenFramesProcessor(BaseProcessor):
         frame_props: FramePropertyMap,
         frame_mapping: FrameMap,
         presets: PresetDict,
-    ) -> Tuple[vs.VideoNode, FramePropertyMap, FrameMap]:
+    ) -> tuple[vs.VideoNode, FramePropertyMap, FrameMap]:
         """
         Process frozen frames
 
@@ -95,7 +95,7 @@ class DecimationProcessor(BaseProcessor):
         frame_props: FramePropertyMap,
         frame_mapping: FrameMap,
         presets: PresetDict,
-    ) -> Tuple[vs.VideoNode, FramePropertyMap, FrameMap]:
+    ) -> tuple[vs.VideoNode, FramePropertyMap, FrameMap]:
         """
         Process frame decimation
 
@@ -125,7 +125,7 @@ class DecimationProcessor(BaseProcessor):
                 return clip, frame_props, frame_mapping
 
             # Create new frame property map
-            new_frame_props: Dict[int, Dict[str, Any]] = {}
+            new_frame_props: dict[int, dict[str, Any]] = {}
             new_idx = 0
 
             for n in range(clip.num_frames):
@@ -158,7 +158,7 @@ class SpecialFrameMarkProcessor(BaseProcessor):
         frame_props: FramePropertyMap,
         frame_mapping: FrameMap,
         presets: PresetDict,
-    ) -> Tuple[vs.VideoNode, FramePropertyMap, FrameMap]:
+    ) -> tuple[vs.VideoNode, FramePropertyMap, FrameMap]:
         """
         Mark special frames
 
@@ -230,10 +230,10 @@ class SpecialFrameMarkProcessor(BaseProcessor):
         return matches
 
     def _process_interlaced_fades(
-        self, interlaced_fades: List[Dict[str, Any]], Keys: WobblyKeys
-    ) -> Dict[int, float]:
+        self, interlaced_fades: list[dict[str, Any]], Keys: WobblyKeys
+    ) -> dict[int, float]:
         """Process interlaced fades data"""
-        fade_dict: Dict[int, float] = {}
+        fade_dict: dict[int, float] = {}
 
         if interlaced_fades:
             for fade in interlaced_fades:
@@ -247,13 +247,13 @@ class SpecialFrameMarkProcessor(BaseProcessor):
     def _identify_orphan_fields(
         self,
         matches: str,
-        sections_list: List[Dict[str, Any]],
-        decimated_frames: Set[int],
+        sections_list: list[dict[str, Any]],
+        decimated_frames: set[int],
         num_frames: int,
         Keys: WobblyKeys,
-    ) -> Dict[int, Dict[str, Any]]:
+    ) -> dict[int, dict[str, Any]]:
         """Identify orphan fields in the project"""
-        orphan_fields: Dict[int, Dict[str, Any]] = {}
+        orphan_fields: dict[int, dict[str, Any]] = {}
 
         if not matches or not sections_list:
             return orphan_fields

@@ -2,7 +2,7 @@
 Section processor implementation.
 """
 
-from typing import Dict, List, Tuple, Any
+from typing import Any
 
 from vstools import vs
 
@@ -27,7 +27,7 @@ class SectionProcessor(BaseProcessor):
         frame_props: FramePropertyMap,
         frame_mapping: FrameMap,
         presets: PresetDict,
-    ) -> Tuple[vs.VideoNode, FramePropertyMap, FrameMap]:
+    ) -> tuple[vs.VideoNode, FramePropertyMap, FrameMap]:
         """
         Process sections
 
@@ -60,7 +60,7 @@ class SectionProcessor(BaseProcessor):
 
             # Apply presets and splice
             sections = []
-            new_frame_props: Dict[int, Dict[str, Any]] = {}
+            new_frame_props: dict[int, dict[str, Any]] = {}
             new_frame_idx = 0
 
             for i, section_info in enumerate(sorted_sections):
@@ -101,7 +101,7 @@ class SectionProcessor(BaseProcessor):
     def _mark_section_frames(
         self,
         clip: vs.VideoNode,
-        sorted_sections: List[Dict[str, Any]],
+        sorted_sections: list[dict[str, Any]],
         frame_props: FramePropertyMap,
         frame_mapping: FrameMap,
         Keys: WobblyKeys,

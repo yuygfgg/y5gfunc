@@ -2,7 +2,6 @@
 Custom list processor implementation.
 """
 
-from typing import List, Tuple
 from vstools import vs
 
 from .base import BaseProcessor
@@ -38,7 +37,7 @@ class CustomListProcessor(BaseProcessor):
         frame_props: FramePropertyMap,
         frame_mapping: FrameMap,
         presets: PresetDict,
-    ) -> Tuple[vs.VideoNode, FramePropertyMap, FrameMap]:
+    ) -> tuple[vs.VideoNode, FramePropertyMap, FrameMap]:
         """
         Process custom lists
 
@@ -82,7 +81,7 @@ class CustomListProcessor(BaseProcessor):
                     continue
 
                 # Ensure cl_frames is a list of lists
-                ranges: List[Tuple[int, int]] = []
+                ranges: list[tuple[int, int]] = []
                 for frame_range in cl_frames:
                     if isinstance(frame_range, list) and len(frame_range) == 2:
                         start, end = frame_range

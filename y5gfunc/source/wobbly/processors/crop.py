@@ -2,8 +2,6 @@
 Crop processor implementation.
 """
 
-from typing import Tuple
-
 from vstools import vs
 
 from .base import BaseProcessor
@@ -33,7 +31,7 @@ class CropProcessor(BaseProcessor):
         frame_props: FramePropertyMap,
         frame_mapping: FrameMap,
         presets: PresetDict,
-    ) -> Tuple[vs.VideoNode, FramePropertyMap, FrameMap]:
+    ) -> tuple[vs.VideoNode, FramePropertyMap, FrameMap]:
         """
         Process crop operation
 

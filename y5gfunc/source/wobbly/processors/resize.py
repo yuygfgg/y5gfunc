@@ -2,7 +2,7 @@
 Resize and bit depth processor.
 """
 
-from typing import Dict, Any, Tuple
+from typing import Any
 
 from vstools import vs
 
@@ -35,7 +35,7 @@ class ResizeProcessor(BaseProcessor):
         frame_props: FramePropertyMap,
         frame_mapping: FrameMap,
         presets: PresetDict,
-    ) -> Tuple[vs.VideoNode, FramePropertyMap, FrameMap]:
+    ) -> tuple[vs.VideoNode, FramePropertyMap, FrameMap]:
         """
         Process resize and bit depth operations
 
@@ -61,7 +61,7 @@ class ResizeProcessor(BaseProcessor):
                 return clip, frame_props, frame_mapping
 
             # Record resize and bit depth info
-            resize_props: Dict[str, Any] = {}
+            resize_props: dict[str, Any] = {}
 
             # Get filter name
             resize_filter_name = resize_info.get(Keys.resize.filter, "Bicubic")
@@ -76,7 +76,7 @@ class ResizeProcessor(BaseProcessor):
                 resize_filter_name = "Bicubic"
 
             # Prepare resize arguments
-            resize_args: Dict[str, Any] = {}
+            resize_args: dict[str, Any] = {}
             if resize_enabled:
                 resize_width = resize_info.get(Keys.resize.width, clip.width)
                 resize_height = resize_info.get(Keys.resize.height, clip.height)

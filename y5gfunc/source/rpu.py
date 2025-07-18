@@ -25,7 +25,7 @@ class RpuFile:
         """
         self.file_path = resolve_path(file_path)
         self._data = b""
-        self._nalu_offsets = []
+        self._nalu_offsets: list[int] = []
 
         self._load_and_parse()
 

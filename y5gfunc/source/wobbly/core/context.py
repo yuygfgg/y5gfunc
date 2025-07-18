@@ -3,14 +3,14 @@ Processing contexts and helpers for Wobbly parser.
 """
 
 from contextlib import contextmanager
-from typing import Iterator, Dict, Any, Optional
+from typing import Iterator, Any, Optional
 
 from ..errors import WobblyError, WobblyProcessError
 
 
 @contextmanager
 def safe_processing(
-    stage: str, details: Optional[Dict[str, Any]] = None
+    stage: str, details: Optional[dict[str, Any]] = None
 ) -> Iterator[None]:
     """
     Safe processing context manager for catching and transforming exceptions

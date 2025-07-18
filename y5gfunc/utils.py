@@ -1,11 +1,11 @@
-from typing import List, Union
+from typing import Union
 from vstools import vs
 from pathlib import Path
 
 
 def ranger(
     start: Union[int, float], end: Union[int, float], step: Union[int, float]
-) -> List[Union[int, float]]:
+) -> list[Union[int, float]]:
     """
     Generates a sequence of numbers similar to range(), but allows floats.
 
