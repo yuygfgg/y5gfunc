@@ -2925,7 +2925,7 @@
 
   
       module-attribute
-   (y5gfunc.source.wobbly.types.PresetDict)" href="../../types/#y5gfunc.source.wobbly.types.PresetDict">PresetDict</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Tuple" href="https://docs.python.org/3/library/typing.html#typing.Tuple">Tuple</a></span><span class="p">[</span><span class="n"><span title="vstools.vs.VideoNode">VideoNode</span></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" title="            FramePropertyMap
+   (y5gfunc.source.wobbly.types.PresetDict)" href="../../types/#y5gfunc.source.wobbly.types.PresetDict">PresetDict</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#tuple">tuple</a></span><span class="p">[</span><span class="n"><span title="vstools.vs.VideoNode">VideoNode</span></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" title="            FramePropertyMap
 
 
   
@@ -3069,7 +3069,7 @@
       <tbody>
           <tr class="doc-section-item">
             <td>
-                  <code><a class="autorefs autorefs-external" title="typing.Tuple" href="https://docs.python.org/3/library/typing.html#typing.Tuple">Tuple</a>[<span title="vstools.vs.VideoNode">VideoNode</span>, <a class="autorefs autorefs-internal" title="            FramePropertyMap
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#tuple">tuple</a>[<span title="vstools.vs.VideoNode">VideoNode</span>, <a class="autorefs autorefs-internal" title="            FramePropertyMap
 
 
   
@@ -3194,7 +3194,7 @@
 <a id="__codelineno-0-35" name="__codelineno-0-35"></a>    <span class="n">frame_props</span><span class="p">:</span> <span class="n">FramePropertyMap</span><span class="p">,</span>
 <a id="__codelineno-0-36" name="__codelineno-0-36"></a>    <span class="n">frame_mapping</span><span class="p">:</span> <span class="n">FrameMap</span><span class="p">,</span>
 <a id="__codelineno-0-37" name="__codelineno-0-37"></a>    <span class="n">presets</span><span class="p">:</span> <span class="n">PresetDict</span><span class="p">,</span>
-<a id="__codelineno-0-38" name="__codelineno-0-38"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">vs</span><span class="o">.</span><span class="n">VideoNode</span><span class="p">,</span> <span class="n">FramePropertyMap</span><span class="p">,</span> <span class="n">FrameMap</span><span class="p">]:</span>
+<a id="__codelineno-0-38" name="__codelineno-0-38"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">vs</span><span class="o">.</span><span class="n">VideoNode</span><span class="p">,</span> <span class="n">FramePropertyMap</span><span class="p">,</span> <span class="n">FrameMap</span><span class="p">]:</span>
 <a id="__codelineno-0-39" name="__codelineno-0-39"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <a id="__codelineno-0-40" name="__codelineno-0-40"></a><span class="sd">    Process resize and bit depth operations</span>
 <a id="__codelineno-0-41" name="__codelineno-0-41"></a>
@@ -3220,7 +3220,7 @@
 <a id="__codelineno-0-61" name="__codelineno-0-61"></a>            <span class="k">return</span> <span class="n">clip</span><span class="p">,</span> <span class="n">frame_props</span><span class="p">,</span> <span class="n">frame_mapping</span>
 <a id="__codelineno-0-62" name="__codelineno-0-62"></a>
 <a id="__codelineno-0-63" name="__codelineno-0-63"></a>        <span class="c1"># Record resize and bit depth info</span>
-<a id="__codelineno-0-64" name="__codelineno-0-64"></a>        <span class="n">resize_props</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+<a id="__codelineno-0-64" name="__codelineno-0-64"></a>        <span class="n">resize_props</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
 <a id="__codelineno-0-65" name="__codelineno-0-65"></a>
 <a id="__codelineno-0-66" name="__codelineno-0-66"></a>        <span class="c1"># Get filter name</span>
 <a id="__codelineno-0-67" name="__codelineno-0-67"></a>        <span class="n">resize_filter_name</span> <span class="o">=</span> <span class="n">resize_info</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">Keys</span><span class="o">.</span><span class="n">resize</span><span class="o">.</span><span class="n">filter</span><span class="p">,</span> <span class="s2">&quot;Bicubic&quot;</span><span class="p">)</span>
@@ -3235,7 +3235,7 @@
 <a id="__codelineno-0-76" name="__codelineno-0-76"></a>            <span class="n">resize_filter_name</span> <span class="o">=</span> <span class="s2">&quot;Bicubic&quot;</span>
 <a id="__codelineno-0-77" name="__codelineno-0-77"></a>
 <a id="__codelineno-0-78" name="__codelineno-0-78"></a>        <span class="c1"># Prepare resize arguments</span>
-<a id="__codelineno-0-79" name="__codelineno-0-79"></a>        <span class="n">resize_args</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+<a id="__codelineno-0-79" name="__codelineno-0-79"></a>        <span class="n">resize_args</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
 <a id="__codelineno-0-80" name="__codelineno-0-80"></a>        <span class="k">if</span> <span class="n">resize_enabled</span><span class="p">:</span>
 <a id="__codelineno-0-81" name="__codelineno-0-81"></a>            <span class="n">resize_width</span> <span class="o">=</span> <span class="n">resize_info</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">Keys</span><span class="o">.</span><span class="n">resize</span><span class="o">.</span><span class="n">width</span><span class="p">,</span> <span class="n">clip</span><span class="o">.</span><span class="n">width</span><span class="p">)</span>
 <a id="__codelineno-0-82" name="__codelineno-0-82"></a>            <span class="n">resize_height</span> <span class="o">=</span> <span class="n">resize_info</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">Keys</span><span class="o">.</span><span class="n">resize</span><span class="o">.</span><span class="n">height</span><span class="p">,</span> <span class="n">clip</span><span class="o">.</span><span class="n">height</span><span class="p">)</span>
