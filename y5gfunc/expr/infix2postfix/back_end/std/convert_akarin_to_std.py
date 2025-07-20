@@ -111,44 +111,83 @@ def convert_sort(expr: str) -> str:
         return base_prefix
 
     def generate_sort_network(n: int, temp_prefix: str) -> list[str]:
-        """generate sort network operations for top n elements"""
+        """
+        Generate Batcher odd-even mergesort network for top n elements.
+        """
         if n <= 1:
             return []
-        else:
-            ops = []
 
-            for i in range(n):
-                ops.append(f"{temp_prefix}_{n-1-i}!")
+        ops = []
 
-            for i in range(n - 1):
-                for j in range(n - 1 - i):
-                    ops.extend(
-                        [
-                            f"{temp_prefix}_{j}@",
-                            f"{temp_prefix}_{j+1}@",  # [a, b]
-                            f"{temp_prefix}_{j+1}@",
-                            f"{temp_prefix}_{j}@",
-                            "min",
-                            f"{temp_prefix}_{j}!",  # store min(a,b) to j
-                            "max",
-                            f"{temp_prefix}_{j+1}!",  # store max(a,b) to j+1
-                        ]
-                    )
+        # Find the next power of 2 for padding
+        padded_n = 1
+        while padded_n < n:
+            padded_n *= 2
 
-            # push back to stack in sorted order, with min at top
-            for i in range(n - 1, -1, -1):
-                ops.append(f"{temp_prefix}_{i}@")
+        for i in range(n):
+            ops.append(f"{temp_prefix}_{n-1-i}!")
 
-            return ops
+        for i in range(n, padded_n):
+            ops.extend(["1e30", f"{temp_prefix}_{i}!"])
+
+        def compare_and_swap(i: int, j: int):
+            """Generate operations to compare and swap elements at positions i and j"""
+            ops.extend(
+                [
+                    f"{temp_prefix}_{i}@",
+                    f"{temp_prefix}_{j}@",
+                    f"{temp_prefix}_{j}@",
+                    f"{temp_prefix}_{i}@",
+                    "min",
+                    f"{temp_prefix}_{i}!",
+                    "max",
+                    f"{temp_prefix}_{j}!",
+                ]
+            )
+
+        def odd_even_merge_sort(lo: int, length: int):
+            """Batcher odd-even mergesort for elements from lo to lo+length-1"""
+            if length <= 1:
+                return
+
+            mid = length // 2
+            # Sort first and second half
+            odd_even_merge_sort(lo, mid)
+            odd_even_merge_sort(lo + mid, mid)
+            # Merge the sorted halves
+            odd_even_merge(lo, length, 1)
+
+        def odd_even_merge(lo: int, length: int, r: int):
+            """Odd-even merge: merge two sorted sequences into one"""
+            step = r * 2
+            if step < length:
+                odd_even_merge(lo, length, step)  # even positions
+                odd_even_merge(lo + r, length, step)  # odd positions
+
+                # Compare and swap elements at distance r
+                i = lo + r
+                while i + r < lo + length:
+                    compare_and_swap(i, i + r)
+                    i += step
+            else:
+                # compare adjacent elements
+                if lo + r < padded_n:
+                    compare_and_swap(lo, lo + r)
+
+        odd_even_merge_sort(0, padded_n)
+
+        # Push back to stack in sorted order, with min at top (only original n elements)
+        for i in range(n - 1, -1, -1):
+            ops.append(f"{temp_prefix}_{i}@")
+
+        return ops
 
     tokens = tokenize_expr(expr)
     if not tokens:
         return ""
 
-    # Get all variable names used in the original expression
     used_vars = get_used_variable_names(tokens)
 
-    # Generate unique temporary variable prefix
     temp_prefix = generate_unique_temp_prefix(used_vars)
 
     new_tokens = []
