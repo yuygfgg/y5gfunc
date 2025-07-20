@@ -52,8 +52,12 @@ _CONSTANTS = {
 _TERNARY_OPS = {"?"}
 _CLAMP_OPS = {"clip", "clamp"}
 
-_REL_STATIC_PATTERN_INFIX = re.compile(r"(\$?\w+)\[\s*(-?\d+)\s*,\s*(-?\d+)\s*\](?::(?:c|m))?")
-_REL_STATIC_PATTERN_POSTFIX = re.compile(r"(\w+)\[\s*(-?\d+)\s*,\s*(-?\d+)\s*\](?::(?:c|m))?")
+_REL_STATIC_PATTERN_INFIX = re.compile(
+    r"(\$?\w+)\[\s*(-?\d+)\s*,\s*(-?\d+)\s*\](?::(?:c|m))?"
+)
+_REL_STATIC_PATTERN_POSTFIX = re.compile(
+    r"(\w+)\[\s*(-?\d+)\s*,\s*(-?\d+)\s*\](?::(?:c|m))?"
+)
 _SPLIT_PATTERN = re.compile(r"\s+")
 _NUMBER_PATTERNS = [
     re.compile(pattern)
@@ -88,10 +92,13 @@ def is_clip_postfix(token: str) -> bool:
     """Check if a token string represents a clip."""
     return _CLIP_NAME_PATTERN.match(token) is not None
 
+
 @lru_cache
 def is_clip_infix(token: str) -> bool:
     """Check if a token string represents a clip."""
-    return _CLIP_NAME_PATTERN.match(token.lstrip("$")) is not None and token.startswith("$")
+    return _CLIP_NAME_PATTERN.match(token.lstrip("$")) is not None and token.startswith(
+        "$"
+    )
 
 
 @lru_cache
@@ -101,7 +108,7 @@ def is_constant_infix(token: str) -> bool:
     """
     if not token.startswith("$"):
         return False
-    
+
     # Remove the $ prefix and check if it's a valid constant
     constant_name = token[1:]
     constants_set = {
@@ -117,6 +124,7 @@ def is_constant_infix(token: str) -> bool:
     if is_clip_postfix(constant_name):
         return True
     return False
+
 
 @lru_cache
 def is_constant_postfix(token: str) -> bool:
@@ -248,7 +256,11 @@ def get_op_arity(token: str) -> int:
         return 2
     if token in _TERNARY_OPS or token in _CLAMP_OPS:
         return 3
-    if token.endswith("[]") and len(token) > 2 and not _REL_STATIC_PATTERN_POSTFIX.match(token):
+    if (
+        token.endswith("[]")
+        and len(token) > 2
+        and not _REL_STATIC_PATTERN_POSTFIX.match(token)
+    ):
         return 2
     if (
         token.endswith("!")
@@ -288,6 +300,27 @@ def get_op_arity(token: str) -> int:
                         )
                     return n
     return 0
+
+
+def get_used_variable_names(tokens: list[str]) -> set[str]:
+    """Extract all variable names used in the expression."""
+    var_names = set()
+    for token in tokens:
+        if token.endswith("!") and len(token) > 1:
+            if not token.startswith("[") and not _REL_STATIC_PATTERN_POSTFIX.match(
+                token
+            ):
+                var_name = token[:-1]
+                if var_name.replace("_", "").replace("src", "").isalnum():
+                    var_names.add(var_name)
+        elif token.endswith("@") and len(token) > 1:
+            if not token.startswith("[") and not _REL_STATIC_PATTERN_POSTFIX.match(
+                token
+            ):
+                var_name = token[:-1]
+                if var_name.replace("_", "").replace("src", "").isalnum():
+                    var_names.add(var_name)
+    return var_names
 
 
 # modified from jvsfunc.ex_planes()
