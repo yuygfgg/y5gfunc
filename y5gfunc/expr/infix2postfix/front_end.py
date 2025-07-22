@@ -1175,6 +1175,7 @@ def parse_args(args_str: str) -> list[str]:
     return [arg for arg in args if arg]
 
 
+@lru_cache
 def is_builtin_function(func_name: str) -> bool:
     """
     Check if the function name belongs to a built-in function.

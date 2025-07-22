@@ -206,40 +206,40 @@ def tokenize_expr(expr: str) -> list[str]:
 
 
 @lru_cache
-def get_stack_effect(tk: str) -> int:
+def get_stack_effect(token: str) -> int:
     """Return net stack delta for a token."""
     if (
-        is_token_numeric(tk)
-        or _REL_STATIC_PATTERN_POSTFIX.match(tk)
-        or is_constant_postfix(tk)
-        or (tk.startswith("dup") and not (tk.endswith("!") or tk.endswith("@")))
+        is_token_numeric(token)
+        or _REL_STATIC_PATTERN_POSTFIX.match(token)
+        or is_constant_postfix(token)
+        or (token.startswith("dup") and not (token.endswith("!") or token.endswith("@")))
     ):
         return 1
-    if tk in _UNARY_OPS or tk.startswith(("swap", "sort")):
+    if token in _UNARY_OPS or token.startswith(("swap", "sort")):
         return 0
-    if tk in _BINARY_OPS:
+    if token in _BINARY_OPS:
         return -1
-    if tk in _TERNARY_OPS or tk in _CLAMP_OPS:
+    if token in _TERNARY_OPS or token in _CLAMP_OPS:
         return -2
-    if tk.endswith("[]") and len(tk) > 2 and not _REL_STATIC_PATTERN_POSTFIX.match(tk):
+    if token.endswith("[]") and len(token) > 2 and not _REL_STATIC_PATTERN_POSTFIX.match(token):
         return -1
     if (
-        tk.endswith("!")
-        and len(tk) > 1
-        and not tk.startswith("[")
-        and not _REL_STATIC_PATTERN_POSTFIX.match(tk)
+        token.endswith("!")
+        and len(token) > 1
+        and not token.startswith("[")
+        and not _REL_STATIC_PATTERN_POSTFIX.match(token)
     ):
         return -1
     if (
-        tk.endswith("@")
-        and len(tk) > 1
-        and not tk.startswith("[")
-        and not _REL_STATIC_PATTERN_POSTFIX.match(tk)
+        token.endswith("@")
+        and len(token) > 1
+        and not token.startswith("[")
+        and not _REL_STATIC_PATTERN_POSTFIX.match(token)
     ):
         return 1
 
-    if tk.startswith("drop"):
-        m = _DROP_PATTERN.fullmatch(tk)
+    if token.startswith("drop"):
+        m = _DROP_PATTERN.fullmatch(token)
         if m:
             n_str = m.group(1)
             return -(int(n_str) if n_str else 1)
@@ -302,25 +302,17 @@ def get_op_arity(token: str) -> int:
     return 0
 
 
-def get_used_variable_names(tokens: list[str]) -> set[str]:
+def get_used_variable_names(tokens: Union[list[str], str]) -> set[str]:
     """Extract all variable names used in the expression."""
-    var_names = set()
-    for token in tokens:
-        if token.endswith("!") and len(token) > 1:
-            if not token.startswith("[") and not _REL_STATIC_PATTERN_POSTFIX.match(
-                token
-            ):
-                var_name = token[:-1]
-                if var_name.replace("_", "").replace("src", "").isalnum():
-                    var_names.add(var_name)
-        elif token.endswith("@") and len(token) > 1:
-            if not token.startswith("[") and not _REL_STATIC_PATTERN_POSTFIX.match(
-                token
-            ):
-                var_name = token[:-1]
-                if var_name.replace("_", "").replace("src", "").isalnum():
-                    var_names.add(var_name)
-    return var_names
+
+    if isinstance(tokens, str):
+        tokens = tokenize_expr(tokens)
+
+    return set(
+        varname[:-1]
+        for varname in tokens
+        if varname.endswith("!") or varname.endswith("@")
+    )
 
 
 # modified from jvsfunc.ex_planes()

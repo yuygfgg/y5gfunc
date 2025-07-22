@@ -32,20 +32,17 @@ def optimize_akarin_expr(expr: str) -> str:
 
     while prev_expr != current_expr:
         prev_expr = current_expr
-        current_expr = convert_drop(
-            convert_var(
-                convert_sort(
-                    convert_clip_clamp(
-                        eliminate_immediate_store_load(fold_constants(current_expr))
-                    )
-                )
+        current_expr = convert_sort(
+            convert_clip_clamp(
+                eliminate_immediate_store_load(fold_constants(current_expr))
             )
         )
 
     optimized_expr = convert_dynamic_to_static(current_expr)
-    return optimized_expr
+    return fold_constants(convert_var(optimized_expr))
 
 
+@lru_cache
 def parse_numeric(token: str) -> Union[int, float]:
     """Parse a numeric token string to its actual value (int or float)."""
     if not is_token_numeric(token):

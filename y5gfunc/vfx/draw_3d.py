@@ -1,14 +1,17 @@
+import math
+from typing import Literal
 import trimesh
 from vstools import vs
 from ..expr import compile
 import numpy as np
 
 
-def draw_3d_cube(
+def draw_3d_polyhedron(
     clip: vs.VideoNode,
+    shape: Literal["cube", "icosahedron", "tetrahedron", "octahedron", "dodecahedron"],
     centerX: str,
     centerY: str,
-    cubeSize: str,
+    size: str,
     color: str,
     rotationX: str,
     rotationY: str,
@@ -18,129 +21,303 @@ def draw_3d_cube(
     factor: str = "1",
 ) -> vs.VideoNode:
     """
-    Draw a 3D cube on a video clip.
+    Draw a 3D regular polyhedron on a video clip.
 
     Args:
-        clip: The video clip to draw the cube on.
+        clip: The video clip to draw the polyhedron on.
+        shape: The shape of the polyhedron.
         centerX: The x-coordinate of the center of the projection screen.
         centerY: The y-coordinate of the center of the projection screen.
-        cubeSize: The size of the cube.
-        color: The color of the cube's edges.
+        size: The size of the polyhedron.
+        color: The color of the polyhedron's edges.
         rotationX: The rotation angle around the X-axis (in radians).
         rotationY: The rotation angle around the Y-axis (in radians).
-        thickness: The thickness of the cube's edges.
+        thickness: The thickness of the polyhedron's edges.
         translateZ: The translation along the Z-axis, affecting perspective.
         focal: The focal length for the projection.
         factor: The blending factor for the color.
 
     Returns:
-        The video clip with the 3D cube drawn on it.
+        The video clip with the 3D polyhedron drawn on it.
 
     Raises:
         AssertionError: If the format of the video clip has more than 1 plane.
     """
     assert clip.format.num_planes == 1
 
-    expr = compile(
+    PHI = (1 + math.sqrt(5)) / 2
+    PSI = 1 / PHI
+
+    _POLYHEDRA_DATA = {
+        "cube": {
+            "vertices": [
+                (-1, -1, -1),
+                (1, -1, -1),
+                (1, 1, -1),
+                (-1, 1, -1),
+                (-1, -1, 1),
+                (1, -1, 1),
+                (1, 1, 1),
+                (-1, 1, 1),
+            ],
+            "edges": [
+                (0, 1),
+                (1, 2),
+                (2, 3),
+                (3, 0),
+                (4, 5),
+                (5, 6),
+                (6, 7),
+                (7, 4),
+                (0, 4),
+                (1, 5),
+                (2, 6),
+                (3, 7),
+            ],
+        },
+        "icosahedron": {
+            "vertices": [
+                (-1, "phi", 0),
+                (1, "phi", 0),
+                (-1, "-phi", 0),
+                (1, "-phi", 0),
+                (0, -1, "phi"),
+                (0, 1, "phi"),
+                (0, -1, "-phi"),
+                (0, 1, "-phi"),
+                ("phi", 0, -1),
+                ("phi", 0, 1),
+                ("-phi", 0, -1),
+                ("-phi", 0, 1),
+            ],
+            "edges": [
+                (0, 1),
+                (0, 5),
+                (0, 7),
+                (0, 10),
+                (0, 11),
+                (1, 5),
+                (1, 7),
+                (1, 8),
+                (1, 9),
+                (2, 3),
+                (2, 4),
+                (2, 6),
+                (2, 10),
+                (2, 11),
+                (3, 4),
+                (3, 6),
+                (3, 8),
+                (3, 9),
+                (4, 5),
+                (4, 9),
+                (4, 11),
+                (5, 9),
+                (5, 11),
+                (6, 7),
+                (6, 8),
+                (6, 10),
+                (7, 8),
+                (7, 10),
+                (8, 9),
+                (10, 11),
+            ],
+        },
+        "tetrahedron": {
+            "vertices": [
+                (1, 1, 1),
+                (1, -1, -1),
+                (-1, 1, -1),
+                (-1, -1, 1),
+            ],
+            "edges": [
+                (0, 1),
+                (0, 2),
+                (0, 3),
+                (1, 2),
+                (1, 3),
+                (2, 3),
+            ],
+        },
+        "octahedron": {
+            "vertices": [
+                (1, 0, 0),
+                (-1, 0, 0),
+                (0, 1, 0),
+                (0, -1, 0),
+                (0, 0, 1),
+                (0, 0, -1),
+            ],
+            "edges": [
+                (0, 2),
+                (0, 3),
+                (0, 4),
+                (0, 5),
+                (1, 2),
+                (1, 3),
+                (1, 4),
+                (1, 5),
+                (2, 4),
+                (2, 5),
+                (3, 4),
+                (3, 5),
+            ],
+        },
+        "dodecahedron": {
+            "vertices": [
+                (1, 1, 1),
+                (1, 1, -1),
+                (1, -1, 1),
+                (1, -1, -1),
+                (-1, 1, 1),
+                (-1, 1, -1),
+                (-1, -1, 1),
+                (-1, -1, -1),
+                (0, "psi", "phi"),
+                (0, "psi", "-phi"),
+                (0, "-psi", "phi"),
+                (0, "-psi", "-phi"),
+                ("phi", 0, "psi"),
+                ("phi", 0, "-psi"),
+                ("-phi", 0, "psi"),
+                ("-phi", 0, "-psi"),
+                ("psi", "phi", 0),
+                ("psi", "-phi", 0),
+                ("-psi", "phi", 0),
+                ("-psi", "-phi", 0),
+            ],
+            "edges": [
+                (0, 8),
+                (0, 12),
+                (0, 16),
+                (1, 9),
+                (1, 13),
+                (1, 16),
+                (2, 10),
+                (2, 12),
+                (2, 17),
+                (3, 11),
+                (3, 13),
+                (3, 17),
+                (4, 8),
+                (4, 14),
+                (4, 18),
+                (5, 9),
+                (5, 14),
+                (5, 18),
+                (6, 10),
+                (6, 15),
+                (6, 19),
+                (7, 11),
+                (7, 15),
+                (7, 19),
+                (8, 18),
+                (9, 18),
+                (10, 19),
+                (11, 19),
+                (12, 17),
+                (13, 17),
+                (14, 15),
+            ],
+        },
+    }
+
+    data = _POLYHEDRA_DATA[shape]
+    vertices_coords = data["vertices"]
+    edges = data["edges"]
+
+    expr_parts = [
         f"""
-            centerX = {centerX}
-            centerY = {centerY}
-            cubeSize = {cubeSize}
-            rotationX = {rotationX}
-            rotationY = {rotationY}
-            translateZ = {translateZ}
-            focal = {focal}
-            thickness = {thickness}
-            color = {color}
-            factor = {factor}
-            
-            half = cubeSize / 2
-            cos_rotationX = cos(rotationX)
-            sin_rotationX = sin(rotationX)
-            cos_rotationY = cos(rotationY)
-            sin_rotationY = sin(rotationY)
-            
-            <global<cos_rotationX><sin_rotationX><cos_rotationY><sin_rotationY><translateZ><centerX><focal>>
-            function project3d_x(vx, vy, vz) {{
-                vy1 = vy * cos_rotationX - vz * sin_rotationX
-                vz1 = vy * sin_rotationX + vz * cos_rotationX
-                vx1 = vx
-                vx2 = vx1 * cos_rotationY + vz1 * sin_rotationY
-                vz2 = -vx1 * sin_rotationY + vz1 * cos_rotationY
-                vy2 = vy1
-                vz_final = vz2 + translateZ
-                return centerX + (vx2 * focal) / vz_final
-            }}
-            
-            <global<cos_rotationX><sin_rotationX><cos_rotationY><sin_rotationY><translateZ><centerY><focal>>
-            function project3d_y(vx, vy, vz) {{
-                vy1 = vy * cos_rotationX - vz * sin_rotationX
-                vz1 = vy * sin_rotationX + vz * cos_rotationX
-                vx1 = vx
-                vx2 = vx1 * cos_rotationY + vz1 * sin_rotationY
-                vz2 = -vx1 * sin_rotationY + vz1 * cos_rotationY
-                vy2 = vy1
-                vz_final = vz2 + translateZ
-                return centerY + (vy2 * focal) / vz_final
-            }}
-            
-            function distSqToSegment(x0, y0, x1, y1) {{
-                dx = x1 - x0
-                dy = y1 - y0
-                segLenSq = dx * dx + dy * dy
-                tt = (($X - x0) * dx + ($Y - y0) * dy) / segLenSq
-                t_clamped = clamp(tt, 0, 1)
-                projX = x0 + t_clamped * dx
-                projY = y0 + t_clamped * dy
-                return ($X - projX) ** 2 + ($Y - projY) ** 2
-            }}
-            
-            v0projX = project3d_x(-half, -half, -half)
-            v0projY = project3d_y(-half, -half, -half)
-            
-            v1projX = project3d_x(half, -half, -half)
-            v1projY = project3d_y(half, -half, -half)
-            
-            v2projX = project3d_x(half, half, -half)
-            v2projY = project3d_y(half, half, -half)
-            
-            v3projX = project3d_x(-half, half, -half)
-            v3projY = project3d_y(-half, half, -half)
-            
-            v4projX = project3d_x(-half, -half, half)
-            v4projY = project3d_y(-half, -half, half)
-            
-            v5projX = project3d_x(half, -half, half)
-            v5projY = project3d_y(half, -half, half)
-            
-            v6projX = project3d_x(half, half, half)
-            v6projY = project3d_y(half, half, half)
-            
-            v7projX = project3d_x(-half, half, half)
-            v7projY = project3d_y(-half, half, half)
-            
-            d0  = distSqToSegment(v0projX, v0projY, v1projX, v1projY)
-            d1  = distSqToSegment(v1projX, v1projY, v2projX, v2projY)
-            d2  = distSqToSegment(v2projX, v2projY, v3projX, v3projY)
-            d3  = distSqToSegment(v3projX, v3projY, v0projX, v0projY)
-            d4  = distSqToSegment(v4projX, v4projY, v5projX, v5projY)
-            d5  = distSqToSegment(v5projX, v5projY, v6projX, v6projY)
-            d6  = distSqToSegment(v6projX, v6projY, v7projX, v7projY)
-            d7  = distSqToSegment(v7projX, v7projY, v4projX, v4projY)
-            d8  = distSqToSegment(v0projX, v0projY, v4projX, v4projY)
-            d9  = distSqToSegment(v1projX, v1projY, v5projX, v5projY)
-            d10 = distSqToSegment(v2projX, v2projY, v6projX, v6projY)
-            d11 = distSqToSegment(v3projX, v3projY, v7projX, v7projY)
-            
-            finalMinDistanceSquared = nth_1(d0, d1, d2, d3, d4, d5, d6, d7, d8, d9, d10, d11)
-            
-            halfThickness = thickness / 2
-            halfThicknessSq = halfThickness ** 2
-            doDraw = finalMinDistanceSquared <= halfThicknessSq
-            
-            RESULT = doDraw ? ((1 - factor) * $src0 + factor * color) : $src0
-            """
+        centerX = {centerX}
+        centerY = {centerY}
+        size = {size}
+        rotationX = {rotationX}
+        rotationY = {rotationY}
+        translateZ = {translateZ}
+        focal = {focal}
+        thickness = {thickness}
+        color = {color}
+        factor = {factor}
+        
+        halfSize = size / 2
+        phi = {PHI}
+        psi = {PSI}
+        cos_rotationX = cos(rotationX)
+        sin_rotationX = sin(rotationX)
+        cos_rotationY = cos(rotationY)
+        sin_rotationY = sin(rotationY)
+        
+        <global<cos_rotationX><sin_rotationX><cos_rotationY><sin_rotationY><translateZ><centerX><focal>>
+        function project3d_x(vx, vy, vz) {{
+            vy1 = vy * cos_rotationX - vz * sin_rotationX
+            vz1 = vy * sin_rotationX + vz * cos_rotationX
+            vx1 = vx
+            vx2 = vx1 * cos_rotationY + vz1 * sin_rotationY
+            vz2 = -vx1 * sin_rotationY + vz1 * cos_rotationY
+            vy2 = vy1
+            vz_final = vz2 + translateZ
+            return centerX + (vx2 * focal) / vz_final
+        }}
+        
+        <global<cos_rotationX><sin_rotationX><cos_rotationY><sin_rotationY><translateZ><centerY><focal>>
+        function project3d_y(vx, vy, vz) {{
+            vy1 = vy * cos_rotationX - vz * sin_rotationX
+            vz1 = vy * sin_rotationX + vz * cos_rotationX
+            vx1 = vx
+            vx2 = vx1 * cos_rotationY + vz1 * sin_rotationY
+            vz2 = -vx1 * sin_rotationY + vz1 * cos_rotationY
+            vy2 = vy1
+            vz_final = vz2 + translateZ
+            return centerY + (vy2 * focal) / vz_final
+        }}
+        
+        function distSqToSegment(x0, y0, x1, y1) {{
+            dx = x1 - x0
+            dy = y1 - y0
+            segLenSq = dx ** 2 + dy ** 2
+            tt = (($X - x0) * dx + ($Y - y0) * dy) / segLenSq
+            t_clamped = clamp(tt, 0, 1)
+            projX = x0 + t_clamped * dx
+            projY = y0 + t_clamped * dy
+            return ($X - projX) ** 2 + ($Y - projY) ** 2
+        }}
+        """
+    ]
+
+    for i, (x, y, z) in enumerate(vertices_coords):
+        expr_parts.append(f"v{i}x = ({x}) * halfSize")
+        expr_parts.append(f"v{i}y = ({y}) * halfSize")
+        expr_parts.append(f"v{i}z = ({z}) * halfSize")
+
+    for i in range(len(vertices_coords)):
+        expr_parts.append(f"v{i}projX = project3d_x(v{i}x, v{i}y, v{i}z)")
+        expr_parts.append(f"v{i}projY = project3d_y(v{i}x, v{i}y, v{i}z)")
+
+    dist_vars = []
+    for i, (v1, v2) in enumerate(edges):
+        dist_var = f"d{i}"
+        dist_vars.append(dist_var)
+        expr_parts.append(
+            f"{dist_var} = distSqToSegment(v{v1}projX, v{v1}projY, v{v2}projX, v{v2}projY)"
+        )
+
+    min_expr = dist_vars[0]
+    for i in range(1, len(dist_vars)):
+        min_expr = f"min({min_expr}, {dist_vars[i]})"
+    expr_parts.append(f"finalMinDistanceSquared = {min_expr}")
+
+    expr_parts.append(
+        """
+        halfThickness = thickness / 2
+        halfThicknessSq = halfThickness ** 2
+        doDraw = finalMinDistanceSquared <= halfThicknessSq
+        
+        RESULT = doDraw ? ((1 - factor) * $src0 + factor * color) : $src0
+    """
     )
+
+    full_expr = "\n".join(expr_parts)
+    expr = compile(full_expr)
 
     return clip.akarin.Expr(expr)
 

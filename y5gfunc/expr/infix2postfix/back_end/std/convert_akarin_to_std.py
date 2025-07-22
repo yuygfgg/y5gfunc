@@ -53,7 +53,6 @@ def convert_var(expr: str) -> str:
                     new_tokens.append(token)
                     stack_size += get_stack_effect(token)
             else:
-                # Not a variable store, keep as-is
                 new_tokens.append(token)
                 stack_size += get_stack_effect(token)
         elif token.endswith("@") and len(token) > 1:
@@ -68,7 +67,7 @@ def convert_var(expr: str) -> str:
                         new_tokens.append("dup")
                     else:
                         new_tokens.append(f"dup{dup_index}")
-                    stack_size += 1  # dup increases stack size
+                    stack_size += 1
                 else:
                     new_tokens.append(token)
                     stack_size += get_stack_effect(token)
