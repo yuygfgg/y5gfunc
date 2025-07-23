@@ -14,7 +14,6 @@ from ..utils import (
     tokenize_expr,
 )
 from .back_end import (
-    convert_drop,
     convert_sort,
     convert_var,
     convert_clip_clamp,

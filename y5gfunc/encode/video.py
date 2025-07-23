@@ -4,6 +4,7 @@ from subprocess import Popen
 import sys
 
 # TODO: add a function to get encoder params
+# TODO: add dovi encoding
 
 
 # copied from https://skyeysnow.com/forum.php?mod=viewthread&tid=38690

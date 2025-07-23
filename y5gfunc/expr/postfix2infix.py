@@ -16,6 +16,7 @@ from .utils import (
 )
 
 
+# TODO: check if variable is defined before using it
 # inspired by mvf.postfix2infix
 def postfix2infix(expr: str, check_mode: bool = False) -> str:
     """
@@ -98,7 +99,7 @@ def postfix2infix(expr: str, check_mode: bool = False) -> str:
                 raise ValueError(
                     f"postfix2infix: {i}th token {token} expected a clip identifier, but got {clip_identifier}."
                 )
-            
+
             # Add $ prefix for clip identifiers
             clip_name = f"${clip_identifier}"
             push(f"dyn({clip_name},{absX},{absY})")

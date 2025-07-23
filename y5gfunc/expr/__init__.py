@@ -36,3 +36,5 @@ __all__ = [
     "verify_akarin_expr",
     "verify_std_expr",
 ]
+
+# FIXME: refactor `str` and `list[str]` based data structure to specific classes and enums.
