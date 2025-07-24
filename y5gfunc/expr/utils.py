@@ -73,7 +73,7 @@ _HEX_PARTS_PATTERN = re.compile(
 )
 _OCTAL_PATTERN = re.compile(r"^0[0-7]")
 _DROP_PATTERN = re.compile(r"^drop([1-9]\d*)?$")
-_CLIP_NAME_PATTERN = re.compile(r"(?:[a-zA-Z]|src\d+)$")
+_CLIP_NAME_PATTERN = re.compile(r"(?:[a-z]|src\d+)$")
 _SRC_PATTERN = re.compile(r"^src\d+$")
 _FRAME_PROP_PATTERN = re.compile(r"^[a-zA-Z]\w*\.[a-zA-Z]\w*$")
 _STATIC_PIXEL_PATTERN = re.compile(
