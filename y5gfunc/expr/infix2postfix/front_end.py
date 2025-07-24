@@ -10,6 +10,7 @@ from ..utils import (
     get_op_arity,
     get_stack_effect,
     is_clip_postfix,
+    is_constant_postfix,
     tokenize_expr,
     is_clip_infix,
     is_constant_infix,
@@ -226,7 +227,7 @@ def parse_infix_to_postfix(infix_code: str) -> str:
                         pass  # All globals are implicitly available
             # Check self-reference in definition.
             if var_name not in current_globals and re.search(
-                r"\b" + re.escape(var_name) + r"\b", expr
+                r"(?<!\$)\b" + re.escape(var_name) + r"\b", expr
             ):
                 raise SyntaxError(
                     f"Variable '{var_name}' used before definition", line_num
@@ -760,9 +761,16 @@ def convert_expr(
                             func_line_num + offset,
                             func_name,
                         )
-                    if is_constant_infix(f"${var}"):
+                    if is_constant_infix(f"{var}"):
                         raise SyntaxError(
                             f"Cannot assign to constant '{var}'.",
+                            func_line_num + offset,
+                            func_name,
+                        )
+                    # Check if trying to assign to a function parameter
+                    if var in params:
+                        raise SyntaxError(
+                            f"Cannot assign to function parameter '{var}'. Parameters are read-only.",
                             func_line_num + offset,
                             func_name,
                         )
@@ -811,7 +819,7 @@ def convert_expr(
 
                 if temp_map:
                     pattern = (
-                        r"\b("
+                        r"(?<!\$)\b("
                         + "|".join(re.escape(k) for k in temp_map.keys())
                         + r")\b"
                     )
@@ -858,14 +866,14 @@ def convert_expr(
                 elif _ASSIGN_PATTERN.search(body_line):
                     var_name, expr_line = body_line.split("=", 1)
                     var_name = var_name.strip()
-                    if is_constant_infix(f"${var_name}"):
+                    if is_constant_infix(f"{var_name}"):
                         raise SyntaxError(
                             f"Cannot assign to constant '{var_name}'.",
                             effective_line_num,
                             func_name,
                         )
                     if var_name not in new_local_vars and re.search(
-                        r"\b" + re.escape(var_name) + r"\b", expr_line
+                        r"(?<!\$)\b" + re.escape(var_name) + r"\b", expr_line
                     ):
                         _, orig_var = extract_function_info(var_name, func_name)
                         raise SyntaxError(
@@ -1048,14 +1056,14 @@ def convert_expr(
             if _LETTER_PATTERN.fullmatch(
                 left.strip()
             ) and not left_postfix.strip().endswith("@"):
-                if not (is_constant_infix(f"${left_postfix.strip()}")) and not (
+                if not (is_constant_postfix(f"{left_postfix.strip()}")) and not (
                     literals_in_scope and left_postfix.strip() in literals_in_scope
                 ):
                     left_postfix = left_postfix.strip() + "@"
             if _LETTER_PATTERN.fullmatch(
                 right.strip()
             ) and not right_postfix.strip().endswith("@"):
-                if not (is_constant_infix(f"${right_postfix.strip()}")) and not (
+                if not (is_constant_postfix(f"{right_postfix.strip()}")) and not (
                     literals_in_scope and right_postfix.strip() in literals_in_scope
                 ):
                     right_postfix = right_postfix.strip() + "@"
