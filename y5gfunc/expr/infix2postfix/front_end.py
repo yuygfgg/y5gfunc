@@ -285,7 +285,7 @@ def parse_infix_to_postfix(infix_code: str) -> str:
     final_result = " ".join(postfix_tokens)
     final_result = final_result.replace("(", "").replace(")", "")
     if "RESULT!" not in final_result:
-        raise SyntaxError("Final result must be assigned to variable 'RESULT!'")
+        raise SyntaxError("Final result must be assigned to variable 'RESULT'!")
 
     return final_result + " RESULT@"
 
