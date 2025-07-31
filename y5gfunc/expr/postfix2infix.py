@@ -16,7 +16,6 @@ from .utils import (
 )
 
 
-# TODO: check if variable is defined before using it
 # inspired by mvf.postfix2infix
 def postfix2infix(expr: str, check_mode: bool = False) -> str:
     """
@@ -39,6 +38,7 @@ def postfix2infix(expr: str, check_mode: bool = False) -> str:
 
     stack = []
     output_lines = []
+    defined_vars = set()
 
     i = 0
     while i < len(tokens):
@@ -135,10 +135,15 @@ def postfix2infix(expr: str, check_mode: bool = False) -> str:
             val = pop()
             if not check_mode:
                 output_lines.append(f"{var_name} = {val}")
+            defined_vars.add(var_name)
             i += 1
             continue
         elif var_load_match:
             var_name = var_load_match.group(1)
+            if var_name not in defined_vars:
+                raise ValueError(
+                    f"postfix2infix: {i}th token {token} loads an undefined variable {var_name}."
+                )
             push(var_name)
             i += 1
             continue
