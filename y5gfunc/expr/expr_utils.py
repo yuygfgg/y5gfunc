@@ -41,8 +41,8 @@ function atan(var) {
 function atan2(var_y, var_x) {
     theta = 0
     theta = (var_x > 0) ? atan(var_y / var_x) : theta
-    theta = (var_x < 0) ? (atan(var_y / var_x) + copysign(pi, var_y)) : theta
-    theta = ((var_x == 0) && var_y) ? (copysign(pi / 2, var_y)) : theta
+    theta = (var_x < 0) ? (atan(var_y / var_x) + copysign($pi, var_y)) : theta
+    theta = ((var_x == 0) && var_y) ? (copysign($pi / 2, var_y)) : theta
     theta = ((var_x == 0) && (var_y == 0)) ? 0 : theta
     return theta
 }
@@ -68,7 +68,7 @@ function acos(var) {
 }
 
 function acot(var) {
-    return pi / 2 - atan(var)
+    return $pi / 2 - atan(var)
 }
 
 function sinh(var) {
@@ -148,7 +148,7 @@ function gamma_sign(var_z) {
     is_pole = (var_z <= 0) && (floor(var_z) == var_z)
     use_reflection = (var_z < 0.5) && !is_pole
     sign_direct = 1
-    sin_pi_var_z = sin(pi * var_z)
+    sin_pi_var_z = sin($pi * var_z)
     sign_reflected = (sin_pi_var_z >= 0) ? 1 : -1
     calc_sign = use_reflection ? sign_reflected : sign_direct
     return is_pole ? 1 : calc_sign
@@ -170,10 +170,10 @@ function lgamma_val(var_z) {
     series = series + 9.9843695780195708595638234185252e-6 / (var_z_minus_1 + 7)
     series = series + 1.5056327351493115583497230996790e-7 / (var_z_minus_1 + 8)
     log_series = log(max(series, 1e9))
-    log_gamma_core = 0.5 * log(2 * pi) + (var_z_calc - 0.5) * log(max(tmp, 1e9)) - tmp + log_series
-    sin_pi_var_z = sin(pi * var_z)
+    log_gamma_core = 0.5 * log(2 * $pi) + (var_z_calc - 0.5) * log(max(tmp, 1e9)) - tmp + log_series
+    sin_pi_var_z = sin($pi * var_z)
     log_abs_sin = log(max(abs(sin_pi_var_z), 1e9))
-    reflection_adjustment = log(pi) - log_abs_sin
+    reflection_adjustment = log($pi) - log_abs_sin
     final_log_gamma = use_reflection ? (reflection_adjustment - log_gamma_core) : log_gamma_core
     return is_pole ? 1e9 : final_log_gamma
 }
