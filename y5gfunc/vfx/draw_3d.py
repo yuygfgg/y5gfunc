@@ -2,7 +2,7 @@ import math
 from typing import Literal
 import trimesh
 from vstools import vs
-from ..expr import compile
+from ..expr import infix2postfix
 import numpy as np
 
 
@@ -317,7 +317,7 @@ def draw_3d_polyhedron(
     )
 
     full_expr = "\n".join(expr_parts)
-    expr = compile(full_expr)
+    expr = infix2postfix(full_expr)
 
     return clip.akarin.Expr(expr)
 
@@ -636,8 +636,8 @@ def render_triangle_scene(
         face_shading_names.append(f"shading_face_{f_idx}")
 
     if face_count > 0:
-        expr_lines.append(f"closest_t_0 = t_face_0")
-        expr_lines.append(f"closest_shading_0 = shading_face_0")
+        expr_lines.append("closest_t_0 = t_face_0")
+        expr_lines.append("closest_shading_0 = shading_face_0")
 
         for i in range(1, face_count):
             prev_i = i - 1
@@ -657,7 +657,7 @@ def render_triangle_scene(
         expr_lines.append("RESULT = background")
 
     full_expr = "\n".join(expr_lines)
-    converted_expr = compile(full_expr)
+    converted_expr = infix2postfix(full_expr)
 
     return clip.akarin.Expr(converted_expr)
 

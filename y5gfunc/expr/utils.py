@@ -160,6 +160,53 @@ def is_token_numeric(token: str) -> bool:
     return False
 
 
+@lru_cache
+def parse_numeric(token: str) -> Union[int, float]:
+    """Parse a numeric token string to its actual value (int or float)."""
+    if not is_token_numeric(token):
+        raise ValueError(
+            f"parse_numeric: Token '{token}' is not a valid numeric format for parsing."
+        )
+
+    if _HEX_PATTERN.match(token):  # Hexadecimal
+        if "." in token or "p" in token.lower():
+            try:
+                return float.fromhex(token)
+            except ValueError:
+                parts = _HEX_PARTS_PATTERN.match(token.lower())
+                if parts:
+                    integer_part = int(parts.group(1), 16)
+                    fractional_part = 0
+                    if parts.group(2):
+                        frac_hex = parts.group(2)
+                        fractional_part = int(frac_hex, 16) / (16 ** len(frac_hex))
+                    exponent = 0
+                    if parts.group(3):
+                        exponent = int(parts.group(3))
+                    return (integer_part + fractional_part) * (2**exponent)
+                else:
+                    raise ValueError(
+                        f"parse_numeric: Could not parse complex hex token: {token}"
+                    )  # Should not happen
+        else:
+            return int(token, 16)  # Simple hex integer
+    elif (
+        _OCTAL_PATTERN.match(token)
+        and len(token) > 1
+        and all(c in "01234567" for c in token[1:])
+    ):  # Octal
+        return int(token, 8)
+    else:  # Decimal / Scientific / Integer
+        try:
+            if "." in token or "e" in token.lower():
+                return float(token)
+            return int(token)
+        except ValueError:
+            raise ValueError(
+                f"parse_numeric: Internal error: Could not parse supposedly numeric token: {token}"
+            )
+
+
 def tokenize_expr(expr: str) -> list[str]:
     """Convert expression string to a list of tokens"""
     expr = expr.strip()
@@ -212,7 +259,9 @@ def get_stack_effect(token: str) -> int:
         is_token_numeric(token)
         or _REL_STATIC_PATTERN_POSTFIX.match(token)
         or is_constant_postfix(token)
-        or (token.startswith("dup") and not (token.endswith("!") or token.endswith("@")))
+        or (
+            token.startswith("dup") and not (token.endswith("!") or token.endswith("@"))
+        )
     ):
         return 1
     if token in _UNARY_OPS or token.startswith(("swap", "sort")):
@@ -221,7 +270,11 @@ def get_stack_effect(token: str) -> int:
         return -1
     if token in _TERNARY_OPS or token in _CLAMP_OPS:
         return -2
-    if token.endswith("[]") and len(token) > 2 and not _REL_STATIC_PATTERN_POSTFIX.match(token):
+    if (
+        token.endswith("[]")
+        and len(token) > 2
+        and not _REL_STATIC_PATTERN_POSTFIX.match(token)
+    ):
         return -1
     if (
         token.endswith("!")

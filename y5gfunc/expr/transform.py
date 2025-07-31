@@ -1,13 +1,16 @@
-from ....utils import (
+from .utils import (
     get_stack_effect,
     tokenize_expr,
     _CLAMP_OPS,
     _REL_STATIC_PATTERN_POSTFIX,
     get_used_variable_names,
+    parse_numeric,
+    is_token_numeric,
 )
 import regex as re
 import random
 import time
+import math
 
 
 def convert_var(expr: str) -> str:
@@ -312,6 +315,26 @@ def convert_clip_clamp(expr: str) -> str:
     return " ".join(new_tokens)
 
 
+def convert_pi(expr: str) -> str:
+    """
+    Replace pi with its constant value.
+    """
+    return " ".join(
+        token if token != "pi" else str(math.pi) for token in tokenize_expr(expr)
+    )
+
+
+def convert_number(expr: str) -> str:
+    """
+    This function converts all numbers to decimal.
+    """
+
+    return " ".join(
+        str(parse_numeric(token)) if is_token_numeric(token) else token
+        for token in tokenize_expr(expr)
+    )
+
+
 def to_std_expr(expr: str) -> str:
     """
     Convert an akarin.Expr expression to a std.Expr expression.
@@ -319,7 +342,11 @@ def to_std_expr(expr: str) -> str:
     # FIXME: convert math functions (trunc / round / floor / fmod) (possible?)
     ret = convert_drop(
         convert_clip_names(
-            convert_var(convert_sort(convert_pow(convert_clip_clamp(expr))))
+            convert_var(
+                convert_sort(
+                    convert_pow(convert_clip_clamp(convert_pi(convert_number(expr))))
+                )
+            )
         )
     )
 

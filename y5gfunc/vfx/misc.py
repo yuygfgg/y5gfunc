@@ -1,5 +1,5 @@
 from vstools import vs
-from ..expr import compile
+from ..expr import infix2postfix
 from enum import IntEnum
 
 
@@ -192,5 +192,5 @@ def rotate_image(
 
     full_expr_str = setup + source_coord_calc + interpolate
 
-    expr_postfix = compile(full_expr_str)
+    expr_postfix = infix2postfix(full_expr_str)
     return clip.akarin.Expr(expr_postfix, boundary=boundary)

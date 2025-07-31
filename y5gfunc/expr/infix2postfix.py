@@ -1,12 +1,4 @@
-import regex as re
-from functools import lru_cache
-from typing import Optional
-import sys
-from enum import StrEnum
-
-sys.setrecursionlimit(5000)
-
-from ..utils import (
+from .utils import (
     get_op_arity,
     get_stack_effect,
     is_clip_postfix,
@@ -16,6 +8,16 @@ from ..utils import (
     is_constant_infix,
     is_token_numeric,
 )
+from .optimize import optimize_akarin_expr
+from .transform import to_std_expr
+from .verify import verify_std_expr, verify_akarin_expr
+import regex as re
+from functools import lru_cache
+from typing import Optional
+import sys
+from enum import StrEnum
+
+sys.setrecursionlimit(5000)
 
 
 class GlobalMode(StrEnum):
@@ -33,16 +35,291 @@ class GlobalMode(StrEnum):
     SPECIFIC = "specific"
 
 
-def parse_infix_to_postfix(infix_code: str) -> str:
-    """
-    Parse an infix expression to a postfix expression.
-    """
+def infix2postfix(
+    infix_code: str, optimize: bool = True, force_std: bool = False
+) -> str:
+    R"""
+    Convert infix expressions to postfix expressions.
 
-    # Reject user input that contains semicolons.
-    if ";" in infix_code:
-        raise SyntaxError(
-            "User input code cannot contain semicolons. Use newlines instead."
-        )
+    Args:
+        infix_code: Input infix code.
+        optimize: Whether to optimize the expression.
+        force_std: Whether to force the expression to be converted to std.Expr.
+
+    Returns:
+        Converted postfix expr.
+
+    Raises:
+        SyntaxError: If infix code failed to convert to postfix expr.
+        ValueError: If the expression is invalid (failed to generate for specified backend).
+
+    Refer to ..vfx/ and .expr_utils.py for examples.
+
+    ## General Format
+
+    - **Input Structure:**
+    The source code is written as plain text with one statement per line. User input must not contain semicolons.
+
+    - **Whitespace:**
+    Whitespace (spaces and newlines) is used to separate tokens and statements. Extra spaces are generally ignored.
+
+    ---
+
+    ## Lexical Elements
+
+    ### Identifiers and Literals
+
+    - **Identifiers (Variable and Function Names):**
+    - Must start with a letter or an underscore and can be composed of letters, digits, and underscores (matching `[a-zA-Z_]\w*`).
+    - Identifiers starting with the reserved prefix `__internal_` are not allowed in user code (they are used internally for parameter renaming and temporary variables).
+    - Some names are "built-in constants" (see below) and cannot be reassigned.
+
+    - **Constants vs. Variables:**
+    A distinction is made between variables and constants based on a `$` prefix.
+    - **Variables:** Standard identifiers (e.g., `my_var`) are treated as variables. They must be assigned a value before being used.
+    - **Constants:** Identifiers prefixed with a `$` (i.e., `$X`, `$Y`, `$width`, `$height`, `$pi`, etc.) are treated as constants. They are passed as literal values and do not require prior assignment.
+
+    - **Built-in Constants:**
+    The language defines the following reserved identifiers: (Refer to std.Expr and akarin.Expr documents for more information)
+    - `N` (Akarin Only)
+    - `X` (Akarin Only)
+    - `Y` (Akarin Only)
+    - `width` (Akarin Only)
+    - `height` (Akarin Only)
+    - `pi`
+
+    In addition, any token that is a single letter (e.g. `a`, `b`) or a string matching `src` followed by digits (e.g. `src1`, `src42`) is considered a source clip. (Note: `srcN` where N > 25 is Akarin Only)
+
+    - **Numeric Literals:**
+    The language supports:  (Refer to akarin.Expr documents for more information)
+    - **Decimal numbers:** Integers (e.g. `123`, `-42`) and floating‑point numbers (e.g. `3.14`, `-0.5` with optional scientific notation).
+    - **Hexadecimal numbers:** Starting with `0x` followed by hexadecimal digits (optionally with a fractional part and a "p‑exponent").
+    - **Octal numbers:** A leading zero followed by octal digits (e.g. `0755`).
+
+    ---
+
+    ## Operators
+
+    ### Binary Operators
+
+    Expressions may contain binary operators that, when converted, yield corresponding postfix tokens. The supported binary operators include:
+
+    - **Logical Operators:**
+    - `||` (logical OR; converted to `or`)
+    - `&&` (logical AND; converted to `and`)
+
+    - **Bitwise Operators:** (Akarin Only)
+        - `&` (bitwise AND; converted to `bitand`)
+        - `|` (bitwise OR; converted to `bitor`)
+        - `^` (bitwise XOR; converted to `bitxor`)
+
+    - **Equality and Relational Operators:**
+    - `==` (equality; converted to `=`)
+    - `!=` (inequality)
+    - Relational: `<`, `>`, `<=`, `>=`
+
+    - **Arithmetic Operators:**
+    - `+` (addition)
+    - `-` (subtraction)
+    - `*` (multiplication)
+    - `/` (division)
+    - `%` (modulus) (Akarin Only)
+    - `**` (exponentiation; converted to `pow`)
+
+    When parsing an infix expression, the algorithm searches for a binary operator at the outer level (i.e. not inside any nested parentheses) and—depending on its position—splits the expression into left and right operands. The order in which the operator candidates are considered effectively defines the operator precedence.
+
+    ### Unary Operators
+
+    - **Negation:**
+    A minus sign (`-`) may be used to denote negative numeric literals; if used before an expression that is not a literal number, it is interpreted as multiplying the operand by -1.
+
+    - **Logical NOT:**
+    An exclamation mark (`!`) is used as a unary operator for logical NOT. For example, `!expr` is converted to postfix by appending the operator `not` to the processed operand.
+
+    ### Ternary Operator
+
+    - **Conditional Expression:**
+    The language supports a ternary operator with the syntax:
+    ```
+    condition ? true_expression : false_expression
+    ```
+    The operator first evaluates the condition; then based on its result, it selects either the true or false branch. In the conversion process, the three expressions are translated to a corresponding postfix form followed by a `?` token.
+
+    ---
+
+    ## Grouping
+
+    - **Parentheses:**
+    Parentheses `(` and `)` can be used to override the default evaluation order. If an entire expression is wrapped in parentheses, the outer pair is stripped prior to further conversion.
+
+    ---
+
+    ## Function Calls and Built-in Functions
+
+    ### General Function Call Syntax
+
+    - **Invocation:**
+    Functions are called using the usual form:
+    ```
+    functionName(arg1, arg2, …)
+    ```
+    The argument list must be properly parenthesized and can contain nested expressions. The arguments are parsed by taking into account nested parentheses and brackets.
+
+    - **Builtin Function Examples:**
+    Some functions are specially handled and have fixed argument counts:
+
+    - **Unary Functions:**
+        - `sin(x)`
+        - `cos(x)`
+        - `round(x)` (Akarin Only)
+        - `floor(x)` (Akarin Only)
+        - `abs(x)`
+        - `sqrt(x)`
+        - `trunc(x)`
+        - `bitnot(x)` (Akarin Only)
+        - `not(x)`
+
+    - **Binary Functions:**
+        - `min(a, b)`
+        - `max(a, b)`
+
+    - **Ternary Functions:**
+        - `clamp(a, b, c)`
+        - `dyn(a, b, c)` (Akarin Only)
+        Again, in the case of `dyn` the first argument must be a valid source clip.
+        In addition, an extra optimizing will be performed to convert dynamic access (`dyn`) to static access (see below) if possible for potentially higher performance.
+
+    - **Special Pattern – nth_N Functions:**
+        Function names matching the pattern `nth_<number>` (for example, `nth_2`) are supported. They require at least N arguments and returns the Nth smallest of the arguments (e.g. `nth_1(a, b, c, d)` returns the smallest one of `a`, `b`, `c` and `d`).
+
+    ### Custom Function Definitions
+
+    - **Syntax:**
+    Functions are defined as follows:
+    ```
+    function functionName(param1, param2, …) {
+        // function body
+        return expression // optional
+    }
+    ```
+    - **Requirements and Checks:**
+    - The parameter names must be unique, and none may begin with the reserved prefix `__internal_`.
+    - The function body may span several lines. It can contain assignment statements and expression evaluations.
+    - There must be at most one return statement, and if it exists, it must be the last (non-empty) statement in the function body.
+    - Defining functions inside another function is not currently supported.
+
+    ---
+
+    ## Global Declarations and Assignments
+
+    ### Global Declarations
+
+    - **Syntax:**
+    Global variables may be declared on a dedicated line immediately preceding a function definition. Three formats are supported:
+
+    1.  **Specific Globals:** To declare a specific set of global variables for a function:
+        ```
+        <global<var1><var2>…>
+        ```
+        The declared names (`var1`, `var2`, etc.) are recorded as the only global variables accessible by that function.
+
+    2.  **All Globals:** To allow a function to access all currently defined global variables:
+        ```
+        <global.all>
+        ```
+        This makes any global variable defined in the top-level scope available within the function.
+
+    3.  **No Globals:** To explicitly prevent a function from accessing any global variables:
+        ```
+        <global.none>
+        ```
+        This is the **default behavior** if no global declaration is provided for a function.
+
+    - **Placement:**
+    A global declaration must immediately precede the `function` definition it applies to.
+
+    ### Assignment Statements
+
+    - **Global Assignments:**
+    A top-level assignment statement uses the syntax:
+    ```
+    variable = expression
+    ```
+    The left-hand side (`variable`) must not be a built-in constant or otherwise reserved. The expression on the right-hand side is converted to its postfix form. Internally, the assignment is marked by appending an exclamation mark (`!`) to indicate that the result is stored in that variable.
+
+    - **Variable Usage Rules:**
+    Variables must be defined (assigned) before they are referenced in expressions. Otherwise, a syntax error will be raised.
+
+    ---
+
+    ## Special Constructs
+
+    ### Frame Property Access (Akarin Only)
+
+    - **Syntax:**
+    To access a frame property from a source clip, use dot notation:
+    ```
+    clip.propname
+    ```
+    - `clip` must be a valid source clip.
+    - `propname` is the name of the property.
+
+    ### Static Relative Pixel Access (Akarin Only)
+
+    - **Syntax:**
+    For accessing a pixel value relative to a source clip, the expression can take the following form:
+    ```
+    clip[statX, statY]
+    ```
+    where:
+    - `clip` is a valid source clip. The clip can be specified as a constant (e.g., `$src1`).
+    - `statX` and `statY` are integer literals specifying the x and y offsets, and
+    - An optional suffix (`:m` or `:c`) may follow the closing bracket.
+
+    - **Validation:**
+    The indices must be numeric constants (no expressions allowed inside the brackets).
+
+    ---
+
+    ## Operator Precedence and Expression Parsing
+
+    - **Precedence Determination:**
+    When converting infix to postfix, the parser searches the expression (tracking parenthesis nesting) for a binary operator at the outer level. The operators are considered in the following order (which effectively sets their precedence):
+
+    1. Logical OR: `||`
+    2. Logical AND: `&&`
+    3. Bitwise Operators: `&`, `|`, `^` (Akarin Only)
+    4. Relational: `<`, `<=`, `>`, `>=`
+    5. Equality: `==`
+    6. Inequality: `!=`
+    7. Addition and Subtraction: `+`, `-`
+    8. Multiplication, Division, and Modulus: `*`, `/`, `%` (`%` is Akarin Only)
+    9. Exponentiation: `**`
+
+    The conversion function finds the **last occurrence** of an operator at the outer level for splitting the expression. Parentheses can be used to override this behavior.
+
+    - **Ternary Operator:**
+    The C-style ternary operator (`? :`) is supported.
+
+    ---
+
+    ## Error Checks and Restrictions
+
+    - **Semicolon Usage:**
+    The input may not contain semicolons.
+
+    - **Naming Restrictions:**
+    Variables, function names, and parameters must not use reserved names (such as built-in constants or names beginning with `__internal_`).
+
+    - **Global Dependencies:**
+    For functions that use global variables (declared using `<global<...>>` or `<global.all>`), the referenced global variables must be defined in the global scope before any call to that function.
+
+    - **Function Return:**
+    Each function definition must have at most one return statement, and if it exists, it must be the last statement in the function.
+
+    - **Argument Counts:**
+    Function calls (both built-in and custom) check that the exact number of required arguments is provided; otherwise, a syntax error is raised.
+    """
 
     # Remove comments
     infix_code = "\n".join(
@@ -62,6 +339,14 @@ def parse_infix_to_postfix(infix_code: str) -> str:
     global_mode_for_functions: dict[str, GlobalMode] = {}
     lines = infix_code.split("\n")
     modified_lines: list[str] = []
+
+    # Reject user input that contains semicolons.
+    for i, line in enumerate(lines):
+        if ";" in line:
+            raise SyntaxError(
+                "User input code cannot contain semicolons. Use newlines instead.",
+                line_num=i + 1,
+            )
 
     # Build a mapping from line number to function name for function declarations.
     function_lines = {}
@@ -112,7 +397,7 @@ def parse_infix_to_postfix(infix_code: str) -> str:
                             global_var in function_params for global_var in globals_list
                         ):
                             raise SyntaxError(
-                                "Function param must not duplicate with global declarations.",
+                                "Function parameters must not duplicate with global declarations.",
                                 j,
                             )
                 else:
@@ -237,7 +522,12 @@ def parse_infix_to_postfix(infix_code: str) -> str:
                 global_assignments[var_name] = line_num
             current_globals.add(var_name)
             postfix_expr = convert_expr(
-                expr, current_globals, functions, line_num, global_mode_for_functions
+                expr,
+                current_globals,
+                functions,
+                line_num,
+                global_mode_for_functions,
+                force_std=force_std,
             )
             full_postfix_expr = f"{postfix_expr} {var_name}!"
             if compute_stack_effect(full_postfix_expr, line_num) != 0:
@@ -266,7 +556,12 @@ def parse_infix_to_postfix(infix_code: str) -> str:
                     elif func_global_mode == GlobalMode.ALL:
                         pass
             postfix_expr = convert_expr(
-                stmt, current_globals, functions, line_num, global_mode_for_functions
+                stmt,
+                current_globals,
+                functions,
+                line_num,
+                global_mode_for_functions,
+                force_std=force_std,
             )
             if compute_stack_effect(postfix_expr, line_num) != 0:
                 raise SyntaxError(
@@ -287,7 +582,20 @@ def parse_infix_to_postfix(infix_code: str) -> str:
     if "RESULT!" not in final_result:
         raise SyntaxError("Final result must be assigned to variable 'RESULT'!")
 
-    return final_result + " RESULT@"
+    ret = final_result + " RESULT@"
+
+    if optimize:
+        ret = optimize_akarin_expr(ret)
+
+    if force_std:
+        ret = to_std_expr(ret)
+        if not verify_std_expr(ret):
+            raise SyntaxError("Converted expression does not pass verification.")
+    else:
+        if not verify_akarin_expr(ret):
+            raise SyntaxError("Converted expression does not pass verification.")
+
+    return ret
 
 
 _FUNC_CALL_PATTERN = re.compile(r"(\w+)\s*\(")
@@ -315,6 +623,28 @@ _BUILD_IN_FUNC_PATTERNS = [
     re.compile(r)
     for r in [rf"^{prefix}\d+$" for prefix in ["nth_", "sort", "dup", "drop", "swap"]]
 ]
+_STD_COMPAT_CONST_N_PATTERN = re.compile(r"\$N(?![a-zA-Z0-9_])")
+_STD_COMPAT_CONST_X_PATTERN = re.compile(r"\$X(?![a-zA-Z0-9_])")
+_STD_COMPAT_CONST_Y_PATTERN = re.compile(r"\$Y(?![a-zA-Z0-9_])")
+_STD_COMPAT_CONST_WIDTH_PATTERN = re.compile(r"\$width(?![a-zA-Z0-9_])")
+_STD_COMPAT_CONST_HEIGHT_PATTERN = re.compile(r"\$height(?![a-zA-Z0-9_])")
+_STD_COMPAT_SRC_HIGH_NUM_PATTERN = re.compile(r"\$src(\d+)\b")
+_STD_COMPAT_BITAND_PATTERN = re.compile(r"(?<!\w)&(?!\w)")
+_STD_COMPAT_BITOR_PATTERN = re.compile(r"(?<!\w)\|(?!\w)")
+_STD_COMPAT_BITXOR_PATTERN = re.compile(r"(?<!\w)\^(?!\w)")
+_STD_COMPAT_MODULUS_PATTERN = re.compile(r"(?<!\w)%(?!\w)")
+_STD_COMPAT_CONST_PATTERNS = {
+    "N": _STD_COMPAT_CONST_N_PATTERN,
+    "X": _STD_COMPAT_CONST_X_PATTERN,
+    "Y": _STD_COMPAT_CONST_Y_PATTERN,
+    "width": _STD_COMPAT_CONST_WIDTH_PATTERN,
+    "height": _STD_COMPAT_CONST_HEIGHT_PATTERN,
+}
+_STD_COMPAT_BITWISE_PATTERNS = {
+    "&": _STD_COMPAT_BITAND_PATTERN,
+    "|": _STD_COMPAT_BITOR_PATTERN,
+    "^": _STD_COMPAT_BITXOR_PATTERN,
+}
 
 
 class SyntaxError(Exception):
@@ -564,6 +894,71 @@ def check_variable_usage(
             )
 
 
+def check_std_compatibility(
+    expr: str,
+    func_name: Optional[str] = None,
+    line_num: Optional[int] = None,
+    current_function: Optional[str] = None,
+) -> None:
+    """
+    Check if expression uses Akarin Only features.
+    Raises SyntaxError if any incompatible features found.
+    """
+    for const, pattern in _STD_COMPAT_CONST_PATTERNS.items():
+        if pattern.search(expr):
+            raise SyntaxError(
+                f"Constant '${const}' is Akarin Only and not supported in std.Expr mode.",
+                line_num,
+                current_function,
+            )
+
+    src_matches = _STD_COMPAT_SRC_HIGH_NUM_PATTERN.findall(expr)
+    for src_num in src_matches:
+        if int(src_num) > 25:
+            raise SyntaxError(
+                f"Source clip 'src{src_num}' is Akarin Only (srcN where N > 25 is not supported in std.Expr mode).",
+                line_num,
+                current_function,
+            )
+
+    for op, pattern in _STD_COMPAT_BITWISE_PATTERNS.items():
+        if pattern.search(expr):
+            raise SyntaxError(
+                f"Bitwise operator '{op}' is Akarin Only and not supported in std.Expr mode.",
+                line_num,
+                current_function,
+            )
+
+    if _STD_COMPAT_MODULUS_PATTERN.search(expr):
+        raise SyntaxError(
+            "Modulus operator '%' is Akarin Only and not supported in std.Expr mode.",
+            line_num,
+            current_function,
+        )
+
+    akarin_only_funcs = {"round", "floor", "bitnot", "dyn"}
+    if func_name in akarin_only_funcs:
+        raise SyntaxError(
+            f"Function '{func_name}' is Akarin Only and not supported in std.Expr mode.",
+            line_num,
+            current_function,
+        )
+
+    if _PROP_ACCESS_PATTERN.match(expr):
+        raise SyntaxError(
+            "Frame property access is Akarin Only and not supported in std.Expr mode.",
+            line_num,
+            current_function,
+        )
+
+    if _M_STATIC_PATTERN.match(expr):
+        raise SyntaxError(
+            "Static relative pixel access is Akarin Only and not supported in std.Expr mode.",
+            line_num,
+            current_function,
+        )
+
+
 def convert_expr(
     expr: str,
     variables: set[str],
@@ -573,12 +968,16 @@ def convert_expr(
     current_function: Optional[str] = None,
     local_vars: Optional[set[str]] = None,
     literals_in_scope: Optional[set[str]] = None,
+    force_std: bool = False,
 ) -> str:
     """
     Convert a single infix expression to a postfix expression.
     Supports binary and unary operators, function calls, and custom function definitions.
     """
     expr = expr.strip()
+
+    if force_std:
+        check_std_compatibility(expr, None, line_num, current_function)
 
     if is_token_numeric(expr):
         return expr
@@ -602,6 +1001,10 @@ def convert_expr(
             raise SyntaxError(
                 f"Undefined function '{func_name}'", line_num, current_function
             )
+
+        if force_std:
+            check_std_compatibility(expr, func_name, line_num, current_function)
+
         m_nth = _NTH_PATTERN.match(func_name)
         if m_nth:
             N_val = int(m_nth.group(1))
@@ -629,6 +1032,7 @@ def convert_expr(
                     current_function,
                     local_vars,
                     literals_in_scope,
+                    force_std,
                 )
                 for arg in args
             ]
@@ -657,6 +1061,7 @@ def convert_expr(
                 current_function,
                 local_vars,
                 literals_in_scope,
+                force_std,
             )
             for arg in args
         ]
@@ -860,6 +1265,7 @@ def convert_expr(
                             func_name,
                             new_local_vars,
                             literals_for_body,
+                            force_std,
                         )
                     )
                 # Process assignment statements.
@@ -884,7 +1290,7 @@ def convert_expr(
                     if var_name not in new_local_vars:
                         new_local_vars.add(var_name)
 
-                    postfix_line = f"{convert_expr(expr_line, variables, functions, effective_line_num, global_mode_for_functions, func_name, new_local_vars, literals_for_body)} {var_name}!"
+                    postfix_line = f"{convert_expr(expr_line, variables, functions, effective_line_num, global_mode_for_functions, func_name, new_local_vars, literals_for_body, force_std)} {var_name}!"
                     if (
                         compute_stack_effect(
                             postfix_line, effective_line_num, func_name
@@ -908,6 +1314,7 @@ def convert_expr(
                         func_name,
                         new_local_vars,
                         literals_for_body,
+                        force_std,
                     )
                     if (
                         compute_stack_effect(
@@ -955,6 +1362,7 @@ def convert_expr(
             current_function,
             local_vars,
             literals_in_scope,
+            force_std,
         )
 
     m_static = _M_STATIC_PATTERN.match(expr)
@@ -988,6 +1396,7 @@ def convert_expr(
             current_function,
             local_vars,
             literals_in_scope,
+            force_std,
         )
         true_conv = convert_expr(
             true_expr,
@@ -998,6 +1407,7 @@ def convert_expr(
             current_function,
             local_vars,
             literals_in_scope,
+            force_std,
         )
         false_conv = convert_expr(
             false_expr,
@@ -1008,6 +1418,7 @@ def convert_expr(
             current_function,
             local_vars,
             literals_in_scope,
+            force_std,
         )
         return f"{cond_conv} {true_conv} {false_conv} ?"
 
@@ -1042,6 +1453,7 @@ def convert_expr(
                 current_function,
                 local_vars,
                 literals_in_scope,
+                force_std,
             )
             right_postfix = convert_expr(
                 right,
@@ -1052,6 +1464,7 @@ def convert_expr(
                 current_function,
                 local_vars,
                 literals_in_scope,
+                force_std,
             )
             if _LETTER_PATTERN.fullmatch(
                 left.strip()
@@ -1080,6 +1493,7 @@ def convert_expr(
             current_function,
             local_vars,
             literals_in_scope,
+            force_std,
         )
         return f"{operand} not"
 
@@ -1093,6 +1507,7 @@ def convert_expr(
             current_function,
             local_vars,
             literals_in_scope,
+            force_std,
         )
         return f"{operand} -1 *"
 

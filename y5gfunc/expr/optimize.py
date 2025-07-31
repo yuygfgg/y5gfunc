@@ -1,22 +1,21 @@
 from typing import Optional, Union, Any
 import math
 from functools import lru_cache
-from ..utils import (
+from .utils import (
     _UNARY_OPS,
     _BINARY_OPS,
     _TERNARY_OPS,
     _CLAMP_OPS,
     _REL_STATIC_PATTERN_POSTFIX,
-    _HEX_PATTERN,
-    _HEX_PARTS_PATTERN,
-    _OCTAL_PATTERN,
     is_token_numeric,
     tokenize_expr,
+    parse_numeric,
 )
-from .back_end import (
+from .transform import (
     convert_sort,
     convert_var,
     convert_clip_clamp,
+    convert_pi,
 )
 
 
@@ -25,6 +24,8 @@ def optimize_akarin_expr(expr: str) -> str:
     expr = expr.strip()
     if not expr:
         return expr
+
+    expr = convert_pi(expr)
 
     prev_expr = None
     current_expr = expr
@@ -39,53 +40,6 @@ def optimize_akarin_expr(expr: str) -> str:
 
     optimized_expr = convert_dynamic_to_static(current_expr)
     return fold_constants(convert_var(optimized_expr))
-
-
-@lru_cache
-def parse_numeric(token: str) -> Union[int, float]:
-    """Parse a numeric token string to its actual value (int or float)."""
-    if not is_token_numeric(token):
-        raise ValueError(
-            f"parse_numeric: Token '{token}' is not a valid numeric format for parsing."
-        )
-
-    if _HEX_PATTERN.match(token):  # Hexadecimal
-        if "." in token or "p" in token.lower():
-            try:
-                return float.fromhex(token)
-            except ValueError:
-                parts = _HEX_PARTS_PATTERN.match(token.lower())
-                if parts:
-                    integer_part = int(parts.group(1), 16)
-                    fractional_part = 0
-                    if parts.group(2):
-                        frac_hex = parts.group(2)
-                        fractional_part = int(frac_hex, 16) / (16 ** len(frac_hex))
-                    exponent = 0
-                    if parts.group(3):
-                        exponent = int(parts.group(3))
-                    return (integer_part + fractional_part) * (2**exponent)
-                else:
-                    raise ValueError(
-                        f"parse_numeric: Could not parse complex hex token: {token}"
-                    )  # Should not happen
-        else:
-            return int(token, 16)  # Simple hex integer
-    elif (
-        _OCTAL_PATTERN.match(token)
-        and len(token) > 1
-        and all(c in "01234567" for c in token[1:])
-    ):  # Octal
-        return int(token, 8)
-    else:  # Decimal / Scientific / Integer
-        try:
-            if "." in token or "e" in token.lower():
-                return float(token)
-            return int(token)
-        except ValueError:
-            raise ValueError(
-                f"parse_numeric: Internal error: Could not parse supposedly numeric token: {token}"
-            )
 
 
 @lru_cache
@@ -244,12 +198,6 @@ def fold_constants(expr: str) -> str:
             except ValueError:
                 stack.append(None)
                 result_tokens.append(token)
-            i += 1
-            continue
-
-        if token == "pi":
-            stack.append(math.pi)
-            result_tokens.append(token)
             i += 1
             continue
 
@@ -518,7 +466,6 @@ def fold_constants(expr: str) -> str:
                 raise ValueError("fold_constants: Sort count must be positive")
             if len(stack) < n:
                 raise ValueError(f"fold_constants: Stack underflow for {token}")
-            removed = stack[-n:]
             del stack[-n:]
             for _ in range(n):
                 stack.append(None)

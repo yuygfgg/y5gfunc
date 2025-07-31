@@ -1,4 +1,3 @@
-import sys
 from .utils import (
     tokenize_expr,
     _NUMBER_PATTERNS,
