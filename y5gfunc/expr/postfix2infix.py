@@ -11,6 +11,7 @@ from .utils import (
     _SWAP_PATTERN,
     is_clip_postfix,
     is_constant_postfix,
+    ensure_akarin_clip_name,
 )
 
 
@@ -63,9 +64,7 @@ def postfix2infix(expr: str, check_mode: bool = False) -> str:
 
         # Constants
         if is_constant_postfix(token):
-            if token.isalpha() and token.islower() and len(token) == 1:
-                token = f"src{"xyzabcdefghijklmnopqrstuvw".find(token)}" # Convert to srcN
-            push(f"${token}")
+            push(f"${ensure_akarin_clip_name(token)}")
             i += 1
             continue
 
@@ -77,7 +76,9 @@ def postfix2infix(expr: str, check_mode: bool = False) -> str:
 
         # Frame property
         if _FRAME_PROP_PATTERN.match(token):
-            push(token)
+            clip_name = token.split(".")[0]
+            clip_name_akarin = ensure_akarin_clip_name(clip_name)
+            push(f"{clip_name_akarin}.{token.split(".")[1]}")
             i += 1
             continue
 

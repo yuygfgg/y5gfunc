@@ -141,6 +141,14 @@ def is_token_numeric(token: str) -> bool:
 
 
 @lru_cache
+def ensure_akarin_clip_name(token: str) -> str:
+    """Ensure a clip name token is akarin.Expr-style (srcN)."""
+    if token.isalpha() and token.islower() and len(token) == 1:
+        return f"src{"xyzabcdefghijklmnopqrstuvw".find(token)}"
+    return token
+
+
+@lru_cache
 def parse_numeric(token: str) -> Union[int, float]:
     """Parse a numeric token string to its actual value (int or float)."""
     if not is_token_numeric(token):
