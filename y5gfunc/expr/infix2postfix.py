@@ -56,270 +56,239 @@ def infix2postfix(
 
     Refer to ..vfx/ and .expr_utils.py for examples.
 
-    ## General Format
+    ## 1. Introduction
 
-    - **Input Structure:**
-    The source code is written as plain text with one statement per line. User input must not contain semicolons.
+    This document specifies the syntax and semantics of the `y5gfunc` expression language, a domain-specific language designed to be transpiled into postfix notation (Reverse Polish Notation) for use with VapourSynth's `std.Expr` and the enhanced `akarin.Expr`.
 
-    - **Whitespace:**
-    Whitespace (spaces and newlines) is used to separate tokens and statements. Extra spaces are generally ignored.
+    The language provides a familiar C-style infix syntax that supports variables, operators, user-defined functions, and special constructs for video processing.
+    It is designed to be expressive and readable, abstracting away the complexities of writing raw postfix expressions.
 
-    ---
+    ### Modes of Operation
 
-    ## Lexical Elements
+    The transpiler can target two different backends, which affects the set of available features:
 
-    ### Identifiers and Literals
+    -   **Standard Mode (`force_std=True`):** Generates expressions compatible with VapourSynth's built-in `core.std.Expr`. This mode has a restricted feature set.
+    -   **Akarin Mode (`force_std=False`):** (Default) Generates expressions for the more powerful `akarin.Expr`, enabling numerous advanced features.
 
-    - **Identifiers (Variable and Function Names):**
-    - Must start with a letter or an underscore and can be composed of letters, digits, and underscores (matching `[a-zA-Z_]\w*`).
-    - Identifiers starting with the reserved prefix `__internal_` are not allowed in user code (they are used internally for parameter renaming and temporary variables).
-    - Some names are "built-in constants" (see below) and cannot be reassigned.
+    ## 2. Lexical Structure
 
-    - **Constants vs. Variables:**
-    A distinction is made between variables and constants based on a `$` prefix.
-    - **Variables:** Standard identifiers (e.g., `my_var`) are treated as variables. They must be assigned a value before being used.
-    - **Constants:** Identifiers prefixed with a `$` (i.e., `$X`, `$Y`, `$width`, `$height`, `$pi`, etc.) are treated as constants. They are passed as literal values and do not require prior assignment.
+    ### 2.1. Comments
 
-    - **Built-in Constants:**
-    The language defines the following reserved identifiers: (Refer to std.Expr and akarin.Expr documents for more information)
-    - `N` (Akarin Only)
-    - `X` (Akarin Only)
-    - `Y` (Akarin Only)
-    - `width` (Akarin Only)
-    - `height` (Akarin Only)
-    - `pi`
+    Comments begin with a `#` character and extend to the end of the line. They are ignored by the parser.
 
-    In addition, any token that is a single letter (e.g. `a`, `b`) or a string matching `src` followed by digits (e.g. `src1`, `src42`) is considered a source clip. (Note: `srcN` where N > 25 is Akarin Only)
-
-    - **Numeric Literals:**
-    The language supports:  (Refer to akarin.Expr documents for more information)
-    - **Decimal numbers:** Integers (e.g. `123`, `-42`) and floating‑point numbers (e.g. `3.14`, `-0.5` with optional scientific notation).
-    - **Hexadecimal numbers:** Starting with `0x` followed by hexadecimal digits (optionally with a fractional part and a "p‑exponent").
-    - **Octal numbers:** A leading zero followed by octal digits (e.g. `0755`).
-
-    ---
-
-    ## Operators
-
-    ### Binary Operators
-
-    Expressions may contain binary operators that, when converted, yield corresponding postfix tokens. The supported binary operators include:
-
-    - **Logical Operators:**
-    - `||` (logical OR; converted to `or`)
-    - `&&` (logical AND; converted to `and`)
-
-    - **Bitwise Operators:** (Akarin Only)
-        - `&` (bitwise AND; converted to `bitand`)
-        - `|` (bitwise OR; converted to `bitor`)
-        - `^` (bitwise XOR; converted to `bitxor`)
-
-    - **Equality and Relational Operators:**
-    - `==` (equality; converted to `=`)
-    - `!=` (inequality)
-    - Relational: `<`, `>`, `<=`, `>=`
-
-    - **Arithmetic Operators:**
-    - `+` (addition)
-    - `-` (subtraction)
-    - `*` (multiplication)
-    - `/` (division)
-    - `%` (modulus) (Akarin Only)
-    - `**` (exponentiation; converted to `pow`)
-
-    When parsing an infix expression, the algorithm searches for a binary operator at the outer level (i.e. not inside any nested parentheses) and—depending on its position—splits the expression into left and right operands. The order in which the operator candidates are considered effectively defines the operator precedence.
-
-    ### Unary Operators
-
-    - **Negation:**
-    A minus sign (`-`) may be used to denote negative numeric literals; if used before an expression that is not a literal number, it is interpreted as multiplying the operand by -1.
-
-    - **Logical NOT:**
-    An exclamation mark (`!`) is used as a unary operator for logical NOT. For example, `!expr` is converted to postfix by appending the operator `not` to the processed operand.
-
-    ### Ternary Operator
-
-    - **Conditional Expression:**
-    The language supports a ternary operator with the syntax:
     ```
-    condition ? true_expression : false_expression
+    # This is a comment.
+    a = 1 # This is an inline comment.
     ```
-    The operator first evaluates the condition; then based on its result, it selects either the true or false branch. In the conversion process, the three expressions are translated to a corresponding postfix form followed by a `?` token.
 
-    ---
+    ### 2.2. Whitespace
 
-    ## Grouping
+    Whitespace characters (spaces, tabs, newlines) are used to separate tokens. Multiple whitespace characters are treated as a single separator. Newlines are significant as they terminate statements.
 
-    - **Parentheses:**
-    Parentheses `(` and `)` can be used to override the default evaluation order. If an entire expression is wrapped in parentheses, the outer pair is stripped prior to further conversion.
+    ### 2.3. Identifiers
 
-    ---
+    Identifiers are used for naming variables and functions.
 
-    ## Function Calls and Built-in Functions
+    -   **Rules:** Must begin with a letter (`a-z`, `A-Z`) or an underscore (`_`) and can be followed by any number of letters, digits, or underscores. The pattern is `[a-zA-Z_]\w*`.
+    -   **Case-Sensitivity:** Identifiers are case-sensitive. `myVar` and `myvar` are different.
+    -   **Reserved Prefix:** Identifiers starting with `__internal_` are reserved for internal use by the transpiler and must not be used in user code.
 
-    ### General Function Call Syntax
+    ### 2.4. Literals
 
-    - **Invocation:**
-    Functions are called using the usual form:
+    #### Numeric Literals
+
+    The language supports several formats for numeric constants:
+
+    -   **Decimal:** Standard integers (`100`, `-42`) and floating-point numbers (`3.14`, `-0.5`, `1.2e-5`).
+    -   **Hexadecimal:** Prefixed with `0x`. Can include a fractional part and a binary exponent (`p-exponent`). Examples: `0xFF`, `0x1.9p-2`.
+    -   **Octal:** Prefixed with a leading `0`. Example: `0755`.
+
+    ## 3. Program Structure
+
+    A program is a script composed of one or more statements.
+
+    ### 3.1. Statements
+
+    -   Statements are written one per line.
+    -   The use of semicolons (`;`) to terminate or separate statements is forbidden and will result in a syntax error.
+
+    #### Assignment Statements
+
+    An assignment statement computes the value of an expression and stores it in a variable.
+
+    -   **Syntax:** `variable = expression`
+    -   The stack must be balanced after an assignment (i.e., the expression must result in exactly one value).
+
+    #### Expression Statements
+
+    A statement can consist of a single expression, such as a function call that does not return a value. The expression is evaluated, and its result is discarded. The net stack effect of such a statement must be zero.
+
     ```
-    functionName(arg1, arg2, …)
+    # Assignment statement
+    my_var = 10 * 2
+
+    # Expression statement (assuming 'my_func' has no return value)
+    my_func(my_var)
     ```
-    The argument list must be properly parenthesized and can contain nested expressions. The arguments are parsed by taking into account nested parentheses and brackets.
 
-    - **Builtin Function Examples:**
-    Some functions are specially handled and have fixed argument counts:
+    ### 3.2. Final Result
 
-    - **Unary Functions:**
-        - `sin(x)`
-        - `cos(x)`
-        - `round(x)` (Akarin Only)
-        - `floor(x)` (Akarin Only)
-        - `abs(x)`
-        - `sqrt(x)`
-        - `trunc(x)`
-        - `bitnot(x)` (Akarin Only)
-        - `not(x)`
+    To produce a final output from the script, a value must be assigned to the special variable `RESULT`. This assignment is typically the last statement in the global scope.
 
-    - **Binary Functions:**
-        - `min(a, b)`
-        - `max(a, b)`
-
-    - **Ternary Functions:**
-        - `clamp(a, b, c)`
-        - `dyn(a, b, c)` (Akarin Only)
-        Again, in the case of `dyn` the first argument must be a valid source clip.
-        In addition, an extra optimizing will be performed to convert dynamic access (`dyn`) to static access (see below) if possible for potentially higher performance.
-
-    - **Special Pattern – nth_N Functions:**
-        Function names matching the pattern `nth_<number>` (for example, `nth_2`) are supported. They require at least N arguments and returns the Nth smallest of the arguments (e.g. `nth_1(a, b, c, d)` returns the smallest one of `a`, `b`, `c` and `d`).
-
-    ### Custom Function Definitions
-
-    - **Syntax:**
-    Functions are defined as follows:
     ```
-    function functionName(param1, param2, …) {
-        // function body
-        return expression // optional
+    # ... calculations ...
+    RESULT = final_value
+    ```
+
+    ## 4. Variables and Constants
+
+    ### 4.1. Variables
+
+    -   **Declaration:** Variables are declared implicitly upon their first assignment.
+    -   **Usage:** A variable must be assigned a value before it is used in an expression. Using an undefined variable will result in a syntax error.
+
+    ### 4.2. Constants
+
+    Constants represent fixed values and are **always** identified by a `$` prefix. They are treated as literal values and do not require prior assignment.
+
+    ### 4.3. Built-in Constants
+
+    The language provides several built-in constants.
+
+    | Constant | Description | Availability |
+    | :--- | :--- | :--- |
+    | `$pi` | The value of π. | All modes |
+    | `$N` | The current frame number. | Akarin Only |
+    | `$X` | The current column coordinate. | Akarin Only |
+    | `$Y` | The current row coordinate. | Akarin Only |
+    | `$width` | The width of the video plane (chroma-subsampling counted). | Akarin Only |
+    | `$height` | The height of the video plane (chroma-subsampling counted). | Akarin Only |
+
+    ### 4.4. Source Clips
+
+    Source clips are special constants used to reference input video clips. They must be prefixed with a `$`.
+
+    1.  **Single Letters:** Any single lowercase letter prefixed with `$` (e.g., `$a`, `$b`).
+    2.  **`src` Prefixed:** The identifier `src` followed by one or more digits, prefixed with `$` (e.g., `$src1`, `$src42`).
+        -   In **Standard Mode**, only `$src0` through `$src25` are available.
+        -   In **Akarin Mode**, this range is extended.
+
+    Example: `my_pixel_value = $a[0, 0]`
+
+    ## 5. Operators
+
+    Operators are left-associative, except for the unary and ternary operators. The following table lists operators in order of precedence, from lowest to highest.
+
+    | Precedence | Operator | Description | Arity | Associativity | Availability |
+    | :--- | :--- | :--- | :--- |:--- |:--- |
+    | 1 | `||` | Logical OR | Binary | Left | All modes |
+    | 2 | `&&` | Logical AND | Binary | Left | All modes |
+    | 3 | `\|` | Bitwise OR | Binary | Left | Akarin Only |
+    | | `^` | Bitwise XOR | Binary | Left | Akarin Only |
+    | | `&` | Bitwise AND | Binary | Left | Akarin Only |
+    | 4 | `<`, `<=`, `>` `>=` | Relational | Binary | Left | All modes |
+    | 5 | `==`, `!=` | Equality | Binary | Left | All modes |
+    | 6 | `+`, `-` | Addition, Subtraction | Binary | Left | All modes |
+    | 7 | `*`, `/` | Multiplication, Division | Binary | Left | All modes |
+    | | `%` | Modulus | Binary | Left | Akarin Only |
+    | 8 | `**` | Exponentiation (Power) | Binary | Left | All modes |
+    | 9 | `-` | Negation | Unary | Right | All modes |
+    | | `!` | Logical NOT | Unary | Right | All modes |
+    | 10 | `? :` | Ternary Conditional | Ternary| Right | All modes |
+
+    ## 6. Functions
+
+    ### 6.1. Function Calls
+
+    Functions are called using standard syntax: `functionName(argument1, argument2, ...)`
+
+    ### 6.2. Built-in Functions
+
+    | Function | Arity | Description | Availability |
+    | :--- | :--- | :--- | :--- |
+    | `sin`, `cos`, `log`, `exp` | 1 | Standard trigonometric and logarithmic functions. | All modes |
+    | `sqrt`, `abs`| 1 | Square root, absolute value. | All modes |
+    | `trunc` | 1 | Truncation. | Akarin Only |
+    | `not` | 1 | Logical NOT. | All modes |
+    | `bitnot` | 1 | Bitwise NOT. | Akarin Only |
+    | `min`, `max` | 2 | Returns the minimum or maximum of two values. | All modes |
+    | `clamp` | 3 | `clamp(x, min_val, max_val)` | All modes |
+    | `round`, `floor` | 1 | Round to nearest integer, round down. | Akarin Only |
+    | `dyn` | 3 | Dynamic relative pixel access. See Section 8. | Akarin Only |
+    | `nth_N` | `M` (where M≥N) | `nth_3(a, b, c, d)` finds the 3rd smallest value. | All modes |
+
+    ### 6.3. User-Defined Functions
+
+    -   **Definition:**
+        ```
+        function functionName(param1, param2) {
+            // Body of the function
+            local_var = param1 * param2
+            return local_var + 10
+        }
+        ```
+    -   **Return Statement:** A function can have at most one `return` statement, which must be the last non-empty statement in its body. If a function has no `return` statement, it produces no value.
+    -   **Parameters:** Function parameters are read-only and cannot be reassigned within the function body.
+    -   **Inlining:** Function calls are effectively inlined at compile time. Recursion is not supported.
+    -   **Nesting:** Function definitions cannot be nested.
+
+    ### 6.4. Standard Library
+
+    A set of additional mathematical functions are available through the provided `math_functions` utility. These are implemented as user-defined functions and include `atan`, `atan2`, `sinh`, `cosh`, `tgamma`, `erf`, `cbrt`, and more. They can be prepended to user code to be made available.
+
+    ## 7. Scope and Globals
+
+    ### 7.1. Scopes
+
+    -   **Global Scope:** Variables defined at the top level of the script.
+    -   **Function Scope:** Each function has its own local scope. This includes its parameters and any variables assigned within its body.
+
+    ### 7.2. Global Variable Access
+
+    By default, functions operate in an isolated scope and cannot access global variables. This behavior can be modified with a global declaration placed immediately before a function definition.
+
+    -   **` <global.none> `:** (Default) The function cannot access any global variables.
+    -   **` <global.all> `:** The function can access any global variable defined in the script at the time of the function's call.
+    -   **` <global<var1><var2>...> `:** The function can access only the specified global variables.
+
+    **Example:**
+    ```
+    <global<my_global>>
+    function useGlobal(x) {
+        return x + my_global # Accesses global 'my_global'
     }
+
+    my_global = 100
+    RESULT = useGlobal(5) # Evaluates to 105
     ```
-    - **Requirements and Checks:**
-    - The parameter names must be unique, and none may begin with the reserved prefix `__internal_`.
-    - The function body may span several lines. It can contain assignment statements and expression evaluations.
-    - There must be at most one return statement, and if it exists, it must be the last (non-empty) statement in the function body.
-    - Defining functions inside another function is not currently supported.
 
-    ---
+    -   Any global variable a function depends on must be defined before that function is called.
 
-    ## Global Declarations and Assignments
+    ## 8. Special Constructs (Akarin Mode Only)
 
-    ### Global Declarations
+    ### 8.1. Frame Property Access
 
-    - **Syntax:**
-    Global variables may be declared on a dedicated line immediately preceding a function definition. Three formats are supported:
+    Read a property from a clip's frame properties.
 
-    1.  **Specific Globals:** To declare a specific set of global variables for a function:
-        ```
-        <global<var1><var2>…>
-        ```
-        The declared names (`var1`, `var2`, etc.) are recorded as the only global variables accessible by that function.
+    -   **Syntax:** `clip.propname`
+    -   `clip` must be a valid source clip identifier (e.g., `$a`, `$src1`), but without the `$` prefix. For example: `a.propname` or `src1._Matrix`.
 
-    2.  **All Globals:** To allow a function to access all currently defined global variables:
-        ```
-        <global.all>
-        ```
-        This makes any global variable defined in the top-level scope available within the function.
+    ### 8.2. Static Relative Pixel Access
 
-    3.  **No Globals:** To explicitly prevent a function from accessing any global variables:
-        ```
-        <global.none>
-        ```
-        This is the **default behavior** if no global declaration is provided for a function.
+    Access a pixel from a source clip at a fixed, constant offset from the current coordinate (`X`, `Y`).
 
-    - **Placement:**
-    A global declaration must immediately precede the `function` definition it applies to.
+    -   **Syntax:** `$clip[offsetX, offsetY]`
+    -   `$clip` must be a source clip constant.
+    -   `offsetX` and `offsetY` must be integer literals.
 
-    ### Assignment Statements
+    ### 8.3. Dynamic Relative Pixel Access
 
-    - **Global Assignments:**
-    A top-level assignment statement uses the syntax:
-    ```
-    variable = expression
-    ```
-    The left-hand side (`variable`) must not be a built-in constant or otherwise reserved. The expression on the right-hand side is converted to its postfix form. Internally, the assignment is marked by appending an exclamation mark (`!`) to indicate that the result is stored in that variable.
+    Access a pixel from a source clip at a dynamically calculated coordinate. This is achieved via the `dyn` built-in function.
 
-    - **Variable Usage Rules:**
-    Variables must be defined (assigned) before they are referenced in expressions. Otherwise, a syntax error will be raised.
+    -   **Syntax:** `dyn($clip, x_expr, y_expr)`
+    -   `$clip` must be a source clip constant.
+    -   `x_expr` and `y_expr` can be any valid expressions that evaluate to the desired coordinates.
 
-    ---
-
-    ## Special Constructs
-
-    ### Frame Property Access (Akarin Only)
-
-    - **Syntax:**
-    To access a frame property from a source clip, use dot notation:
-    ```
-    clip.propname
-    ```
-    - `clip` must be a valid source clip.
-    - `propname` is the name of the property.
-
-    ### Static Relative Pixel Access (Akarin Only)
-
-    - **Syntax:**
-    For accessing a pixel value relative to a source clip, the expression can take the following form:
-    ```
-    clip[statX, statY]
-    ```
-    where:
-    - `clip` is a valid source clip. The clip can be specified as a constant (e.g., `$src1`).
-    - `statX` and `statY` are integer literals specifying the x and y offsets, and
-    - An optional suffix (`:m` or `:c`) may follow the closing bracket.
-
-    - **Validation:**
-    The indices must be numeric constants (no expressions allowed inside the brackets).
-
-    ---
-
-    ## Operator Precedence and Expression Parsing
-
-    - **Precedence Determination:**
-    When converting infix to postfix, the parser searches the expression (tracking parenthesis nesting) for a binary operator at the outer level. The operators are considered in the following order (which effectively sets their precedence):
-
-    1. Logical OR: `||`
-    2. Logical AND: `&&`
-    3. Bitwise Operators: `&`, `|`, `^` (Akarin Only)
-    4. Relational: `<`, `<=`, `>`, `>=`
-    5. Equality: `==`
-    6. Inequality: `!=`
-    7. Addition and Subtraction: `+`, `-`
-    8. Multiplication, Division, and Modulus: `*`, `/`, `%` (`%` is Akarin Only)
-    9. Exponentiation: `**`
-
-    The conversion function finds the **last occurrence** of an operator at the outer level for splitting the expression. Parentheses can be used to override this behavior.
-
-    - **Ternary Operator:**
-    The C-style ternary operator (`? :`) is supported.
-
-    ---
-
-    ## Error Checks and Restrictions
-
-    - **Semicolon Usage:**
-    The input may not contain semicolons.
-
-    - **Naming Restrictions:**
-    Variables, function names, and parameters must not use reserved names (such as built-in constants or names beginning with `__internal_`).
-
-    - **Global Dependencies:**
-    For functions that use global variables (declared using `<global<...>>` or `<global.all>`), the referenced global variables must be defined in the global scope before any call to that function.
-
-    - **Function Return:**
-    Each function definition must have at most one return statement, and if it exists, it must be the last statement in the function.
-
-    - **Argument Counts:**
-    Function calls (both built-in and custom) check that the exact number of required arguments is provided; otherwise, a syntax error is raised.
     """
 
     # Remove comments
@@ -936,7 +905,7 @@ def check_std_compatibility(
             current_function,
         )
 
-    akarin_only_funcs = {"round", "floor", "bitnot", "dyn"}
+    akarin_only_funcs = {"round", "floor", "bitnot", "dyn", "trunc"}
     if func_name in akarin_only_funcs:
         raise SyntaxError(
             f"Function '{func_name}' is Akarin Only and not supported in std.Expr mode.",
