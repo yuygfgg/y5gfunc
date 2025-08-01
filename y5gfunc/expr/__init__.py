@@ -13,7 +13,7 @@ from .transform import (
     to_std_expr,
 )
 from .verify import verify_akarin_expr, verify_std_expr
-from .optimize import optimize_akarin_expr
+from .optimize import optimize_akarin_expr, OptimizeLevel
 
 from .expr_utils import math_functions
 from .utils import ex_planes, parse_numeric
@@ -35,6 +35,7 @@ __all__ = [
     "math_functions",
     "verify_akarin_expr",
     "verify_std_expr",
+    "OptimizeLevel",
 ]
 
 # FIXME: refactor `str` and `list[str]` based data structure to specific classes and enums.

@@ -1,5 +1,6 @@
 from typing import Optional, Union, Any
 import math
+from enum import IntEnum
 from functools import lru_cache
 from .utils import (
     _UNARY_OPS,
@@ -14,37 +15,74 @@ from .utils import (
 from .transform import (
     convert_sort,
     convert_var,
-    convert_clip_clamp,
     convert_pi,
 )
 
 
-def optimize_akarin_expr(expr: str) -> str:
+class OptimizeLevel(IntEnum):
+    """
+    Optimization level.
+
+    Attributes:
+        O0: No optimization.
+        O1: Basic constant folding that preserves all variables.
+        O2: Slightly more aggressive optimization that may remove some variables.
+        O3: Aggressive optimization that sacrifices readability for performance.
+        OFast: Most aggressive optimization that may slightly change the result. (Generally more accurate though)
+    """
+
+    O0 = 0
+    O1 = 1
+    O2 = 2
+    O3 = 3
+    OFast = 4
+
+
+def optimize_akarin_expr(
+    expr: str, optimize_level: OptimizeLevel = OptimizeLevel.OFast
+) -> str:
     """Fold constants and convert dynamic pixel access to static when possible."""
     expr = expr.strip()
     if not expr:
         return expr
 
-    expr = convert_pi(expr)
+    if optimize_level == OptimizeLevel.O0:
+        return expr
+
+    expr = convert_sort(expr)
+
+    if optimize_level == OptimizeLevel.OFast:
+        expr = convert_pi(expr)
 
     prev_expr = None
     current_expr = expr
 
     while prev_expr != current_expr:
         prev_expr = current_expr
-        current_expr = convert_sort(
-            convert_clip_clamp(
-                eliminate_immediate_store_load(fold_constants(current_expr))
-            )
+        current_expr = (
+            eliminate_immediate_store_load(fold_constants(current_expr, optimize_level))
+            if optimize_level >= OptimizeLevel.O2
+            else fold_constants(current_expr, optimize_level)
         )
 
     optimized_expr = convert_dynamic_to_static(current_expr)
-    return fold_constants(convert_var(optimized_expr))
+    return (
+        fold_constants(convert_var(optimized_expr), optimize_level)
+        if optimize_level >= OptimizeLevel.O3
+        else optimized_expr
+    )
 
 
 @lru_cache
-def calculate_unary(op: str, a: Union[int, float]) -> Optional[Union[int, float]]:
+def calculate_unary(
+    op: str, a: Union[int, float], optimize_level: OptimizeLevel
+) -> Optional[Union[int, float]]:
     """Calculate result of unary operation"""
+    ofast_only_ops = {"exp", "log", "sqrt", "sin", "cos"}
+
+    if op in ofast_only_ops and optimize_level < OptimizeLevel.OFast:
+        return None
+
     operators = {
         "exp": math.exp,
         "log": math.log,
@@ -179,7 +217,9 @@ def format_number(num: Union[int, float]) -> str:
         return formatted
 
 
-def fold_constants(expr: str) -> str:
+def fold_constants(
+    expr: str, optimize_level: OptimizeLevel = OptimizeLevel.OFast
+) -> str:
     """Perform constant folding optimization"""
     tokens = tokenize_expr(expr)
     stack: list[Any] = []
@@ -251,7 +291,7 @@ def fold_constants(expr: str) -> str:
                 if isinstance(op1_stack_val, (int, float)) and is_token_numeric(
                     op1_token
                 ):
-                    result = calculate_unary(token, op1_stack_val)
+                    result = calculate_unary(token, op1_stack_val, optimize_level)
                     if result is not None:
                         stack.pop()
                         stack.append(result)

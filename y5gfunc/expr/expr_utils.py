@@ -35,7 +35,7 @@ function atan(var) {
     pp = fma(pp, ss, -3.3333333333331838e-1)
     pp = fma(pp * ss, aa, aa)
     rr = (zz > 1) ? fma(0.93282184640716537, 1.6839188885261840, -pp): pp
-    return copysign (rr, var)
+    return copysign(rr, var)
 }
 
 function atan2(var_y, var_x) {

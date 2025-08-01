@@ -8,7 +8,7 @@ from .utils import (
     is_constant_infix,
     is_token_numeric,
 )
-from .optimize import optimize_akarin_expr
+from .optimize import optimize_akarin_expr, OptimizeLevel
 from .transform import to_std_expr
 from .verify import verify_std_expr, verify_akarin_expr
 import regex as re
@@ -36,22 +36,23 @@ class GlobalMode(StrEnum):
 
 
 def infix2postfix(
-    infix_code: str, optimize: bool = True, force_std: bool = False
+    infix_code: str,
+    force_std: bool = False,
+    optimize_level: OptimizeLevel = OptimizeLevel.OFast,
 ) -> str:
     R"""
     Convert infix expressions to postfix expressions.
 
     Args:
         infix_code: Input infix code.
-        optimize: Whether to optimize the expression.
-        force_std: Whether to force the expression to be converted to std.Expr.
+        force_std: Whether to force the converted expr to be std.Expr compatible.
+        optimize_level: Optimization level of generated expr.
 
     Returns:
         Converted postfix expr.
 
     Raises:
         SyntaxError: If infix code failed to convert to postfix expr.
-        ValueError: If the expression is invalid (failed to generate for specified backend).
 
     Refer to ..vfx/ and .expr_utils.py for examples.
 
@@ -584,8 +585,7 @@ def infix2postfix(
 
     ret = final_result + " RESULT@"
 
-    if optimize:
-        ret = optimize_akarin_expr(ret)
+    ret = optimize_akarin_expr(ret, optimize_level)
 
     if force_std:
         ret = to_std_expr(ret)
