@@ -168,10 +168,17 @@ def infix2postfix(
 
     Source clips are special constants used to reference input video clips. They must be prefixed with a `$`.
 
-    1.  **Single Letters:** Any single lowercase letter prefixed with `$` (e.g., `$a`, `$b`).
-    2.  **`src` Prefixed:** The identifier `src` followed by one or more digits, prefixed with `$` (e.g., `$src1`, `$src42`).
-        -   In **Standard Mode**, only `$src0` through `$src25` are available.
-        -   In **Akarin Mode**, this range is extended.
+    Source clips can be referenced in two equivalent ways:
+    
+    1.  **Single Letters:** The lowercase letters `xyzabcdefghijklmnopqrstuvw` are aliases for `src0` through `src25` respectively:
+        - `$x` is equivalent to `$src0`
+        - `$y` is equivalent to `$src1`
+        - `$z` is equivalent to `$src2`
+        - And so on through `$w` which is equivalent to `$src25`
+    
+    2.  **`src` Prefixed:** The identifier `src` followed by one or more digits, prefixed with `$` (e.g., `$src0`, `$src1`).
+        -   In **Standard Mode**, only `$src0` through `$src25` (or their letter aliases) are available.
+        -   In **Akarin Mode**, this range is extended beyond `$src25`.
 
     Example: `my_pixel_value = $a[0, 0]`
 
@@ -183,7 +190,7 @@ def infix2postfix(
     | :--- | :--- | :--- | :--- |:--- |:--- |
     | 1 | `||` | Logical OR | Binary | Left | All modes |
     | 2 | `&&` | Logical AND | Binary | Left | All modes |
-    | 3 | `\|` | Bitwise OR | Binary | Left | Akarin Only |
+    | 3 | `|` | Bitwise OR | Binary | Left | Akarin Only |
     | | `^` | Bitwise XOR | Binary | Left | Akarin Only |
     | | `&` | Bitwise AND | Binary | Left | Akarin Only |
     | 4 | `<`, `<=`, `>` `>=` | Relational | Binary | Left | All modes |
