@@ -1,7 +1,6 @@
 import regex as re
 from functools import lru_cache
-from vstools import vs
-from typing import Union, Optional
+from typing import Union
 
 _UNARY_OPS = {
     "exp",
@@ -75,7 +74,7 @@ _OCTAL_PATTERN = re.compile(r"^0[0-7]")
 _DROP_PATTERN = re.compile(r"^drop([1-9]\d*)?$")
 _CLIP_NAME_PATTERN = re.compile(r"(?:[a-z]|src\d+)$")
 _SRC_PATTERN = re.compile(r"^src\d+$")
-_FRAME_PROP_PATTERN = re.compile(r"^[a-zA-Z]\w*\.[a-zA-Z]\w*$")
+_FRAME_PROP_PATTERN = re.compile(r"^[a-zA-Z_]\w*\.[a-zA-Z_]\w*$")
 _STATIC_PIXEL_PATTERN = re.compile(
     r"^([a-zA-Z]\w*)\[\s*(-?\d+)\s*,\s*(-?\d+)\s*\](\:\w+)?$"
 )
@@ -96,34 +95,7 @@ def is_clip_postfix(token: str) -> bool:
 @lru_cache
 def is_clip_infix(token: str) -> bool:
     """Check if a token string represents a clip."""
-    return _CLIP_NAME_PATTERN.match(token.lstrip("$")) is not None and token.startswith(
-        "$"
-    )
-
-
-@lru_cache
-def is_constant_infix(token: str) -> bool:
-    """
-    Check if the token is a built-in constant (must start with $).
-    """
-    if not token.startswith("$"):
-        return False
-
-    # Remove the $ prefix and check if it's a valid constant
-    constant_name = token[1:]
-    constants_set = {
-        "N",
-        "X",
-        "Y",
-        "width",
-        "height",
-        "pi",
-    }
-    if constant_name in constants_set:
-        return True
-    if is_clip_postfix(constant_name):
-        return True
-    return False
+    return is_clip_postfix(token.lstrip("$")) and token.startswith("$")
 
 
 @lru_cache
@@ -144,6 +116,14 @@ def is_constant_postfix(token: str) -> bool:
     if is_clip_postfix(token):
         return True
     return False
+
+
+@lru_cache
+def is_constant_infix(token: str) -> bool:
+    """
+    Check if the token is a built-in constant
+    """
+    return is_constant_postfix(token.lstrip("$")) and token.startswith("$")
 
 
 @lru_cache
@@ -259,6 +239,7 @@ def get_stack_effect(token: str) -> int:
         is_token_numeric(token)
         or _REL_STATIC_PATTERN_POSTFIX.match(token)
         or is_constant_postfix(token)
+        or _FRAME_PROP_PATTERN.match(token)
         or (
             token.startswith("dup") and not (token.endswith("!") or token.endswith("@"))
         )
@@ -366,14 +347,3 @@ def get_used_variable_names(tokens: Union[list[str], str]) -> set[str]:
         for varname in tokens
         if varname.endswith("!") or varname.endswith("@")
     )
-
-
-# modified from jvsfunc.ex_planes()
-def ex_planes(
-    clip: vs.VideoNode, expr: list[str], planes: Optional[Union[int, list[int]]] = None
-) -> list[str]:
-    if planes:
-        plane_range = range(clip.format.num_planes)
-        planes = [planes] if isinstance(planes, int) else planes
-        expr = [expr[0] if i in planes else "" for i in plane_range]
-    return expr

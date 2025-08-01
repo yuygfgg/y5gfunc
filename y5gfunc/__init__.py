@@ -8,7 +8,6 @@ from .expr import (
     to_std_expr,
     optimize_akarin_expr,
     math_functions,
-    ex_planes,
     convert_drop,
     convert_sort,
     convert_var,
@@ -18,6 +17,8 @@ from .expr import (
     verify_akarin_expr,
     verify_std_expr,
     OptimizeLevel,
+    emulate_expr,
+    ConstantValues
 )
 from .filter import (
     sakiko_deband,
@@ -143,7 +144,6 @@ __all__ = [
     "to_std_expr",
     "optimize_akarin_expr",
     "math_functions",
-    "ex_planes",
     "sakiko_deband",
     "SynDeband",
     "BM3DPreset",
@@ -245,4 +245,6 @@ __all__ = [
     "verify_akarin_expr",
     "verify_std_expr",
     "OptimizeLevel",
+    "emulate_expr",
+    "ConstantValues"
 ]

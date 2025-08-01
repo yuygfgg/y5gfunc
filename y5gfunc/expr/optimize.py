@@ -84,11 +84,11 @@ def calculate_unary(
         return None
 
     operators = {
-        "exp": math.exp,
-        "log": math.log,
-        "sqrt": math.sqrt,
-        "sin": math.sin,
-        "cos": math.cos,
+        "exp": math.exp,  # OFast only
+        "log": math.log,  # OFast only
+        "sqrt": math.sqrt,  # OFast only
+        "sin": math.sin,  # OFast only
+        "cos": math.cos,  # OFast only
         "abs": abs,
         "not": lambda x: 0.0 if float(x) > 0.0 else 1.0,
         "bitnot": lambda x: ~int(x),  # Integer specific

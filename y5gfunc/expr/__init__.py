@@ -14,9 +14,8 @@ from .transform import (
 )
 from .verify import verify_akarin_expr, verify_std_expr
 from .optimize import optimize_akarin_expr, OptimizeLevel
-
 from .expr_utils import math_functions
-from .utils import ex_planes, parse_numeric
+from .emulator import emulate_expr, ConstantValues
 
 __all__ = [
     "postfix2infix",
@@ -30,12 +29,13 @@ __all__ = [
     "convert_pow",
     "convert_clip_clamp",
     "convert_number",
-    "parse_numeric",
-    "ex_planes",
     "math_functions",
     "verify_akarin_expr",
     "verify_std_expr",
     "OptimizeLevel",
+    "emulate_expr",
+    "ConstantValues",
 ]
 
 # FIXME: refactor `str` and `list[str]` based data structure to specific classes and enums.
+# TODO: stop treating `bitnot` differently from other unary operators as a function.

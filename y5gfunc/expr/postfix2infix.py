@@ -1,7 +1,6 @@
 from .utils import (
     tokenize_expr,
     _NUMBER_PATTERNS,
-    _SRC_PATTERN,
     _FRAME_PROP_PATTERN,
     _STATIC_PIXEL_PATTERN,
     _VAR_STORE_PATTERN,
@@ -62,23 +61,17 @@ def postfix2infix(expr: str, check_mode: bool = False) -> str:
 
         token = tokens[i]
 
-        # Single letter
-        if token.isalpha() and len(token) == 1:
-            # Add $ prefix for clip identifiers
-            token_name = f"${token}" if is_clip_postfix(token) else token
-            push(token_name)
+        # Constants
+        if is_constant_postfix(token):
+            if token.isalpha() and token.islower() and len(token) == 1:
+                token = f"src{"xyzabcdefghijklmnopqrstuvw".find(token)}" # Convert to srcN
+            push(f"${token}")
             i += 1
             continue
 
         # Numbers
         if any(pattern.match(token) for pattern in _NUMBER_PATTERNS):
             push(token)
-            i += 1
-            continue
-
-        # Source clips (srcN)
-        if _SRC_PATTERN.match(token):
-            push(f"${token}")
             i += 1
             continue
 
@@ -189,12 +182,6 @@ def postfix2infix(expr: str, check_mode: bool = False) -> str:
                 )
             else:
                 stack[-1], stack[-1 - n] = stack[-1 - n], stack[-1]
-            i += 1
-            continue
-
-        # Special constants (now with $ prefix)
-        if is_constant_postfix(token):
-            push(token)
             i += 1
             continue
 

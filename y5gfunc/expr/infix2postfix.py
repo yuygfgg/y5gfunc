@@ -169,13 +169,13 @@ def infix2postfix(
     Source clips are special constants used to reference input video clips. They must be prefixed with a `$`.
 
     Source clips can be referenced in two equivalent ways:
-    
+
     1.  **Single Letters:** The lowercase letters `xyzabcdefghijklmnopqrstuvw` are aliases for `src0` through `src25` respectively:
         - `$x` is equivalent to `$src0`
         - `$y` is equivalent to `$src1`
         - `$z` is equivalent to `$src2`
         - And so on through `$w` which is equivalent to `$src25`
-    
+
     2.  **`src` Prefixed:** The identifier `src` followed by one or more digits, prefixed with `$` (e.g., `$src0`, `$src1`).
         -   In **Standard Mode**, only `$src0` through `$src25` (or their letter aliases) are available.
         -   In **Akarin Mode**, this range is extended beyond `$src25`.
@@ -580,8 +580,8 @@ _FUNC_PATTERN = re.compile(r"function\s+(\w+)")
 _GLOBAL_DECL_PATTERN = re.compile(r"^<global(.*)>$")
 _FUNCTION_DEF_PATTERN = re.compile(r"^\s*function\s+(\w+)\s*\(([^)]*)\)\s*\{")
 _M_CALL_PATTERN = re.compile(r"^(\w+)\s*\(")
-_PROP_ACCESS_PATTERN = re.compile(r"^(\w+)\.([a-zA-Z_]\w*)$")
-_PROP_ACCESS_GENERIC_PATTERN = re.compile(r"([a-zA-Z_]\w*)\.([a-zA-Z_]\w*)")
+_PROP_ACCESS_PATTERN = re.compile(r"^\$?(\w+)\.([a-zA-Z_]\w*)$")
+_PROP_ACCESS_GENERIC_PATTERN = re.compile(r"(\$?[a-zA-Z_]\w*)\.([a-zA-Z_]\w*)")
 _NTH_PATTERN = re.compile(r"^nth_(\d+)$")
 _M_LINE_PATTERN = re.compile(r"^([a-zA-Z_]\w*)\s*=\s*(.+)$")
 _M_STATIC_PATTERN = re.compile(r"^\$?(\w+)\[\s*(-?\d+)\s*,\s*(-?\d+)\s*\](\:\w+)?$")
@@ -961,8 +961,9 @@ def convert_expr(
     prop_access_match = _PROP_ACCESS_PATTERN.match(expr)
     if prop_access_match:
         clip_name = prop_access_match.group(1)
-        if is_clip_infix(clip_name):
-            return expr
+        prop_name = prop_access_match.group(2)
+        if is_clip_infix(f"${clip_name}") or is_clip_infix(clip_name):
+            return f"{clip_name.lstrip('$')}.{prop_name}"
 
     # Check variable usage and validate static relative pixel indices.
     check_variable_usage(
