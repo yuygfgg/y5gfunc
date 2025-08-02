@@ -33,6 +33,14 @@ def emulate_expr(
 
     Returns:
         The result of the expression.
+
+    Raises:
+        ValueError: If the expression contains invalid identifiers or if required constants are not set.
+        ValueError: If the clip names do not follow the expected format.
+        ValueError: If the nth function is called with insufficient arguments.
+        ValueError: If a constant is not set when referenced in the expression.
+        ValueError: If an unknown identifier is encountered in the expression.
+        ValueError: If the clip names do not follow the expected format.
     """
     clip_value = clip_value or {}
     clip_prop = clip_prop or {}
@@ -52,10 +60,6 @@ def emulate_expr(
         "log": math.log,
         "exp": math.exp,
         "sqrt": math.sqrt,
-        "abs": abs,
-        "max": max,
-        "min": min,
-        "round": round,
         "floor": math.floor,
         "trunc": math.trunc,
         "clamp": lambda x, min_val, max_val: max(min_val, min(max_val, x)),
@@ -64,7 +68,9 @@ def emulate_expr(
     def create_nth_function(n):
         def nth_func(*args):
             if len(args) < n:
-                raise ValueError(f"nth_{n} requires at least {n} arguments")
+                raise ValueError(
+                    f"emulate_expr: nth_{n} requires at least {n} arguments"
+                )
             sorted_args = sorted(args)
             return sorted_args[n - 1]
 

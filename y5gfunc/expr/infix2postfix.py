@@ -58,7 +58,7 @@ def infix2postfix(
 
     ## 1. Introduction
 
-    This document specifies the syntax and semantics of the `y5gfunc` expression language, a domain-specific language designed to be transpiled into postfix notation (Reverse Polish Notation) for use with VapourSynth's `std.Expr` and the enhanced `akarin.Expr`.
+    This function implements a simple domain-specific language designed to be transpiled into postfix notation (Reverse Polish Notation) for use with VapourSynth's `std.Expr` and the enhanced `akarin.Expr`.
 
     The language provides a familiar C-style infix syntax that supports variables, operators, user-defined functions, and special constructs for video processing.
     It is designed to be expressive and readable, abstracting away the complexities of writing raw postfix expressions.
@@ -159,8 +159,8 @@ def infix2postfix(
     | :--- | :--- | :--- |
     | `$pi` | The value of π. | All modes |
     | `$N` | The current frame number. | Akarin Only |
-    | `$X` | The current column coordinate. | Akarin Only |
-    | `$Y` | The current row coordinate. | Akarin Only |
+    | `$X` | The current column coordinate (chroma-subsampling counted). | Akarin Only |
+    | `$Y` | The current row coordinate (chroma-subsampling counted). | Akarin Only |
     | `$width` | The width of the video plane (chroma-subsampling counted). | Akarin Only |
     | `$height` | The height of the video plane (chroma-subsampling counted). | Akarin Only |
 
@@ -174,6 +174,7 @@ def infix2postfix(
         - `$x` is equivalent to `$src0`
         - `$y` is equivalent to `$src1`
         - `$z` is equivalent to `$src2`
+        - `$a` is equivalent to `$src3`
         - And so on through `$w` which is equivalent to `$src25`
 
     2.  **`src` Prefixed:** The identifier `src` followed by one or more digits, prefixed with `$` (e.g., `$src0`, `$src1`).
@@ -398,7 +399,6 @@ def infix2postfix(
 
     expanded_code = "\n".join(modified_lines)
 
-    # Replace function definitions with newlines to preserve line numbers.
     functions: dict[str, tuple[list[str], str, int, set[str], bool]] = {}
 
     def replace_function(match: re.Match[str]) -> str:
@@ -1540,7 +1540,7 @@ def convert_expr(
     return expr
 
 
-def find_binary_op(expr: str, op: str):
+def find_binary_op(expr: str, op: str) -> tuple[Optional[str], Optional[str]]:
     """
     Find the last occurrence of the binary operator op at the outer level and return the left and right parts.
     """
