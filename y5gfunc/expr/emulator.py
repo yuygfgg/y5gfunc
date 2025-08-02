@@ -1,8 +1,9 @@
+from .optimize import optimize_akarin_expr
 from .postfix2infix import postfix2infix
-from .utils import is_clip_postfix
+from .infix2postfix import infix2postfix
+from .utils import is_clip_postfix, tokenize_expr, _FRAME_PROP_PATTERN
 from typing import Optional
 import math
-import regex as re
 from dataclasses import dataclass, asdict
 
 
@@ -33,14 +34,9 @@ def emulate_expr(
 
     Returns:
         The result of the expression.
-
+    
     Raises:
-        ValueError: If the expression contains invalid identifiers or if required constants are not set.
-        ValueError: If the clip names do not follow the expected format.
-        ValueError: If the nth function is called with insufficient arguments.
-        ValueError: If a constant is not set when referenced in the expression.
-        ValueError: If an unknown identifier is encountered in the expression.
-        ValueError: If the clip names do not follow the expected format.
+        ValueError: If the expression is invalid or if a clip or property is not found.
     """
     clip_value = clip_value or {}
     clip_prop = clip_prop or {}
@@ -52,57 +48,51 @@ def emulate_expr(
 
     constant_values_dict = asdict(constants)
 
+    expr = optimize_akarin_expr(expr)
     infix_expr = postfix2infix(expr)
+    expanded_expr = infix2postfix(infix_expr)
+    tokens = tokenize_expr(expanded_expr)
 
-    exec_env = {
-        "sin": math.sin,
-        "cos": math.cos,
-        "log": math.log,
-        "exp": math.exp,
-        "sqrt": math.sqrt,
-        "floor": math.floor,
-        "trunc": math.trunc,
-        "clamp": lambda x, min_val, max_val: max(min_val, min(max_val, x)),
-    }
-
-    def create_nth_function(n):
-        def nth_func(*args):
-            if len(args) < n:
-                raise ValueError(
-                    f"emulate_expr: nth_{n} requires at least {n} arguments"
-                )
-            sorted_args = sorted(args)
-            return sorted_args[n - 1]
-
-        return nth_func
-
-    nth_functions = re.findall(r"\bnth_(\d+)\s*\(", infix_expr)
-    for n in set(nth_functions):
-        n = int(n)
-        exec_env[f"nth_{n}"] = create_nth_function(n)
-
-    for clip_name, prop_list in clip_prop.items():
-        for prop_name, prop_value in prop_list:
-            pattern = f"{clip_name}.{prop_name}"
-            infix_expr = infix_expr.replace(pattern, str(float(prop_value)))
-
-    def replace_dollar(match) -> str:
-        identifier = match.group(1)
-
-        if identifier in constant_values_dict:
-            if constant_values_dict[identifier] is not None:
-                return str(float(constant_values_dict[identifier]))
+    for i, token in enumerate(tokens):
+        if is_clip_postfix(token):
+            if token in clip_value:
+                value = clip_value[token]
+                tokens[i] = str(value)
             else:
-                raise ValueError(f"emulate_expr: Constant '{identifier}' is not set.")
+                raise ValueError(
+                    f"emulate_expr: Clip '{token}' not found in provided values or properties."
+                )
+        elif _FRAME_PROP_PATTERN.match(token):
+            clip_name, prop_name = token.split(".")
+            found_prop_val = False
+            for clip_nm, props in clip_prop.items():
+                if clip_nm == clip_name:
+                    for prop in props:
+                        if prop[0] == prop_name:
+                            if not found_prop_val:
+                                found_prop_val = True
+                                tokens[i] = str(prop[1])
+                            else:
+                                raise ValueError(
+                                    f"emulate_expr: Duplicate property '{prop_name}' found for clip '{clip_name}'."
+                                )
+            if not found_prop_val:
+                raise ValueError(
+                    f"emulate_expr: Property '{prop_name}' not found for clip '{clip_name}'."
+                )
+        elif token in {"pi", "N", "X", "Y", "width", "height"}:
+            if token in constant_values_dict:
+                tokens[i] = str(constant_values_dict[token])
+            else:
+                raise ValueError(
+                    f"emulate_expr: Constant '{token}' not found in provided constants."
+                )
 
-        if identifier in clip_value:
-            return str(float(clip_value[identifier]))
+    try:
+        ret = float(optimize_akarin_expr(" ".join(tokens)))
+    except Exception as e:
+        raise ValueError(
+            f"emulate_expr: Error occurred while optimizing expression: {e}"
+        )
 
-        raise ValueError(f"emulate_expr: Unknown identifier: {identifier}")
-
-    infix_expr = re.sub(r"\$([a-zA-Z_]\w*)", replace_dollar, infix_expr)
-    infix_expr = infix_expr.replace("!", "not")
-
-    exec(infix_expr, exec_env)
-
-    return float(exec_env["RESULT"])
+    return ret

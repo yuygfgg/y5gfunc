@@ -281,7 +281,7 @@ def infix2postfix(
     Read a property from a clip's frame properties.
 
     -   **Syntax:** `clip.propname`
-    -   `clip` must be a valid source clip identifier (e.g., `$a`, `$src1`), but without the `$` prefix. For example: `a.propname` or `src1._Matrix`.
+    -   `clip` must be a valid source clip identifier (e.g., `$a`, `$src1`), but the `$` prefix is optional. For example: `$a.propname` or `src1._Matrix`.
 
     ### 8.2. Static Relative Pixel Access
 
@@ -575,7 +575,8 @@ def infix2postfix(
 
     return ret
 
-
+_SCIENTIFIC_E_PATTERN = re.compile(r"(?<=[0-9\.])e(?=[+-]?[0-9])", re.IGNORECASE)
+_HEX_P_PATTERN = re.compile(r"(?<=[0-9a-fA-F\.])p(?=[+-]?[0-9])", re.IGNORECASE)
 _FUNC_CALL_PATTERN = re.compile(r"(\w+)\s*\(")
 _FUNC_INFO_PATTERN = re.compile(r"__internal_([a-zA-Z_]\w*)_([a-zA-Z_]\w+)$")
 _FUNC_PATTERN = re.compile(r"function\s+(\w+)")
@@ -815,7 +816,6 @@ def validate_static_relative_pixel_indices(
                     function_name,
                 )
 
-
 def check_variable_usage(
     expr: str,
     variables: set[str],
@@ -829,9 +829,13 @@ def check_variable_usage(
     In function scope, if local_vars is provided, only local variables are checked.
     """
 
+    # Scientific notation and hexadecimal notation handling
+    expr = _SCIENTIFIC_E_PATTERN.sub(" ", expr)
+    expr = _HEX_P_PATTERN.sub(" ", expr)
+
     def prop_repl(m: re.Match[str]) -> str:
         clip_candidate = m.group(1)
-        if is_clip_infix(clip_candidate):
+        if is_clip_infix(clip_candidate) or is_clip_infix(f"${clip_candidate}"):
             return " "
         return m.group(0)
 

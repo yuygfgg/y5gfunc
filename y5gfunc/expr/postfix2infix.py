@@ -255,7 +255,7 @@ def postfix2infix(expr: str, check_mode: bool = False) -> str:
                 # (a && !b) || (!a && b)
                 push(f"(({a} && !{b}) || (!{a} && {b}))")
             elif token == "=":
-                push(f"{a} == {b}")
+                push(f"({a} == {b})")
             else:
                 push(f"({a} {token} {b})")
             i += 1
