@@ -193,6 +193,7 @@ def infix2postfix(
     | 3 | `|` | Bitwise OR | Binary | Left | Akarin Only |
     | | `^` | Bitwise XOR | Binary | Left | Akarin Only |
     | | `&` | Bitwise AND | Binary | Left | Akarin Only |
+    | | `~` | Bitwise NOT | Unary | Right | Akarin Only |
     | 4 | `<`, `<=`, `>` `>=` | Relational | Binary | Left | All modes |
     | 5 | `==`, `!=` | Equality | Binary | Left | All modes |
     | 6 | `+`, `-` | Addition, Subtraction | Binary | Left | All modes |
@@ -202,6 +203,8 @@ def infix2postfix(
     | 9 | `-` | Negation | Unary | Right | All modes |
     | | `!` | Logical NOT | Unary | Right | All modes |
     | 10 | `? :` | Ternary Conditional | Ternary| Right | All modes |
+
+    Note: Bitwise operators operates on integer values. When operating on floating-point values, operands are first rounded to the nearest integer.
 
     ## 6. Functions
 
@@ -217,7 +220,6 @@ def infix2postfix(
     | `sqrt`, `abs`| 1 | Square root, absolute value. | All modes |
     | `trunc` | 1 | Truncation. | Akarin Only |
     | `not` | 1 | Logical NOT. | All modes |
-    | `bitnot` | 1 | Bitwise NOT. | Akarin Only |
     | `min`, `max` | 2 | Returns the minimum or maximum of two values. | All modes |
     | `clamp` | 3 | `clamp(x, min_val, max_val)` | All modes |
     | `round`, `floor` | 1 | Round to nearest integer, round down. | Akarin Only |
@@ -912,7 +914,7 @@ def check_std_compatibility(
             current_function,
         )
 
-    akarin_only_funcs = {"round", "floor", "bitnot", "dyn", "trunc"}
+    akarin_only_funcs = {"round", "floor", "dyn", "trunc"}
     if func_name in akarin_only_funcs:
         raise SyntaxError(
             f"Function '{func_name}' is Akarin Only and not supported in std.Expr mode.",
@@ -1085,7 +1087,6 @@ def convert_expr(
                 "abs",
                 "sqrt",
                 "trunc",
-                "bitnot",
                 "not",
             ]
             if func_name in builtin_unary:
@@ -1488,6 +1489,26 @@ def convert_expr(
         )
         return f"{operand} -1 *"
 
+    if expr.startswith("~"):
+        if force_std:
+            raise SyntaxError(
+                "Bitwise NOT operator '~' is Akarin Only and not supported in std.Expr mode.",
+                line_num,
+                current_function,
+            )
+        operand = convert_expr(
+            expr[1:],
+            variables,
+            functions,
+            line_num,
+            global_mode_for_functions,
+            current_function,
+            local_vars,
+            literals_in_scope,
+            force_std,
+        )
+        return f"{operand} bitnot"
+
     if is_constant_infix(expr):
         # Remove $ prefix from constants in postfix expression
         return expr[1:]
@@ -1590,7 +1611,6 @@ def is_builtin_function(func_name: str) -> bool:
         "abs",
         "sqrt",
         "trunc",
-        "bitnot",
         "not",
     ]
     builtin_binary = ["min", "max"]

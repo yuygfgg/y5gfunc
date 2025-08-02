@@ -58,8 +58,6 @@ def emulate_expr(
         "round": round,
         "floor": math.floor,
         "trunc": math.trunc,
-        "not": lambda x: 1.0 if not x else 0.0,
-        "bitnot": lambda x: float(~int(x)),
         "clamp": lambda x, min_val, max_val: max(min_val, min(max_val, x)),
     }
 
@@ -97,6 +95,7 @@ def emulate_expr(
         raise ValueError(f"emulate_expr: Unknown identifier: {identifier}")
 
     infix_expr = re.sub(r"\$([a-zA-Z_]\w*)", replace_dollar, infix_expr)
+    infix_expr = infix_expr.replace("!", "not")
 
     exec(infix_expr, exec_env)
 

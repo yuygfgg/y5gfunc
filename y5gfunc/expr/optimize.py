@@ -2,6 +2,7 @@ from typing import Optional, Union, Any
 import math
 from enum import IntEnum
 from functools import lru_cache
+
 from .utils import (
     _UNARY_OPS,
     _BINARY_OPS,
@@ -14,6 +15,7 @@ from .utils import (
 )
 from .transform import (
     convert_sort,
+    convert_drop,
     convert_var,
     convert_pi,
 )
@@ -59,11 +61,13 @@ def optimize_akarin_expr(
 
     while prev_expr != current_expr:
         prev_expr = current_expr
-        current_expr = (
-            eliminate_immediate_store_load(fold_constants(current_expr, optimize_level))
-            if optimize_level >= OptimizeLevel.O2
-            else fold_constants(current_expr, optimize_level)
+        current_expr = eliminate_immediate_store_load(
+            fold_constants(current_expr, optimize_level)
         )
+        if optimize_level >= OptimizeLevel.O2:
+            current_expr = remove_unused_variables(current_expr)
+        if optimize_level >= OptimizeLevel.O3:
+            current_expr = convert_drop(current_expr)
 
     optimized_expr = convert_dynamic_to_static(current_expr)
     return (
@@ -91,7 +95,7 @@ def calculate_unary(
         "cos": math.cos,  # OFast only
         "abs": abs,
         "not": lambda x: 0.0 if float(x) > 0.0 else 1.0,
-        "bitnot": lambda x: ~int(x),  # Integer specific
+        "bitnot": lambda x: ~round(x),  # Integer specific
         "trunc": math.trunc,  # Returns int
         "round": round,  # Returns int if possible
         "floor": math.floor,  # Returns float
@@ -147,9 +151,9 @@ def calculate_binary(
         "or": lambda x, y: 1.0 if float(x) > 0 or float(y) > 0 else 0.0,
         "xor": lambda x, y: 1.0 if (float(x) > 0) != (float(y) > 0) else 0.0,
         "%": lambda x, y: x % y if y != 0 else None,
-        "bitand": lambda x, y: int(x) & int(y),
-        "bitor": lambda x, y: int(x) | int(y),
-        "bitxor": lambda x, y: int(x) ^ int(y),
+        "bitand": lambda x, y: round(x) & round(y),
+        "bitor": lambda x, y: round(x) | round(y),
+        "bitxor": lambda x, y: round(x) ^ round(y),
     }
     if op not in operators:
         return None
@@ -641,9 +645,18 @@ def eliminate_immediate_store_load(expr: str) -> str:
 
             if next_token == expected_load:
                 later_tokens = tokens[i + 2 :]
-                variable_used_later = any(
-                    t == expected_load or t == var_store for t in later_tokens
-                )
+
+                next_load = math.inf
+                next_store = math.inf
+                variable_used_later = False
+                for j, tk in enumerate(later_tokens):
+                    if tk == expected_load:
+                        next_load = min(next_load, j)
+                    elif tk == var_store:
+                        next_store = min(next_store, j)
+
+                if next_load < next_store:
+                    variable_used_later = True
 
                 if not variable_used_later:
                     i += 2
@@ -653,3 +666,31 @@ def eliminate_immediate_store_load(expr: str) -> str:
         i += 1
 
     return " ".join(result_tokens)
+
+
+def remove_unused_variables(expr: str) -> str:
+    """Remove variables that are not used in the expression."""
+    tokens = tokenize_expr(expr)
+    if not tokens:
+        return ""
+
+    result: list[str] = []
+    i = 0
+
+    used_vars = set(tk[:-1] for tk in tokens if tk.endswith("@"))
+
+    while i < len(tokens):
+        token = tokens[i]
+
+        if token.endswith("!"):
+            var_name = token[:-1]
+            if var_name in used_vars:
+                result.append(token)
+            else:
+                result.append("drop")
+        else:
+            result.append(token)
+
+        i += 1
+
+    return " ".join(result)

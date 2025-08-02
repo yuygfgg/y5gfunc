@@ -201,6 +201,8 @@ def postfix2infix(expr: str, check_mode: bool = False) -> str:
             a = pop()
             if token == "not":
                 push(f"(!({a}))")
+            elif token == "bitnot":
+                push(f"(~round({a}))")
             else:
                 push(f"{token}({a})")
             i += 1
@@ -215,11 +217,11 @@ def postfix2infix(expr: str, check_mode: bool = False) -> str:
             elif token in ("**", "pow"):
                 push(f"({a} ** {b})")
             elif token == "bitand":
-                push(f"({a} & {b})")
+                push(f"(round({a}) & round({b}))")
             elif token == "bitor":
-                push(f"({a} | {b})")
+                push(f"(round({a}) | round({b}))")
             elif token == "bitxor":
-                push(f"({a} ^ {b})")
+                push(f"(round({a}) ^ round({b}))")
             i += 1
             continue
 

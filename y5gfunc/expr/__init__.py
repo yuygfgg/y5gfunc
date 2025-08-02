@@ -38,4 +38,3 @@ __all__ = [
 ]
 
 # FIXME: refactor `str` and `list[str]` based data structure to specific classes and enums.
-# TODO: stop treating `bitnot` differently from other unary operators as a function.
