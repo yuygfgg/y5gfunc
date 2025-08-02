@@ -44,6 +44,7 @@ function atan2(var_y, var_x) {
     theta = (var_x < 0) ? (atan(var_y / var_x) + copysign($pi, var_y)) : theta
     theta = ((var_x == 0) && var_y) ? (copysign($pi / 2, var_y)) : theta
     theta = ((var_x == 0) && (var_y == 0)) ? 0 : theta
+    theta = (var_x == 0) ? copysign($pi / 2, var_y) : theta
     return theta
 }
 
