@@ -3178,7 +3178,7 @@
     </table>
         <p>Refer to ..vfx/ and .expr_utils.py for examples.</p>
 <h4 id="y5gfunc.expr.infix2postfix.infix2postfix--1-introduction">1. Introduction<a class="headerlink" href="#y5gfunc.expr.infix2postfix.infix2postfix--1-introduction" title="Permanent link">&para;</a></h4>
-<p>This document specifies the syntax and semantics of the <code>y5gfunc</code> expression language, a domain-specific language designed to be transpiled into postfix notation (Reverse Polish Notation) for use with VapourSynth's <code>std.Expr</code> and the enhanced <code>akarin.Expr</code>.</p>
+<p>This function implements a simple domain-specific language designed to be transpiled into postfix notation (Reverse Polish Notation) for use with VapourSynth's <code>std.Expr</code> and the enhanced <code>akarin.Expr</code>.</p>
 <p>The language provides a familiar C-style infix syntax that supports variables, operators, user-defined functions, and special constructs for video processing.
 It is designed to be expressive and readable, abstracting away the complexities of writing raw postfix expressions.</p>
 <h5 id="y5gfunc.expr.infix2postfix.infix2postfix--modes-of-operation">Modes of Operation<a class="headerlink" href="#y5gfunc.expr.infix2postfix.infix2postfix--modes-of-operation" title="Permanent link">&para;</a></h5>
@@ -3267,12 +3267,12 @@ It is designed to be expressive and readable, abstracting away the complexities 
 </tr>
 <tr>
 <td style="text-align: left;"><code>$X</code></td>
-<td style="text-align: left;">The current column coordinate.</td>
+<td style="text-align: left;">The current column coordinate (chroma-subsampling counted).</td>
 <td style="text-align: left;">Akarin Only</td>
 </tr>
 <tr>
 <td style="text-align: left;"><code>$Y</code></td>
-<td style="text-align: left;">The current row coordinate.</td>
+<td style="text-align: left;">The current row coordinate (chroma-subsampling counted).</td>
 <td style="text-align: left;">Akarin Only</td>
 </tr>
 <tr>
@@ -3297,6 +3297,7 @@ It is designed to be expressive and readable, abstracting away the complexities 
 <li><code>$x</code> is equivalent to <code>$src0</code></li>
 <li><code>$y</code> is equivalent to <code>$src1</code></li>
 <li><code>$z</code> is equivalent to <code>$src2</code></li>
+<li><code>$a</code> is equivalent to <code>$src3</code></li>
 <li>And so on through <code>$w</code> which is equivalent to <code>$src25</code></li>
 </ul>
 </li>
@@ -4143,7 +4144,7 @@ It is designed to be expressive and readable, abstracting away the complexities 
 <a id="__codelineno-0-58" name="__codelineno-0-58"></a>
 <a id="__codelineno-0-59" name="__codelineno-0-59"></a><span class="sd">    ## 1. Introduction</span>
 <a id="__codelineno-0-60" name="__codelineno-0-60"></a>
-<a id="__codelineno-0-61" name="__codelineno-0-61"></a><span class="sd">    This document specifies the syntax and semantics of the `y5gfunc` expression language, a domain-specific language designed to be transpiled into postfix notation (Reverse Polish Notation) for use with VapourSynth&#39;s `std.Expr` and the enhanced `akarin.Expr`.</span>
+<a id="__codelineno-0-61" name="__codelineno-0-61"></a><span class="sd">    This function implements a simple domain-specific language designed to be transpiled into postfix notation (Reverse Polish Notation) for use with VapourSynth&#39;s `std.Expr` and the enhanced `akarin.Expr`.</span>
 <a id="__codelineno-0-62" name="__codelineno-0-62"></a>
 <a id="__codelineno-0-63" name="__codelineno-0-63"></a><span class="sd">    The language provides a familiar C-style infix syntax that supports variables, operators, user-defined functions, and special constructs for video processing.</span>
 <a id="__codelineno-0-64" name="__codelineno-0-64"></a><span class="sd">    It is designed to be expressive and readable, abstracting away the complexities of writing raw postfix expressions.</span>
@@ -4244,8 +4245,8 @@ It is designed to be expressive and readable, abstracting away the complexities 
 <a id="__codelineno-0-159" name="__codelineno-0-159"></a><span class="sd">    | :--- | :--- | :--- |</span>
 <a id="__codelineno-0-160" name="__codelineno-0-160"></a><span class="sd">    | `$pi` | The value of π. | All modes |</span>
 <a id="__codelineno-0-161" name="__codelineno-0-161"></a><span class="sd">    | `$N` | The current frame number. | Akarin Only |</span>
-<a id="__codelineno-0-162" name="__codelineno-0-162"></a><span class="sd">    | `$X` | The current column coordinate. | Akarin Only |</span>
-<a id="__codelineno-0-163" name="__codelineno-0-163"></a><span class="sd">    | `$Y` | The current row coordinate. | Akarin Only |</span>
+<a id="__codelineno-0-162" name="__codelineno-0-162"></a><span class="sd">    | `$X` | The current column coordinate (chroma-subsampling counted). | Akarin Only |</span>
+<a id="__codelineno-0-163" name="__codelineno-0-163"></a><span class="sd">    | `$Y` | The current row coordinate (chroma-subsampling counted). | Akarin Only |</span>
 <a id="__codelineno-0-164" name="__codelineno-0-164"></a><span class="sd">    | `$width` | The width of the video plane (chroma-subsampling counted). | Akarin Only |</span>
 <a id="__codelineno-0-165" name="__codelineno-0-165"></a><span class="sd">    | `$height` | The height of the video plane (chroma-subsampling counted). | Akarin Only |</span>
 <a id="__codelineno-0-166" name="__codelineno-0-166"></a>
@@ -4259,231 +4260,231 @@ It is designed to be expressive and readable, abstracting away the complexities 
 <a id="__codelineno-0-174" name="__codelineno-0-174"></a><span class="sd">        - `$x` is equivalent to `$src0`</span>
 <a id="__codelineno-0-175" name="__codelineno-0-175"></a><span class="sd">        - `$y` is equivalent to `$src1`</span>
 <a id="__codelineno-0-176" name="__codelineno-0-176"></a><span class="sd">        - `$z` is equivalent to `$src2`</span>
-<a id="__codelineno-0-177" name="__codelineno-0-177"></a><span class="sd">        - And so on through `$w` which is equivalent to `$src25`</span>
-<a id="__codelineno-0-178" name="__codelineno-0-178"></a>
-<a id="__codelineno-0-179" name="__codelineno-0-179"></a><span class="sd">    2.  **`src` Prefixed:** The identifier `src` followed by one or more digits, prefixed with `$` (e.g., `$src0`, `$src1`).</span>
-<a id="__codelineno-0-180" name="__codelineno-0-180"></a><span class="sd">        -   In **Standard Mode**, only `$src0` through `$src25` (or their letter aliases) are available.</span>
-<a id="__codelineno-0-181" name="__codelineno-0-181"></a><span class="sd">        -   In **Akarin Mode**, this range is extended beyond `$src25`.</span>
-<a id="__codelineno-0-182" name="__codelineno-0-182"></a>
-<a id="__codelineno-0-183" name="__codelineno-0-183"></a><span class="sd">    Example: `my_pixel_value = $a[0, 0]`</span>
-<a id="__codelineno-0-184" name="__codelineno-0-184"></a>
-<a id="__codelineno-0-185" name="__codelineno-0-185"></a><span class="sd">    ## 5. Operators</span>
-<a id="__codelineno-0-186" name="__codelineno-0-186"></a>
-<a id="__codelineno-0-187" name="__codelineno-0-187"></a><span class="sd">    Operators are left-associative, except for the unary and ternary operators. The following table lists operators in order of precedence, from lowest to highest.</span>
-<a id="__codelineno-0-188" name="__codelineno-0-188"></a>
-<a id="__codelineno-0-189" name="__codelineno-0-189"></a><span class="sd">    | Precedence | Operator | Description | Arity | Associativity | Availability |</span>
-<a id="__codelineno-0-190" name="__codelineno-0-190"></a><span class="sd">    | :--- | :--- | :--- | :--- |:--- |:--- |</span>
-<a id="__codelineno-0-191" name="__codelineno-0-191"></a><span class="sd">    | 1 | `||` | Logical OR | Binary | Left | All modes |</span>
-<a id="__codelineno-0-192" name="__codelineno-0-192"></a><span class="sd">    | 2 | `&amp;&amp;` | Logical AND | Binary | Left | All modes |</span>
-<a id="__codelineno-0-193" name="__codelineno-0-193"></a><span class="sd">    | 3 | `|` | Bitwise OR | Binary | Left | Akarin Only |</span>
-<a id="__codelineno-0-194" name="__codelineno-0-194"></a><span class="sd">    | | `^` | Bitwise XOR | Binary | Left | Akarin Only |</span>
-<a id="__codelineno-0-195" name="__codelineno-0-195"></a><span class="sd">    | | `&amp;` | Bitwise AND | Binary | Left | Akarin Only |</span>
-<a id="__codelineno-0-196" name="__codelineno-0-196"></a><span class="sd">    | | `~` | Bitwise NOT | Unary | Right | Akarin Only |</span>
-<a id="__codelineno-0-197" name="__codelineno-0-197"></a><span class="sd">    | 4 | `&lt;`, `&lt;=`, `&gt;` `&gt;=` | Relational | Binary | Left | All modes |</span>
-<a id="__codelineno-0-198" name="__codelineno-0-198"></a><span class="sd">    | 5 | `==`, `!=` | Equality | Binary | Left | All modes |</span>
-<a id="__codelineno-0-199" name="__codelineno-0-199"></a><span class="sd">    | 6 | `+`, `-` | Addition, Subtraction | Binary | Left | All modes |</span>
-<a id="__codelineno-0-200" name="__codelineno-0-200"></a><span class="sd">    | 7 | `*`, `/` | Multiplication, Division | Binary | Left | All modes |</span>
-<a id="__codelineno-0-201" name="__codelineno-0-201"></a><span class="sd">    | | `%` | Modulus | Binary | Left | Akarin Only |</span>
-<a id="__codelineno-0-202" name="__codelineno-0-202"></a><span class="sd">    | 8 | `**` | Exponentiation (Power) | Binary | Left | All modes |</span>
-<a id="__codelineno-0-203" name="__codelineno-0-203"></a><span class="sd">    | 9 | `-` | Negation | Unary | Right | All modes |</span>
-<a id="__codelineno-0-204" name="__codelineno-0-204"></a><span class="sd">    | | `!` | Logical NOT | Unary | Right | All modes |</span>
-<a id="__codelineno-0-205" name="__codelineno-0-205"></a><span class="sd">    | 10 | `? :` | Ternary Conditional | Ternary| Right | All modes |</span>
-<a id="__codelineno-0-206" name="__codelineno-0-206"></a>
-<a id="__codelineno-0-207" name="__codelineno-0-207"></a><span class="sd">    Note: Bitwise operators operates on integer values. When operating on floating-point values, operands are first rounded to the nearest integer.</span>
-<a id="__codelineno-0-208" name="__codelineno-0-208"></a>
-<a id="__codelineno-0-209" name="__codelineno-0-209"></a><span class="sd">    ## 6. Functions</span>
-<a id="__codelineno-0-210" name="__codelineno-0-210"></a>
-<a id="__codelineno-0-211" name="__codelineno-0-211"></a><span class="sd">    ### 6.1. Function Calls</span>
-<a id="__codelineno-0-212" name="__codelineno-0-212"></a>
-<a id="__codelineno-0-213" name="__codelineno-0-213"></a><span class="sd">    Functions are called using standard syntax: `functionName(argument1, argument2, ...)`</span>
-<a id="__codelineno-0-214" name="__codelineno-0-214"></a>
-<a id="__codelineno-0-215" name="__codelineno-0-215"></a><span class="sd">    ### 6.2. Built-in Functions</span>
-<a id="__codelineno-0-216" name="__codelineno-0-216"></a>
-<a id="__codelineno-0-217" name="__codelineno-0-217"></a><span class="sd">    | Function | Arity | Description | Availability |</span>
-<a id="__codelineno-0-218" name="__codelineno-0-218"></a><span class="sd">    | :--- | :--- | :--- | :--- |</span>
-<a id="__codelineno-0-219" name="__codelineno-0-219"></a><span class="sd">    | `sin`, `cos`, `log`, `exp` | 1 | Standard trigonometric and logarithmic functions. | All modes |</span>
-<a id="__codelineno-0-220" name="__codelineno-0-220"></a><span class="sd">    | `sqrt`, `abs`| 1 | Square root, absolute value. | All modes |</span>
-<a id="__codelineno-0-221" name="__codelineno-0-221"></a><span class="sd">    | `trunc` | 1 | Truncation. | Akarin Only |</span>
-<a id="__codelineno-0-222" name="__codelineno-0-222"></a><span class="sd">    | `not` | 1 | Logical NOT. | All modes |</span>
-<a id="__codelineno-0-223" name="__codelineno-0-223"></a><span class="sd">    | `min`, `max` | 2 | Returns the minimum or maximum of two values. | All modes |</span>
-<a id="__codelineno-0-224" name="__codelineno-0-224"></a><span class="sd">    | `clamp` | 3 | `clamp(x, min_val, max_val)` | All modes |</span>
-<a id="__codelineno-0-225" name="__codelineno-0-225"></a><span class="sd">    | `round`, `floor` | 1 | Round to nearest integer, round down. | Akarin Only |</span>
-<a id="__codelineno-0-226" name="__codelineno-0-226"></a><span class="sd">    | `dyn` | 3 | Dynamic relative pixel access. See Section 8. | Akarin Only |</span>
-<a id="__codelineno-0-227" name="__codelineno-0-227"></a><span class="sd">    | `nth_N` | `M` (where M≥N) | `nth_3(a, b, c, d)` finds the 3rd smallest value. | All modes |</span>
-<a id="__codelineno-0-228" name="__codelineno-0-228"></a>
-<a id="__codelineno-0-229" name="__codelineno-0-229"></a><span class="sd">    ### 6.3. User-Defined Functions</span>
-<a id="__codelineno-0-230" name="__codelineno-0-230"></a>
-<a id="__codelineno-0-231" name="__codelineno-0-231"></a><span class="sd">    -   **Definition:**</span>
-<a id="__codelineno-0-232" name="__codelineno-0-232"></a><span class="sd">        ```</span>
-<a id="__codelineno-0-233" name="__codelineno-0-233"></a><span class="sd">        function functionName(param1, param2) {</span>
-<a id="__codelineno-0-234" name="__codelineno-0-234"></a><span class="sd">            // Body of the function</span>
-<a id="__codelineno-0-235" name="__codelineno-0-235"></a><span class="sd">            local_var = param1 * param2</span>
-<a id="__codelineno-0-236" name="__codelineno-0-236"></a><span class="sd">            return local_var + 10</span>
-<a id="__codelineno-0-237" name="__codelineno-0-237"></a><span class="sd">        }</span>
-<a id="__codelineno-0-238" name="__codelineno-0-238"></a><span class="sd">        ```</span>
-<a id="__codelineno-0-239" name="__codelineno-0-239"></a><span class="sd">    -   **Return Statement:** A function can have at most one `return` statement, which must be the last non-empty statement in its body. If a function has no `return` statement, it produces no value.</span>
-<a id="__codelineno-0-240" name="__codelineno-0-240"></a><span class="sd">    -   **Parameters:** Function parameters are read-only and cannot be reassigned within the function body.</span>
-<a id="__codelineno-0-241" name="__codelineno-0-241"></a><span class="sd">    -   **Inlining:** Function calls are effectively inlined at compile time. Recursion is not supported.</span>
-<a id="__codelineno-0-242" name="__codelineno-0-242"></a><span class="sd">    -   **Nesting:** Function definitions cannot be nested.</span>
-<a id="__codelineno-0-243" name="__codelineno-0-243"></a>
-<a id="__codelineno-0-244" name="__codelineno-0-244"></a><span class="sd">    ### 6.4. Standard Library</span>
-<a id="__codelineno-0-245" name="__codelineno-0-245"></a>
-<a id="__codelineno-0-246" name="__codelineno-0-246"></a><span class="sd">    A set of additional mathematical functions are available through the provided `math_functions` utility. These are implemented as user-defined functions and include `atan`, `atan2`, `sinh`, `cosh`, `tgamma`, `erf`, `cbrt`, and more. They can be prepended to user code to be made available.</span>
-<a id="__codelineno-0-247" name="__codelineno-0-247"></a>
-<a id="__codelineno-0-248" name="__codelineno-0-248"></a><span class="sd">    ## 7. Scope and Globals</span>
-<a id="__codelineno-0-249" name="__codelineno-0-249"></a>
-<a id="__codelineno-0-250" name="__codelineno-0-250"></a><span class="sd">    ### 7.1. Scopes</span>
-<a id="__codelineno-0-251" name="__codelineno-0-251"></a>
-<a id="__codelineno-0-252" name="__codelineno-0-252"></a><span class="sd">    -   **Global Scope:** Variables defined at the top level of the script.</span>
-<a id="__codelineno-0-253" name="__codelineno-0-253"></a><span class="sd">    -   **Function Scope:** Each function has its own local scope. This includes its parameters and any variables assigned within its body.</span>
-<a id="__codelineno-0-254" name="__codelineno-0-254"></a>
-<a id="__codelineno-0-255" name="__codelineno-0-255"></a><span class="sd">    ### 7.2. Global Variable Access</span>
-<a id="__codelineno-0-256" name="__codelineno-0-256"></a>
-<a id="__codelineno-0-257" name="__codelineno-0-257"></a><span class="sd">    By default, functions operate in an isolated scope and cannot access global variables. This behavior can be modified with a global declaration placed immediately before a function definition.</span>
-<a id="__codelineno-0-258" name="__codelineno-0-258"></a>
-<a id="__codelineno-0-259" name="__codelineno-0-259"></a><span class="sd">    -   **` &lt;global.none&gt; `:** (Default) The function cannot access any global variables.</span>
-<a id="__codelineno-0-260" name="__codelineno-0-260"></a><span class="sd">    -   **` &lt;global.all&gt; `:** The function can access any global variable defined in the script at the time of the function&#39;s call.</span>
-<a id="__codelineno-0-261" name="__codelineno-0-261"></a><span class="sd">    -   **` &lt;global&lt;var1&gt;&lt;var2&gt;...&gt; `:** The function can access only the specified global variables.</span>
-<a id="__codelineno-0-262" name="__codelineno-0-262"></a>
-<a id="__codelineno-0-263" name="__codelineno-0-263"></a><span class="sd">    **Example:**</span>
-<a id="__codelineno-0-264" name="__codelineno-0-264"></a><span class="sd">    ```</span>
-<a id="__codelineno-0-265" name="__codelineno-0-265"></a><span class="sd">    &lt;global&lt;my_global&gt;&gt;</span>
-<a id="__codelineno-0-266" name="__codelineno-0-266"></a><span class="sd">    function useGlobal(x) {</span>
-<a id="__codelineno-0-267" name="__codelineno-0-267"></a><span class="sd">        return x + my_global # Accesses global &#39;my_global&#39;</span>
-<a id="__codelineno-0-268" name="__codelineno-0-268"></a><span class="sd">    }</span>
-<a id="__codelineno-0-269" name="__codelineno-0-269"></a>
-<a id="__codelineno-0-270" name="__codelineno-0-270"></a><span class="sd">    my_global = 100</span>
-<a id="__codelineno-0-271" name="__codelineno-0-271"></a><span class="sd">    RESULT = useGlobal(5) # Evaluates to 105</span>
-<a id="__codelineno-0-272" name="__codelineno-0-272"></a><span class="sd">    ```</span>
-<a id="__codelineno-0-273" name="__codelineno-0-273"></a>
-<a id="__codelineno-0-274" name="__codelineno-0-274"></a><span class="sd">    -   Any global variable a function depends on must be defined before that function is called.</span>
-<a id="__codelineno-0-275" name="__codelineno-0-275"></a>
-<a id="__codelineno-0-276" name="__codelineno-0-276"></a><span class="sd">    ## 8. Special Constructs (Akarin Mode Only)</span>
-<a id="__codelineno-0-277" name="__codelineno-0-277"></a>
-<a id="__codelineno-0-278" name="__codelineno-0-278"></a><span class="sd">    ### 8.1. Frame Property Access</span>
-<a id="__codelineno-0-279" name="__codelineno-0-279"></a>
-<a id="__codelineno-0-280" name="__codelineno-0-280"></a><span class="sd">    Read a property from a clip&#39;s frame properties.</span>
-<a id="__codelineno-0-281" name="__codelineno-0-281"></a>
-<a id="__codelineno-0-282" name="__codelineno-0-282"></a><span class="sd">    -   **Syntax:** `clip.propname`</span>
-<a id="__codelineno-0-283" name="__codelineno-0-283"></a><span class="sd">    -   `clip` must be a valid source clip identifier (e.g., `$a`, `$src1`), but without the `$` prefix. For example: `a.propname` or `src1._Matrix`.</span>
-<a id="__codelineno-0-284" name="__codelineno-0-284"></a>
-<a id="__codelineno-0-285" name="__codelineno-0-285"></a><span class="sd">    ### 8.2. Static Relative Pixel Access</span>
-<a id="__codelineno-0-286" name="__codelineno-0-286"></a>
-<a id="__codelineno-0-287" name="__codelineno-0-287"></a><span class="sd">    Access a pixel from a source clip at a fixed, constant offset from the current coordinate (`X`, `Y`).</span>
-<a id="__codelineno-0-288" name="__codelineno-0-288"></a>
-<a id="__codelineno-0-289" name="__codelineno-0-289"></a><span class="sd">    -   **Syntax:** `$clip[offsetX, offsetY]`</span>
-<a id="__codelineno-0-290" name="__codelineno-0-290"></a><span class="sd">    -   `$clip` must be a source clip constant.</span>
-<a id="__codelineno-0-291" name="__codelineno-0-291"></a><span class="sd">    -   `offsetX` and `offsetY` must be integer literals.</span>
-<a id="__codelineno-0-292" name="__codelineno-0-292"></a>
-<a id="__codelineno-0-293" name="__codelineno-0-293"></a><span class="sd">    ### 8.3. Dynamic Relative Pixel Access</span>
-<a id="__codelineno-0-294" name="__codelineno-0-294"></a>
-<a id="__codelineno-0-295" name="__codelineno-0-295"></a><span class="sd">    Access a pixel from a source clip at a dynamically calculated coordinate. This is achieved via the `dyn` built-in function.</span>
-<a id="__codelineno-0-296" name="__codelineno-0-296"></a>
-<a id="__codelineno-0-297" name="__codelineno-0-297"></a><span class="sd">    -   **Syntax:** `dyn($clip, x_expr, y_expr)`</span>
-<a id="__codelineno-0-298" name="__codelineno-0-298"></a><span class="sd">    -   `$clip` must be a source clip constant.</span>
-<a id="__codelineno-0-299" name="__codelineno-0-299"></a><span class="sd">    -   `x_expr` and `y_expr` can be any valid expressions that evaluate to the desired coordinates.</span>
-<a id="__codelineno-0-300" name="__codelineno-0-300"></a>
-<a id="__codelineno-0-301" name="__codelineno-0-301"></a><span class="sd">    &quot;&quot;&quot;</span>
-<a id="__codelineno-0-302" name="__codelineno-0-302"></a>
-<a id="__codelineno-0-303" name="__codelineno-0-303"></a>    <span class="c1"># Remove comments</span>
-<a id="__codelineno-0-304" name="__codelineno-0-304"></a>    <span class="n">infix_code</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
-<a id="__codelineno-0-305" name="__codelineno-0-305"></a>        <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;#&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">rstrip</span><span class="p">()</span> <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">infix_code</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-306" name="__codelineno-0-306"></a>    <span class="p">)</span>
-<a id="__codelineno-0-307" name="__codelineno-0-307"></a>
-<a id="__codelineno-0-308" name="__codelineno-0-308"></a>    <span class="c1"># Check for duplicate function definitions.</span>
-<a id="__codelineno-0-309" name="__codelineno-0-309"></a>    <span class="n">find_duplicate_functions</span><span class="p">(</span><span class="n">infix_code</span><span class="p">)</span>
-<a id="__codelineno-0-310" name="__codelineno-0-310"></a>
-<a id="__codelineno-0-311" name="__codelineno-0-311"></a>    <span class="c1"># Process global declarations.</span>
-<a id="__codelineno-0-312" name="__codelineno-0-312"></a>    <span class="c1"># global declaration syntax: &lt;global&lt;var1&gt;&lt;var2&gt;...&gt; or &lt;global.all&gt; or &lt;global.none&gt;</span>
-<a id="__codelineno-0-313" name="__codelineno-0-313"></a>    <span class="c1"># Also record for functions if global declaration appears immediately before function definition.</span>
-<a id="__codelineno-0-314" name="__codelineno-0-314"></a>    <span class="n">declared_globals</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
-<a id="__codelineno-0-315" name="__codelineno-0-315"></a>        <span class="p">{}</span>
-<a id="__codelineno-0-316" name="__codelineno-0-316"></a>    <span class="p">)</span>  <span class="c1"># mapping: global variable -&gt; declaration line number</span>
-<a id="__codelineno-0-317" name="__codelineno-0-317"></a>    <span class="n">global_vars_for_functions</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">set</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span>
-<a id="__codelineno-0-318" name="__codelineno-0-318"></a>    <span class="n">global_mode_for_functions</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">GlobalMode</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
-<a id="__codelineno-0-319" name="__codelineno-0-319"></a>    <span class="n">lines</span> <span class="o">=</span> <span class="n">infix_code</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-320" name="__codelineno-0-320"></a>    <span class="n">modified_lines</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
-<a id="__codelineno-0-321" name="__codelineno-0-321"></a>
-<a id="__codelineno-0-322" name="__codelineno-0-322"></a>    <span class="c1"># Reject user input that contains semicolons.</span>
-<a id="__codelineno-0-323" name="__codelineno-0-323"></a>    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">line</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">lines</span><span class="p">):</span>
-<a id="__codelineno-0-324" name="__codelineno-0-324"></a>        <span class="k">if</span> <span class="s2">&quot;;&quot;</span> <span class="ow">in</span> <span class="n">line</span><span class="p">:</span>
-<a id="__codelineno-0-325" name="__codelineno-0-325"></a>            <span class="k">raise</span> <span class="ne">SyntaxError</span><span class="p">(</span>
-<a id="__codelineno-0-326" name="__codelineno-0-326"></a>                <span class="s2">&quot;User input code cannot contain semicolons. Use newlines instead.&quot;</span><span class="p">,</span>
-<a id="__codelineno-0-327" name="__codelineno-0-327"></a>                <span class="n">line_num</span><span class="o">=</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span>
-<a id="__codelineno-0-328" name="__codelineno-0-328"></a>            <span class="p">)</span>
-<a id="__codelineno-0-329" name="__codelineno-0-329"></a>
-<a id="__codelineno-0-330" name="__codelineno-0-330"></a>    <span class="c1"># Build a mapping from line number to function name for function declarations.</span>
-<a id="__codelineno-0-331" name="__codelineno-0-331"></a>    <span class="n">function_lines</span> <span class="o">=</span> <span class="p">{}</span>
-<a id="__codelineno-0-332" name="__codelineno-0-332"></a>    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">line</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">lines</span><span class="p">):</span>
-<a id="__codelineno-0-333" name="__codelineno-0-333"></a>        <span class="n">func_match</span> <span class="o">=</span> <span class="n">_FUNC_PATTERN</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
-<a id="__codelineno-0-334" name="__codelineno-0-334"></a>        <span class="k">if</span> <span class="n">func_match</span><span class="p">:</span>
-<a id="__codelineno-0-335" name="__codelineno-0-335"></a>            <span class="n">func_name</span> <span class="o">=</span> <span class="n">func_match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
-<a id="__codelineno-0-336" name="__codelineno-0-336"></a>            <span class="n">function_lines</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">func_name</span>
-<a id="__codelineno-0-337" name="__codelineno-0-337"></a>
-<a id="__codelineno-0-338" name="__codelineno-0-338"></a>    <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
-<a id="__codelineno-0-339" name="__codelineno-0-339"></a>    <span class="k">while</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">lines</span><span class="p">):</span>
-<a id="__codelineno-0-340" name="__codelineno-0-340"></a>        <span class="n">line</span> <span class="o">=</span> <span class="n">lines</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
-<a id="__codelineno-0-341" name="__codelineno-0-341"></a>
-<a id="__codelineno-0-342" name="__codelineno-0-342"></a>        <span class="n">global_decl_match</span> <span class="o">=</span> <span class="n">_GLOBAL_DECL_PATTERN</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
-<a id="__codelineno-0-343" name="__codelineno-0-343"></a>        <span class="k">if</span> <span class="n">global_decl_match</span><span class="p">:</span>
-<a id="__codelineno-0-344" name="__codelineno-0-344"></a>            <span class="n">content</span> <span class="o">=</span> <span class="n">global_decl_match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
-<a id="__codelineno-0-345" name="__codelineno-0-345"></a>            <span class="c1"># Extract all global variable names from this line.</span>
-<a id="__codelineno-0-346" name="__codelineno-0-346"></a>            <span class="n">j</span> <span class="o">=</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span>
-<a id="__codelineno-0-347" name="__codelineno-0-347"></a>            <span class="c1"># If the next non-global line is a function definition, apply these globals for that function.</span>
-<a id="__codelineno-0-348" name="__codelineno-0-348"></a>            <span class="k">if</span> <span class="n">j</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">lines</span><span class="p">):</span>
-<a id="__codelineno-0-349" name="__codelineno-0-349"></a>                <span class="n">function_match</span> <span class="o">=</span> <span class="n">_FUNCTION_DEF_PATTERN</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">lines</span><span class="p">[</span><span class="n">j</span><span class="p">])</span>
-<a id="__codelineno-0-350" name="__codelineno-0-350"></a>                <span class="k">if</span> <span class="n">function_match</span><span class="p">:</span>
-<a id="__codelineno-0-351" name="__codelineno-0-351"></a>                    <span class="n">func_name</span> <span class="o">=</span> <span class="n">function_match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
-<a id="__codelineno-0-352" name="__codelineno-0-352"></a>                    <span class="n">args</span> <span class="o">=</span> <span class="n">function_match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
-<a id="__codelineno-0-353" name="__codelineno-0-353"></a>                    <span class="k">if</span> <span class="n">content</span> <span class="o">==</span> <span class="s2">&quot;.all&quot;</span><span class="p">:</span>
-<a id="__codelineno-0-354" name="__codelineno-0-354"></a>                        <span class="n">global_mode_for_functions</span><span class="p">[</span><span class="n">func_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">GlobalMode</span><span class="o">.</span><span class="n">ALL</span>
-<a id="__codelineno-0-355" name="__codelineno-0-355"></a>                    <span class="k">elif</span> <span class="n">content</span> <span class="o">==</span> <span class="s2">&quot;.none&quot;</span><span class="p">:</span>
-<a id="__codelineno-0-356" name="__codelineno-0-356"></a>                        <span class="n">global_mode_for_functions</span><span class="p">[</span><span class="n">func_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">GlobalMode</span><span class="o">.</span><span class="n">NONE</span>
-<a id="__codelineno-0-357" name="__codelineno-0-357"></a>                    <span class="k">else</span><span class="p">:</span>
-<a id="__codelineno-0-358" name="__codelineno-0-358"></a>                        <span class="n">global_mode_for_functions</span><span class="p">[</span><span class="n">func_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">GlobalMode</span><span class="o">.</span><span class="n">SPECIFIC</span>
-<a id="__codelineno-0-359" name="__codelineno-0-359"></a>                        <span class="n">globals_list</span> <span class="o">=</span> <span class="n">_GLOBAL_MATCH_PATTERN</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="n">content</span><span class="p">)</span>
-<a id="__codelineno-0-360" name="__codelineno-0-360"></a>
-<a id="__codelineno-0-361" name="__codelineno-0-361"></a>                        <span class="k">if</span> <span class="ow">not</span> <span class="n">globals_list</span> <span class="ow">and</span> <span class="n">content</span><span class="p">:</span>
-<a id="__codelineno-0-362" name="__codelineno-0-362"></a>                            <span class="k">raise</span> <span class="ne">SyntaxError</span><span class="p">(</span>
-<a id="__codelineno-0-363" name="__codelineno-0-363"></a>                                <span class="sa">f</span><span class="s2">&quot;Invalid global declaration syntax: &lt;global</span><span class="si">{</span><span class="n">content</span><span class="si">}</span><span class="s2">&gt;&quot;</span><span class="p">,</span>
-<a id="__codelineno-0-364" name="__codelineno-0-364"></a>                                <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span>
-<a id="__codelineno-0-365" name="__codelineno-0-365"></a>                            <span class="p">)</span>
-<a id="__codelineno-0-366" name="__codelineno-0-366"></a>                        <span class="k">for</span> <span class="n">gv</span> <span class="ow">in</span> <span class="n">globals_list</span><span class="p">:</span>
-<a id="__codelineno-0-367" name="__codelineno-0-367"></a>                            <span class="k">if</span> <span class="n">gv</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">declared_globals</span><span class="p">:</span>
-<a id="__codelineno-0-368" name="__codelineno-0-368"></a>                                <span class="n">declared_globals</span><span class="p">[</span><span class="n">gv</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
-<a id="__codelineno-0-369" name="__codelineno-0-369"></a>                                    <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span>
-<a id="__codelineno-0-370" name="__codelineno-0-370"></a>                                <span class="p">)</span>  <span class="c1"># store declaration line number (1-indexed)</span>
-<a id="__codelineno-0-371" name="__codelineno-0-371"></a>                        <span class="k">if</span> <span class="n">func_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">global_vars_for_functions</span><span class="p">:</span>
-<a id="__codelineno-0-372" name="__codelineno-0-372"></a>                            <span class="n">global_vars_for_functions</span><span class="p">[</span><span class="n">func_name</span><span class="p">]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
-<a id="__codelineno-0-373" name="__codelineno-0-373"></a>                        <span class="n">global_vars_for_functions</span><span class="p">[</span><span class="n">func_name</span><span class="p">]</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">globals_list</span><span class="p">)</span>
-<a id="__codelineno-0-374" name="__codelineno-0-374"></a>                        <span class="n">function_params</span> <span class="o">=</span> <span class="n">parse_args</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
-<a id="__codelineno-0-375" name="__codelineno-0-375"></a>                        <span class="k">if</span> <span class="nb">any</span><span class="p">(</span>
-<a id="__codelineno-0-376" name="__codelineno-0-376"></a>                            <span class="n">global_var</span> <span class="ow">in</span> <span class="n">function_params</span> <span class="k">for</span> <span class="n">global_var</span> <span class="ow">in</span> <span class="n">globals_list</span>
-<a id="__codelineno-0-377" name="__codelineno-0-377"></a>                        <span class="p">):</span>
-<a id="__codelineno-0-378" name="__codelineno-0-378"></a>                            <span class="k">raise</span> <span class="ne">SyntaxError</span><span class="p">(</span>
-<a id="__codelineno-0-379" name="__codelineno-0-379"></a>                                <span class="s2">&quot;Function parameters must not duplicate with global declarations.&quot;</span><span class="p">,</span>
-<a id="__codelineno-0-380" name="__codelineno-0-380"></a>                                <span class="n">j</span><span class="p">,</span>
-<a id="__codelineno-0-381" name="__codelineno-0-381"></a>                            <span class="p">)</span>
-<a id="__codelineno-0-382" name="__codelineno-0-382"></a>                <span class="k">else</span><span class="p">:</span>
-<a id="__codelineno-0-383" name="__codelineno-0-383"></a>                    <span class="k">raise</span> <span class="ne">SyntaxError</span><span class="p">(</span>
-<a id="__codelineno-0-384" name="__codelineno-0-384"></a>                        <span class="s2">&quot;Global declaration must be followed by a function definition.&quot;</span><span class="p">,</span>
-<a id="__codelineno-0-385" name="__codelineno-0-385"></a>                        <span class="n">j</span><span class="p">,</span>
-<a id="__codelineno-0-386" name="__codelineno-0-386"></a>                    <span class="p">)</span>
-<a id="__codelineno-0-387" name="__codelineno-0-387"></a>            <span class="k">else</span><span class="p">:</span>
-<a id="__codelineno-0-388" name="__codelineno-0-388"></a>                <span class="k">raise</span> <span class="ne">SyntaxError</span><span class="p">(</span>
-<a id="__codelineno-0-389" name="__codelineno-0-389"></a>                    <span class="s2">&quot;Global declaration must not be at the last line of code.&quot;</span><span class="p">,</span>
-<a id="__codelineno-0-390" name="__codelineno-0-390"></a>                    <span class="n">j</span><span class="p">,</span>
-<a id="__codelineno-0-391" name="__codelineno-0-391"></a>                <span class="p">)</span>
-<a id="__codelineno-0-392" name="__codelineno-0-392"></a>            <span class="c1"># Replace the global declaration lines with empty line.</span>
-<a id="__codelineno-0-393" name="__codelineno-0-393"></a>            <span class="n">modified_lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-394" name="__codelineno-0-394"></a>            <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
-<a id="__codelineno-0-395" name="__codelineno-0-395"></a>        <span class="k">else</span><span class="p">:</span>
-<a id="__codelineno-0-396" name="__codelineno-0-396"></a>            <span class="n">modified_lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">lines</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
-<a id="__codelineno-0-397" name="__codelineno-0-397"></a>            <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
-<a id="__codelineno-0-398" name="__codelineno-0-398"></a>
-<a id="__codelineno-0-399" name="__codelineno-0-399"></a>    <span class="n">expanded_code</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">modified_lines</span><span class="p">)</span>
-<a id="__codelineno-0-400" name="__codelineno-0-400"></a>
-<a id="__codelineno-0-401" name="__codelineno-0-401"></a>    <span class="c1"># Replace function definitions with newlines to preserve line numbers.</span>
+<a id="__codelineno-0-177" name="__codelineno-0-177"></a><span class="sd">        - `$a` is equivalent to `$src3`</span>
+<a id="__codelineno-0-178" name="__codelineno-0-178"></a><span class="sd">        - And so on through `$w` which is equivalent to `$src25`</span>
+<a id="__codelineno-0-179" name="__codelineno-0-179"></a>
+<a id="__codelineno-0-180" name="__codelineno-0-180"></a><span class="sd">    2.  **`src` Prefixed:** The identifier `src` followed by one or more digits, prefixed with `$` (e.g., `$src0`, `$src1`).</span>
+<a id="__codelineno-0-181" name="__codelineno-0-181"></a><span class="sd">        -   In **Standard Mode**, only `$src0` through `$src25` (or their letter aliases) are available.</span>
+<a id="__codelineno-0-182" name="__codelineno-0-182"></a><span class="sd">        -   In **Akarin Mode**, this range is extended beyond `$src25`.</span>
+<a id="__codelineno-0-183" name="__codelineno-0-183"></a>
+<a id="__codelineno-0-184" name="__codelineno-0-184"></a><span class="sd">    Example: `my_pixel_value = $a[0, 0]`</span>
+<a id="__codelineno-0-185" name="__codelineno-0-185"></a>
+<a id="__codelineno-0-186" name="__codelineno-0-186"></a><span class="sd">    ## 5. Operators</span>
+<a id="__codelineno-0-187" name="__codelineno-0-187"></a>
+<a id="__codelineno-0-188" name="__codelineno-0-188"></a><span class="sd">    Operators are left-associative, except for the unary and ternary operators. The following table lists operators in order of precedence, from lowest to highest.</span>
+<a id="__codelineno-0-189" name="__codelineno-0-189"></a>
+<a id="__codelineno-0-190" name="__codelineno-0-190"></a><span class="sd">    | Precedence | Operator | Description | Arity | Associativity | Availability |</span>
+<a id="__codelineno-0-191" name="__codelineno-0-191"></a><span class="sd">    | :--- | :--- | :--- | :--- |:--- |:--- |</span>
+<a id="__codelineno-0-192" name="__codelineno-0-192"></a><span class="sd">    | 1 | `||` | Logical OR | Binary | Left | All modes |</span>
+<a id="__codelineno-0-193" name="__codelineno-0-193"></a><span class="sd">    | 2 | `&amp;&amp;` | Logical AND | Binary | Left | All modes |</span>
+<a id="__codelineno-0-194" name="__codelineno-0-194"></a><span class="sd">    | 3 | `|` | Bitwise OR | Binary | Left | Akarin Only |</span>
+<a id="__codelineno-0-195" name="__codelineno-0-195"></a><span class="sd">    | | `^` | Bitwise XOR | Binary | Left | Akarin Only |</span>
+<a id="__codelineno-0-196" name="__codelineno-0-196"></a><span class="sd">    | | `&amp;` | Bitwise AND | Binary | Left | Akarin Only |</span>
+<a id="__codelineno-0-197" name="__codelineno-0-197"></a><span class="sd">    | | `~` | Bitwise NOT | Unary | Right | Akarin Only |</span>
+<a id="__codelineno-0-198" name="__codelineno-0-198"></a><span class="sd">    | 4 | `&lt;`, `&lt;=`, `&gt;` `&gt;=` | Relational | Binary | Left | All modes |</span>
+<a id="__codelineno-0-199" name="__codelineno-0-199"></a><span class="sd">    | 5 | `==`, `!=` | Equality | Binary | Left | All modes |</span>
+<a id="__codelineno-0-200" name="__codelineno-0-200"></a><span class="sd">    | 6 | `+`, `-` | Addition, Subtraction | Binary | Left | All modes |</span>
+<a id="__codelineno-0-201" name="__codelineno-0-201"></a><span class="sd">    | 7 | `*`, `/` | Multiplication, Division | Binary | Left | All modes |</span>
+<a id="__codelineno-0-202" name="__codelineno-0-202"></a><span class="sd">    | | `%` | Modulus | Binary | Left | Akarin Only |</span>
+<a id="__codelineno-0-203" name="__codelineno-0-203"></a><span class="sd">    | 8 | `**` | Exponentiation (Power) | Binary | Left | All modes |</span>
+<a id="__codelineno-0-204" name="__codelineno-0-204"></a><span class="sd">    | 9 | `-` | Negation | Unary | Right | All modes |</span>
+<a id="__codelineno-0-205" name="__codelineno-0-205"></a><span class="sd">    | | `!` | Logical NOT | Unary | Right | All modes |</span>
+<a id="__codelineno-0-206" name="__codelineno-0-206"></a><span class="sd">    | 10 | `? :` | Ternary Conditional | Ternary| Right | All modes |</span>
+<a id="__codelineno-0-207" name="__codelineno-0-207"></a>
+<a id="__codelineno-0-208" name="__codelineno-0-208"></a><span class="sd">    Note: Bitwise operators operates on integer values. When operating on floating-point values, operands are first rounded to the nearest integer.</span>
+<a id="__codelineno-0-209" name="__codelineno-0-209"></a>
+<a id="__codelineno-0-210" name="__codelineno-0-210"></a><span class="sd">    ## 6. Functions</span>
+<a id="__codelineno-0-211" name="__codelineno-0-211"></a>
+<a id="__codelineno-0-212" name="__codelineno-0-212"></a><span class="sd">    ### 6.1. Function Calls</span>
+<a id="__codelineno-0-213" name="__codelineno-0-213"></a>
+<a id="__codelineno-0-214" name="__codelineno-0-214"></a><span class="sd">    Functions are called using standard syntax: `functionName(argument1, argument2, ...)`</span>
+<a id="__codelineno-0-215" name="__codelineno-0-215"></a>
+<a id="__codelineno-0-216" name="__codelineno-0-216"></a><span class="sd">    ### 6.2. Built-in Functions</span>
+<a id="__codelineno-0-217" name="__codelineno-0-217"></a>
+<a id="__codelineno-0-218" name="__codelineno-0-218"></a><span class="sd">    | Function | Arity | Description | Availability |</span>
+<a id="__codelineno-0-219" name="__codelineno-0-219"></a><span class="sd">    | :--- | :--- | :--- | :--- |</span>
+<a id="__codelineno-0-220" name="__codelineno-0-220"></a><span class="sd">    | `sin`, `cos`, `log`, `exp` | 1 | Standard trigonometric and logarithmic functions. | All modes |</span>
+<a id="__codelineno-0-221" name="__codelineno-0-221"></a><span class="sd">    | `sqrt`, `abs`| 1 | Square root, absolute value. | All modes |</span>
+<a id="__codelineno-0-222" name="__codelineno-0-222"></a><span class="sd">    | `trunc` | 1 | Truncation. | Akarin Only |</span>
+<a id="__codelineno-0-223" name="__codelineno-0-223"></a><span class="sd">    | `not` | 1 | Logical NOT. | All modes |</span>
+<a id="__codelineno-0-224" name="__codelineno-0-224"></a><span class="sd">    | `min`, `max` | 2 | Returns the minimum or maximum of two values. | All modes |</span>
+<a id="__codelineno-0-225" name="__codelineno-0-225"></a><span class="sd">    | `clamp` | 3 | `clamp(x, min_val, max_val)` | All modes |</span>
+<a id="__codelineno-0-226" name="__codelineno-0-226"></a><span class="sd">    | `round`, `floor` | 1 | Round to nearest integer, round down. | Akarin Only |</span>
+<a id="__codelineno-0-227" name="__codelineno-0-227"></a><span class="sd">    | `dyn` | 3 | Dynamic relative pixel access. See Section 8. | Akarin Only |</span>
+<a id="__codelineno-0-228" name="__codelineno-0-228"></a><span class="sd">    | `nth_N` | `M` (where M≥N) | `nth_3(a, b, c, d)` finds the 3rd smallest value. | All modes |</span>
+<a id="__codelineno-0-229" name="__codelineno-0-229"></a>
+<a id="__codelineno-0-230" name="__codelineno-0-230"></a><span class="sd">    ### 6.3. User-Defined Functions</span>
+<a id="__codelineno-0-231" name="__codelineno-0-231"></a>
+<a id="__codelineno-0-232" name="__codelineno-0-232"></a><span class="sd">    -   **Definition:**</span>
+<a id="__codelineno-0-233" name="__codelineno-0-233"></a><span class="sd">        ```</span>
+<a id="__codelineno-0-234" name="__codelineno-0-234"></a><span class="sd">        function functionName(param1, param2) {</span>
+<a id="__codelineno-0-235" name="__codelineno-0-235"></a><span class="sd">            // Body of the function</span>
+<a id="__codelineno-0-236" name="__codelineno-0-236"></a><span class="sd">            local_var = param1 * param2</span>
+<a id="__codelineno-0-237" name="__codelineno-0-237"></a><span class="sd">            return local_var + 10</span>
+<a id="__codelineno-0-238" name="__codelineno-0-238"></a><span class="sd">        }</span>
+<a id="__codelineno-0-239" name="__codelineno-0-239"></a><span class="sd">        ```</span>
+<a id="__codelineno-0-240" name="__codelineno-0-240"></a><span class="sd">    -   **Return Statement:** A function can have at most one `return` statement, which must be the last non-empty statement in its body. If a function has no `return` statement, it produces no value.</span>
+<a id="__codelineno-0-241" name="__codelineno-0-241"></a><span class="sd">    -   **Parameters:** Function parameters are read-only and cannot be reassigned within the function body.</span>
+<a id="__codelineno-0-242" name="__codelineno-0-242"></a><span class="sd">    -   **Inlining:** Function calls are effectively inlined at compile time. Recursion is not supported.</span>
+<a id="__codelineno-0-243" name="__codelineno-0-243"></a><span class="sd">    -   **Nesting:** Function definitions cannot be nested.</span>
+<a id="__codelineno-0-244" name="__codelineno-0-244"></a>
+<a id="__codelineno-0-245" name="__codelineno-0-245"></a><span class="sd">    ### 6.4. Standard Library</span>
+<a id="__codelineno-0-246" name="__codelineno-0-246"></a>
+<a id="__codelineno-0-247" name="__codelineno-0-247"></a><span class="sd">    A set of additional mathematical functions are available through the provided `math_functions` utility. These are implemented as user-defined functions and include `atan`, `atan2`, `sinh`, `cosh`, `tgamma`, `erf`, `cbrt`, and more. They can be prepended to user code to be made available.</span>
+<a id="__codelineno-0-248" name="__codelineno-0-248"></a>
+<a id="__codelineno-0-249" name="__codelineno-0-249"></a><span class="sd">    ## 7. Scope and Globals</span>
+<a id="__codelineno-0-250" name="__codelineno-0-250"></a>
+<a id="__codelineno-0-251" name="__codelineno-0-251"></a><span class="sd">    ### 7.1. Scopes</span>
+<a id="__codelineno-0-252" name="__codelineno-0-252"></a>
+<a id="__codelineno-0-253" name="__codelineno-0-253"></a><span class="sd">    -   **Global Scope:** Variables defined at the top level of the script.</span>
+<a id="__codelineno-0-254" name="__codelineno-0-254"></a><span class="sd">    -   **Function Scope:** Each function has its own local scope. This includes its parameters and any variables assigned within its body.</span>
+<a id="__codelineno-0-255" name="__codelineno-0-255"></a>
+<a id="__codelineno-0-256" name="__codelineno-0-256"></a><span class="sd">    ### 7.2. Global Variable Access</span>
+<a id="__codelineno-0-257" name="__codelineno-0-257"></a>
+<a id="__codelineno-0-258" name="__codelineno-0-258"></a><span class="sd">    By default, functions operate in an isolated scope and cannot access global variables. This behavior can be modified with a global declaration placed immediately before a function definition.</span>
+<a id="__codelineno-0-259" name="__codelineno-0-259"></a>
+<a id="__codelineno-0-260" name="__codelineno-0-260"></a><span class="sd">    -   **` &lt;global.none&gt; `:** (Default) The function cannot access any global variables.</span>
+<a id="__codelineno-0-261" name="__codelineno-0-261"></a><span class="sd">    -   **` &lt;global.all&gt; `:** The function can access any global variable defined in the script at the time of the function&#39;s call.</span>
+<a id="__codelineno-0-262" name="__codelineno-0-262"></a><span class="sd">    -   **` &lt;global&lt;var1&gt;&lt;var2&gt;...&gt; `:** The function can access only the specified global variables.</span>
+<a id="__codelineno-0-263" name="__codelineno-0-263"></a>
+<a id="__codelineno-0-264" name="__codelineno-0-264"></a><span class="sd">    **Example:**</span>
+<a id="__codelineno-0-265" name="__codelineno-0-265"></a><span class="sd">    ```</span>
+<a id="__codelineno-0-266" name="__codelineno-0-266"></a><span class="sd">    &lt;global&lt;my_global&gt;&gt;</span>
+<a id="__codelineno-0-267" name="__codelineno-0-267"></a><span class="sd">    function useGlobal(x) {</span>
+<a id="__codelineno-0-268" name="__codelineno-0-268"></a><span class="sd">        return x + my_global # Accesses global &#39;my_global&#39;</span>
+<a id="__codelineno-0-269" name="__codelineno-0-269"></a><span class="sd">    }</span>
+<a id="__codelineno-0-270" name="__codelineno-0-270"></a>
+<a id="__codelineno-0-271" name="__codelineno-0-271"></a><span class="sd">    my_global = 100</span>
+<a id="__codelineno-0-272" name="__codelineno-0-272"></a><span class="sd">    RESULT = useGlobal(5) # Evaluates to 105</span>
+<a id="__codelineno-0-273" name="__codelineno-0-273"></a><span class="sd">    ```</span>
+<a id="__codelineno-0-274" name="__codelineno-0-274"></a>
+<a id="__codelineno-0-275" name="__codelineno-0-275"></a><span class="sd">    -   Any global variable a function depends on must be defined before that function is called.</span>
+<a id="__codelineno-0-276" name="__codelineno-0-276"></a>
+<a id="__codelineno-0-277" name="__codelineno-0-277"></a><span class="sd">    ## 8. Special Constructs (Akarin Mode Only)</span>
+<a id="__codelineno-0-278" name="__codelineno-0-278"></a>
+<a id="__codelineno-0-279" name="__codelineno-0-279"></a><span class="sd">    ### 8.1. Frame Property Access</span>
+<a id="__codelineno-0-280" name="__codelineno-0-280"></a>
+<a id="__codelineno-0-281" name="__codelineno-0-281"></a><span class="sd">    Read a property from a clip&#39;s frame properties.</span>
+<a id="__codelineno-0-282" name="__codelineno-0-282"></a>
+<a id="__codelineno-0-283" name="__codelineno-0-283"></a><span class="sd">    -   **Syntax:** `clip.propname`</span>
+<a id="__codelineno-0-284" name="__codelineno-0-284"></a><span class="sd">    -   `clip` must be a valid source clip identifier (e.g., `$a`, `$src1`), but without the `$` prefix. For example: `a.propname` or `src1._Matrix`.</span>
+<a id="__codelineno-0-285" name="__codelineno-0-285"></a>
+<a id="__codelineno-0-286" name="__codelineno-0-286"></a><span class="sd">    ### 8.2. Static Relative Pixel Access</span>
+<a id="__codelineno-0-287" name="__codelineno-0-287"></a>
+<a id="__codelineno-0-288" name="__codelineno-0-288"></a><span class="sd">    Access a pixel from a source clip at a fixed, constant offset from the current coordinate (`X`, `Y`).</span>
+<a id="__codelineno-0-289" name="__codelineno-0-289"></a>
+<a id="__codelineno-0-290" name="__codelineno-0-290"></a><span class="sd">    -   **Syntax:** `$clip[offsetX, offsetY]`</span>
+<a id="__codelineno-0-291" name="__codelineno-0-291"></a><span class="sd">    -   `$clip` must be a source clip constant.</span>
+<a id="__codelineno-0-292" name="__codelineno-0-292"></a><span class="sd">    -   `offsetX` and `offsetY` must be integer literals.</span>
+<a id="__codelineno-0-293" name="__codelineno-0-293"></a>
+<a id="__codelineno-0-294" name="__codelineno-0-294"></a><span class="sd">    ### 8.3. Dynamic Relative Pixel Access</span>
+<a id="__codelineno-0-295" name="__codelineno-0-295"></a>
+<a id="__codelineno-0-296" name="__codelineno-0-296"></a><span class="sd">    Access a pixel from a source clip at a dynamically calculated coordinate. This is achieved via the `dyn` built-in function.</span>
+<a id="__codelineno-0-297" name="__codelineno-0-297"></a>
+<a id="__codelineno-0-298" name="__codelineno-0-298"></a><span class="sd">    -   **Syntax:** `dyn($clip, x_expr, y_expr)`</span>
+<a id="__codelineno-0-299" name="__codelineno-0-299"></a><span class="sd">    -   `$clip` must be a source clip constant.</span>
+<a id="__codelineno-0-300" name="__codelineno-0-300"></a><span class="sd">    -   `x_expr` and `y_expr` can be any valid expressions that evaluate to the desired coordinates.</span>
+<a id="__codelineno-0-301" name="__codelineno-0-301"></a>
+<a id="__codelineno-0-302" name="__codelineno-0-302"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="__codelineno-0-303" name="__codelineno-0-303"></a>
+<a id="__codelineno-0-304" name="__codelineno-0-304"></a>    <span class="c1"># Remove comments</span>
+<a id="__codelineno-0-305" name="__codelineno-0-305"></a>    <span class="n">infix_code</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+<a id="__codelineno-0-306" name="__codelineno-0-306"></a>        <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;#&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">rstrip</span><span class="p">()</span> <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">infix_code</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-307" name="__codelineno-0-307"></a>    <span class="p">)</span>
+<a id="__codelineno-0-308" name="__codelineno-0-308"></a>
+<a id="__codelineno-0-309" name="__codelineno-0-309"></a>    <span class="c1"># Check for duplicate function definitions.</span>
+<a id="__codelineno-0-310" name="__codelineno-0-310"></a>    <span class="n">find_duplicate_functions</span><span class="p">(</span><span class="n">infix_code</span><span class="p">)</span>
+<a id="__codelineno-0-311" name="__codelineno-0-311"></a>
+<a id="__codelineno-0-312" name="__codelineno-0-312"></a>    <span class="c1"># Process global declarations.</span>
+<a id="__codelineno-0-313" name="__codelineno-0-313"></a>    <span class="c1"># global declaration syntax: &lt;global&lt;var1&gt;&lt;var2&gt;...&gt; or &lt;global.all&gt; or &lt;global.none&gt;</span>
+<a id="__codelineno-0-314" name="__codelineno-0-314"></a>    <span class="c1"># Also record for functions if global declaration appears immediately before function definition.</span>
+<a id="__codelineno-0-315" name="__codelineno-0-315"></a>    <span class="n">declared_globals</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+<a id="__codelineno-0-316" name="__codelineno-0-316"></a>        <span class="p">{}</span>
+<a id="__codelineno-0-317" name="__codelineno-0-317"></a>    <span class="p">)</span>  <span class="c1"># mapping: global variable -&gt; declaration line number</span>
+<a id="__codelineno-0-318" name="__codelineno-0-318"></a>    <span class="n">global_vars_for_functions</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">set</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span>
+<a id="__codelineno-0-319" name="__codelineno-0-319"></a>    <span class="n">global_mode_for_functions</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">GlobalMode</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+<a id="__codelineno-0-320" name="__codelineno-0-320"></a>    <span class="n">lines</span> <span class="o">=</span> <span class="n">infix_code</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-321" name="__codelineno-0-321"></a>    <span class="n">modified_lines</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+<a id="__codelineno-0-322" name="__codelineno-0-322"></a>
+<a id="__codelineno-0-323" name="__codelineno-0-323"></a>    <span class="c1"># Reject user input that contains semicolons.</span>
+<a id="__codelineno-0-324" name="__codelineno-0-324"></a>    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">line</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">lines</span><span class="p">):</span>
+<a id="__codelineno-0-325" name="__codelineno-0-325"></a>        <span class="k">if</span> <span class="s2">&quot;;&quot;</span> <span class="ow">in</span> <span class="n">line</span><span class="p">:</span>
+<a id="__codelineno-0-326" name="__codelineno-0-326"></a>            <span class="k">raise</span> <span class="ne">SyntaxError</span><span class="p">(</span>
+<a id="__codelineno-0-327" name="__codelineno-0-327"></a>                <span class="s2">&quot;User input code cannot contain semicolons. Use newlines instead.&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-328" name="__codelineno-0-328"></a>                <span class="n">line_num</span><span class="o">=</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span>
+<a id="__codelineno-0-329" name="__codelineno-0-329"></a>            <span class="p">)</span>
+<a id="__codelineno-0-330" name="__codelineno-0-330"></a>
+<a id="__codelineno-0-331" name="__codelineno-0-331"></a>    <span class="c1"># Build a mapping from line number to function name for function declarations.</span>
+<a id="__codelineno-0-332" name="__codelineno-0-332"></a>    <span class="n">function_lines</span> <span class="o">=</span> <span class="p">{}</span>
+<a id="__codelineno-0-333" name="__codelineno-0-333"></a>    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">line</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">lines</span><span class="p">):</span>
+<a id="__codelineno-0-334" name="__codelineno-0-334"></a>        <span class="n">func_match</span> <span class="o">=</span> <span class="n">_FUNC_PATTERN</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
+<a id="__codelineno-0-335" name="__codelineno-0-335"></a>        <span class="k">if</span> <span class="n">func_match</span><span class="p">:</span>
+<a id="__codelineno-0-336" name="__codelineno-0-336"></a>            <span class="n">func_name</span> <span class="o">=</span> <span class="n">func_match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<a id="__codelineno-0-337" name="__codelineno-0-337"></a>            <span class="n">function_lines</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">func_name</span>
+<a id="__codelineno-0-338" name="__codelineno-0-338"></a>
+<a id="__codelineno-0-339" name="__codelineno-0-339"></a>    <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+<a id="__codelineno-0-340" name="__codelineno-0-340"></a>    <span class="k">while</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">lines</span><span class="p">):</span>
+<a id="__codelineno-0-341" name="__codelineno-0-341"></a>        <span class="n">line</span> <span class="o">=</span> <span class="n">lines</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+<a id="__codelineno-0-342" name="__codelineno-0-342"></a>
+<a id="__codelineno-0-343" name="__codelineno-0-343"></a>        <span class="n">global_decl_match</span> <span class="o">=</span> <span class="n">_GLOBAL_DECL_PATTERN</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
+<a id="__codelineno-0-344" name="__codelineno-0-344"></a>        <span class="k">if</span> <span class="n">global_decl_match</span><span class="p">:</span>
+<a id="__codelineno-0-345" name="__codelineno-0-345"></a>            <span class="n">content</span> <span class="o">=</span> <span class="n">global_decl_match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+<a id="__codelineno-0-346" name="__codelineno-0-346"></a>            <span class="c1"># Extract all global variable names from this line.</span>
+<a id="__codelineno-0-347" name="__codelineno-0-347"></a>            <span class="n">j</span> <span class="o">=</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span>
+<a id="__codelineno-0-348" name="__codelineno-0-348"></a>            <span class="c1"># If the next non-global line is a function definition, apply these globals for that function.</span>
+<a id="__codelineno-0-349" name="__codelineno-0-349"></a>            <span class="k">if</span> <span class="n">j</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">lines</span><span class="p">):</span>
+<a id="__codelineno-0-350" name="__codelineno-0-350"></a>                <span class="n">function_match</span> <span class="o">=</span> <span class="n">_FUNCTION_DEF_PATTERN</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">lines</span><span class="p">[</span><span class="n">j</span><span class="p">])</span>
+<a id="__codelineno-0-351" name="__codelineno-0-351"></a>                <span class="k">if</span> <span class="n">function_match</span><span class="p">:</span>
+<a id="__codelineno-0-352" name="__codelineno-0-352"></a>                    <span class="n">func_name</span> <span class="o">=</span> <span class="n">function_match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<a id="__codelineno-0-353" name="__codelineno-0-353"></a>                    <span class="n">args</span> <span class="o">=</span> <span class="n">function_match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<a id="__codelineno-0-354" name="__codelineno-0-354"></a>                    <span class="k">if</span> <span class="n">content</span> <span class="o">==</span> <span class="s2">&quot;.all&quot;</span><span class="p">:</span>
+<a id="__codelineno-0-355" name="__codelineno-0-355"></a>                        <span class="n">global_mode_for_functions</span><span class="p">[</span><span class="n">func_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">GlobalMode</span><span class="o">.</span><span class="n">ALL</span>
+<a id="__codelineno-0-356" name="__codelineno-0-356"></a>                    <span class="k">elif</span> <span class="n">content</span> <span class="o">==</span> <span class="s2">&quot;.none&quot;</span><span class="p">:</span>
+<a id="__codelineno-0-357" name="__codelineno-0-357"></a>                        <span class="n">global_mode_for_functions</span><span class="p">[</span><span class="n">func_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">GlobalMode</span><span class="o">.</span><span class="n">NONE</span>
+<a id="__codelineno-0-358" name="__codelineno-0-358"></a>                    <span class="k">else</span><span class="p">:</span>
+<a id="__codelineno-0-359" name="__codelineno-0-359"></a>                        <span class="n">global_mode_for_functions</span><span class="p">[</span><span class="n">func_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">GlobalMode</span><span class="o">.</span><span class="n">SPECIFIC</span>
+<a id="__codelineno-0-360" name="__codelineno-0-360"></a>                        <span class="n">globals_list</span> <span class="o">=</span> <span class="n">_GLOBAL_MATCH_PATTERN</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="n">content</span><span class="p">)</span>
+<a id="__codelineno-0-361" name="__codelineno-0-361"></a>
+<a id="__codelineno-0-362" name="__codelineno-0-362"></a>                        <span class="k">if</span> <span class="ow">not</span> <span class="n">globals_list</span> <span class="ow">and</span> <span class="n">content</span><span class="p">:</span>
+<a id="__codelineno-0-363" name="__codelineno-0-363"></a>                            <span class="k">raise</span> <span class="ne">SyntaxError</span><span class="p">(</span>
+<a id="__codelineno-0-364" name="__codelineno-0-364"></a>                                <span class="sa">f</span><span class="s2">&quot;Invalid global declaration syntax: &lt;global</span><span class="si">{</span><span class="n">content</span><span class="si">}</span><span class="s2">&gt;&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-365" name="__codelineno-0-365"></a>                                <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span>
+<a id="__codelineno-0-366" name="__codelineno-0-366"></a>                            <span class="p">)</span>
+<a id="__codelineno-0-367" name="__codelineno-0-367"></a>                        <span class="k">for</span> <span class="n">gv</span> <span class="ow">in</span> <span class="n">globals_list</span><span class="p">:</span>
+<a id="__codelineno-0-368" name="__codelineno-0-368"></a>                            <span class="k">if</span> <span class="n">gv</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">declared_globals</span><span class="p">:</span>
+<a id="__codelineno-0-369" name="__codelineno-0-369"></a>                                <span class="n">declared_globals</span><span class="p">[</span><span class="n">gv</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+<a id="__codelineno-0-370" name="__codelineno-0-370"></a>                                    <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span>
+<a id="__codelineno-0-371" name="__codelineno-0-371"></a>                                <span class="p">)</span>  <span class="c1"># store declaration line number (1-indexed)</span>
+<a id="__codelineno-0-372" name="__codelineno-0-372"></a>                        <span class="k">if</span> <span class="n">func_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">global_vars_for_functions</span><span class="p">:</span>
+<a id="__codelineno-0-373" name="__codelineno-0-373"></a>                            <span class="n">global_vars_for_functions</span><span class="p">[</span><span class="n">func_name</span><span class="p">]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+<a id="__codelineno-0-374" name="__codelineno-0-374"></a>                        <span class="n">global_vars_for_functions</span><span class="p">[</span><span class="n">func_name</span><span class="p">]</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">globals_list</span><span class="p">)</span>
+<a id="__codelineno-0-375" name="__codelineno-0-375"></a>                        <span class="n">function_params</span> <span class="o">=</span> <span class="n">parse_args</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+<a id="__codelineno-0-376" name="__codelineno-0-376"></a>                        <span class="k">if</span> <span class="nb">any</span><span class="p">(</span>
+<a id="__codelineno-0-377" name="__codelineno-0-377"></a>                            <span class="n">global_var</span> <span class="ow">in</span> <span class="n">function_params</span> <span class="k">for</span> <span class="n">global_var</span> <span class="ow">in</span> <span class="n">globals_list</span>
+<a id="__codelineno-0-378" name="__codelineno-0-378"></a>                        <span class="p">):</span>
+<a id="__codelineno-0-379" name="__codelineno-0-379"></a>                            <span class="k">raise</span> <span class="ne">SyntaxError</span><span class="p">(</span>
+<a id="__codelineno-0-380" name="__codelineno-0-380"></a>                                <span class="s2">&quot;Function parameters must not duplicate with global declarations.&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-381" name="__codelineno-0-381"></a>                                <span class="n">j</span><span class="p">,</span>
+<a id="__codelineno-0-382" name="__codelineno-0-382"></a>                            <span class="p">)</span>
+<a id="__codelineno-0-383" name="__codelineno-0-383"></a>                <span class="k">else</span><span class="p">:</span>
+<a id="__codelineno-0-384" name="__codelineno-0-384"></a>                    <span class="k">raise</span> <span class="ne">SyntaxError</span><span class="p">(</span>
+<a id="__codelineno-0-385" name="__codelineno-0-385"></a>                        <span class="s2">&quot;Global declaration must be followed by a function definition.&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-386" name="__codelineno-0-386"></a>                        <span class="n">j</span><span class="p">,</span>
+<a id="__codelineno-0-387" name="__codelineno-0-387"></a>                    <span class="p">)</span>
+<a id="__codelineno-0-388" name="__codelineno-0-388"></a>            <span class="k">else</span><span class="p">:</span>
+<a id="__codelineno-0-389" name="__codelineno-0-389"></a>                <span class="k">raise</span> <span class="ne">SyntaxError</span><span class="p">(</span>
+<a id="__codelineno-0-390" name="__codelineno-0-390"></a>                    <span class="s2">&quot;Global declaration must not be at the last line of code.&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-391" name="__codelineno-0-391"></a>                    <span class="n">j</span><span class="p">,</span>
+<a id="__codelineno-0-392" name="__codelineno-0-392"></a>                <span class="p">)</span>
+<a id="__codelineno-0-393" name="__codelineno-0-393"></a>            <span class="c1"># Replace the global declaration lines with empty line.</span>
+<a id="__codelineno-0-394" name="__codelineno-0-394"></a>            <span class="n">modified_lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-395" name="__codelineno-0-395"></a>            <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
+<a id="__codelineno-0-396" name="__codelineno-0-396"></a>        <span class="k">else</span><span class="p">:</span>
+<a id="__codelineno-0-397" name="__codelineno-0-397"></a>            <span class="n">modified_lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">lines</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+<a id="__codelineno-0-398" name="__codelineno-0-398"></a>            <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
+<a id="__codelineno-0-399" name="__codelineno-0-399"></a>
+<a id="__codelineno-0-400" name="__codelineno-0-400"></a>    <span class="n">expanded_code</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">modified_lines</span><span class="p">)</span>
+<a id="__codelineno-0-401" name="__codelineno-0-401"></a>
 <a id="__codelineno-0-402" name="__codelineno-0-402"></a>    <span class="n">functions</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">set</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">bool</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span>
 <a id="__codelineno-0-403" name="__codelineno-0-403"></a>
 <a id="__codelineno-0-404" name="__codelineno-0-404"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">replace_function</span><span class="p">(</span><span class="n">match</span><span class="p">:</span> <span class="n">re</span><span class="o">.</span><span class="n">Match</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
@@ -6669,7 +6670,7 @@ Supports binary and unary operators, function calls, and custom function definit
 
 
 <a href="#y5gfunc.expr.infix2postfix.find_binary_op" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">find_binary_op</span><span class="p">(</span><span class="n"><span title="y5gfunc.expr.infix2postfix.find_binary_op(expr)">expr</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span> <span class="n"><span title="y5gfunc.expr.infix2postfix.find_binary_op(op)">op</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">find_binary_op</span><span class="p">(</span><span class="n"><span title="y5gfunc.expr.infix2postfix.find_binary_op(expr)">expr</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span> <span class="n"><span title="y5gfunc.expr.infix2postfix.find_binary_op(op)">op</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#tuple">tuple</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" title="typing.Optional" href="https://docs.python.org/3/library/typing.html#typing.Optional">Optional</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">],</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Optional" href="https://docs.python.org/3/library/typing.html#typing.Optional">Optional</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">]]</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -6707,7 +6708,7 @@ Supports binary and unary operators, function calls, and custom function definit
 <span class="normal"><a href="#__codelineno-0-1568">1568</a></span>
 <span class="normal"><a href="#__codelineno-0-1569">1569</a></span>
 <span class="normal"><a href="#__codelineno-0-1570">1570</a></span>
-<span class="normal"><a href="#__codelineno-0-1571">1571</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-1543" name="__codelineno-0-1543"></a><span class="k">def</span><span class="w"> </span><span class="nf">find_binary_op</span><span class="p">(</span><span class="n">expr</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">op</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="normal"><a href="#__codelineno-0-1571">1571</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-1543" name="__codelineno-0-1543"></a><span class="k">def</span><span class="w"> </span><span class="nf">find_binary_op</span><span class="p">(</span><span class="n">expr</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">op</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]]:</span>
 <a id="__codelineno-0-1544" name="__codelineno-0-1544"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <a id="__codelineno-0-1545" name="__codelineno-0-1545"></a><span class="sd">    Find the last occurrence of the binary operator op at the outer level and return the left and right parts.</span>
 <a id="__codelineno-0-1546" name="__codelineno-0-1546"></a><span class="sd">    &quot;&quot;&quot;</span>
