@@ -3028,8 +3028,7 @@
 
             <details class="quote">
               <summary>Source code in <code>y5gfunc/expr/emulator.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-20">20</a></span>
-<span class="normal"><a href="#__codelineno-0-21">21</a></span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-21">21</a></span>
 <span class="normal"><a href="#__codelineno-0-22">22</a></span>
 <span class="normal"><a href="#__codelineno-0-23">23</a></span>
 <span class="normal"><a href="#__codelineno-0-24">24</a></span>
@@ -3106,85 +3105,86 @@
 <span class="normal"><a href="#__codelineno-0-95">95</a></span>
 <span class="normal"><a href="#__codelineno-0-96">96</a></span>
 <span class="normal"><a href="#__codelineno-0-97">97</a></span>
-<span class="normal"><a href="#__codelineno-0-98">98</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-20" name="__codelineno-0-20"></a><span class="k">def</span><span class="w"> </span><span class="nf">emulate_expr</span><span class="p">(</span>
-<a id="__codelineno-0-21" name="__codelineno-0-21"></a>    <span class="n">expr</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-<a id="__codelineno-0-22" name="__codelineno-0-22"></a>    <span class="n">constants</span><span class="p">:</span> <span class="n">ConstantValues</span> <span class="o">=</span> <span class="n">ConstantValues</span><span class="p">(),</span>
-<a id="__codelineno-0-23" name="__codelineno-0-23"></a>    <span class="n">clip_value</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-<a id="__codelineno-0-24" name="__codelineno-0-24"></a>    <span class="n">clip_prop</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-<a id="__codelineno-0-25" name="__codelineno-0-25"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
-<a id="__codelineno-0-26" name="__codelineno-0-26"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<a id="__codelineno-0-27" name="__codelineno-0-27"></a><span class="sd">    Emulate Akarin.Expr with the given constants, clip values and properties.</span>
-<a id="__codelineno-0-28" name="__codelineno-0-28"></a>
-<a id="__codelineno-0-29" name="__codelineno-0-29"></a><span class="sd">    Args:</span>
-<a id="__codelineno-0-30" name="__codelineno-0-30"></a><span class="sd">        expr: The expression to emulate.</span>
-<a id="__codelineno-0-31" name="__codelineno-0-31"></a><span class="sd">        constants: An object containing constant values (N, X, Y, width, height, pi).</span>
-<a id="__codelineno-0-32" name="__codelineno-0-32"></a><span class="sd">        clip_value: The values of the clips. (e.g. {&quot;src0&quot;: 1.0, &quot;src1&quot;: 2.0})</span>
-<a id="__codelineno-0-33" name="__codelineno-0-33"></a><span class="sd">        clip_prop: The properties of the clips. (e.g. {&quot;src0&quot;: [(&quot;prop1&quot;, 1234), (&quot;prop2&quot;, 4567.8)], &quot;src1&quot;: [(&quot;yajyuu_senpai&quot;, 114514)]})</span>
-<a id="__codelineno-0-34" name="__codelineno-0-34"></a>
-<a id="__codelineno-0-35" name="__codelineno-0-35"></a><span class="sd">    Returns:</span>
-<a id="__codelineno-0-36" name="__codelineno-0-36"></a><span class="sd">        The result of the expression.</span>
-<a id="__codelineno-0-37" name="__codelineno-0-37"></a>
-<a id="__codelineno-0-38" name="__codelineno-0-38"></a><span class="sd">    Raises:</span>
-<a id="__codelineno-0-39" name="__codelineno-0-39"></a><span class="sd">        ValueError: If the expression is invalid or if a clip or property is not found.</span>
-<a id="__codelineno-0-40" name="__codelineno-0-40"></a><span class="sd">    &quot;&quot;&quot;</span>
-<a id="__codelineno-0-41" name="__codelineno-0-41"></a>    <span class="n">clip_value</span> <span class="o">=</span> <span class="n">clip_value</span> <span class="ow">or</span> <span class="p">{}</span>
-<a id="__codelineno-0-42" name="__codelineno-0-42"></a>    <span class="n">clip_prop</span> <span class="o">=</span> <span class="n">clip_prop</span> <span class="ow">or</span> <span class="p">{}</span>
-<a id="__codelineno-0-43" name="__codelineno-0-43"></a>
-<a id="__codelineno-0-44" name="__codelineno-0-44"></a>    <span class="n">all_clip_names</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">clip_value</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">+</span> <span class="nb">list</span><span class="p">(</span><span class="n">clip_prop</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
-<a id="__codelineno-0-45" name="__codelineno-0-45"></a>    <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">all_clip_names</span><span class="p">:</span>
-<a id="__codelineno-0-46" name="__codelineno-0-46"></a>        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">is_clip_postfix</span><span class="p">(</span><span class="n">name</span><span class="p">)</span> <span class="ow">and</span> <span class="n">name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;src&quot;</span><span class="p">)):</span>
-<a id="__codelineno-0-47" name="__codelineno-0-47"></a>            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;emulate_expr: Invalid clip name provided: &#39;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-48" name="__codelineno-0-48"></a>
-<a id="__codelineno-0-49" name="__codelineno-0-49"></a>    <span class="n">constant_values_dict</span> <span class="o">=</span> <span class="n">asdict</span><span class="p">(</span><span class="n">constants</span><span class="p">)</span>
-<a id="__codelineno-0-50" name="__codelineno-0-50"></a>
-<a id="__codelineno-0-51" name="__codelineno-0-51"></a>    <span class="n">expr</span> <span class="o">=</span> <span class="n">optimize_akarin_expr</span><span class="p">(</span><span class="n">expr</span><span class="p">)</span>
-<a id="__codelineno-0-52" name="__codelineno-0-52"></a>    <span class="n">infix_expr</span> <span class="o">=</span> <span class="n">postfix2infix</span><span class="p">(</span><span class="n">expr</span><span class="p">)</span>
-<a id="__codelineno-0-53" name="__codelineno-0-53"></a>    <span class="n">expanded_expr</span> <span class="o">=</span> <span class="n">infix2postfix</span><span class="p">(</span><span class="n">infix_expr</span><span class="p">)</span>
-<a id="__codelineno-0-54" name="__codelineno-0-54"></a>    <span class="n">tokens</span> <span class="o">=</span> <span class="n">tokenize_expr</span><span class="p">(</span><span class="n">expanded_expr</span><span class="p">)</span>
-<a id="__codelineno-0-55" name="__codelineno-0-55"></a>
-<a id="__codelineno-0-56" name="__codelineno-0-56"></a>    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">token</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">tokens</span><span class="p">):</span>
-<a id="__codelineno-0-57" name="__codelineno-0-57"></a>        <span class="k">if</span> <span class="n">is_clip_postfix</span><span class="p">(</span><span class="n">token</span><span class="p">):</span>
-<a id="__codelineno-0-58" name="__codelineno-0-58"></a>            <span class="k">if</span> <span class="n">token</span> <span class="ow">in</span> <span class="n">clip_value</span><span class="p">:</span>
-<a id="__codelineno-0-59" name="__codelineno-0-59"></a>                <span class="n">value</span> <span class="o">=</span> <span class="n">clip_value</span><span class="p">[</span><span class="n">token</span><span class="p">]</span>
-<a id="__codelineno-0-60" name="__codelineno-0-60"></a>                <span class="n">tokens</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
-<a id="__codelineno-0-61" name="__codelineno-0-61"></a>            <span class="k">else</span><span class="p">:</span>
-<a id="__codelineno-0-62" name="__codelineno-0-62"></a>                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-<a id="__codelineno-0-63" name="__codelineno-0-63"></a>                    <span class="sa">f</span><span class="s2">&quot;emulate_expr: Clip &#39;</span><span class="si">{</span><span class="n">token</span><span class="si">}</span><span class="s2">&#39; not found in provided values or properties.&quot;</span>
-<a id="__codelineno-0-64" name="__codelineno-0-64"></a>                <span class="p">)</span>
-<a id="__codelineno-0-65" name="__codelineno-0-65"></a>        <span class="k">elif</span> <span class="n">_FRAME_PROP_PATTERN</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">token</span><span class="p">):</span>
-<a id="__codelineno-0-66" name="__codelineno-0-66"></a>            <span class="n">clip_name</span><span class="p">,</span> <span class="n">prop_name</span> <span class="o">=</span> <span class="n">token</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-67" name="__codelineno-0-67"></a>            <span class="n">found_prop_val</span> <span class="o">=</span> <span class="kc">False</span>
-<a id="__codelineno-0-68" name="__codelineno-0-68"></a>            <span class="k">for</span> <span class="n">clip_nm</span><span class="p">,</span> <span class="n">props</span> <span class="ow">in</span> <span class="n">clip_prop</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-<a id="__codelineno-0-69" name="__codelineno-0-69"></a>                <span class="k">if</span> <span class="n">clip_nm</span> <span class="o">==</span> <span class="n">clip_name</span><span class="p">:</span>
-<a id="__codelineno-0-70" name="__codelineno-0-70"></a>                    <span class="k">for</span> <span class="n">prop</span> <span class="ow">in</span> <span class="n">props</span><span class="p">:</span>
-<a id="__codelineno-0-71" name="__codelineno-0-71"></a>                        <span class="k">if</span> <span class="n">prop</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">prop_name</span><span class="p">:</span>
-<a id="__codelineno-0-72" name="__codelineno-0-72"></a>                            <span class="k">if</span> <span class="ow">not</span> <span class="n">found_prop_val</span><span class="p">:</span>
-<a id="__codelineno-0-73" name="__codelineno-0-73"></a>                                <span class="n">found_prop_val</span> <span class="o">=</span> <span class="kc">True</span>
-<a id="__codelineno-0-74" name="__codelineno-0-74"></a>                                <span class="n">tokens</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">prop</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
-<a id="__codelineno-0-75" name="__codelineno-0-75"></a>                            <span class="k">else</span><span class="p">:</span>
-<a id="__codelineno-0-76" name="__codelineno-0-76"></a>                                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-<a id="__codelineno-0-77" name="__codelineno-0-77"></a>                                    <span class="sa">f</span><span class="s2">&quot;emulate_expr: Duplicate property &#39;</span><span class="si">{</span><span class="n">prop_name</span><span class="si">}</span><span class="s2">&#39; found for clip &#39;</span><span class="si">{</span><span class="n">clip_name</span><span class="si">}</span><span class="s2">&#39;.&quot;</span>
-<a id="__codelineno-0-78" name="__codelineno-0-78"></a>                                <span class="p">)</span>
-<a id="__codelineno-0-79" name="__codelineno-0-79"></a>            <span class="k">if</span> <span class="ow">not</span> <span class="n">found_prop_val</span><span class="p">:</span>
-<a id="__codelineno-0-80" name="__codelineno-0-80"></a>                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-<a id="__codelineno-0-81" name="__codelineno-0-81"></a>                    <span class="sa">f</span><span class="s2">&quot;emulate_expr: Property &#39;</span><span class="si">{</span><span class="n">prop_name</span><span class="si">}</span><span class="s2">&#39; not found for clip &#39;</span><span class="si">{</span><span class="n">clip_name</span><span class="si">}</span><span class="s2">&#39;.&quot;</span>
-<a id="__codelineno-0-82" name="__codelineno-0-82"></a>                <span class="p">)</span>
-<a id="__codelineno-0-83" name="__codelineno-0-83"></a>        <span class="k">elif</span> <span class="n">token</span> <span class="ow">in</span> <span class="p">{</span><span class="s2">&quot;pi&quot;</span><span class="p">,</span> <span class="s2">&quot;N&quot;</span><span class="p">,</span> <span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="s2">&quot;Y&quot;</span><span class="p">,</span> <span class="s2">&quot;width&quot;</span><span class="p">,</span> <span class="s2">&quot;height&quot;</span><span class="p">}:</span>
-<a id="__codelineno-0-84" name="__codelineno-0-84"></a>            <span class="k">if</span> <span class="n">token</span> <span class="ow">in</span> <span class="n">constant_values_dict</span><span class="p">:</span>
-<a id="__codelineno-0-85" name="__codelineno-0-85"></a>                <span class="n">tokens</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">constant_values_dict</span><span class="p">[</span><span class="n">token</span><span class="p">])</span>
-<a id="__codelineno-0-86" name="__codelineno-0-86"></a>            <span class="k">else</span><span class="p">:</span>
-<a id="__codelineno-0-87" name="__codelineno-0-87"></a>                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-<a id="__codelineno-0-88" name="__codelineno-0-88"></a>                    <span class="sa">f</span><span class="s2">&quot;emulate_expr: Constant &#39;</span><span class="si">{</span><span class="n">token</span><span class="si">}</span><span class="s2">&#39; not found in provided constants.&quot;</span>
-<a id="__codelineno-0-89" name="__codelineno-0-89"></a>                <span class="p">)</span>
-<a id="__codelineno-0-90" name="__codelineno-0-90"></a>
-<a id="__codelineno-0-91" name="__codelineno-0-91"></a>    <span class="k">try</span><span class="p">:</span>
-<a id="__codelineno-0-92" name="__codelineno-0-92"></a>        <span class="n">ret</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">optimize_akarin_expr</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">tokens</span><span class="p">)))</span>
-<a id="__codelineno-0-93" name="__codelineno-0-93"></a>    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-<a id="__codelineno-0-94" name="__codelineno-0-94"></a>        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-<a id="__codelineno-0-95" name="__codelineno-0-95"></a>            <span class="sa">f</span><span class="s2">&quot;emulate_expr: Error occurred while optimizing expression: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span>
-<a id="__codelineno-0-96" name="__codelineno-0-96"></a>        <span class="p">)</span>
-<a id="__codelineno-0-97" name="__codelineno-0-97"></a>
-<a id="__codelineno-0-98" name="__codelineno-0-98"></a>    <span class="k">return</span> <span class="n">ret</span>
+<span class="normal"><a href="#__codelineno-0-98">98</a></span>
+<span class="normal"><a href="#__codelineno-0-99">99</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-21" name="__codelineno-0-21"></a><span class="k">def</span><span class="w"> </span><span class="nf">emulate_expr</span><span class="p">(</span>
+<a id="__codelineno-0-22" name="__codelineno-0-22"></a>    <span class="n">expr</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+<a id="__codelineno-0-23" name="__codelineno-0-23"></a>    <span class="n">constants</span><span class="p">:</span> <span class="n">ConstantValues</span> <span class="o">=</span> <span class="n">ConstantValues</span><span class="p">(),</span>
+<a id="__codelineno-0-24" name="__codelineno-0-24"></a>    <span class="n">clip_value</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<a id="__codelineno-0-25" name="__codelineno-0-25"></a>    <span class="n">clip_prop</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<a id="__codelineno-0-26" name="__codelineno-0-26"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<a id="__codelineno-0-27" name="__codelineno-0-27"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<a id="__codelineno-0-28" name="__codelineno-0-28"></a><span class="sd">    Emulate Akarin.Expr with the given constants, clip values and properties.</span>
+<a id="__codelineno-0-29" name="__codelineno-0-29"></a>
+<a id="__codelineno-0-30" name="__codelineno-0-30"></a><span class="sd">    Args:</span>
+<a id="__codelineno-0-31" name="__codelineno-0-31"></a><span class="sd">        expr: The expression to emulate.</span>
+<a id="__codelineno-0-32" name="__codelineno-0-32"></a><span class="sd">        constants: An object containing constant values (N, X, Y, width, height, pi).</span>
+<a id="__codelineno-0-33" name="__codelineno-0-33"></a><span class="sd">        clip_value: The values of the clips. (e.g. {&quot;src0&quot;: 1.0, &quot;src1&quot;: 2.0})</span>
+<a id="__codelineno-0-34" name="__codelineno-0-34"></a><span class="sd">        clip_prop: The properties of the clips. (e.g. {&quot;src0&quot;: [(&quot;prop1&quot;, 1234), (&quot;prop2&quot;, 4567.8)], &quot;src1&quot;: [(&quot;yajyuu_senpai&quot;, 114514)]})</span>
+<a id="__codelineno-0-35" name="__codelineno-0-35"></a>
+<a id="__codelineno-0-36" name="__codelineno-0-36"></a><span class="sd">    Returns:</span>
+<a id="__codelineno-0-37" name="__codelineno-0-37"></a><span class="sd">        The result of the expression.</span>
+<a id="__codelineno-0-38" name="__codelineno-0-38"></a>
+<a id="__codelineno-0-39" name="__codelineno-0-39"></a><span class="sd">    Raises:</span>
+<a id="__codelineno-0-40" name="__codelineno-0-40"></a><span class="sd">        ValueError: If the expression is invalid or if a clip or property is not found.</span>
+<a id="__codelineno-0-41" name="__codelineno-0-41"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="__codelineno-0-42" name="__codelineno-0-42"></a>    <span class="n">clip_value</span> <span class="o">=</span> <span class="n">clip_value</span> <span class="ow">or</span> <span class="p">{}</span>
+<a id="__codelineno-0-43" name="__codelineno-0-43"></a>    <span class="n">clip_prop</span> <span class="o">=</span> <span class="n">clip_prop</span> <span class="ow">or</span> <span class="p">{}</span>
+<a id="__codelineno-0-44" name="__codelineno-0-44"></a>
+<a id="__codelineno-0-45" name="__codelineno-0-45"></a>    <span class="n">all_clip_names</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">clip_value</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">+</span> <span class="nb">list</span><span class="p">(</span><span class="n">clip_prop</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+<a id="__codelineno-0-46" name="__codelineno-0-46"></a>    <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">all_clip_names</span><span class="p">:</span>
+<a id="__codelineno-0-47" name="__codelineno-0-47"></a>        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">is_clip_postfix</span><span class="p">(</span><span class="n">name</span><span class="p">)</span> <span class="ow">and</span> <span class="n">name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;src&quot;</span><span class="p">)):</span>
+<a id="__codelineno-0-48" name="__codelineno-0-48"></a>            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;emulate_expr: Invalid clip name provided: &#39;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-49" name="__codelineno-0-49"></a>
+<a id="__codelineno-0-50" name="__codelineno-0-50"></a>    <span class="n">constant_values_dict</span> <span class="o">=</span> <span class="n">asdict</span><span class="p">(</span><span class="n">constants</span><span class="p">)</span>
+<a id="__codelineno-0-51" name="__codelineno-0-51"></a>
+<a id="__codelineno-0-52" name="__codelineno-0-52"></a>    <span class="n">expr</span> <span class="o">=</span> <span class="n">optimize_akarin_expr</span><span class="p">(</span><span class="n">expr</span><span class="p">)</span>
+<a id="__codelineno-0-53" name="__codelineno-0-53"></a>    <span class="n">infix_expr</span> <span class="o">=</span> <span class="n">postfix2infix</span><span class="p">(</span><span class="n">expr</span><span class="p">)</span>
+<a id="__codelineno-0-54" name="__codelineno-0-54"></a>    <span class="n">expanded_expr</span> <span class="o">=</span> <span class="n">infix2postfix</span><span class="p">(</span><span class="n">infix_expr</span><span class="p">)</span>
+<a id="__codelineno-0-55" name="__codelineno-0-55"></a>    <span class="n">tokens</span> <span class="o">=</span> <span class="n">tokenize_expr</span><span class="p">(</span><span class="n">expanded_expr</span><span class="p">)</span>
+<a id="__codelineno-0-56" name="__codelineno-0-56"></a>
+<a id="__codelineno-0-57" name="__codelineno-0-57"></a>    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">token</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">tokens</span><span class="p">):</span>
+<a id="__codelineno-0-58" name="__codelineno-0-58"></a>        <span class="k">if</span> <span class="n">is_clip_postfix</span><span class="p">(</span><span class="n">token</span><span class="p">):</span>
+<a id="__codelineno-0-59" name="__codelineno-0-59"></a>            <span class="k">if</span> <span class="n">token</span> <span class="ow">in</span> <span class="n">clip_value</span><span class="p">:</span>
+<a id="__codelineno-0-60" name="__codelineno-0-60"></a>                <span class="n">value</span> <span class="o">=</span> <span class="n">clip_value</span><span class="p">[</span><span class="n">token</span><span class="p">]</span>
+<a id="__codelineno-0-61" name="__codelineno-0-61"></a>                <span class="n">tokens</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+<a id="__codelineno-0-62" name="__codelineno-0-62"></a>            <span class="k">else</span><span class="p">:</span>
+<a id="__codelineno-0-63" name="__codelineno-0-63"></a>                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+<a id="__codelineno-0-64" name="__codelineno-0-64"></a>                    <span class="sa">f</span><span class="s2">&quot;emulate_expr: Clip &#39;</span><span class="si">{</span><span class="n">token</span><span class="si">}</span><span class="s2">&#39; not found in provided values or properties.&quot;</span>
+<a id="__codelineno-0-65" name="__codelineno-0-65"></a>                <span class="p">)</span>
+<a id="__codelineno-0-66" name="__codelineno-0-66"></a>        <span class="k">elif</span> <span class="n">_FRAME_PROP_PATTERN</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">token</span><span class="p">):</span>
+<a id="__codelineno-0-67" name="__codelineno-0-67"></a>            <span class="n">clip_name</span><span class="p">,</span> <span class="n">prop_name</span> <span class="o">=</span> <span class="n">token</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-68" name="__codelineno-0-68"></a>            <span class="n">found_prop_val</span> <span class="o">=</span> <span class="kc">False</span>
+<a id="__codelineno-0-69" name="__codelineno-0-69"></a>            <span class="k">for</span> <span class="n">clip_nm</span><span class="p">,</span> <span class="n">props</span> <span class="ow">in</span> <span class="n">clip_prop</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+<a id="__codelineno-0-70" name="__codelineno-0-70"></a>                <span class="k">if</span> <span class="n">clip_nm</span> <span class="o">==</span> <span class="n">clip_name</span><span class="p">:</span>
+<a id="__codelineno-0-71" name="__codelineno-0-71"></a>                    <span class="k">for</span> <span class="n">prop</span> <span class="ow">in</span> <span class="n">props</span><span class="p">:</span>
+<a id="__codelineno-0-72" name="__codelineno-0-72"></a>                        <span class="k">if</span> <span class="n">prop</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">prop_name</span><span class="p">:</span>
+<a id="__codelineno-0-73" name="__codelineno-0-73"></a>                            <span class="k">if</span> <span class="ow">not</span> <span class="n">found_prop_val</span><span class="p">:</span>
+<a id="__codelineno-0-74" name="__codelineno-0-74"></a>                                <span class="n">found_prop_val</span> <span class="o">=</span> <span class="kc">True</span>
+<a id="__codelineno-0-75" name="__codelineno-0-75"></a>                                <span class="n">tokens</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">prop</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+<a id="__codelineno-0-76" name="__codelineno-0-76"></a>                            <span class="k">else</span><span class="p">:</span>
+<a id="__codelineno-0-77" name="__codelineno-0-77"></a>                                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+<a id="__codelineno-0-78" name="__codelineno-0-78"></a>                                    <span class="sa">f</span><span class="s2">&quot;emulate_expr: Duplicate property &#39;</span><span class="si">{</span><span class="n">prop_name</span><span class="si">}</span><span class="s2">&#39; found for clip &#39;</span><span class="si">{</span><span class="n">clip_name</span><span class="si">}</span><span class="s2">&#39;.&quot;</span>
+<a id="__codelineno-0-79" name="__codelineno-0-79"></a>                                <span class="p">)</span>
+<a id="__codelineno-0-80" name="__codelineno-0-80"></a>            <span class="k">if</span> <span class="ow">not</span> <span class="n">found_prop_val</span><span class="p">:</span>
+<a id="__codelineno-0-81" name="__codelineno-0-81"></a>                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+<a id="__codelineno-0-82" name="__codelineno-0-82"></a>                    <span class="sa">f</span><span class="s2">&quot;emulate_expr: Property &#39;</span><span class="si">{</span><span class="n">prop_name</span><span class="si">}</span><span class="s2">&#39; not found for clip &#39;</span><span class="si">{</span><span class="n">clip_name</span><span class="si">}</span><span class="s2">&#39;.&quot;</span>
+<a id="__codelineno-0-83" name="__codelineno-0-83"></a>                <span class="p">)</span>
+<a id="__codelineno-0-84" name="__codelineno-0-84"></a>        <span class="k">elif</span> <span class="n">token</span> <span class="ow">in</span> <span class="p">{</span><span class="s2">&quot;pi&quot;</span><span class="p">,</span> <span class="s2">&quot;N&quot;</span><span class="p">,</span> <span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="s2">&quot;Y&quot;</span><span class="p">,</span> <span class="s2">&quot;width&quot;</span><span class="p">,</span> <span class="s2">&quot;height&quot;</span><span class="p">}:</span>
+<a id="__codelineno-0-85" name="__codelineno-0-85"></a>            <span class="k">if</span> <span class="n">token</span> <span class="ow">in</span> <span class="n">constant_values_dict</span><span class="p">:</span>
+<a id="__codelineno-0-86" name="__codelineno-0-86"></a>                <span class="n">tokens</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">constant_values_dict</span><span class="p">[</span><span class="n">token</span><span class="p">])</span>
+<a id="__codelineno-0-87" name="__codelineno-0-87"></a>            <span class="k">else</span><span class="p">:</span>
+<a id="__codelineno-0-88" name="__codelineno-0-88"></a>                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+<a id="__codelineno-0-89" name="__codelineno-0-89"></a>                    <span class="sa">f</span><span class="s2">&quot;emulate_expr: Constant &#39;</span><span class="si">{</span><span class="n">token</span><span class="si">}</span><span class="s2">&#39; not found in provided constants.&quot;</span>
+<a id="__codelineno-0-90" name="__codelineno-0-90"></a>                <span class="p">)</span>
+<a id="__codelineno-0-91" name="__codelineno-0-91"></a>
+<a id="__codelineno-0-92" name="__codelineno-0-92"></a>    <span class="k">try</span><span class="p">:</span>
+<a id="__codelineno-0-93" name="__codelineno-0-93"></a>        <span class="n">ret</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">optimize_akarin_expr</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">tokens</span><span class="p">)))</span>
+<a id="__codelineno-0-94" name="__codelineno-0-94"></a>    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+<a id="__codelineno-0-95" name="__codelineno-0-95"></a>        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+<a id="__codelineno-0-96" name="__codelineno-0-96"></a>            <span class="sa">f</span><span class="s2">&quot;emulate_expr: Error occurred while optimizing expression: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span>
+<a id="__codelineno-0-97" name="__codelineno-0-97"></a>        <span class="p">)</span>
+<a id="__codelineno-0-98" name="__codelineno-0-98"></a>
+<a id="__codelineno-0-99" name="__codelineno-0-99"></a>    <span class="k">return</span> <span class="n">ret</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
