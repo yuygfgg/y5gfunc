@@ -608,10 +608,10 @@ _STD_COMPAT_CONST_Y_PATTERN = re.compile(r"\$Y(?![a-zA-Z0-9_])")
 _STD_COMPAT_CONST_WIDTH_PATTERN = re.compile(r"\$width(?![a-zA-Z0-9_])")
 _STD_COMPAT_CONST_HEIGHT_PATTERN = re.compile(r"\$height(?![a-zA-Z0-9_])")
 _STD_COMPAT_SRC_HIGH_NUM_PATTERN = re.compile(r"\$src(\d+)\b")
-_STD_COMPAT_BITAND_PATTERN = re.compile(r"(?<!\w)&(?!\w)")
-_STD_COMPAT_BITOR_PATTERN = re.compile(r"(?<!\w)\|(?!\w)")
-_STD_COMPAT_BITXOR_PATTERN = re.compile(r"(?<!\w)\^(?!\w)")
-_STD_COMPAT_MODULUS_PATTERN = re.compile(r"(?<!\w)%(?!\w)")
+_STD_COMPAT_BITAND_PATTERN = re.compile(r"(?<!&)&(?!&)")
+_STD_COMPAT_BITOR_PATTERN = re.compile(r"(?<!\|)\|(?!\|)")
+_STD_COMPAT_BITXOR_PATTERN = re.compile(r"\^")
+_STD_COMPAT_MODULUS_PATTERN = re.compile(r"%")
 _STD_COMPAT_CONST_PATTERNS = {
     "N": _STD_COMPAT_CONST_N_PATTERN,
     "X": _STD_COMPAT_CONST_X_PATTERN,
@@ -624,7 +624,6 @@ _STD_COMPAT_BITWISE_PATTERNS = {
     "|": _STD_COMPAT_BITOR_PATTERN,
     "^": _STD_COMPAT_BITXOR_PATTERN,
 }
-
 
 class SyntaxError(Exception):
     """Custom syntax error class with line information"""
