@@ -18,7 +18,10 @@ from .expr import (
     verify_std_expr,
     OptimizeLevel,
     emulate_expr,
-    ConstantValues
+    ConstantValues,
+    SourceClip,
+    Constant,
+    BuiltInFunc,
 )
 from .filter import (
     sakiko_deband,
@@ -246,5 +249,8 @@ __all__ = [
     "verify_std_expr",
     "OptimizeLevel",
     "emulate_expr",
-    "ConstantValues"
+    "ConstantValues",
+    "SourceClip",
+    "Constant",
+    "BuiltInFunc",
 ]

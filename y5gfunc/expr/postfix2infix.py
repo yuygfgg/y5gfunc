@@ -154,7 +154,10 @@ def postfix2infix(expr: str, check_mode: bool = False) -> str:
         if sort_match:
             num = int(sort_match.group(1))
             items = pop(num)
-            sorted_items_expr = f"nth_{{}}({', '.join(items)})"
+            if not check_mode:
+                sorted_items_expr = f"nth_{{}}({', '.join(items)})"
+            else:
+                sorted_items_expr = f"nth_{{}}({', '* num})"
             for idx in range(len(items)):
                 push(sorted_items_expr.format(len(items) - idx))
             i += 1
