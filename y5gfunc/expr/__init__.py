@@ -16,7 +16,7 @@ from .verify import verify_akarin_expr, verify_std_expr
 from .optimize import optimize_akarin_expr, OptimizeLevel
 from .expr_utils import math_functions
 from .emulator import emulate_expr, ConstantValues
-from python2infix import SourceClip, Constant, BuiltInFunc
+from .python2infix import SourceClip, Constant, BuiltInFunc
 
 __all__ = [
     "postfix2infix",
