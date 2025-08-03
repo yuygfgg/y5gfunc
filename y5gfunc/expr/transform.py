@@ -7,7 +7,6 @@ from .utils import (
     parse_numeric,
     is_token_numeric,
 )
-import regex as re
 import random
 import time
 import math
@@ -277,18 +276,21 @@ def convert_clip_names(expr: str) -> str:
     Replace clip names with their std.Expr equivalents.
     """
 
-    pattern = re.compile(r"\bsrc(\d+)\b")
     clip_vars = "xyzabcdefghijklmnopqrstuvw"
 
-    def get_replacement(match) -> str:
-        n = int(match.group(1))
-        if 0 <= n < len(clip_vars):
-            return clip_vars[n]
-        raise ValueError(
-            f"Clip index {n} is out of range. std.Expr supports up to {len(clip_vars)} clips (src0 ~ src{len(clip_vars)-1})."
-        )
+    tokens = tokenize_expr(expr)
 
-    return pattern.sub(get_replacement, expr)
+    for i, token in enumerate(tokens):
+        if token.startswith("src") and len(token) > 3 and token[3:].isdigit():
+            n = int(token[3:])
+            if 0 <= n < len(clip_vars):
+                tokens[i] = clip_vars[n]
+            else:
+                raise ValueError(
+                    f"Clip index {n} is out of range. std.Expr supports up to {len(clip_vars)} clips (src0 ~ src{len(clip_vars)-1})."
+                )
+
+    return " ".join(tokens)
 
 
 def convert_pow(expr: str) -> str:

@@ -12,6 +12,11 @@ package_name = src_package_dir.name
 log.info(f"Starting reference page generation from source directory: {src_package_dir}")
 
 for path in sorted(src_package_dir.rglob("*.py")):
+
+    if "test" in path.parts:
+        log.debug(f"Skipping test folder file: {path}")
+        continue
+    
     module_path_rel_pkg = path.relative_to(src_package_dir)
     module_path_parts = module_path_rel_pkg.with_suffix("").parts
 
