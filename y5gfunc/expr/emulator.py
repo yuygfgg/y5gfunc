@@ -17,6 +17,7 @@ class ConstantValues:
     height: Optional[int] = None
 
 
+# FIXME: support pixel access emulation (how?)
 def emulate_expr(
     expr: str,
     constants: ConstantValues = ConstantValues(),

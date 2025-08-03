@@ -181,8 +181,6 @@ def infix2postfix(
         -   In **Standard Mode**, only `$src0` through `$src25` (or their letter aliases) are available.
         -   In **Akarin Mode**, this range is extended beyond `$src25`.
 
-    Example: `my_pixel_value = $a[0, 0]`
-
     ## 5. Operators
 
     Operators are left-associative, except for the unary and ternary operators. The following table lists operators in order of precedence, from lowest to highest.
@@ -220,7 +218,6 @@ def infix2postfix(
     | `sin`, `cos`, `log`, `exp` | 1 | Standard trigonometric and logarithmic functions. | All modes |
     | `sqrt`, `abs`| 1 | Square root, absolute value. | All modes |
     | `trunc` | 1 | Truncation. | Akarin Only |
-    | `not` | 1 | Logical NOT. | All modes |
     | `min`, `max` | 2 | Returns the minimum or maximum of two values. | All modes |
     | `clamp` | 3 | `clamp(x, min_val, max_val)` | All modes |
     | `round`, `floor` | 1 | Round to nearest integer, round down. | Akarin Only |
@@ -1090,7 +1087,6 @@ def convert_expr(
                 "abs",
                 "sqrt",
                 "trunc",
-                "not",
             ]
             if func_name in builtin_unary:
                 if len(args) != 1:
@@ -1614,7 +1610,6 @@ def is_builtin_function(func_name: str) -> bool:
         "abs",
         "sqrt",
         "trunc",
-        "not",
     ]
     builtin_binary = ["min", "max"]
     builtin_ternary = ["clamp", "dyn"]
