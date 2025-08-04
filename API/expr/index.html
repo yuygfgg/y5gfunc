@@ -2777,10 +2777,21 @@
 <li><strong>Postfix to Infix</strong>: Decompile existing Postfix expressions back into the human-readable Infix DSL, making it easier to understand, modify, and debug complex RPN code.</li>
 </ul>
 <h3 id="2-expression-optimization">2. Expression Optimization<a class="headerlink" href="#2-expression-optimization" title="Permanent link">&para;</a></h3>
-<p>A powerful optimizer that applies a variety of techniques to enhance <code>Expr</code> performance:
--   <strong>Constant Folding</strong>: Pre-calculates constant parts of the expression.
--   <strong>Dead Assignment Elimination</strong>: Removes variables that are assigned but never used.
--   <strong>Dynamic to Static Pixel Access Conversion</strong>: Converts dynamic pixel access (e.g., <code>x[a,b]</code>) to faster static access (e.g., <code>x[1,1]</code>) where possible.</p>
+<p>A powerful optimizer that applies a variety of techniques to enhance <code>Expr</code> performance:</p>
+<ul>
+<li>
+<p><strong>Constant Folding</strong>: Pre-calculates constant parts of the expression.</p>
+</li>
+<li>
+<p><strong>Dead Assignment Elimination</strong>: Removes variables that are assigned but never used.</p>
+</li>
+<li>
+<p><strong>Dynamic to Static Pixel Access Conversion</strong>: Converts dynamic pixel access (e.g., <code>x[a,b]</code>) to faster static access (e.g., <code>x[1,1]</code>) where possible.</p>
+</li>
+<li>
+<p><strong>Memory Optimization</strong>: Improve memory performance by transforming variable operations into stack manipulations.</p>
+</li>
+</ul>
 <h3 id="3-compatibility-transformation">3. Compatibility &amp; Transformation<a class="headerlink" href="#3-compatibility-transformation" title="Permanent link">&para;</a></h3>
 <ul>
 <li><strong>Reduce Akarin Plugin Dependency</strong>: Transforms expressions to emulate certain <code>akarin.Expr</code>-only features (like <code>sort</code>, <code>dropN</code>, and variable storage) using <code>std.Expr</code> compatible operations. This significantly reduces the need for external plugins.</li>

@@ -2898,35 +2898,39 @@
 <h4 id="11-reverse-polish-notation-rpn"><strong>1.1. Reverse Polish Notation (RPN)</strong><a class="headerlink" href="#11-reverse-polish-notation-rpn" title="Permanent link">&para;</a></h4>
 <p>Instead of the conventional <code>A + B</code>, RPN places operators <em>after</em> their operands: <code>A B +</code>. The expression is evaluated using a stack. Values are pushed onto the stack, and operators pop values, perform a calculation, and push the result back onto the stack.</p>
 <ul>
-<li><strong>Example:</strong> To calculate <code>(5 + 3) * 2</code>, the RPN expression is <code>5 3 + 2 *</code>.<ol>
+<li><strong>Example:</strong> To calculate <code>(5 + 3) * 2</code>, the RPN expression is <code>5 3 + 2 *</code>.</li>
 <li><code>5</code>: Push 5. Stack: <code>[5]</code></li>
 <li><code>3</code>: Push 3. Stack: <code>[5, 3]</code></li>
 <li><code>+</code>: Pop 3 and 5, calculate 8, push 8. Stack: <code>[8]</code></li>
 <li><code>2</code>: Push 2. Stack: <code>[8, 2]</code></li>
 <li><code>*</code>: Pop 2 and 8, calculate 16, push 16. Stack: <code>[16]</code></li>
-</ol>
-</li>
 </ul>
 <p>The final value on the stack is the result for the pixel.</p>
 <h4 id="12-data-ranges"><strong>1.2. Data Ranges</strong><a class="headerlink" href="#12-data-ranges" title="Permanent link">&para;</a></h4>
-<p><code>Expr</code> does not normalize input clip values. You must account for the native range of the pixel format.
-*   <strong>8-bit integer:</strong> 0 to 255
-*   <strong>10-bit integer:</strong> 0 to 1023
-*   <strong>16-bit integer:</strong> 0 to 65535
-*   <strong>32-bit float:</strong> Typically 0.0 to 1.0 for Luma (Y) and Alpha, and -0.5 to 0.5 for Chroma (U/V).</p>
+<p><code>Expr</code> does not normalize input clip values. You must account for the native range of the pixel format.</p>
+<ul>
+<li><strong>8-bit integer:</strong> 0 to 255</li>
+<li><strong>10-bit integer:</strong> 0 to 1023</li>
+<li><strong>16-bit integer:</strong> 0 to 65535</li>
+<li><strong>32-bit float:</strong> Typically 0.0 to 1.0 for Luma (Y) and Alpha, and -0.5 to 0.5 for Chroma (U/V).</li>
+</ul>
 <p>When mixing formats, scale values accordingly. For example, to add an 8-bit value to a 10-bit value, you might use <code>x y 4 * +</code> (multiplying the 8-bit value <code>y</code> by 4 to scale it to the 10-bit range).</p>
 <hr />
 <h3 id="2-stdexpr-base-syntax"><strong>2. <code>std.Expr</code> Base Syntax</strong><a class="headerlink" href="#2-stdexpr-base-syntax" title="Permanent link">&para;</a></h3>
 <p>This section covers the standard operators and identifiers available in <code>std.Expr</code>.</p>
 <h4 id="21-clip-identifiers"><strong>2.1. Clip Identifiers</strong><a class="headerlink" href="#21-clip-identifiers" title="Permanent link">&para;</a></h4>
-<p>Input clips are referred to by letters. Up to 26 clips can be used.
-*   <code>x</code>: The first input clip.
-*   <code>y</code>: The second input clip.
-*   <code>z</code>: The third input clip.
-*   <code>a</code> to <code>w</code>: The 4th to 26th clips.</p>
+<p>Input clips are referred to by letters. Up to 26 clips can be used.</p>
+<ul>
+<li><code>x</code>: The first input clip.</li>
+<li><code>y</code>: The second input clip.</li>
+<li><code>z</code>: The third input clip.</li>
+<li><code>a</code> to <code>w</code>: The 4th to 26th clips.</li>
+</ul>
 <h4 id="22-constants"><strong>2.2. Constants</strong><a class="headerlink" href="#22-constants" title="Permanent link">&para;</a></h4>
-<p>Numeric literals are pushed directly onto the stack.
-*   <strong>Example:</strong> <code>x 128 -</code> (Subtracts 128 from each pixel value of the first clip).</p>
+<p>Numeric literals are pushed directly onto the stack.</p>
+<ul>
+<li><strong>Example:</strong> <code>x 128 -</code> (Subtracts 128 from each pixel value of the first clip).</li>
+</ul>
 <h4 id="23-arithmetic-operators-2-operands"><strong>2.3. Arithmetic Operators (2 operands)</strong><a class="headerlink" href="#23-arithmetic-operators-2-operands" title="Permanent link">&para;</a></h4>
 <ul>
 <li><code>+</code>: Addition</li>
@@ -2945,22 +2949,22 @@
 <li><code>cos</code>: (1 operand) <code>x cos</code> is the cosine of x.</li>
 </ul>
 <h4 id="25-comparison-logical-operators-2-operands"><strong>2.5. Comparison &amp; Logical Operators (2 operands)</strong><a class="headerlink" href="#25-comparison-logical-operators-2-operands" title="Permanent link">&para;</a></h4>
-<p>These operators treat any value greater than 0 as <code>true</code>. They return <code>1.0</code> for true and <code>0.0</code> for false.
-*   <code>&gt;</code>: Greater than
-*   <code>&lt;</code>: Less than
-*   <code>=</code>: Equal to
-*   <code>&gt;=</code>: Greater than or equal to
-*   <code>&lt;=</code>: Less than or equal to
-*   <code>and</code>: Logical AND
-*   <code>or</code>: Logical OR
-*   <code>xor</code>: Logical XOR
-*   <code>not</code>: (1 operand) Logical NOT.</p>
+<p>These operators treat any value greater than 0 as <code>true</code>. They return <code>1.0</code> for true and <code>0.0</code> for false.</p>
+<ul>
+<li><code>&gt;</code>: Greater than</li>
+<li><code>&lt;</code>: Less than</li>
+<li><code>=</code>: Equal to</li>
+<li><code>&gt;=</code>: Greater than or equal to</li>
+<li><code>&lt;=</code>: Less than or equal to</li>
+<li><code>and</code>: Logical AND</li>
+<li><code>or</code>: Logical OR</li>
+<li><code>xor</code>: Logical XOR</li>
+<li><code>not</code>: (1 operand) Logical NOT.</li>
+</ul>
 <h4 id="26-conditional-operator-3-operands"><strong>2.6. Conditional Operator (3 operands)</strong><a class="headerlink" href="#26-conditional-operator-3-operands" title="Permanent link">&para;</a></h4>
 <ul>
-<li><code>?</code>: A ternary operator, <code>C A B ?</code> is equivalent to <code>C ? A : B</code>. If <code>C</code> is true (non-zero), <code>A</code> is evaluated and its result is pushed. Otherwise, <code>B</code> is evaluated and its result is pushed.<ul>
+<li><code>?</code>: A ternary operator, <code>C A B ?</code> is equivalent to <code>C ? A : B</code>. If <code>C</code> is true (non-zero), <code>A</code> is evaluated and its result is pushed. Otherwise, <code>B</code> is evaluated and its result is pushed.</li>
 <li><strong>Example:</strong> <code>x 128 &gt; x 0 ?</code> (If the pixel value is greater than 128, keep it, otherwise set it to 0).</li>
-</ul>
-</li>
 </ul>
 <h4 id="27-minmax-operators-2-operands"><strong>2.7. Min/Max Operators (2 operands)</strong><a class="headerlink" href="#27-minmax-operators-2-operands" title="Permanent link">&para;</a></h4>
 <ul>
@@ -2978,52 +2982,44 @@
 <h3 id="3-akarinexpr-extended-syntax"><strong>3. <code>akarin.Expr</code> Extended Syntax</strong><a class="headerlink" href="#3-akarinexpr-extended-syntax" title="Permanent link">&para;</a></h3>
 <p><code>akarin.Expr</code> includes all <code>std.Expr</code> functionality plus the following additions.</p>
 <h4 id="31-special-variables-constants"><strong>3.1. Special Variables &amp; Constants</strong><a class="headerlink" href="#31-special-variables-constants" title="Permanent link">&para;</a></h4>
-<p>These are special operators that push a specific value onto the stack.
-*   <code>pi</code>: Pushes the mathematical constant π (approximately 3.14159).
-*   <code>N</code>: Pushes the current frame number.
-*   <code>X</code>: Pushes the current pixel's column coordinate (width).
-*   <code>Y</code>: Pushes the current pixel's row coordinate (height).
-*   <code>width</code>: Pushes the width of the frame.
-*   <code>height</code>: Pushes the height of the frame.</p>
+<p>These are special operators that push a specific value onto the stack.</p>
+<ul>
+<li><code>pi</code>: Pushes the mathematical constant π (approximately 3.14159).</li>
+<li><code>N</code>: Pushes the current frame number.</li>
+<li><code>X</code>: Pushes the current pixel's column coordinate (width).</li>
+<li><code>Y</code>: Pushes the current pixel's row coordinate (height).</li>
+<li><code>width</code>: Pushes the width of the frame.</li>
+<li><code>height</code>: Pushes the height of the frame.</li>
+</ul>
 <h4 id="32-frame-property-access"><strong>3.2. Frame Property Access</strong><a class="headerlink" href="#32-frame-property-access" title="Permanent link">&para;</a></h4>
 <ul>
-<li><code>clip.PropertyName</code>: Loads a scalar numerical frame property.<ul>
+<li><code>clip.PropertyName</code>: Loads a scalar numerical frame property.</li>
 <li><strong>Example:</strong> <code>x.PlaneStatsAverage</code> pushes the average pixel value of the current plane from the first clip. If the property doesn't exist, the value is <code>NaN</code>.</li>
-</ul>
-</li>
 </ul>
 <h4 id="33-additional-math-logic"><strong>3.3. Additional Math &amp; Logic</strong><a class="headerlink" href="#33-additional-math-logic" title="Permanent link">&para;</a></h4>
 <ul>
 <li><code>**</code>: An alias for <code>pow</code>. <code>x 2 **</code> is the same as <code>x 2 pow</code>.</li>
 <li><code>%</code>: Implements C's <code>fmodf</code>. <code>x 1.0 %</code> gives the fractional part of <code>x</code>.</li>
-<li><code>clip</code> / <code>clamp</code>: (3 operands) Clamps a value. <code>x min max clip</code> is equivalent to <code>x max min</code>.<ul>
+<li><code>clip</code> / <code>clamp</code>: (3 operands) Clamps a value. <code>x min max clip</code> is equivalent to <code>x max min</code>.</li>
 <li><strong>Example:</strong> <code>x 16 235 clip</code> clamps the pixel value to the range.</li>
-</ul>
-</li>
 <li><code>trunc</code>: (1 operand) Truncates the value towards zero.</li>
 <li><code>round</code>: (1 operand) Rounds the value to the nearest integer.</li>
 <li><code>floor</code>: (1 operand) Rounds the value down to the nearest integer.</li>
 </ul>
 <h4 id="34-advanced-stack-manipulation"><strong>3.4. Advanced Stack Manipulation</strong><a class="headerlink" href="#34-advanced-stack-manipulation" title="Permanent link">&para;</a></h4>
 <ul>
-<li><strong>Named Variables:</strong><ul>
+<li><strong>Named Variables:</strong></li>
 <li><code>var!</code>: Pops the top value from the stack and stores it in a variable named <code>var</code>.</li>
 <li><code>var@</code>: Pushes the value of the variable <code>var</code> onto the stack.</li>
 <li><strong>Example:</strong> <code>x 2 / my_var! my_var@ my_var@ *</code> (Calculates <code>(x/2)^2</code>).</li>
-</ul>
-</li>
-<li><code>dropN</code>: Drops the top <code>N</code> items from the stack. <code>drop</code> is an alias for <code>drop1</code>.<ul>
+<li><code>dropN</code>: Drops the top <code>N</code> items from the stack. <code>drop</code> is an alias for <code>drop1</code>.</li>
 <li><strong>Example:</strong> <code>1 2 3 drop2</code> results in a stack of <code>[1]</code>.</li>
-</ul>
-</li>
-<li><code>sortN</code>: Sorts the top <code>N</code> items on the stack, with the smallest value ending up on top.<ul>
+<li><code>sortN</code>: Sorts the top <code>N</code> items on the stack, with the smallest value ending up on top.</li>
 <li><strong>Example:</strong> <code>3 1 2 sort3</code> results in a stack of <code>[3, 2, 1]</code>, with <code>1</code> at the top.</li>
-</ul>
-</li>
 </ul>
 <h4 id="35-pixel-access"><strong>3.5. Pixel Access</strong><a class="headerlink" href="#35-pixel-access" title="Permanent link">&para;</a></h4>
 <ul>
-<li><strong>Static Relative Access:</strong> <code>clip[relX, relY]</code><ul>
+<li><strong>Static Relative Access:</strong> <code>clip[relX, relY]</code></li>
 <li>Accesses a pixel relative to the current coordinate. <code>relX</code> and <code>relY</code> must be constants.</li>
 <li><strong>Example:</strong> <code>y[-1, 0]</code> accesses the pixel to the immediate left in the second clip (<code>y</code>).</li>
 <li><strong>Boundary Suffixes:</strong><ul>
@@ -3031,23 +3027,21 @@
 <li><code>:m</code>: Mirrored boundary. <code>x[relX, relY]:m</code>.</li>
 </ul>
 </li>
-</ul>
-</li>
-<li><strong>Dynamic Absolute Access:</strong> <code>absX absY clip[]</code><ul>
+<li><strong>Dynamic Absolute Access:</strong> <code>absX absY clip[]</code></li>
 <li>Accesses a pixel at an absolute coordinate. <code>absX</code> and <code>absY</code> can be computed by expressions. This is more flexible but potentially slower.</li>
 <li><strong>Example:</strong> <code>X 2 / Y x[]</code> reads the pixel at half the current X coordinate from the first clip.</li>
-</ul>
-</li>
 </ul>
 <blockquote>
 <p>Note: <code>X 2 + Y 3 - x[]</code> is equal to <code>x[2,-3]</code>.</p>
 </blockquote>
 <h4 id="36-bitwise-operators"><strong>3.6. Bitwise Operators</strong><a class="headerlink" href="#36-bitwise-operators" title="Permanent link">&para;</a></h4>
-<p>These operators work on integers. Set <code>opt=1</code> in the function parameters to ensure integer evaluation for clips with more than 24 bits.
-*   <code>bitand</code>: Bitwise AND.
-*   <code>bitor</code>: Bitwise OR.
-*   <code>bitxor</code>: Bitwise XOR.
-*   <code>bitnot</code>: Bitwise NOT.</p>
+<p>These operators work on integers. Set <code>opt=1</code> in the function parameters to ensure integer evaluation for clips with more than 24 bits.</p>
+<ul>
+<li><code>bitand</code>: Bitwise AND.</li>
+<li><code>bitor</code>: Bitwise OR.</li>
+<li><code>bitxor</code>: Bitwise XOR.</li>
+<li><code>bitnot</code>: Bitwise NOT.</li>
+</ul>
 <h4 id="37-extended-numeric-formats"><strong>3.7. Extended Numeric Formats</strong><a class="headerlink" href="#37-extended-numeric-formats" title="Permanent link">&para;</a></h4>
 <ul>
 <li><strong>Hexadecimal:</strong> <code>0x10</code> (16), <code>0xFF</code> (255).</li>
@@ -3055,12 +3049,10 @@
 </ul>
 <h4 id="38-arbitrary-number-of-clips"><strong>3.8. Arbitrary Number of Clips</strong><a class="headerlink" href="#38-arbitrary-number-of-clips" title="Permanent link">&para;</a></h4>
 <ul>
-<li><code>srcN</code>: Accesses the N-th input clip (0-indexed).<ul>
+<li><code>srcN</code>: Accesses the N-th input clip (0-indexed).</li>
 <li><code>src0</code> is equivalent to <code>x</code>.</li>
 <li><code>src1</code> is equivalent to <code>y</code>.</li>
 <li><code>src26</code> accesses the 27th clip.</li>
-</ul>
-</li>
 </ul>
 
 

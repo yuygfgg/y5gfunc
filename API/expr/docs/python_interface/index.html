@@ -2837,22 +2837,20 @@
 <a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="c1"># 5. Print the result</span>
 <a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a><span class="nb">print</span><span class="p">(</span><span class="n">dsl_script</span><span class="p">)</span>
 </code></pre></div>
-<p><strong>Generated DSL:</strong>
+<p><strong>Generated DSL:</strong></p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>brighter_clip = ($src3 + 10)
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>RESULT = brighter_clip
-</code></pre></div></p>
+</code></pre></div>
 <h2 id="3-api-reference">3. API Reference<a class="headerlink" href="#3-api-reference" title="Permanent link">&para;</a></h2>
 <h3 id="31-source-clips-sourceclip">3.1. Source Clips (<code>SourceClip</code>)<a class="headerlink" href="#31-source-clips-sourceclip" title="Permanent link">&para;</a></h3>
 <p>Source clips are the primary inputs to your expression, representing the video data.</p>
 <ul>
 <li><strong>Creation</strong>: <code>SourceClip(identifier)</code></li>
-<li><strong>Identifier</strong>: Can be a lowercase letter alias (<code>'x'</code>, <code>'y'</code>, <code>'z'</code>, <code>'a'</code>-<code>'w'</code>) or an integer.<ul>
+<li><strong>Identifier</strong>: Can be a lowercase letter alias (<code>'x'</code>, <code>'y'</code>, <code>'z'</code>, <code>'a'</code>-<code>'w'</code>) or an integer.</li>
 <li><code>SourceClip('x')</code> -&gt; <code>$src0</code></li>
 <li><code>SourceClip('a')</code> -&gt; <code>$src3</code></li>
 <li><code>SourceClip(4)</code> -&gt; <code>$src4</code></li>
 <li><code>SourceClip('src5')</code> -&gt; <code>$src5</code></li>
-</ul>
-</li>
 </ul>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1"># These are equivalent</span>
 <a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="n">clip_x</span> <span class="o">=</span> <span class="n">SourceClip</span><span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">)</span>
@@ -2899,96 +2897,26 @@
 </tr>
 </tbody>
 </table>
-<p><strong>Example:</strong>
+<p><strong>Example:</strong></p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="c1"># Represents the expression: `$X / $width`</span>
 <a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="n">normalized_x</span> <span class="o">=</span> <span class="n">Constant</span><span class="o">.</span><span class="n">X</span> <span class="o">/</span> <span class="n">Constant</span><span class="o">.</span><span class="n">width</span>
-</code></pre></div></p>
+</code></pre></div>
 <h3 id="33-operators">3.3. Operators<a class="headerlink" href="#33-operators" title="Permanent link">&para;</a></h3>
 <p>Most standard Python operators are overloaded to build expression nodes. They are listed below in order of precedence (lowest to highest).</p>
-<table>
-<thead>
-<tr>
-<th>Category</th>
-<th>Python Operator</th>
-<th>DSL Operator</th>
-<th>Example</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><strong>Logical</strong></td>
-<td><code>or</code></td>
-<td><code>||</code></td>
-<td><code>(a &gt; 10) | (b &lt; 20)</code></td>
-</tr>
-<tr>
-<td></td>
-<td><code>and</code></td>
-<td><code>&amp;&amp;</code></td>
-<td><code>(a &gt; 10) &amp; (b &lt; 20)</code></td>
-</tr>
-<tr>
-<td><strong>Bitwise</strong></td>
-<td><code>~</code> (Invert)</td>
-<td><code>~</code></td>
-<td><code>~a</code></td>
-</tr>
-<tr>
-<td></td>
-<td><em>See Note 1</em></td>
-<td><code>|</code>, <code>^</code>, <code>&amp;</code></td>
-<td><code>BuiltInFunc.bitwise_or(a, b)</code></td>
-</tr>
-<tr>
-<td><strong>Relational</strong></td>
-<td><code>&lt;</code>, <code>&lt;=</code>, <code>&gt;</code>, <code>&gt;=</code></td>
-<td>same</td>
-<td><code>a &gt; b</code></td>
-</tr>
-<tr>
-<td><strong>Equality</strong></td>
-<td><code>==</code>, <code>!=</code></td>
-<td>same</td>
-<td><code>a == 128</code></td>
-</tr>
-<tr>
-<td><strong>Arithmetic</strong></td>
-<td><code>+</code>, <code>-</code></td>
-<td>same</td>
-<td><code>a + b</code></td>
-</tr>
-<tr>
-<td></td>
-<td><code>*</code>, <code>/</code></td>
-<td>same</td>
-<td><code>a * 1.5</code></td>
-</tr>
-<tr>
-<td></td>
-<td><code>%</code></td>
-<td>same</td>
-<td><code>a % 2</code></td>
-</tr>
-<tr>
-<td></td>
-<td><code>**</code></td>
-<td>same</td>
-<td><code>a ** 2</code></td>
-</tr>
-<tr>
-<td><strong>Unary</strong></td>
-<td><code>-</code> (Negation)</td>
-<td><code>-</code></td>
-<td><code>-a</code></td>
-</tr>
-<tr>
-<td></td>
-<td><em>See Note 2</em></td>
-<td><code>!</code></td>
-<td><code>BuiltInFunc.logical_not(a)</code></td>
-</tr>
-</tbody>
-</table>
+<p>| Category       | Python Operator      | DSL Operator | Example                      |
+| -------------- | -------------------- | ------------ | ---------------------------- | ------------------------------ | --------- | --------- |
+| <strong>Logical</strong>    | <code>or</code>                 | <code>|                              |</code>                              | <code>(a &gt; 10) | (b &lt; 20)</code> |
+|                | <code>and</code>                | <code>&amp;&amp;</code>         | <code>(a &gt; 10) &amp; (b &lt; 20)</code>        |
+| <strong>Bitwise</strong>    | <code>~</code> (Invert)         | <code>~</code>          | <code>~a</code>                         |
+|                | <em>See Note 1</em>         | <code>|</code>, <code>^</code>, <code>&amp;</code>                  | <code>BuiltInFunc.bitwise_or(a, b)</code> |
+| <strong>Relational</strong> | <code>&lt;</code>, <code>&lt;=</code>, <code>&gt;</code>, <code>&gt;=</code> | same         | <code>a &gt; b</code>                      |
+| <strong>Equality</strong>   | <code>==</code>, <code>!=</code>           | same         | <code>a == 128</code>                   |
+| <strong>Arithmetic</strong> | <code>+</code>, <code>-</code>             | same         | <code>a + b</code>                      |
+|                | <code>*</code>, <code>/</code>             | same         | <code>a * 1.5</code>                    |
+|                | <code>%</code>                  | same         | <code>a % 2</code>                      |
+|                | <code>**</code>                 | same         | <code>a ** 2</code>                     |
+| <strong>Unary</strong>      | <code>-</code> (Negation)       | <code>-</code>          | <code>-a</code>                         |
+|                | <em>See Note 2</em>         | <code>!</code>          | <code>BuiltInFunc.logical_not(a)</code> |</p>
 <blockquote>
 <p><strong>Note 1:</strong> Because <code>&amp;</code>, <code>|</code>, and <code>^</code> are used for logical AND/OR and other purposes, the DSL's bitwise operators are available as explicit functions in <code>BuiltInFunc</code>:
 <code>BuiltInFunc.bitwise_and(a, b)</code>, <code>BuiltInFunc.bitwise_or(a, b)</code>, <code>BuiltInFunc.bitwise_xor(a, b)</code></p>
@@ -3016,20 +2944,20 @@
 <li><strong>Usage</strong>: <code>BuiltInFunc.sort([expr1, expr2, ...])[N]</code></li>
 <li><code>[0]</code> maps to <code>nth_1</code>, <code>[1]</code> to <code>nth_2</code>, and so on.</li>
 </ul>
-<p><strong>Example:</strong>
+<p><strong>Example:</strong></p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">c</span> <span class="o">=</span> <span class="n">SourceClip</span><span class="p">(</span><span class="s1">&#39;a&#39;</span><span class="p">),</span> <span class="n">SourceClip</span><span class="p">(</span><span class="s1">&#39;b&#39;</span><span class="p">),</span> <span class="n">SourceClip</span><span class="p">(</span><span class="s1">&#39;c&#39;</span><span class="p">)</span>
 <a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>
 <a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="c1"># Get the median of three values (the 2nd smallest)</span>
 <a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="n">median</span> <span class="o">=</span> <span class="n">BuiltInFunc</span><span class="o">.</span><span class="n">sort</span><span class="p">([</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">c</span><span class="p">])[</span><span class="mi">1</span><span class="p">]</span>
 <a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="c1"># Generated DSL contains: nth_2($src3, $src4, $src5)</span>
-</code></pre></div></p>
+</code></pre></div>
 <h3 id="35-conditional-logic-if_then_else">3.5. Conditional Logic (<code>if_then_else</code>)<a class="headerlink" href="#35-conditional-logic-if_then_else" title="Permanent link">&para;</a></h3>
 <p><strong>You cannot use Python's native <code>if</code> statements or ternary operator.</strong> This will raise a <code>TypeError</code> with an informative message.</p>
 <p>To implement conditional logic, use <code>BuiltInFunc.if_then_else</code>, which maps directly to the DSL's <code>? :</code> ternary operator.</p>
 <ul>
 <li><strong>Syntax</strong>: <code>BuiltInFunc.if_then_else(condition, true_expression, false_expression)</code></li>
 </ul>
-<p><strong>Example:</strong>
+<p><strong>Example:</strong></p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="c1"># DO THIS:</span>
 <a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="n">clip_a</span> <span class="o">=</span> <span class="n">SourceClip</span><span class="p">(</span><span class="s1">&#39;a&#39;</span><span class="p">)</span>
 <a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="c1"># If clip_a is dark, double its value; otherwise, keep it.</span>
@@ -3040,24 +2968,24 @@
 <a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a><span class="c1">#     result = clip_a * 2</span>
 <a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a><span class="c1"># else:</span>
 <a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a><span class="c1">#     result = clip_a</span>
-</code></pre></div></p>
+</code></pre></div>
 <h3 id="36-clip-specific-operations">3.6. Clip-Specific Operations<a class="headerlink" href="#36-clip-specific-operations" title="Permanent link">&para;</a></h3>
 <h4 id="dynamic-pixel-access-access">Dynamic Pixel Access (<code>.access()</code>)<a class="headerlink" href="#dynamic-pixel-access-access" title="Permanent link">&para;</a></h4>
 <p>To dynamically access pixels from a clip using absolute coordinates, use the <code>.access()</code> method on a <code>SourceClip</code> object.</p>
 <ul>
 <li><strong>Syntax</strong>: <code>clip.access(x_coordinate_expr, y_coordinate_expr)</code></li>
 </ul>
-<p><strong>Example:</strong>
+<p><strong>Example:</strong></p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="n">clip_a</span> <span class="o">=</span> <span class="n">SourceClip</span><span class="p">(</span><span class="s1">&#39;a&#39;</span><span class="p">)</span>
 <a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="c1"># Access pixel from clip &#39;a&#39; 10 pixels to the right and 5 pixels down</span>
 <a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="n">shifted_pixel</span> <span class="o">=</span> <span class="n">clip_a</span><span class="o">.</span><span class="n">access</span><span class="p">(</span><span class="n">Constant</span><span class="o">.</span><span class="n">X</span> <span class="o">+</span> <span class="mi">10</span><span class="p">,</span> <span class="n">Constant</span><span class="o">.</span><span class="n">Y</span> <span class="o">-</span> <span class="mi">5</span><span class="p">)</span>
-</code></pre></div></p>
+</code></pre></div>
 <h4 id="frame-property-access-props">Frame Property Access (<code>.props</code>)<a class="headerlink" href="#frame-property-access-props" title="Permanent link">&para;</a></h4>
 <p>To access a frame property, use the <code>.props</code> property on a <code>SourceClip</code> object, followed by item access (<code>[...]</code>).</p>
 <ul>
 <li><strong>Syntax</strong>: <code>clip.props['PropertyName']</code></li>
 </ul>
-<p><strong>Example:</strong>
+<p><strong>Example:</strong></p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="n">clip_a</span> <span class="o">=</span> <span class="n">SourceClip</span><span class="p">(</span><span class="s1">&#39;a&#39;</span><span class="p">)</span>
 <a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>
 <a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="c1"># Access the _Matrix property from the frame properties of clip &#39;a&#39;</span>
@@ -3065,7 +2993,7 @@
 <a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>
 <a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="c1"># The result can be used in other expressions</span>
 <a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a><span class="n">is_bt709</span> <span class="o">=</span> <span class="n">matrix</span> <span class="o">==</span> <span class="mi">1</span>
-</code></pre></div></p>
+</code></pre></div>
 
 
 

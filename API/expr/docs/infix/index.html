@@ -3122,8 +3122,12 @@ It is designed to be expressive and readable, abstracting away the complexities 
 <p>Source clips are special constants used to reference input video clips. They must be prefixed with a <code>$</code>.</p>
 <p>Source clips can be referenced in two equivalent ways:</p>
 <ol>
-<li><strong>Single Letters:</strong> The lowercase letters <code>xyzabcdefghijklmnopqrstuvw</code> are aliases for <code>src0</code> through <code>src25</code> respectively:</li>
-<li><code>$x</code> is equivalent to <code>$src0</code></li>
+<li>
+<p><strong>Single Letters:</strong> The lowercase letters <code>xyzabcdefghijklmnopqrstuvw</code> are aliases for <code>src0</code> through <code>src25</code> respectively:</p>
+</li>
+<li>
+<p><code>$x</code> is equivalent to <code>$src0</code></p>
+</li>
 <li><code>$y</code> is equivalent to <code>$src1</code></li>
 <li><code>$z</code> is equivalent to <code>$src2</code></li>
 <li><code>$a</code> is equivalent to <code>$src3</code></li>
@@ -3133,145 +3137,30 @@ It is designed to be expressive and readable, abstracting away the complexities 
 <li>
 <p><strong><code>src</code> Prefixed:</strong> The identifier <code>src</code> followed by one or more digits, prefixed with <code>$</code> (e.g., <code>$src0</code>, <code>$src1</code>).</p>
 </li>
-<li>In <strong>Standard Mode</strong>, only <code>$src0</code> through <code>$src25</code> (or their letter aliases) are available.</li>
+<li>
+<p>In <strong>Standard Mode</strong>, only <code>$src0</code> through <code>$src25</code> (or their letter aliases) are available.</p>
+</li>
 <li>In <strong>Akarin Mode</strong>, this range is extended beyond <code>$src25</code>.</li>
 </ol>
 <h2 id="5-operators">5. Operators<a class="headerlink" href="#5-operators" title="Permanent link">&para;</a></h2>
 <p>Operators are left-associative, except for the unary and ternary operators. The following table lists operators in order of precedence, from lowest to highest.</p>
-<table>
-<thead>
-<tr>
-<th style="text-align: left;">Precedence</th>
-<th style="text-align: left;">Operator</th>
-<th style="text-align: left;">Description</th>
-<th style="text-align: left;">Arity</th>
-<th style="text-align: left;">Associativity</th>
-<th style="text-align: left;">Availability</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align: left;">1</td>
-<td style="text-align: left;"><code>||</code></td>
-<td style="text-align: left;">Logical OR</td>
-<td style="text-align: left;">Binary</td>
-<td style="text-align: left;">Left</td>
-<td style="text-align: left;">All modes</td>
-</tr>
-<tr>
-<td style="text-align: left;">2</td>
-<td style="text-align: left;"><code>&amp;&amp;</code></td>
-<td style="text-align: left;">Logical AND</td>
-<td style="text-align: left;">Binary</td>
-<td style="text-align: left;">Left</td>
-<td style="text-align: left;">All modes</td>
-</tr>
-<tr>
-<td style="text-align: left;">3</td>
-<td style="text-align: left;"><code>|</code></td>
-<td style="text-align: left;">Bitwise OR</td>
-<td style="text-align: left;">Binary</td>
-<td style="text-align: left;">Left</td>
-<td style="text-align: left;">Akarin Only</td>
-</tr>
-<tr>
-<td style="text-align: left;"></td>
-<td style="text-align: left;"><code>^</code></td>
-<td style="text-align: left;">Bitwise XOR</td>
-<td style="text-align: left;">Binary</td>
-<td style="text-align: left;">Left</td>
-<td style="text-align: left;">Akarin Only</td>
-</tr>
-<tr>
-<td style="text-align: left;"></td>
-<td style="text-align: left;"><code>&amp;</code></td>
-<td style="text-align: left;">Bitwise AND</td>
-<td style="text-align: left;">Binary</td>
-<td style="text-align: left;">Left</td>
-<td style="text-align: left;">Akarin Only</td>
-</tr>
-<tr>
-<td style="text-align: left;"></td>
-<td style="text-align: left;"><code>~</code></td>
-<td style="text-align: left;">Bitwise NOT</td>
-<td style="text-align: left;">Unary</td>
-<td style="text-align: left;">Right</td>
-<td style="text-align: left;">Akarin Only</td>
-</tr>
-<tr>
-<td style="text-align: left;">4</td>
-<td style="text-align: left;"><code>&lt;</code>, <code>&lt;=</code>, <code>&gt;</code> <code>&gt;=</code></td>
-<td style="text-align: left;">Relational</td>
-<td style="text-align: left;">Binary</td>
-<td style="text-align: left;">Left</td>
-<td style="text-align: left;">All modes</td>
-</tr>
-<tr>
-<td style="text-align: left;">5</td>
-<td style="text-align: left;"><code>==</code>, <code>!=</code></td>
-<td style="text-align: left;">Equality</td>
-<td style="text-align: left;">Binary</td>
-<td style="text-align: left;">Left</td>
-<td style="text-align: left;">All modes</td>
-</tr>
-<tr>
-<td style="text-align: left;">6</td>
-<td style="text-align: left;"><code>+</code>, <code>-</code></td>
-<td style="text-align: left;">Addition, Subtraction</td>
-<td style="text-align: left;">Binary</td>
-<td style="text-align: left;">Left</td>
-<td style="text-align: left;">All modes</td>
-</tr>
-<tr>
-<td style="text-align: left;">7</td>
-<td style="text-align: left;"><code>*</code>, <code>/</code></td>
-<td style="text-align: left;">Multiplication, Division</td>
-<td style="text-align: left;">Binary</td>
-<td style="text-align: left;">Left</td>
-<td style="text-align: left;">All modes</td>
-</tr>
-<tr>
-<td style="text-align: left;"></td>
-<td style="text-align: left;"><code>%</code></td>
-<td style="text-align: left;">Modulus</td>
-<td style="text-align: left;">Binary</td>
-<td style="text-align: left;">Left</td>
-<td style="text-align: left;">Akarin Only</td>
-</tr>
-<tr>
-<td style="text-align: left;">8</td>
-<td style="text-align: left;"><code>**</code></td>
-<td style="text-align: left;">Exponentiation (Power)</td>
-<td style="text-align: left;">Binary</td>
-<td style="text-align: left;">Left</td>
-<td style="text-align: left;">All modes</td>
-</tr>
-<tr>
-<td style="text-align: left;">9</td>
-<td style="text-align: left;"><code>-</code></td>
-<td style="text-align: left;">Negation</td>
-<td style="text-align: left;">Unary</td>
-<td style="text-align: left;">Right</td>
-<td style="text-align: left;">All modes</td>
-</tr>
-<tr>
-<td style="text-align: left;"></td>
-<td style="text-align: left;"><code>!</code></td>
-<td style="text-align: left;">Logical NOT</td>
-<td style="text-align: left;">Unary</td>
-<td style="text-align: left;">Right</td>
-<td style="text-align: left;">All modes</td>
-</tr>
-<tr>
-<td style="text-align: left;">10</td>
-<td style="text-align: left;"><code>? :</code></td>
-<td style="text-align: left;">Ternary Conditional</td>
-<td style="text-align: left;">Ternary</td>
-<td style="text-align: left;">Right</td>
-<td style="text-align: left;">All modes</td>
-</tr>
-</tbody>
-</table>
+<p>| Precedence | Operator            | Description              | Arity      | Associativity | Availability |
+| :--------- | :------------------ | :----------------------- | :--------- | :------------ | :----------- | ----------- | --------- |
+| 1          | <code>|                          |</code>          | Logical OR    | Binary       | Left        | All modes |
+| 2          | <code>&amp;&amp;</code>                | Logical AND              | Binary     | Left          | All modes    |
+| 3          | <code>|</code>                        | Bitwise OR | Binary        | Left         | Akarin Only |
+|            | <code>^</code>                 | Bitwise XOR              | Binary     | Left          | Akarin Only  |
+|            | <code>&amp;</code>                 | Bitwise AND              | Binary     | Left          | Akarin Only  |
+|            | <code>~</code>                 | Bitwise NOT              | Unary      | Right         | Akarin Only  |
+| 4          | <code>&lt;</code>, <code>&lt;=</code>, <code>&gt;</code> <code>&gt;=</code> | Relational               | Binary     | Left          | All modes    |
+| 5          | <code>==</code>, <code>!=</code>          | Equality                 | Binary     | Left          | All modes    |
+| 6          | <code>+</code>, <code>-</code>            | Addition, Subtraction    | Binary     | Left          | All modes    |
+| 7          | <code>*</code>, <code>/</code>            | Multiplication, Division | Binary     | Left          | All modes    |
+|            | <code>%</code>                 | Modulus                  | Binary     | Left          | Akarin Only  |
+| 8          | <code>**</code>                | Exponentiation (Power)   | Binary     | Left          | All modes    |
+| 9          | <code>-</code>                 | Negation                 | Unary      | Right         | All modes    |
+|            | <code>!</code>                 | Logical NOT              | Unary      | Right         | All modes    |
+| 10         | <code>? :</code>               | Ternary Conditional      | Ternary    | Right         | All modes    |</p>
 <p>Note: Bitwise operators operates on integer values. When operating on floating-point values, operands are first rounded to the nearest integer.</p>
 <h2 id="6-functions">6. Functions<a class="headerlink" href="#6-functions" title="Permanent link">&para;</a></h2>
 <h3 id="61-function-calls">6.1. Function Calls<a class="headerlink" href="#61-function-calls" title="Permanent link">&para;</a></h3>
@@ -3339,13 +3228,15 @@ It is designed to be expressive and readable, abstracting away the complexities 
 </table>
 <h3 id="63-user-defined-functions">6.3. User-Defined Functions<a class="headerlink" href="#63-user-defined-functions" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>Definition:</strong>
+<li><strong>Definition:</strong></li>
+</ul>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>function functionName(param1, param2) {
 <a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>    // Body of the function
 <a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>    local_var = param1 * param2
 <a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>    return local_var + 10
 <a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>}
-</code></pre></div></li>
+</code></pre></div>
+<ul>
 <li><strong>Return Statement:</strong> A function can have at most one <code>return</code> statement, which must be the last non-empty statement in its body. If a function has no <code>return</code> statement, it produces no value.</li>
 <li><strong>Parameters:</strong> Function parameters are read-only and cannot be reassigned within the function body.</li>
 <li><strong>Inlining:</strong> Function calls are effectively inlined at compile time. Recursion is not supported.</li>
@@ -3366,7 +3257,7 @@ It is designed to be expressive and readable, abstracting away the complexities 
 <li><strong><code>&lt;global.all&gt;</code>:</strong> The function can access any global variable defined in the script at the time of the function's call.</li>
 <li><strong><code>&lt;global&lt;var1&gt;&lt;var2&gt;...&gt;</code>:</strong> The function can access only the specified global variables.</li>
 </ul>
-<p><strong>Example:</strong>
+<p><strong>Example:</strong></p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>&lt;global&lt;my_global&gt;&gt;
 <a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>function useGlobal(x) {
 <a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>    return x + my_global # Accesses global &#39;my_global&#39;
@@ -3374,7 +3265,7 @@ It is designed to be expressive and readable, abstracting away the complexities 
 <a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>
 <a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>my_global = 100
 <a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>RESULT = useGlobal(5) # Evaluates to 105
-</code></pre></div></p>
+</code></pre></div>
 <ul>
 <li>Any global variable a function depends on must be defined before that function is called.</li>
 </ul>
