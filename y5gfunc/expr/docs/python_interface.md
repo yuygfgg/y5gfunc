@@ -34,6 +34,7 @@ print(dsl_script)
 ```
 
 **Generated DSL:**
+
 ```
 brighter_clip = ($src3 + 10)
 RESULT = brighter_clip
@@ -45,12 +46,12 @@ RESULT = brighter_clip
 
 Source clips are the primary inputs to your expression, representing the video data.
 
--   **Creation**: `SourceClip(identifier)`
--   **Identifier**: Can be a lowercase letter alias (`'x'`, `'y'`, `'z'`, `'a'`-`'w'`) or an integer.
-    -   `SourceClip('x')` -> `$src0`
-    -   `SourceClip('a')` -> `$src3`
-    -   `SourceClip(4)` -> `$src4`
-    -   `SourceClip('src5')` -> `$src5`
+- **Creation**: `SourceClip(identifier)`
+- **Identifier**: Can be a lowercase letter alias (`'x'`, `'y'`, `'z'`, `'a'`-`'w'`) or an integer.
+  - `SourceClip('x')` -> `$src0`
+  - `SourceClip('a')` -> `$src3`
+  - `SourceClip(4)` -> `$src4`
+  - `SourceClip('src5')` -> `$src5`
 
 ```python
 # These are equivalent
@@ -63,7 +64,7 @@ clip_src0 = SourceClip('src0')
 
 The generator provides access to all built-in DSL constants through the `Constant` namespace.
 
--   **Usage**: `Constant.constant_name`
+- **Usage**: `Constant.constant_name`
 
 **Available Constants:**
 
@@ -77,6 +78,7 @@ The generator provides access to all built-in DSL constants through the `Constan
 | `Constant.height` | `$height`      |
 
 **Example:**
+
 ```python
 # Represents the expression: `$X / $width`
 normalized_x = Constant.X / Constant.width
@@ -86,20 +88,20 @@ normalized_x = Constant.X / Constant.width
 
 Most standard Python operators are overloaded to build expression nodes. They are listed below in order of precedence (lowest to highest).
 
-| Category      | Python Operator     | DSL Operator | Example                               |
-| ------------- | ------------------- | ------------ | ------------------------------------- |
-| **Logical**   | `or`                | `||`         | `(a > 10) | (b < 20)`                 |
-|               | `and`               | `&&`         | `(a > 10) & (b < 20)`                 |
-| **Bitwise**   | `~` (Invert)        | `~`          | `~a`                                  |
-|               | *See Note 1*        | `|`, `^`, `&` | `BuiltInFunc.bitwise_or(a, b)`       |
-| **Relational**| `<`, `<=`, `>`, `>=`| same         | `a > b`                               |
-| **Equality**  | `==`, `!=`          | same         | `a == 128`                            |
-| **Arithmetic**| `+`, `-`            | same         | `a + b`                               |
-|               | `*`, `/`            | same         | `a * 1.5`                             |
-|               | `%`                 | same         | `a % 2`                               |
-|               | `**`                | same         | `a ** 2`                              |
-| **Unary**     | `-` (Negation)      | `-`          | `-a`                                  |
-|               | *See Note 2*        | `!`          | `BuiltInFunc.logical_not(a)`          |
+| Category       | Python Operator      | DSL Operator | Example                       |
+| -------------- | -------------------- | ------------ | ----------------------------- |
+| **Logical**    | `or`                 | `||`         | `(a > 10) || (b < 20)`        |
+|                | `and`                | `&&`         | `(a > 10) && (b < 20)`        |
+| **Bitwise**    | `~` (Invert)         | `~`          | `~a`                          |
+|                | _See Note 1_         | `|`, `^`, `&`| `BuiltInFunc.bitwise_or(a, b)`|
+| **Relational** | `<`, `<=`, `>`, `>=` | same         | `a > b`                       |
+| **Equality**   | `==`, `!=`           | same         | `a == 128`                    |
+| **Arithmetic** | `+`, `-`             | same         | `a + b`                       |
+|                | `*`, `/`             | same         | `a * 1.5`                     |
+|                | `%`                  | same         | `a % 2`                       |
+|                | `**`                 | same         | `a ** 2`                      |
+| **Unary**      | `-` (Negation)       | `-`          | `-a`                          |
+|                | _See Note 2_         | `!`          | `BuiltInFunc.logical_not(a)`  |
 
 > **Note 1:** Because `&`, `|`, and `^` are used for logical AND/OR and other purposes, the DSL's bitwise operators are available as explicit functions in `BuiltInFunc`:
 > `BuiltInFunc.bitwise_and(a, b)`, `BuiltInFunc.bitwise_or(a, b)`, `BuiltInFunc.bitwise_xor(a, b)`
@@ -112,26 +114,27 @@ All built-in DSL functions are available as static methods in the `BuiltInFunc` 
 
 **Common Functions:**
 
--   `BuiltInFunc.sin(expr)`
--   `BuiltInFunc.cos(expr)`
--   `BuiltInFunc.sqrt(expr)`
--   `BuiltInFunc.abs(expr)`
--   `BuiltInFunc.round(expr)`
--   `BuiltInFunc.floor(expr)`
--   `BuiltInFunc.min(expr1, expr2)`
--   `BuiltInFunc.max(expr1, expr2)`
--   `BuiltInFunc.clamp(value, min_val, max_val)`
--   `BuiltInFunc.log(expr)`
--   ......
+- `BuiltInFunc.sin(expr)`
+- `BuiltInFunc.cos(expr)`
+- `BuiltInFunc.sqrt(expr)`
+- `BuiltInFunc.abs(expr)`
+- `BuiltInFunc.round(expr)`
+- `BuiltInFunc.floor(expr)`
+- `BuiltInFunc.min(expr1, expr2)`
+- `BuiltInFunc.max(expr1, expr2)`
+- `BuiltInFunc.clamp(value, min_val, max_val)`
+- `BuiltInFunc.log(expr)`
+- ......
 
 **Special Function: `sort`**
 
 The `nth_N` family of functions is accessed via `BuiltInFunc.sort`. It returns a list of `DSLExpr` objects, each representing the Nth smallest value in the input list.
 
--   **Usage**: `BuiltInFunc.sort([expr1, expr2, ...])[N]`
--   `[0]` maps to `nth_1`, `[1]` to `nth_2`, and so on.
+- **Usage**: `BuiltInFunc.sort([expr1, expr2, ...])[N]`
+- `[0]` maps to `nth_1`, `[1]` to `nth_2`, and so on.
 
 **Example:**
+
 ```python
 a, b, c = SourceClip('a'), SourceClip('b'), SourceClip('c')
 
@@ -146,9 +149,10 @@ median = BuiltInFunc.sort([a, b, c])[1]
 
 To implement conditional logic, use `BuiltInFunc.if_then_else`, which maps directly to the DSL's `? :` ternary operator.
 
--   **Syntax**: `BuiltInFunc.if_then_else(condition, true_expression, false_expression)`
+- **Syntax**: `BuiltInFunc.if_then_else(condition, true_expression, false_expression)`
 
 **Example:**
+
 ```python
 # DO THIS:
 clip_a = SourceClip('a')
@@ -168,9 +172,10 @@ result = BuiltInFunc.if_then_else(clip_a < 50, clip_a * 2, clip_a)
 
 To dynamically access pixels from a clip using absolute coordinates, use the `.access()` method on a `SourceClip` object.
 
--   **Syntax**: `clip.access(x_coordinate_expr, y_coordinate_expr)`
+- **Syntax**: `clip.access(x_coordinate_expr, y_coordinate_expr)`
 
 **Example:**
+
 ```python
 clip_a = SourceClip('a')
 # Access pixel from clip 'a' 10 pixels to the right and 5 pixels down
@@ -181,9 +186,10 @@ shifted_pixel = clip_a.access(Constant.X + 10, Constant.Y - 5)
 
 To access a frame property, use the `.props` property on a `SourceClip` object, followed by item access (`[...]`).
 
--   **Syntax**: `clip.props['PropertyName']`
+- **Syntax**: `clip.props['PropertyName']`
 
 **Example:**
+
 ```python
 clip_a = SourceClip('a')
 
