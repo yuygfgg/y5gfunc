@@ -125,7 +125,7 @@ All built-in DSL functions are available as static methods in the `BuiltInFunc` 
 
 **Special Function: `sort`**
 
-The `nth_N` family of functions is accessed via `BuiltInFunc.sort` followed by standard Python list indexing.
+The `nth_N` family of functions is accessed via `BuiltInFunc.sort`. It returns a list of `DSLExpr` objects, each representing the Nth smallest value in the input list.
 
 -   **Usage**: `BuiltInFunc.sort([expr1, expr2, ...])[N]`
 -   `[0]` maps to `nth_1`, `[1]` to `nth_2`, and so on.
@@ -450,16 +450,6 @@ class _PropertyAccessNode(_Node):
         return f"{clip_dsl_name}.{self.prop_name}"
 
 
-class _SortResult:
-    def __init__(self, items: list[DSLExpr]):
-        self.items = items
-
-    def __getitem__(self, key: int) -> "DSLExpr":
-        if not isinstance(key, int) or key < 0:
-            raise TypeError("Index must be a non-negative integer.")
-        return DSLExpr(_FunctionCallNode(f"nth_{key + 1}", self.items))
-
-
 class _PropertyAccessor:
     def __init__(self, clip: "SourceClip"):
         self.clip = clip
@@ -546,8 +536,13 @@ class BuiltInFunc:
         return DSLExpr(_FunctionCallNode("clamp", [x, min_val, max_val]))
 
     @staticmethod
-    def sort(items: list[DSLExpr]) -> _SortResult:
-        return _SortResult(items)
+    def sort(items: list[DSLExpr]) -> list[DSLExpr]:
+        if not isinstance(items, list) or not items:
+            raise TypeError("Input for sort must be a non-empty list of expressions.")
+
+        return [
+            DSLExpr(_FunctionCallNode(f"nth_{i + 1}", items)) for i in range(len(items))
+        ]
 
     @staticmethod
     def trunc(x: DSLExpr) -> DSLExpr:
