@@ -2903,20 +2903,90 @@
 </code></pre></div>
 <h3 id="33-operators">3.3. Operators<a class="headerlink" href="#33-operators" title="Permanent link">&para;</a></h3>
 <p>Most standard Python operators are overloaded to build expression nodes. They are listed below in order of precedence (lowest to highest).</p>
-<p>| Category       | Python Operator      | DSL Operator | Example                      |
-| -------------- | -------------------- | ------------ | ---------------------------- | ------------------------------ | --------- | --------- |
-| <strong>Logical</strong>    | <code>or</code>                 | <code>|                              |</code>                              | <code>(a &gt; 10) | (b &lt; 20)</code> |
-|                | <code>and</code>                | <code>&amp;&amp;</code>         | <code>(a &gt; 10) &amp; (b &lt; 20)</code>        |
-| <strong>Bitwise</strong>    | <code>~</code> (Invert)         | <code>~</code>          | <code>~a</code>                         |
-|                | <em>See Note 1</em>         | <code>|</code>, <code>^</code>, <code>&amp;</code>                  | <code>BuiltInFunc.bitwise_or(a, b)</code> |
-| <strong>Relational</strong> | <code>&lt;</code>, <code>&lt;=</code>, <code>&gt;</code>, <code>&gt;=</code> | same         | <code>a &gt; b</code>                      |
-| <strong>Equality</strong>   | <code>==</code>, <code>!=</code>           | same         | <code>a == 128</code>                   |
-| <strong>Arithmetic</strong> | <code>+</code>, <code>-</code>             | same         | <code>a + b</code>                      |
-|                | <code>*</code>, <code>/</code>             | same         | <code>a * 1.5</code>                    |
-|                | <code>%</code>                  | same         | <code>a % 2</code>                      |
-|                | <code>**</code>                 | same         | <code>a ** 2</code>                     |
-| <strong>Unary</strong>      | <code>-</code> (Negation)       | <code>-</code>          | <code>-a</code>                         |
-|                | <em>See Note 2</em>         | <code>!</code>          | <code>BuiltInFunc.logical_not(a)</code> |</p>
+<table>
+<thead>
+<tr>
+<th>Category</th>
+<th>Python Operator</th>
+<th>DSL Operator</th>
+<th>Example</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Logical</strong></td>
+<td><code>or</code></td>
+<td><code>||</code></td>
+<td><code>(a &gt; 10) || (b &lt; 20)</code></td>
+</tr>
+<tr>
+<td></td>
+<td><code>and</code></td>
+<td><code>&amp;&amp;</code></td>
+<td><code>(a &gt; 10) &amp;&amp; (b &lt; 20)</code></td>
+</tr>
+<tr>
+<td><strong>Bitwise</strong></td>
+<td><code>~</code> (Invert)</td>
+<td><code>~</code></td>
+<td><code>~a</code></td>
+</tr>
+<tr>
+<td></td>
+<td><em>See Note 1</em></td>
+<td><code>|</code>, <code>^</code>, <code>&amp;</code></td>
+<td><code>BuiltInFunc.bitwise_or(a, b)</code></td>
+</tr>
+<tr>
+<td><strong>Relational</strong></td>
+<td><code>&lt;</code>, <code>&lt;=</code>, <code>&gt;</code>, <code>&gt;=</code></td>
+<td>same</td>
+<td><code>a &gt; b</code></td>
+</tr>
+<tr>
+<td><strong>Equality</strong></td>
+<td><code>==</code>, <code>!=</code></td>
+<td>same</td>
+<td><code>a == 128</code></td>
+</tr>
+<tr>
+<td><strong>Arithmetic</strong></td>
+<td><code>+</code>, <code>-</code></td>
+<td>same</td>
+<td><code>a + b</code></td>
+</tr>
+<tr>
+<td></td>
+<td><code>*</code>, <code>/</code></td>
+<td>same</td>
+<td><code>a * 1.5</code></td>
+</tr>
+<tr>
+<td></td>
+<td><code>%</code></td>
+<td>same</td>
+<td><code>a % 2</code></td>
+</tr>
+<tr>
+<td></td>
+<td><code>**</code></td>
+<td>same</td>
+<td><code>a ** 2</code></td>
+</tr>
+<tr>
+<td><strong>Unary</strong></td>
+<td><code>-</code> (Negation)</td>
+<td><code>-</code></td>
+<td><code>-a</code></td>
+</tr>
+<tr>
+<td></td>
+<td><em>See Note 2</em></td>
+<td><code>!</code></td>
+<td><code>BuiltInFunc.logical_not(a)</code></td>
+</tr>
+</tbody>
+</table>
 <blockquote>
 <p><strong>Note 1:</strong> Because <code>&amp;</code>, <code>|</code>, and <code>^</code> are used for logical AND/OR and other purposes, the DSL's bitwise operators are available as explicit functions in <code>BuiltInFunc</code>:
 <code>BuiltInFunc.bitwise_and(a, b)</code>, <code>BuiltInFunc.bitwise_or(a, b)</code>, <code>BuiltInFunc.bitwise_xor(a, b)</code></p>

@@ -3144,23 +3144,140 @@ It is designed to be expressive and readable, abstracting away the complexities 
 </ol>
 <h2 id="5-operators">5. Operators<a class="headerlink" href="#5-operators" title="Permanent link">&para;</a></h2>
 <p>Operators are left-associative, except for the unary and ternary operators. The following table lists operators in order of precedence, from lowest to highest.</p>
-<p>| Precedence | Operator            | Description              | Arity      | Associativity | Availability |
-| :--------- | :------------------ | :----------------------- | :--------- | :------------ | :----------- | ----------- | --------- |
-| 1          | <code>|                          |</code>          | Logical OR    | Binary       | Left        | All modes |
-| 2          | <code>&amp;&amp;</code>                | Logical AND              | Binary     | Left          | All modes    |
-| 3          | <code>|</code>                        | Bitwise OR | Binary        | Left         | Akarin Only |
-|            | <code>^</code>                 | Bitwise XOR              | Binary     | Left          | Akarin Only  |
-|            | <code>&amp;</code>                 | Bitwise AND              | Binary     | Left          | Akarin Only  |
-|            | <code>~</code>                 | Bitwise NOT              | Unary      | Right         | Akarin Only  |
-| 4          | <code>&lt;</code>, <code>&lt;=</code>, <code>&gt;</code> <code>&gt;=</code> | Relational               | Binary     | Left          | All modes    |
-| 5          | <code>==</code>, <code>!=</code>          | Equality                 | Binary     | Left          | All modes    |
-| 6          | <code>+</code>, <code>-</code>            | Addition, Subtraction    | Binary     | Left          | All modes    |
-| 7          | <code>*</code>, <code>/</code>            | Multiplication, Division | Binary     | Left          | All modes    |
-|            | <code>%</code>                 | Modulus                  | Binary     | Left          | Akarin Only  |
-| 8          | <code>**</code>                | Exponentiation (Power)   | Binary     | Left          | All modes    |
-| 9          | <code>-</code>                 | Negation                 | Unary      | Right         | All modes    |
-|            | <code>!</code>                 | Logical NOT              | Unary      | Right         | All modes    |
-| 10         | <code>? :</code>               | Ternary Conditional      | Ternary    | Right         | All modes    |</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Precedence</th>
+<th style="text-align: left;">Operator</th>
+<th style="text-align: left;">Description</th>
+<th style="text-align: left;">Arity</th>
+<th style="text-align: left;">Associativity</th>
+<th style="text-align: left;">Availability</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">1</td>
+<td style="text-align: left;"><code>||</code></td>
+<td style="text-align: left;">Logical OR</td>
+<td style="text-align: left;">Binary</td>
+<td style="text-align: left;">Left</td>
+<td style="text-align: left;">All modes</td>
+</tr>
+<tr>
+<td style="text-align: left;">2</td>
+<td style="text-align: left;"><code>&amp;&amp;</code></td>
+<td style="text-align: left;">Logical AND</td>
+<td style="text-align: left;">Binary</td>
+<td style="text-align: left;">Left</td>
+<td style="text-align: left;">All modes</td>
+</tr>
+<tr>
+<td style="text-align: left;">3</td>
+<td style="text-align: left;"><code>|</code></td>
+<td style="text-align: left;">Bitwise OR</td>
+<td style="text-align: left;">Binary</td>
+<td style="text-align: left;">Left</td>
+<td style="text-align: left;">Akarin Only</td>
+</tr>
+<tr>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"><code>^</code></td>
+<td style="text-align: left;">Bitwise XOR</td>
+<td style="text-align: left;">Binary</td>
+<td style="text-align: left;">Left</td>
+<td style="text-align: left;">Akarin Only</td>
+</tr>
+<tr>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"><code>&amp;</code></td>
+<td style="text-align: left;">Bitwise AND</td>
+<td style="text-align: left;">Binary</td>
+<td style="text-align: left;">Left</td>
+<td style="text-align: left;">Akarin Only</td>
+</tr>
+<tr>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"><code>~</code></td>
+<td style="text-align: left;">Bitwise NOT</td>
+<td style="text-align: left;">Unary</td>
+<td style="text-align: left;">Right</td>
+<td style="text-align: left;">Akarin Only</td>
+</tr>
+<tr>
+<td style="text-align: left;">4</td>
+<td style="text-align: left;"><code>&lt;</code>, <code>&lt;=</code>, <code>&gt;</code> <code>&gt;=</code></td>
+<td style="text-align: left;">Relational</td>
+<td style="text-align: left;">Binary</td>
+<td style="text-align: left;">Left</td>
+<td style="text-align: left;">All modes</td>
+</tr>
+<tr>
+<td style="text-align: left;">5</td>
+<td style="text-align: left;"><code>==</code>, <code>!=</code></td>
+<td style="text-align: left;">Equality</td>
+<td style="text-align: left;">Binary</td>
+<td style="text-align: left;">Left</td>
+<td style="text-align: left;">All modes</td>
+</tr>
+<tr>
+<td style="text-align: left;">6</td>
+<td style="text-align: left;"><code>+</code>, <code>-</code></td>
+<td style="text-align: left;">Addition, Subtraction</td>
+<td style="text-align: left;">Binary</td>
+<td style="text-align: left;">Left</td>
+<td style="text-align: left;">All modes</td>
+</tr>
+<tr>
+<td style="text-align: left;">7</td>
+<td style="text-align: left;"><code>*</code>, <code>/</code></td>
+<td style="text-align: left;">Multiplication, Division</td>
+<td style="text-align: left;">Binary</td>
+<td style="text-align: left;">Left</td>
+<td style="text-align: left;">All modes</td>
+</tr>
+<tr>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"><code>%</code></td>
+<td style="text-align: left;">Modulus</td>
+<td style="text-align: left;">Binary</td>
+<td style="text-align: left;">Left</td>
+<td style="text-align: left;">Akarin Only</td>
+</tr>
+<tr>
+<td style="text-align: left;">8</td>
+<td style="text-align: left;"><code>**</code></td>
+<td style="text-align: left;">Exponentiation (Power)</td>
+<td style="text-align: left;">Binary</td>
+<td style="text-align: left;">Left</td>
+<td style="text-align: left;">All modes</td>
+</tr>
+<tr>
+<td style="text-align: left;">9</td>
+<td style="text-align: left;"><code>-</code></td>
+<td style="text-align: left;">Negation</td>
+<td style="text-align: left;">Unary</td>
+<td style="text-align: left;">Right</td>
+<td style="text-align: left;">All modes</td>
+</tr>
+<tr>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"><code>!</code></td>
+<td style="text-align: left;">Logical NOT</td>
+<td style="text-align: left;">Unary</td>
+<td style="text-align: left;">Right</td>
+<td style="text-align: left;">All modes</td>
+</tr>
+<tr>
+<td style="text-align: left;">10</td>
+<td style="text-align: left;"><code>? :</code></td>
+<td style="text-align: left;">Ternary Conditional</td>
+<td style="text-align: left;">Ternary</td>
+<td style="text-align: left;">Right</td>
+<td style="text-align: left;">All modes</td>
+</tr>
+</tbody>
+</table>
 <p>Note: Bitwise operators operates on integer values. When operating on floating-point values, operands are first rounded to the nearest integer.</p>
 <h2 id="6-functions">6. Functions<a class="headerlink" href="#6-functions" title="Permanent link">&para;</a></h2>
 <h3 id="61-function-calls">6.1. Function Calls<a class="headerlink" href="#61-function-calls" title="Permanent link">&para;</a></h3>
