@@ -200,6 +200,8 @@ def postfix2infix(expr: str, check_mode: bool = False) -> str:
             "abs",
             "sqrt",
             "not",
+            "log",
+            "exp",
         ):
             a = pop()
             if token == "not":

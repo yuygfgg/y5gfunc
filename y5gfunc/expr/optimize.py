@@ -160,18 +160,8 @@ def calculate_binary(
 
     try:
         arg1, arg2 = a, b
-        if op.startswith("bit") or op == "%":
-            f_args = []
-            for v in [a, b]:
-                if isinstance(v, float):
-                    if not v.is_integer():
-                        return None  # Cannot operate on non-integer float
-                    f_args.append(int(v))
-                else:
-                    f_args.append(int(v))
-            arg1, arg2 = f_args[0], f_args[1]
-            if (op == "%" or op == "/") and arg2 == 0:
-                return None  # check zero division
+        if (op == "%" or op == "/") and arg2 == 0:
+            raise ZeroDivisionError(f"Division by zero in binary operation; Op: {op}, Args: {a}, {b}")
         elif op in [
             ">",
             "<",

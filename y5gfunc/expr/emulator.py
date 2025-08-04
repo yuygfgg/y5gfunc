@@ -35,7 +35,7 @@ def emulate_expr(
 
     Returns:
         The result of the expression.
-    
+
     Raises:
         ValueError: If the expression is invalid or if a clip or property is not found.
     """
