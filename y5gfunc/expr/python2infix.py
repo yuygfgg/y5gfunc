@@ -194,24 +194,33 @@ is_bt709 = matrix == 1
 ```
 """
 
-import inspect
-from typing import Optional, Union, Sequence
+import varname
+from typing import Union, Sequence, Optional
+
+
+def _get_preferred_name() -> Optional[str]:
+    try:
+        name_or_tuple = varname.core.varname(frame=3)
+        if isinstance(name_or_tuple, str):
+            return name_or_tuple
+        return None
+    except Exception:
+        return None
 
 
 class _DSLBuilder:
-    def __init__(self, preferred_names: Optional[dict["_Node", str]] = None):
+    def __init__(self):
         self.statements: list[str] = []
         self.node_to_name: dict["_Node", str] = {}
         self.name_counter: int = 0
-        self.preferred_names = preferred_names or {}
         self.used_names: set[str] = set()
 
     def _get_unique_name(self, node: "_Node") -> str:
-        base_name = self.preferred_names.get(node)
+        base_name = getattr(node, "preferred_name", None)
 
         if base_name and base_name not in self.used_names:
             self.used_names.add(base_name)
-            return base_name
+            return f"{base_name}_0"
 
         if base_name:
             i = 1
@@ -325,27 +334,7 @@ class DSLExpr:
 
     @property
     def dsl(self) -> str:
-        symbol_context = {}
-        try:
-            caller_frame = (
-                inspect.currentframe().f_back  # pyright: ignore[reportOptionalMemberAccess]
-            )
-            symbol_context = (
-                caller_frame.f_locals  # pyright: ignore[reportOptionalMemberAccess]
-            )
-        except (AttributeError, ValueError):
-            pass
-        finally:
-            if "caller_frame" in locals():
-                del caller_frame
-
-        node_to_py_name = {
-            val._node: name
-            for name, val in symbol_context.items()
-            if isinstance(val, DSLExpr)
-        }
-
-        builder = _DSLBuilder(preferred_names=node_to_py_name)
+        builder = _DSLBuilder()
         return builder.build(self)
 
 
@@ -398,6 +387,7 @@ def _to_node(expr: Union[DSLExpr, int, float]) -> _Node:
 class _BinaryOpNode(_Node):
     def __init__(self, op: str, left: DSLExpr, right: Union[DSLExpr, int, float]):
         self.op, self.left, self.right = op, _to_node(left), _to_node(right)
+        self.preferred_name = _get_preferred_name()
 
     def __hash__(self):
         return hash(("binary_op", self.op, self.left, self.right))
@@ -417,6 +407,7 @@ class _BinaryOpNode(_Node):
 class _UnaryOpNode(_Node):
     def __init__(self, op: str, operand: DSLExpr):
         self.op, self.operand = op, _to_node(operand)
+        self.preferred_name = _get_preferred_name()
 
     def __hash__(self):
         return hash(("unary_op", self.op, self.operand))
@@ -435,6 +426,7 @@ class _UnaryOpNode(_Node):
 class _FunctionCallNode(_Node):
     def __init__(self, func_name: str, args: Sequence[Union[DSLExpr, int, float]]):
         self.func_name, self.args = func_name, tuple(_to_node(arg) for arg in args)
+        self.preferred_name = _get_preferred_name()
 
     def __hash__(self):
         return hash(("func_call", self.func_name, self.args))
@@ -458,6 +450,7 @@ class _TernaryOpNode(_Node):
             _to_node(true_expr),
             _to_node(false_expr),
         )
+        self.preferred_name = _get_preferred_name()
 
     def __hash__(self):
         return hash(("ternary", self.cond, self.true_expr, self.false_expr))
@@ -478,6 +471,7 @@ class _PropertyAccessNode(_Node):
     def __init__(self, clip_node: _InputNode, prop_name: str):
         self.clip_node = clip_node
         self.prop_name = prop_name
+        self.preferred_name = _get_preferred_name()
 
     def __hash__(self):
         return hash(("prop_access", self.clip_node, self.prop_name))
@@ -501,10 +495,8 @@ class _PropertyAccessor:
     def __getitem__(self, prop_name: str) -> "DSLExpr":
         if not isinstance(prop_name, str):
             raise TypeError("Property name must be a string.")
-
         if not isinstance(self.clip._node, _InputNode):
             raise TypeError("Property access is only valid on a direct source clip.")
-
         return DSLExpr(_PropertyAccessNode(self.clip._node, prop_name))
 
 
@@ -518,7 +510,7 @@ class SourceClip(DSLExpr):
             elif identifier.startswith("src"):
                 name = identifier
             else:
-                name = f"src{self._ALIASES.index(identifier)}"
+                raise ValueError(f"Invalid string identifier: {identifier}")
         elif isinstance(identifier, int):
             name = f"src{identifier}"
         else:
@@ -583,7 +575,6 @@ class BuiltInFunc:
     def sort(items: list[DSLExpr]) -> list[DSLExpr]:
         if not isinstance(items, list) or not items:
             raise TypeError("Input for sort must be a non-empty list of expressions.")
-
         return [
             DSLExpr(_FunctionCallNode(f"nth_{i + 1}", items)) for i in range(len(items))
         ]
