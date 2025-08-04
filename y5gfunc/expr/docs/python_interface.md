@@ -166,15 +166,15 @@ result = BuiltInFunc.if_then_else(clip_a < 50, clip_a * 2, clip_a)
 
 #### Dynamic Pixel Access (`.access()`)
 
-To dynamically access pixels from a clip (the `access` function), use the `.access()` method on a `SourceClip` object.
+To dynamically access pixels from a clip using absolute coordinates, use the `.access()` method on a `SourceClip` object.
 
 -   **Syntax**: `clip.access(x_coordinate_expr, y_coordinate_expr)`
 
 **Example:**
 ```python
 clip_a = SourceClip('a')
-# Access pixel from clip 'a' at offset (X+10, Y)
-shifted_pixel = clip_a.access(Constant.X + 10, Constant.Y)
+# Access pixel from clip 'a' 10 pixels to the right and 5 pixels down
+shifted_pixel = clip_a.access(Constant.X + 10, Constant.Y - 5)
 ```
 
 #### Frame Property Access (`.props`)

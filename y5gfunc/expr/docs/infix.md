@@ -163,7 +163,7 @@ Functions are called using standard syntax: `functionName(argument1, argument2, 
 | `min`, `max` | 2 | Returns the minimum or maximum of two values. | All modes |
 | `clamp` | 3 | `clamp(x, min_val, max_val)` | All modes |
 | `round`, `floor` | 1 | Round to nearest integer, round down. | Akarin Only |
-| `dyn` | 3 | Dynamic relative pixel access. See Section 8. | Akarin Only |
+| `dyn` | 3 | Dynamic static pixel access. See Section 8. | Akarin Only |
 | `nth_N` | `M` (where M≥N) | `nth_3(a, b, c, d)` finds the 3rd smallest value. | All modes |
 
 ### 6.3. User-Defined Functions
