@@ -207,7 +207,7 @@ class TestEndToEndWorkflows(TestComprehensiveSuite):
         c = SourceClip(0)
 
         p = [
-            [c.access(x, y) for x in [-1, 0, 1]]  # pyright: ignore[reportArgumentType]
+            [c.access(Constant.X + x, Constant.Y + y) for x in [-1, 0, 1]]
             for y in [-1, 0, 1]
         ]
 
