@@ -3043,14 +3043,14 @@
 </code></pre></div></p>
 <h3 id="36-clip-specific-operations">3.6. Clip-Specific Operations<a class="headerlink" href="#36-clip-specific-operations" title="Permanent link">&para;</a></h3>
 <h4 id="dynamic-pixel-access-access">Dynamic Pixel Access (<code>.access()</code>)<a class="headerlink" href="#dynamic-pixel-access-access" title="Permanent link">&para;</a></h4>
-<p>To dynamically access pixels from a clip (the <code>access</code> function), use the <code>.access()</code> method on a <code>SourceClip</code> object.</p>
+<p>To dynamically access pixels from a clip using absolute coordinates, use the <code>.access()</code> method on a <code>SourceClip</code> object.</p>
 <ul>
 <li><strong>Syntax</strong>: <code>clip.access(x_coordinate_expr, y_coordinate_expr)</code></li>
 </ul>
 <p><strong>Example:</strong>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="n">clip_a</span> <span class="o">=</span> <span class="n">SourceClip</span><span class="p">(</span><span class="s1">&#39;a&#39;</span><span class="p">)</span>
-<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="c1"># Access pixel from clip &#39;a&#39; at offset (X+10, Y)</span>
-<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="n">shifted_pixel</span> <span class="o">=</span> <span class="n">clip_a</span><span class="o">.</span><span class="n">access</span><span class="p">(</span><span class="n">Constant</span><span class="o">.</span><span class="n">X</span> <span class="o">+</span> <span class="mi">10</span><span class="p">,</span> <span class="n">Constant</span><span class="o">.</span><span class="n">Y</span><span class="p">)</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="c1"># Access pixel from clip &#39;a&#39; 10 pixels to the right and 5 pixels down</span>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="n">shifted_pixel</span> <span class="o">=</span> <span class="n">clip_a</span><span class="o">.</span><span class="n">access</span><span class="p">(</span><span class="n">Constant</span><span class="o">.</span><span class="n">X</span> <span class="o">+</span> <span class="mi">10</span><span class="p">,</span> <span class="n">Constant</span><span class="o">.</span><span class="n">Y</span> <span class="o">-</span> <span class="mi">5</span><span class="p">)</span>
 </code></pre></div></p>
 <h4 id="frame-property-access-props">Frame Property Access (<code>.props</code>)<a class="headerlink" href="#frame-property-access-props" title="Permanent link">&para;</a></h4>
 <p>To access a frame property, use the <code>.props</code> property on a <code>SourceClip</code> object, followed by item access (<code>[...]</code>).</p>
