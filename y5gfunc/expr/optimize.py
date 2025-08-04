@@ -551,17 +551,45 @@ def fold_constants(
 
 
 def convert_dynamic_to_static(expr: str) -> str:
-    """Convert dynamic pixel access to static when possible"""
+    """Convert dynamic pixel access to static when possible."""
     tokens = tokenize_expr(expr)
     if not tokens:
         return ""
 
-    result_tokens = []
+    def _parse_relative_coord(
+        tokens: list[str], coord_char: str
+    ) -> tuple[Optional[int], int]:
+        """Parses a relative coordinate expression from the end of a token list."""
+        if not tokens:
+            return None, 0
+
+        if (
+            len(tokens) >= 3
+            and tokens[-3] == coord_char
+            and is_token_numeric(tokens[-2])
+            and tokens[-1] in ("+", "-")
+        ):
+            try:
+                val = parse_numeric(tokens[-2])
+                if isinstance(val, float) and not val.is_integer():
+                    return None, 0
+
+                offset = int(val)
+                if tokens[-1] == "-":
+                    offset = -offset
+                return offset, 3
+            except (ValueError, OverflowError):
+                return None, 0
+
+        if tokens[-1] == coord_char:
+            return 0, 1
+
+        return None, 0
+
+    result_tokens: list[str] = []
     i = 0
     while i < len(tokens):
         token = tokens[i]
-        converted = False
-
         is_dynamic_access = (
             token.endswith("[]")
             and len(token) > 2
@@ -570,51 +598,36 @@ def convert_dynamic_to_static(expr: str) -> str:
             and not is_token_numeric(token)
         )
 
-        if is_dynamic_access and len(result_tokens) >= 2:
-            y_token = result_tokens[-1]
-            x_token = result_tokens[-2]
+        converted = False
 
-            if is_token_numeric(x_token) and is_token_numeric(y_token):
-                try:
-                    y_val = parse_numeric(y_token)
-                    x_val = parse_numeric(x_token)
+        if is_dynamic_access:
+            y_offset, y_tokens_consumed = _parse_relative_coord(result_tokens, "Y")
 
-                    is_x_int = isinstance(x_val, int) or (
-                        isinstance(x_val, float) and x_val.is_integer()
-                    )
-                    is_y_int = isinstance(y_val, int) or (
-                        isinstance(y_val, float) and y_val.is_integer()
-                    )
+            if y_offset is not None:
+                tokens_before_y = result_tokens[:-y_tokens_consumed]
+                x_offset, x_tokens_consumed = _parse_relative_coord(
+                    tokens_before_y, "X"
+                )
 
-                    if is_x_int and is_y_int:
-                        x_int = int(x_val)
-                        y_int = int(y_val)
+                if x_offset is not None:
+                    total_tokens_to_remove = x_tokens_consumed + y_tokens_consumed
+                    del result_tokens[-total_tokens_to_remove:]
 
-                        clip_identifier = token[:-2]  # Get clip name
-                        suffix = ""
-                        if ":" in clip_identifier:
-                            parts = clip_identifier.split(":", 1)
-                            clip_identifier = parts[0]
-                            suffix = ":" + parts[1]
+                    clip_identifier = token[:-2]
+                    suffix = ""
+                    if ":" in clip_identifier:
+                        parts = clip_identifier.split(":", 1)
+                        clip_identifier = parts[0]
+                        suffix = ":" + parts[1]
 
-                        result_tokens.pop()  # Remove y token
-                        result_tokens.pop()  # Remove x token
-
-                        result_tokens.append(
-                            f"{clip_identifier}[{x_int},{y_int}]{suffix}"
-                        )
-                        converted = True
-
-                except (
-                    ValueError,
-                    OverflowError,
-                ):  # Handle parse errors or large floats
-                    pass  # Fall through to append original token
+                    new_token = f"{clip_identifier}[{x_offset},{y_offset}]{suffix}"
+                    result_tokens.append(new_token)
+                    converted = True
 
         if not converted:
             result_tokens.append(token)
 
-        i += 1  # Move to the next token in the *original* list
+        i += 1
 
     return " ".join(result_tokens)
 

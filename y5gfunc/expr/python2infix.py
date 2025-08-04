@@ -36,8 +36,8 @@ print(dsl_script)
 
 **Generated DSL:**
 ```
-v_0 = ($src3 + 10)
-RESULT = v_0
+brighter_clip = ($src3 + 10)
+RESULT = brighter_clip
 ```
 
 ## 3. API Reference
@@ -51,11 +51,13 @@ Source clips are the primary inputs to your expression, representing the video d
     -   `SourceClip('x')` -> `$src0`
     -   `SourceClip('a')` -> `$src3`
     -   `SourceClip(4)` -> `$src4`
+    -   `SourceClip('src5')` -> `$src5`
 
 ```python
-# These two are equivalent
+# These are equivalent
 clip_x = SourceClip('x')
 clip_0 = SourceClip(0)
+clip_src0 = SourceClip('src0')
 ```
 
 ### 3.2. Built-in Constants (`Constant`)
