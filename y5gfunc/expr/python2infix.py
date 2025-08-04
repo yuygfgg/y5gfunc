@@ -194,19 +194,40 @@ is_bt709 = matrix == 1
 ```
 """
 
-from typing import Union, Sequence
+import inspect
+from typing import Optional, Union, Sequence
 
 
 class _DSLBuilder:
-    def __init__(self):
+    def __init__(self, preferred_names: Optional[dict["_Node", str]] = None):
         self.statements: list[str] = []
         self.node_to_name: dict["_Node", str] = {}
         self.name_counter: int = 0
+        self.preferred_names = preferred_names or {}
+        self.used_names: set[str] = set()
 
-    def _get_unique_name(self) -> str:
-        name = f"v_{self.name_counter}"
-        self.name_counter += 1
-        return name
+    def _get_unique_name(self, node: "_Node") -> str:
+        base_name = self.preferred_names.get(node)
+
+        if base_name and base_name not in self.used_names:
+            self.used_names.add(base_name)
+            return base_name
+
+        if base_name:
+            i = 1
+            while f"{base_name}_{i}" in self.used_names:
+                i += 1
+            name = f"{base_name}_{i}"
+            self.used_names.add(name)
+            return name
+        else:
+            name = f"v_{self.name_counter}"
+            while name in self.used_names:
+                self.name_counter += 1
+                name = f"v_{self.name_counter}"
+            self.name_counter += 1
+            self.used_names.add(name)
+            return name
 
     def build(self, final_node: "DSLExpr") -> str:
         final_name = self._process_node(final_node._node)
@@ -217,11 +238,14 @@ class _DSLBuilder:
     def _process_node(self, node: "_Node") -> str:
         if node in self.node_to_name:
             return self.node_to_name[node]
+
         dsl_fragment = node.to_dsl_fragment(self)
+
         if isinstance(node, (_InputNode, _ConstantNode, _LiteralNode)):
             self.node_to_name[node] = dsl_fragment
             return dsl_fragment
-        name = self._get_unique_name()
+
+        name = self._get_unique_name(node)
         statement = f"{name} = {dsl_fragment}"
         self.statements.append(statement)
         self.node_to_name[node] = name
@@ -301,7 +325,27 @@ class DSLExpr:
 
     @property
     def dsl(self) -> str:
-        builder = _DSLBuilder()
+        symbol_context = {}
+        try:
+            caller_frame = (
+                inspect.currentframe().f_back  # pyright: ignore[reportOptionalMemberAccess]
+            )
+            symbol_context = (
+                caller_frame.f_locals  # pyright: ignore[reportOptionalMemberAccess]
+            )
+        except (AttributeError, ValueError):
+            pass
+        finally:
+            if "caller_frame" in locals():
+                del caller_frame
+
+        node_to_py_name = {
+            val._node: name
+            for name, val in symbol_context.items()
+            if isinstance(val, DSLExpr)
+        }
+
+        builder = _DSLBuilder(preferred_names=node_to_py_name)
         return builder.build(self)
 
 
