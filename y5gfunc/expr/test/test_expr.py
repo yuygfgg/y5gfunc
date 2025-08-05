@@ -12,6 +12,7 @@ from y5gfunc.expr import (
     SourceClip,
     Constant,
     BuiltInFunc,
+    python2infix,
     verify_akarin_expr,
     verify_std_expr,
     math_functions,
@@ -311,17 +312,18 @@ class TestPythonInterface(TestComprehensiveSuite):
         """Tests the various ways to access pixels via the Python interface."""
         c = SourceClip(0)
 
-        static_expr = c[1, 1]
-        self.assertIn("$src0[1,1]", static_expr.dsl)
+        with python2infix.varname_toggle(True):
+            static_expr = c[1, 1]
+            self.assertIn("$src0[1,1]", static_expr.dsl)
 
-        dyn_int_expr = c.access(0, 0)
-        self.assertIn("dyn($src0, 0, 0)", dyn_int_expr.dsl)
+            dyn_int_expr = c.access(0, 0)
+            self.assertIn("dyn($src0, 0, 0)", dyn_int_expr.dsl)
 
-        dyn_expr_expr = c.access(Constant.X + 1, Constant.Y - 1)
-        self.assertIn(
-            "v_0 = ($X + 1)\nv_1 = ($Y - 1)\ndyn_expr_expr_0 = dyn($src0, v_0, v_1)\nRESULT = dyn_expr_expr_0",
-            dyn_expr_expr.dsl,
-        )
+            dyn_expr_expr = c.access(Constant.X + 1, Constant.Y - 1)
+            self.assertIn(
+                "v_0 = ($X + 1)\nv_1 = ($Y - 1)\ndyn_expr_expr_0 = dyn($src0, v_0, v_1)\nRESULT = dyn_expr_expr_0",
+                dyn_expr_expr.dsl,
+            )
 
         with self.assertRaises(
             TypeError, msg="Static access should not allow expressions"
