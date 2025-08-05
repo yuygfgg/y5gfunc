@@ -18,7 +18,7 @@ This example takes a source clip, increases its brightness by 10, and generates 
 
 ```python
 # 1. Import the necessary components
-from dsl_generator import SourceClip, BuiltInFunc
+from y5gfunc.expr.python2infix import SourceClip
 
 # 2. Define a source clip. 'a' is an alias for $src3 in the DSL.
 clip_a = SourceClip('a')
@@ -36,9 +36,46 @@ print(dsl_script)
 **Generated DSL:**
 
 ```
-brighter_clip = ($src3 + 10)
-RESULT = brighter_clip
+v_0 = ($src3 + 10)
+RESULT = v_0
 ```
+
+As you can see, the intermediate variable is named `v_0`, not `brighter_clip`. This is the default behavior, designed for maximum performance. See the next section for details on how to generate more readable code.
+
+## 2.1. Performance and Readability (`varname_toggle`)
+
+By default, the generator does **not** use your Python variable names in the output DSL. This is a deliberate design choice to maximize performance, as inspecting the Python call stack to retrieve variable names can be slow, especially for complex expressions.
+
+The default output uses simple, auto-incrementing names like `v_0`, `v_1`, etc.
+
+If you need more readable DSL for debugging or inspection, you can temporarily enable variable name detection using the `varname_toggle` context manager.
+
+**Example:**
+
+```python
+from y5gfunc.expr import python2infix
+from y5gfunc.expr.python2infix import SourceClip
+
+clip_a = SourceClip('a')
+
+# Enable varname detection just for this block
+with python2infix.varname_toggle(True):
+    brighter_clip = clip_a + 10
+    much_brighter_clip = brighter_clip * 1.5
+
+dsl_script = much_brighter_clip.dsl
+print(dsl_script)
+```
+
+**Generated DSL with `varname_toggle(True)`:**
+
+```
+brighter_clip_0 = ($src3 + 10)
+much_brighter_clip_1 = (brighter_clip_0 * 1.5)
+RESULT = much_brighter_clip_1
+```
+
+> **Note:** It is recommended to use `varname_toggle(True)` only when needed, as it can impact the generation speed of very large and complex expression trees.
 
 ## 3. API Reference
 

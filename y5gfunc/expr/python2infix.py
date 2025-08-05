@@ -4,14 +4,42 @@ Python interface to generate infix DSL code, that can be further converted to va
 Refer to [this document](docs/python_interface.md) for documentations about the Python interface.
 """
 
+import contextlib
 import varname
 from typing import Union, Sequence, Optional, TypeAlias
+
+
+_USE_VARNAME = False
+
+
+@contextlib.contextmanager
+def varname_toggle(enable: bool):
+    """
+    A context manager to temporarily enable or disable the use of the `varname` package.
+    Disabling this can significantly speed up the generation of complex DSL expressions.
+    It is disabled by default for performance reasons.
+
+    Usage:
+        with varname_toggle(True):
+            # code where varname is enabled
+            ...
+        # varname is disabled again here
+    """
+    global _USE_VARNAME
+    old_value = _USE_VARNAME
+    _USE_VARNAME = enable
+    try:
+        yield
+    finally:
+        _USE_VARNAME = old_value
 
 
 ExprLike: TypeAlias = Union["DSLExpr", int, float]
 
 
 def _get_preferred_name() -> Optional[str]:
+    if not _USE_VARNAME:
+        return None
     try:
         name_or_tuple = varname.core.varname(frame=3)
         if isinstance(name_or_tuple, str):
@@ -75,6 +103,9 @@ class _DSLBuilder:
 
 
 class _Node:
+    def __init__(self):
+        self._hash_cache: Optional[int] = None
+
     def __hash__(self):
         raise NotImplementedError
 
@@ -139,6 +170,30 @@ class DSLExpr:
     def __or__(self, other: ExprLike):
         return DSLExpr(_BinaryOpNode("||", self, other))
 
+    def __radd__(self, other: ExprLike):
+        return DSLExpr(_BinaryOpNode("+", other, self))
+
+    def __rsub__(self, other: ExprLike):
+        return DSLExpr(_BinaryOpNode("-", other, self))
+
+    def __rmul__(self, other: ExprLike):
+        return DSLExpr(_BinaryOpNode("*", other, self))
+
+    def __rtruediv__(self, other: ExprLike):
+        return DSLExpr(_BinaryOpNode("/", other, self))
+
+    def __rpow__(self, other: ExprLike):
+        return DSLExpr(_BinaryOpNode("**", other, self))
+
+    def __rmod__(self, other: ExprLike):
+        return DSLExpr(_BinaryOpNode("%", other, self))
+
+    def __rand__(self, other: ExprLike):
+        return DSLExpr(_BinaryOpNode("&&", other, self))
+
+    def __ror__(self, other: ExprLike):
+        return DSLExpr(_BinaryOpNode("||", other, self))
+
     def __neg__(self):
         return DSLExpr(_UnaryOpNode("-", self))
 
@@ -153,10 +208,14 @@ class DSLExpr:
 
 class _InputNode(_Node):
     def __init__(self, name: str):
+        super().__init__()
         self.name = name
 
     def __hash__(self):
-        return hash(("input", self.name))
+        if self._hash_cache is not None:
+            return self._hash_cache
+        self._hash_cache = hash(("input", self.name))
+        return self._hash_cache
 
     def __eq__(self, other):
         return isinstance(other, _InputNode) and self.name == other.name
@@ -167,10 +226,14 @@ class _InputNode(_Node):
 
 class _ConstantNode(_Node):
     def __init__(self, name: str):
+        super().__init__()
         self.name = name
 
     def __hash__(self):
-        return hash(("const", self.name))
+        if self._hash_cache is not None:
+            return self._hash_cache
+        self._hash_cache = hash(("const", self.name))
+        return self._hash_cache
 
     def __eq__(self, other):
         return isinstance(other, _ConstantNode) and self.name == other.name
@@ -181,17 +244,20 @@ class _ConstantNode(_Node):
 
 class _LiteralNode(_Node):
     def __init__(self, value: Union[int, float]):
+        super().__init__()
         self.value = value
 
     def __hash__(self):
-        return hash(("literal", self.value))
+        if self._hash_cache is not None:
+            return self._hash_cache
+        self._hash_cache = hash(("literal", self.value))
+        return self._hash_cache
 
     def __eq__(self, other):
         return isinstance(other, _LiteralNode) and self.value == other.value
 
     def to_dsl_fragment(self, builder) -> str:
         return str(self.value)
-
 
 def _to_node(expr: ExprLike) -> _Node:
     return expr._node if isinstance(expr, DSLExpr) else _LiteralNode(expr)
@@ -204,11 +270,15 @@ class _BinaryOpNode(_Node):
         left: ExprLike,
         right: ExprLike,
     ):
+        super().__init__()
         self.op, self.left, self.right = op, _to_node(left), _to_node(right)
         self.preferred_name = _get_preferred_name()
 
     def __hash__(self):
-        return hash(("binary_op", self.op, self.left, self.right))
+        if self._hash_cache is not None:
+            return self._hash_cache
+        self._hash_cache = hash(("binary_op", self.op, self.left, self.right))
+        return self._hash_cache
 
     def __eq__(self, other):
         return (
@@ -224,11 +294,15 @@ class _BinaryOpNode(_Node):
 
 class _UnaryOpNode(_Node):
     def __init__(self, op: str, operand: ExprLike):
+        super().__init__()
         self.op, self.operand = op, _to_node(operand)
         self.preferred_name = _get_preferred_name()
 
     def __hash__(self):
-        return hash(("unary_op", self.op, self.operand))
+        if self._hash_cache is not None:
+            return self._hash_cache
+        self._hash_cache = hash(("unary_op", self.op, self.operand))
+        return self._hash_cache
 
     def __eq__(self, other):
         return (
@@ -243,11 +317,15 @@ class _UnaryOpNode(_Node):
 
 class _FunctionCallNode(_Node):
     def __init__(self, func_name: str, args: Sequence[ExprLike]):
+        super().__init__()
         self.func_name, self.args = func_name, tuple(_to_node(arg) for arg in args)
         self.preferred_name = _get_preferred_name()
 
     def __hash__(self):
-        return hash(("func_call", self.func_name, self.args))
+        if self._hash_cache is not None:
+            return self._hash_cache
+        self._hash_cache = hash(("func_call", self.func_name, self.args))
+        return self._hash_cache
 
     def __eq__(self, other):
         return (
@@ -268,6 +346,7 @@ class _TernaryOpNode(_Node):
         true_expr: ExprLike,
         false_expr: ExprLike,
     ):
+        super().__init__()
         self.cond, self.true_expr, self.false_expr = (
             _to_node(cond),
             _to_node(true_expr),
@@ -276,7 +355,10 @@ class _TernaryOpNode(_Node):
         self.preferred_name = _get_preferred_name()
 
     def __hash__(self):
-        return hash(("ternary", self.cond, self.true_expr, self.false_expr))
+        if self._hash_cache is not None:
+            return self._hash_cache
+        self._hash_cache = hash(("ternary", self.cond, self.true_expr, self.false_expr))
+        return self._hash_cache
 
     def __eq__(self, other):
         return (
@@ -292,12 +374,16 @@ class _TernaryOpNode(_Node):
 
 class _PropertyAccessNode(_Node):
     def __init__(self, clip_node: _InputNode, prop_name: str):
+        super().__init__()
         self.clip_node = clip_node
         self.prop_name = prop_name
         self.preferred_name = _get_preferred_name()
 
     def __hash__(self):
-        return hash(("prop_access", self.clip_node, self.prop_name))
+        if self._hash_cache is not None:
+            return self._hash_cache
+        self._hash_cache = hash(("prop_access", self.clip_node, self.prop_name))
+        return self._hash_cache
 
     def __eq__(self, other):
         return (
@@ -313,13 +399,17 @@ class _PropertyAccessNode(_Node):
 
 class _PixelAccessNode(_Node):
     def __init__(self, clip_node: _InputNode, x_node: _Node, y_node: _Node):
+        super().__init__()
         self.clip_node = clip_node
         self.x_node = x_node
         self.y_node = y_node
         self.preferred_name = _get_preferred_name()
 
     def __hash__(self):
-        return hash(("pixel_access", self.clip_node, self.x_node, self.y_node))
+        if self._hash_cache is not None:
+            return self._hash_cache
+        self._hash_cache = hash(("pixel_access", self.clip_node, self.x_node, self.y_node))
+        return self._hash_cache
 
     def __eq__(self, other):
         return (
@@ -334,6 +424,7 @@ class _PixelAccessNode(_Node):
         x_dsl_name = builder._process_node(self.x_node)
         y_dsl_name = builder._process_node(self.y_node)
         return f"{clip_dsl_name}[{x_dsl_name},{y_dsl_name}]"
+
 
 
 class _PropertyAccessor:

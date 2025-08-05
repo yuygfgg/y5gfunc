@@ -22,6 +22,9 @@ from .expr import (
     SourceClip,
     Constant,
     BuiltInFunc,
+    DSLExpr,
+    ExprLike,
+    varname_toggle
 )
 from .filter import (
     sakiko_deband,
@@ -253,4 +256,7 @@ __all__ = [
     "SourceClip",
     "Constant",
     "BuiltInFunc",
+    "varname_toggle",
+    "DSLExpr",
+    "ExprLike",
 ]
