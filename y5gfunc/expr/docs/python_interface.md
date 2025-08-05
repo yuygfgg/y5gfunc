@@ -168,17 +168,33 @@ result = BuiltInFunc.if_then_else(clip_a < 50, clip_a * 2, clip_a)
 
 ### 3.6. Clip-Specific Operations
 
-#### Dynamic Pixel Access (`.access()`)
+#### Static Pixel Access (`[...]`)
 
-To dynamically access pixels from a clip using absolute coordinates, use the `.access()` method on a `SourceClip` object.
+To access pixels from a source clip at a fixed, constant offset from the current coordinate (`X`, `Y`), use item access (`[...]`) on a `SourceClip` object. This maps directly to the DSL's static relative pixel access feature.
 
-- **Syntax**: `clip.access(x_coordinate_expr, y_coordinate_expr)`
+- **Syntax**: `clip[offset_x, offset_y]`
+- `offset_x` and `offset_y` **must be Python integers**. Expressions are not allowed.
 
 **Example:**
 
 ```python
 clip_a = SourceClip('a')
-# Access pixel from clip 'a' 10 pixels to the right and 5 pixels down
+# Access the pixel from clip 'a' 1 pixel to the right and 1 pixel down
+neighbor_pixel = clip_a[1, 1]
+# Generates DSL: ... = $src3[1,1]
+```
+
+#### Dynamic Pixel Access (`.access()`)
+
+To dynamically access pixels from a clip using absolute coordinates (which can be expressions), use the `.access()` method on a `SourceClip` object. This maps to the DSL's `dyn` function.
+
+- **Syntax**: `clip.access(x_coordinate, y_coordinate)`
+
+**Example:**
+
+```python
+clip_a = SourceClip('a')
+# Access pixel from clip 'a' 10 pixels to the right and 5 pixels up from the current pixel
 shifted_pixel = clip_a.access(Constant.X + 10, Constant.Y - 5)
 ```
 

@@ -5,7 +5,10 @@ Refer to [this document](docs/python_interface.md) for documentations about the 
 """
 
 import varname
-from typing import Union, Sequence, Optional
+from typing import Union, Sequence, Optional, TypeAlias
+
+
+ExprLike: TypeAlias = Union["DSLExpr", int, float]
 
 
 def _get_preferred_name() -> Optional[str]:
@@ -94,46 +97,46 @@ class DSLExpr:
             "for conditional logic."
         )
 
-    def __add__(self, other):
+    def __add__(self, other: ExprLike):
         return DSLExpr(_BinaryOpNode("+", self, other))
 
-    def __sub__(self, other):
+    def __sub__(self, other: ExprLike):
         return DSLExpr(_BinaryOpNode("-", self, other))
 
-    def __mul__(self, other):
+    def __mul__(self, other: ExprLike):
         return DSLExpr(_BinaryOpNode("*", self, other))
 
-    def __truediv__(self, other):
+    def __truediv__(self, other: ExprLike):
         return DSLExpr(_BinaryOpNode("/", self, other))
 
-    def __pow__(self, other):
+    def __pow__(self, other: ExprLike):
         return DSLExpr(_BinaryOpNode("**", self, other))
 
-    def __mod__(self, other):
+    def __mod__(self, other: ExprLike):
         return DSLExpr(_BinaryOpNode("%", self, other))
 
-    def __lt__(self, other):
+    def __lt__(self, other: ExprLike):
         return DSLExpr(_BinaryOpNode("<", self, other))
 
-    def __le__(self, other):
+    def __le__(self, other: ExprLike):
         return DSLExpr(_BinaryOpNode("<=", self, other))
 
-    def __gt__(self, other):
+    def __gt__(self, other: ExprLike):
         return DSLExpr(_BinaryOpNode(">", self, other))
 
-    def __ge__(self, other):
+    def __ge__(self, other: ExprLike):
         return DSLExpr(_BinaryOpNode(">=", self, other))
 
-    def __eq__(self, other):
+    def __eq__(self, other: ExprLike):
         return DSLExpr(_BinaryOpNode("==", self, other))
 
-    def __ne__(self, other):
+    def __ne__(self, other: ExprLike):
         return DSLExpr(_BinaryOpNode("!=", self, other))
 
-    def __and__(self, other):
+    def __and__(self, other: ExprLike):
         return DSLExpr(_BinaryOpNode("&&", self, other))
 
-    def __or__(self, other):
+    def __or__(self, other: ExprLike):
         return DSLExpr(_BinaryOpNode("||", self, other))
 
     def __neg__(self):
@@ -190,12 +193,17 @@ class _LiteralNode(_Node):
         return str(self.value)
 
 
-def _to_node(expr: Union[DSLExpr, int, float]) -> _Node:
+def _to_node(expr: ExprLike) -> _Node:
     return expr._node if isinstance(expr, DSLExpr) else _LiteralNode(expr)
 
 
 class _BinaryOpNode(_Node):
-    def __init__(self, op: str, left: DSLExpr, right: Union[DSLExpr, int, float]):
+    def __init__(
+        self,
+        op: str,
+        left: ExprLike,
+        right: ExprLike,
+    ):
         self.op, self.left, self.right = op, _to_node(left), _to_node(right)
         self.preferred_name = _get_preferred_name()
 
@@ -215,7 +223,7 @@ class _BinaryOpNode(_Node):
 
 
 class _UnaryOpNode(_Node):
-    def __init__(self, op: str, operand: DSLExpr):
+    def __init__(self, op: str, operand: ExprLike):
         self.op, self.operand = op, _to_node(operand)
         self.preferred_name = _get_preferred_name()
 
@@ -234,7 +242,7 @@ class _UnaryOpNode(_Node):
 
 
 class _FunctionCallNode(_Node):
-    def __init__(self, func_name: str, args: Sequence[Union[DSLExpr, int, float]]):
+    def __init__(self, func_name: str, args: Sequence[ExprLike]):
         self.func_name, self.args = func_name, tuple(_to_node(arg) for arg in args)
         self.preferred_name = _get_preferred_name()
 
@@ -254,7 +262,12 @@ class _FunctionCallNode(_Node):
 
 
 class _TernaryOpNode(_Node):
-    def __init__(self, cond: DSLExpr, true_expr: DSLExpr, false_expr: DSLExpr):
+    def __init__(
+        self,
+        cond: ExprLike,
+        true_expr: ExprLike,
+        false_expr: ExprLike,
+    ):
         self.cond, self.true_expr, self.false_expr = (
             _to_node(cond),
             _to_node(true_expr),
@@ -298,6 +311,31 @@ class _PropertyAccessNode(_Node):
         return f"{clip_dsl_name}.{self.prop_name}"
 
 
+class _PixelAccessNode(_Node):
+    def __init__(self, clip_node: _InputNode, x_node: _Node, y_node: _Node):
+        self.clip_node = clip_node
+        self.x_node = x_node
+        self.y_node = y_node
+        self.preferred_name = _get_preferred_name()
+
+    def __hash__(self):
+        return hash(("pixel_access", self.clip_node, self.x_node, self.y_node))
+
+    def __eq__(self, other):
+        return (
+            isinstance(other, _PixelAccessNode)
+            and self.clip_node == other.clip_node
+            and self.x_node == other.x_node
+            and self.y_node == other.y_node
+        )
+
+    def to_dsl_fragment(self, builder: _DSLBuilder) -> str:
+        clip_dsl_name = builder._process_node(self.clip_node)
+        x_dsl_name = builder._process_node(self.x_node)
+        y_dsl_name = builder._process_node(self.y_node)
+        return f"{clip_dsl_name}[{x_dsl_name},{y_dsl_name}]"
+
+
 class _PropertyAccessor:
     def __init__(self, clip: "SourceClip"):
         self.clip = clip
@@ -327,7 +365,28 @@ class SourceClip(DSLExpr):
             raise TypeError("SourceClip identifier must be a string or integer.")
         super().__init__(_InputNode(name))
 
-    def access(self, x_expr: DSLExpr, y_expr: DSLExpr) -> "DSLExpr":
+    def __getitem__(self, key):
+        if not isinstance(self._node, _InputNode):
+            raise TypeError("Pixel access is only valid on a direct source clip.")
+        if not isinstance(key, tuple) or len(key) != 2:
+            raise TypeError(
+                "Pixel access requires a tuple of two indices, e.g., a[x, y]."
+            )
+
+        x, y = key
+        if not isinstance(x, int) or not isinstance(y, int):
+            raise TypeError("Pixel access indices must be integers, not expressions.")
+
+        x_node = _to_node(x)
+        y_node = _to_node(y)
+
+        return DSLExpr(_PixelAccessNode(self._node, x_node, y_node))
+
+    def access(
+        self,
+        x_expr: ExprLike,
+        y_expr: ExprLike,
+    ) -> "DSLExpr":
         return DSLExpr(_FunctionCallNode("dyn", [self, x_expr, y_expr]))
 
     @property
@@ -346,43 +405,47 @@ class Constant:
 
 class BuiltInFunc:
     @staticmethod
-    def sin(x: DSLExpr) -> DSLExpr:
+    def sin(x: ExprLike) -> DSLExpr:
         return DSLExpr(_FunctionCallNode("sin", [x]))
 
     @staticmethod
-    def cos(x: DSLExpr) -> DSLExpr:
+    def cos(x: ExprLike) -> DSLExpr:
         return DSLExpr(_FunctionCallNode("cos", [x]))
 
     @staticmethod
-    def log(x: DSLExpr) -> DSLExpr:
+    def log(x: ExprLike) -> DSLExpr:
         return DSLExpr(_FunctionCallNode("log", [x]))
 
     @staticmethod
-    def exp(x: DSLExpr) -> DSLExpr:
+    def exp(x: ExprLike) -> DSLExpr:
         return DSLExpr(_FunctionCallNode("exp", [x]))
 
     @staticmethod
-    def sqrt(x: DSLExpr) -> DSLExpr:
+    def sqrt(x: ExprLike) -> DSLExpr:
         return DSLExpr(_FunctionCallNode("sqrt", [x]))
 
     @staticmethod
-    def abs(x: DSLExpr) -> DSLExpr:
+    def abs(x: ExprLike) -> DSLExpr:
         return DSLExpr(_FunctionCallNode("abs", [x]))
 
     @staticmethod
-    def min(x: DSLExpr, y: DSLExpr) -> DSLExpr:
+    def min(x: ExprLike, y: ExprLike) -> DSLExpr:
         return DSLExpr(_FunctionCallNode("min", [x, y]))
 
     @staticmethod
-    def max(x: DSLExpr, y: DSLExpr) -> DSLExpr:
+    def max(x: ExprLike, y: ExprLike) -> DSLExpr:
         return DSLExpr(_FunctionCallNode("max", [x, y]))
 
     @staticmethod
-    def clamp(x: DSLExpr, min_val: DSLExpr, max_val: DSLExpr) -> DSLExpr:
+    def clamp(
+        x: ExprLike,
+        min_val: ExprLike,
+        max_val: ExprLike,
+    ) -> DSLExpr:
         return DSLExpr(_FunctionCallNode("clamp", [x, min_val, max_val]))
 
     @staticmethod
-    def sort(items: list[DSLExpr]) -> list[DSLExpr]:
+    def sort(items: list[ExprLike]) -> list[DSLExpr]:
         if not isinstance(items, list) or not items:
             raise TypeError("Input for sort must be a non-empty list of expressions.")
         return [
@@ -390,33 +453,37 @@ class BuiltInFunc:
         ]
 
     @staticmethod
-    def trunc(x: DSLExpr) -> DSLExpr:
+    def trunc(x: ExprLike) -> DSLExpr:
         return DSLExpr(_FunctionCallNode("trunc", [x]))
 
     @staticmethod
-    def round(x: DSLExpr) -> DSLExpr:
+    def round(x: ExprLike) -> DSLExpr:
         return DSLExpr(_FunctionCallNode("round", [x]))
 
     @staticmethod
-    def floor(x: DSLExpr) -> DSLExpr:
+    def floor(x: ExprLike) -> DSLExpr:
         return DSLExpr(_FunctionCallNode("floor", [x]))
 
     @staticmethod
-    def if_then_else(cond: DSLExpr, true_expr: DSLExpr, false_expr: DSLExpr) -> DSLExpr:
+    def if_then_else(
+        cond: ExprLike,
+        true_expr: ExprLike,
+        false_expr: ExprLike,
+    ) -> DSLExpr:
         return DSLExpr(_TernaryOpNode(cond, true_expr, false_expr))
 
     @staticmethod
-    def logical_not(x: DSLExpr) -> DSLExpr:
+    def logical_not(x: ExprLike) -> DSLExpr:
         return DSLExpr(_UnaryOpNode("!", x))
 
     @staticmethod
-    def bitwise_or(x: DSLExpr, y: DSLExpr) -> DSLExpr:
+    def bitwise_or(x: ExprLike, y: ExprLike) -> DSLExpr:
         return DSLExpr(_BinaryOpNode("|", x, y))
 
     @staticmethod
-    def bitwise_xor(x: DSLExpr, y: DSLExpr) -> DSLExpr:
+    def bitwise_xor(x: ExprLike, y: ExprLike) -> DSLExpr:
         return DSLExpr(_BinaryOpNode("^", x, y))
 
     @staticmethod
-    def bitwise_and(x: DSLExpr, y: DSLExpr) -> DSLExpr:
+    def bitwise_and(x: ExprLike, y: ExprLike) -> DSLExpr:
         return DSLExpr(_BinaryOpNode("&", x, y))

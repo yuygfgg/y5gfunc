@@ -18,9 +18,9 @@ from y5gfunc.expr import (
 )
 
 
-def get_pixel_value(clip):
-    """Helper to get the top-left pixel value from a VapourSynth clip."""
-    return clip.get_frame(0)[0][0, 0]
+def get_pixel_value(clip, x=0, y=0):
+    """Helper to get a pixel value from a VapourSynth clip."""
+    return clip.get_frame(0)[0][y, x]
 
 
 class TestComprehensiveSuite(unittest.TestCase):
@@ -100,8 +100,28 @@ class TestCoreDSL(TestComprehensiveSuite):
         self._test_dsl_expression(infix, 30)
 
     def test_pixel_access(self):
-        self._test_dsl_expression("RESULT = $src0[1, 1]", 10, [10, 20])
+        # Create a clip where the value at (1,1) is 20, anywhere else is 10
+        test_clip = vs.core.akarin.Expr(
+            core.std.BlankClip(format=vs.GRAYS, color=10), "X 1 = Y 1 = and 20 10 ?"
+        )
+
+        self._test_dsl_expression("RESULT = $src0[1, 1]", 20, clip_values=[20])
         self._test_dsl_expression("RESULT = dyn($src0, 0, 0)", 10, [10])
+
+        c = SourceClip(0)
+        expr_static = c[1, 1]
+        self.assertAlmostEqual(  # get value at pixel (0,0), so at offset (1,1) should be pixel (1,1), which is 20
+            self._evaluate_expr(infix2postfix(expr_static.dsl), [test_clip]), 20
+        )
+        expr_static2 = c[0, 4]
+        self.assertAlmostEqual(  # get value at pixel (0,0), so at offset (0,4) should be pixel (0,4), which is 10
+            self._evaluate_expr(infix2postfix(expr_static2.dsl), [test_clip]), 10
+        )
+
+        expr_dyn = c.access(1, 1)
+        self.assertAlmostEqual(
+            self._evaluate_expr(infix2postfix(expr_dyn.dsl), [test_clip]), 20
+        )
 
     def test_syntax_errors(self):
         with self.assertRaises(Exception, msg="Expected error for undefined variable"):
@@ -165,7 +185,7 @@ class TestPythonInterface(TestComprehensiveSuite):
         x, y, z = SourceClip(0), SourceClip(1), SourceClip(2)
 
         expr = BuiltInFunc.sqrt(BuiltInFunc.abs((x * Constant.pi) - (y / 2.0))) + z
-        expr = BuiltInFunc.clamp(expr, 0, 255)  # pyright: ignore[reportArgumentType]
+        expr = BuiltInFunc.clamp(expr, 0, 255)
         expr = BuiltInFunc.if_then_else(x > y, expr, z)
 
         clips = [core.std.BlankClip(format=vs.GRAYS, color=v) for v in [50, 20, 10]]
@@ -175,6 +195,33 @@ class TestPythonInterface(TestComprehensiveSuite):
         py_result = math.sqrt(abs((50 * math.pi) - (20 / 2.0))) + 10
         py_result = max(0, min(255, py_result))
         self.assertAlmostEqual(result, py_result, places=5)
+
+    def test_pixel_access_interface(self):
+        """Tests the various ways to access pixels via the Python interface."""
+        c = SourceClip(0)
+
+        static_expr = c[1, 1]
+        self.assertIn("$src0[1,1]", static_expr.dsl)
+
+        dyn_int_expr = c.access(0, 0)
+        self.assertIn("dyn($src0, 0, 0)", dyn_int_expr.dsl)
+
+        dyn_expr_expr = c.access(Constant.X + 1, Constant.Y - 1)
+        self.assertIn(
+            "v_0 = ($X + 1)\nv_1 = ($Y - 1)\ndyn_expr_expr_0 = dyn($src0, v_0, v_1)\nRESULT = dyn_expr_expr_0",
+            dyn_expr_expr.dsl,
+        )
+
+        with self.assertRaises(
+            TypeError, msg="Static access should not allow expressions"
+        ):
+            _ = c[Constant.X, 1]
+        with self.assertRaises(
+            TypeError, msg="Static access should not allow expressions"
+        ):
+            _ = c[1, Constant.Y]
+        with self.assertRaises(TypeError, msg="Static access requires a tuple of two"):
+            _ = c[1]
 
 
 class TestStdConversion(TestComprehensiveSuite):
@@ -206,10 +253,7 @@ class TestEndToEndWorkflows(TestComprehensiveSuite):
         """Build a 3x3 Gaussian blur using the Python interface and evaluate it."""
         c = SourceClip(0)
 
-        p = [
-            [c.access(Constant.X + x, Constant.Y + y) for x in [-1, 0, 1]]
-            for y in [-1, 0, 1]
-        ]
+        p = [[c[x, y] for x in [-1, 0, 1]] for y in [-1, 0, 1]]
 
         kernel = [[1, 2, 1], [2, 4, 2], [1, 2, 1]]
 
@@ -224,7 +268,8 @@ class TestEndToEndWorkflows(TestComprehensiveSuite):
         postfix = infix2postfix(blur_expr.dsl)
         result_clip = core.akarin.Expr([test_clip], postfix)
 
-        self.assertAlmostEqual(result_clip.get_frame(0)[0][5, 5], 100, places=3)
+        # The result at (5,5) should be 100 because all surrounding pixels are 100
+        self.assertAlmostEqual(get_pixel_value(result_clip, 5, 5), 100, places=3)
 
 
 if __name__ == "__main__":

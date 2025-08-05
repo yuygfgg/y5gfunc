@@ -30,7 +30,7 @@ A powerful optimizer that applies a variety of techniques to enhance `Expr` perf
 
 - **Dead Assignment Elimination**: Removes variables that are assigned but never used.
 
-- **Dynamic to Static Pixel Access Conversion**: Converts dynamic pixel access (e.g., `x[a,b]`) to faster static access (e.g., `x[1,1]`) where possible.
+- **Dynamic to Static Pixel Access Conversion**: Converts dynamic pixel access to faster static access where possible.
 
 - **Memory Optimization**: Improve memory performance by transforming variable operations into stack manipulations.
 
@@ -44,7 +44,7 @@ A powerful optimizer that applies a variety of techniques to enhance `Expr` perf
 
 ### 5. Extended Functionality
 
-- **Infix DSL Math Library**: A collection of additional mathematical functions (e.g., `atan2`, `cbrt`, `erf`, `tgamma`) are provided as Infix user-defined functions, extending the capabilities of the standard `Expr` language.
+- **Infix DSL Math Library**: A collection of additional mathematical functions (e.g., `atan2`, `cbrt`, `erf`) are provided as Infix user-defined functions, extending the capabilities of the standard `Expr` language.
 
 ## Documentation
 

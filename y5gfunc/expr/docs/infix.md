@@ -242,4 +242,4 @@ Access a pixel from a source clip at a dynamically calculated coordinate. This i
 - **Syntax:** `dyn($clip, x_expr, y_expr)`
 - `$clip` must be a source clip constant.
 - `x_expr` and `y_expr` can be any valid expressions that evaluate to the desired coordinates.
-- `dyn($src0, X + 2, Y + 3)` is equivalent to `$src0[2, 3]`.
+- `dyn($src0, $X + 2, $Y + 3)` is equivalent to `$src0[2, 3]`.
