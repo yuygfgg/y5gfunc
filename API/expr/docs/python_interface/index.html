@@ -1239,6 +1239,15 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#static-pixel-access" class="md-nav__link">
+    <span class="md-ellipsis">
+      Static Pixel Access ([...])
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#dynamic-pixel-access-access" class="md-nav__link">
     <span class="md-ellipsis">
       Dynamic Pixel Access (.access())
@@ -3040,15 +3049,27 @@
 <a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a><span class="c1">#     result = clip_a</span>
 </code></pre></div>
 <h3 id="36-clip-specific-operations">3.6. Clip-Specific Operations<a class="headerlink" href="#36-clip-specific-operations" title="Permanent link">&para;</a></h3>
-<h4 id="dynamic-pixel-access-access">Dynamic Pixel Access (<code>.access()</code>)<a class="headerlink" href="#dynamic-pixel-access-access" title="Permanent link">&para;</a></h4>
-<p>To dynamically access pixels from a clip using absolute coordinates, use the <code>.access()</code> method on a <code>SourceClip</code> object.</p>
+<h4 id="static-pixel-access">Static Pixel Access (<code>[...]</code>)<a class="headerlink" href="#static-pixel-access" title="Permanent link">&para;</a></h4>
+<p>To access pixels from a source clip at a fixed, constant offset from the current coordinate (<code>X</code>, <code>Y</code>), use item access (<code>[...]</code>) on a <code>SourceClip</code> object. This maps directly to the DSL's static relative pixel access feature.</p>
 <ul>
-<li><strong>Syntax</strong>: <code>clip.access(x_coordinate_expr, y_coordinate_expr)</code></li>
+<li><strong>Syntax</strong>: <code>clip[offset_x, offset_y]</code></li>
+<li><code>offset_x</code> and <code>offset_y</code> <strong>must be Python integers</strong>. Expressions are not allowed.</li>
 </ul>
 <p><strong>Example:</strong></p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="n">clip_a</span> <span class="o">=</span> <span class="n">SourceClip</span><span class="p">(</span><span class="s1">&#39;a&#39;</span><span class="p">)</span>
-<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="c1"># Access pixel from clip &#39;a&#39; 10 pixels to the right and 5 pixels down</span>
-<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="n">shifted_pixel</span> <span class="o">=</span> <span class="n">clip_a</span><span class="o">.</span><span class="n">access</span><span class="p">(</span><span class="n">Constant</span><span class="o">.</span><span class="n">X</span> <span class="o">+</span> <span class="mi">10</span><span class="p">,</span> <span class="n">Constant</span><span class="o">.</span><span class="n">Y</span> <span class="o">-</span> <span class="mi">5</span><span class="p">)</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="c1"># Access the pixel from clip &#39;a&#39; 1 pixel to the right and 1 pixel down</span>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="n">neighbor_pixel</span> <span class="o">=</span> <span class="n">clip_a</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="c1"># Generates DSL: ... = $src3[1,1]</span>
+</code></pre></div>
+<h4 id="dynamic-pixel-access-access">Dynamic Pixel Access (<code>.access()</code>)<a class="headerlink" href="#dynamic-pixel-access-access" title="Permanent link">&para;</a></h4>
+<p>To dynamically access pixels from a clip using absolute coordinates (which can be expressions), use the <code>.access()</code> method on a <code>SourceClip</code> object. This maps to the DSL's <code>dyn</code> function.</p>
+<ul>
+<li><strong>Syntax</strong>: <code>clip.access(x_coordinate, y_coordinate)</code></li>
+</ul>
+<p><strong>Example:</strong></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="n">clip_a</span> <span class="o">=</span> <span class="n">SourceClip</span><span class="p">(</span><span class="s1">&#39;a&#39;</span><span class="p">)</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="c1"># Access pixel from clip &#39;a&#39; 10 pixels to the right and 5 pixels up from the current pixel</span>
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="n">shifted_pixel</span> <span class="o">=</span> <span class="n">clip_a</span><span class="o">.</span><span class="n">access</span><span class="p">(</span><span class="n">Constant</span><span class="o">.</span><span class="n">X</span> <span class="o">+</span> <span class="mi">10</span><span class="p">,</span> <span class="n">Constant</span><span class="o">.</span><span class="n">Y</span> <span class="o">-</span> <span class="mi">5</span><span class="p">)</span>
 </code></pre></div>
 <h4 id="frame-property-access-props">Frame Property Access (<code>.props</code>)<a class="headerlink" href="#frame-property-access-props" title="Permanent link">&para;</a></h4>
 <p>To access a frame property, use the <code>.props</code> property on a <code>SourceClip</code> object, followed by item access (<code>[...]</code>).</p>
@@ -3056,13 +3077,13 @@
 <li><strong>Syntax</strong>: <code>clip.props['PropertyName']</code></li>
 </ul>
 <p><strong>Example:</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="n">clip_a</span> <span class="o">=</span> <span class="n">SourceClip</span><span class="p">(</span><span class="s1">&#39;a&#39;</span><span class="p">)</span>
-<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>
-<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="c1"># Access the _Matrix property from the frame properties of clip &#39;a&#39;</span>
-<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="n">matrix</span> <span class="o">=</span> <span class="n">clip_a</span><span class="o">.</span><span class="n">props</span><span class="p">[</span><span class="s1">&#39;_Matrix&#39;</span><span class="p">]</span>
-<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>
-<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="c1"># The result can be used in other expressions</span>
-<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a><span class="n">is_bt709</span> <span class="o">=</span> <span class="n">matrix</span> <span class="o">==</span> <span class="mi">1</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="n">clip_a</span> <span class="o">=</span> <span class="n">SourceClip</span><span class="p">(</span><span class="s1">&#39;a&#39;</span><span class="p">)</span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="c1"># Access the _Matrix property from the frame properties of clip &#39;a&#39;</span>
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="n">matrix</span> <span class="o">=</span> <span class="n">clip_a</span><span class="o">.</span><span class="n">props</span><span class="p">[</span><span class="s1">&#39;_Matrix&#39;</span><span class="p">]</span>
+<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a>
+<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="c1"># The result can be used in other expressions</span>
+<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a><span class="n">is_bt709</span> <span class="o">=</span> <span class="n">matrix</span> <span class="o">==</span> <span class="mi">1</span>
 </code></pre></div>
 
 
