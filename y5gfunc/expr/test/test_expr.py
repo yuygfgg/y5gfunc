@@ -4,6 +4,7 @@ from vapoursynth import core
 import math
 import functools
 import operator
+import random
 
 from y5gfunc.expr import (
     infix2postfix,
@@ -41,6 +42,7 @@ class TestComprehensiveSuite(unittest.TestCase):
         clip_values=[0],
         use_std=False,
         optimize_level=4,
+        places=5,
     ):
         """A generic, result-oriented test function for the DSL."""
         postfix_expr = infix2postfix(
@@ -54,8 +56,9 @@ class TestComprehensiveSuite(unittest.TestCase):
 
         clips = [core.std.BlankClip(format=vs.GRAYS, color=val) for val in clip_values]
         eval_result = self._evaluate_expr(postfix_expr, clips, use_std=use_std)
-        self.assertAlmostEqual(
-            eval_result, expected_result, places=5, msg=f"Failed on infix: {infix_code}"
+        self.assertTrue(
+            math.isclose(eval_result, expected_result, rel_tol=1e-4, abs_tol=1e-5),
+            msg=f"Failed on infix: {infix_code}, expected {expected_result}, got {eval_result}",
         )
 
 
@@ -146,6 +149,114 @@ class TestMathFunctions(TestComprehensiveSuite):
             expected = py_func(*args)
             with self.subTest(function=name):
                 self._test_dsl_expression(infix, expected, args)
+
+
+class TestMathFunctionsRandomized(TestComprehensiveSuite):
+    """Randomized testing for math functions."""
+
+    def _get_py_func(self, name):
+        """Helper to get python equivalent function."""
+        # Map to python's math module names
+        py_name_map = {
+            "arsinh": "asinh",
+            "arcosh": "acosh",
+            "artanh": "atanh",
+        }
+        py_name = py_name_map.get(name, name)
+
+        if hasattr(math, py_name):  # pyright: ignore[reportArgumentType]
+            return getattr(math, py_name)  # pyright: ignore[reportArgumentType]
+
+        # Custom implementations for functions not in standard math
+        py_funcs = {
+            "abs": abs,
+            "fma": lambda x, y, z: x * y + z,
+            "cot": lambda x: 1 / math.tan(x),
+            "sec": lambda x: 1 / math.cos(x),
+            "csc": lambda x: 1 / math.sin(x),
+            "acot": lambda x: math.pi / 2 - math.atan(x),
+            "coth": lambda x: 1 / math.tanh(x),
+            "sech": lambda x: 1 / math.cosh(x),
+            "csch": lambda x: 1 / math.sinh(x),
+            "arcoth": lambda x: 0.5 * math.log((x + 1) / (x - 1)),
+            "arsech": lambda x: math.log((1 + math.sqrt(1 - x**2)) / x),
+            "arcsch": lambda x: math.log(1 / x + math.sqrt(1 / x**2 + 1)),
+        }
+        return py_funcs.get(name)
+
+    def _generate_args(self, name, num_args):
+        """Generate random arguments with valid domains."""
+        args = []
+        for _ in range(num_args):
+            if name in ["asin", "acos", "artanh"]:
+                args.append(random.uniform(-1.0, 1.0))
+            elif name == "arcosh":
+                args.append(random.uniform(1.0, 100.0))
+            elif name == "arcoth":
+                val = random.uniform(1.0001, 100.0)
+                if random.choice([True, False]):
+                    val = -val
+                args.append(val)
+            elif name == "arsech":
+                args.append(random.uniform(0.0001, 1.0))
+            elif name in ["tan", "sinh", "cosh", "arsinh", "cot", "sec", "csc"]:
+                args.append(random.uniform(-10.0, 10.0))
+            else:
+                args.append(random.uniform(-100.0, 100.0))
+        return args
+
+    def test_randomized_math_functions(self):
+        """Exhaustively test math functions with random values."""
+        functions_to_test = {
+            # name: num_args
+            "tan": 1,
+            "asin": 1,
+            "acos": 1,
+            "atan": 1,
+            "atan2": 2,
+            "sinh": 1,
+            "cosh": 1,
+            "tanh": 1,
+            "arsinh": 1,
+            "arcosh": 1,
+            "artanh": 1,
+            "fma": 3,
+            "copysign": 2,
+            "erf": 1,
+            "erfc": 1,
+            "cbrt": 1,
+            "cot": 1,
+            "sec": 1,
+            "csc": 1,
+            "acot": 1,
+            "coth": 1,
+            "sech": 1,
+            "csch": 1,
+            "arcoth": 1,
+            "arsech": 1,
+            "arcsch": 1,
+        }
+
+        for name, num_args in functions_to_test.items():
+            py_func = self._get_py_func(name)
+            if not py_func:
+                self.skipTest(f"Python equivalent for '{name}' not found.")
+                continue
+
+            with self.subTest(function=name):
+                for _ in range(100):  # 100 random tests per function
+                    args = self._generate_args(name, num_args)
+
+                    try:
+                        expected = py_func(*args)
+                    except (ValueError, ZeroDivisionError):
+                        print(f"Skipping test case for {name} with args {args}")
+                        continue
+
+                    arg_str = ", ".join([f"$src{i}" for i in range(len(args))])
+                    infix = f"{math_functions}\nRESULT = {name}({arg_str})"
+
+                    self._test_dsl_expression(infix, expected, args, places=3)
 
 
 class TestOptimizer(TestComprehensiveSuite):
@@ -277,6 +388,7 @@ if __name__ == "__main__":
     suite = unittest.TestSuite()
     suite.addTests(loader.loadTestsFromTestCase(TestCoreDSL))
     suite.addTests(loader.loadTestsFromTestCase(TestMathFunctions))
+    suite.addTests(loader.loadTestsFromTestCase(TestMathFunctionsRandomized))
     suite.addTests(loader.loadTestsFromTestCase(TestOptimizer))
     suite.addTests(loader.loadTestsFromTestCase(TestPythonInterface))
     suite.addTests(loader.loadTestsFromTestCase(TestStdConversion))

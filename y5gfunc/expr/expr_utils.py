@@ -49,6 +49,10 @@ function atan2(var_y, var_x) {
     return theta
 }
 
+function tan(var) {
+    return sin(var) / cos(var)
+}
+
 function cot(var) {
     return cos(var) / sin(var)
 }
