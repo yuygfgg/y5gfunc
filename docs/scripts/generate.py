@@ -5,13 +5,16 @@ import logging
 log = logging.getLogger("mkdocs")
 
 src_package_dir = Path("y5gfunc")
-
 doc_api_root = Path("API")
 package_name = src_package_dir.name
 
 log.info(f"Starting reference page generation from source directory: {src_package_dir}")
 
 for path in sorted(src_package_dir.rglob("*.py")):
+    if "test" in path.parts:
+        log.debug(f"Skipping test folder file: {path}")
+        continue
+    
     module_path_rel_pkg = path.relative_to(src_package_dir)
     module_path_parts = module_path_rel_pkg.with_suffix("").parts
 
@@ -22,9 +25,7 @@ for path in sorted(src_package_dir.rglob("*.py")):
         continue
 
     full_module_path = ".".join([package_name] + list(module_path_parts))
-
     short_module_name = module_path_parts[-1]
-
     doc_path = doc_api_root / module_path_rel_pkg.with_suffix(".md")
 
     log.info(
@@ -36,19 +37,25 @@ for path in sorted(src_package_dir.rglob("*.py")):
         print(f"title: {short_module_name}", file=fd)
         print("---", file=fd)
         print("", file=fd)
-
         print(f"# `{full_module_path}`", file=fd)
         print("", file=fd)
-
         identifier = f"::: {full_module_path}"
         print(identifier, file=fd)
 
-    mkdocs_gen_files.set_edit_path(
-        doc_path,
-        Path("../..") / path
-        if src_package_dir.name == package_name
-        else Path("../../..") / path,
-    )
+    mkdocs_gen_files.set_edit_path(doc_path, path)
 
+log.info(f"Merging conceptual docs from source directory: {src_package_dir}")
+
+for path in sorted(src_package_dir.rglob("*.md")):
+    md_path_rel_pkg = path.relative_to(src_package_dir)
+
+    doc_path = doc_api_root / md_path_rel_pkg
+
+    log.info(f"Merging conceptual doc: {path} to {doc_path}")
+
+    with mkdocs_gen_files.open(doc_path, "w") as f:
+        f.write(path.read_text(encoding="utf-8"))
+
+    mkdocs_gen_files.set_edit_path(doc_path, path)
 
 log.info("Finished reference page generation.")

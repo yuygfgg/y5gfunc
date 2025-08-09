@@ -38,6 +38,7 @@ from .morpho import convolution, maximum, minimum, inflate, deflate
 from .scenecut import scd_koala
 from .temporal import temporal_stabilize
 from .aa import double_aa
+from .dehalo import simple_dehalo
 from .tonemap import (
     ColorSpace,
     ColorPrimaries,
@@ -89,6 +90,7 @@ __all__ = [
     "nn2x",
     "Gammarize",
     "double_aa",
+    "simple_dehalo",
     "ColorSpace",
     "ColorPrimaries",
     "GamutMapping",

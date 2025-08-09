@@ -9,7 +9,6 @@ from .morpho import minimum, maximum, convolution, inflate
 from .utils import get_peak_value_full
 from .resample import Gammarize
 from vstools import get_peak_value, scale_mask, replace_ranges
-from ..expr import ex_planes
 
 
 # modified from LoliHouse: https://share.dmhy.org/topics/view/478666_LoliHouse_LoliHouse_1st_Anniversary_Announcement_and_Gift.html
@@ -264,7 +263,10 @@ def comb_mask(
     ex_motion = [f"x y - abs {mthresh} > {peak} 0 ?"]
     ex_spatial = ex_m1 if metric else ex_m0
 
-    spatial_mask = clip.akarin.Expr(ex_planes(clip, ex_spatial, planes))
+    plane_range = range(clip.format.num_planes)
+    spatial_expr = [ex_spatial[0] if i in planes else "" for i in plane_range]
+
+    spatial_mask = clip.akarin.Expr(spatial_expr)
     if mthresh == 0:
         return (
             spatial_mask
@@ -274,9 +276,9 @@ def comb_mask(
             )
         )
 
-    motion_mask = core.akarin.Expr(
-        [clip, clip[0] + clip], ex_planes(clip, ex_motion, planes)
-    )
+    motion_expr = [ex_motion[0] if i in planes else "" for i in plane_range]
+
+    motion_mask = core.akarin.Expr([clip, clip[0] + clip], motion_expr)
     motion_mask = maximum(
         motion_mask, planes=planes, coordinates=[0, 1, 0, 0, 0, 0, 1, 0]
     )

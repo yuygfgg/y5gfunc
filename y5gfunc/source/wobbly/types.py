@@ -5,7 +5,7 @@ Advanced type definitions for Wobbly parser.
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import (
-    Generic, Optional, TypedDict, Dict, List, Tuple, Set, Any, Union, Callable, 
+    Generic, Optional, TypedDict, Any, Union, Callable, 
     Protocol, TypeVar
 )
 from pathlib import Path
@@ -231,7 +231,7 @@ class DepthSettings:
 class SectionInfo:
     """Section information"""
     start: int
-    presets: List[str] = field(default_factory=list)
+    presets: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -247,7 +247,7 @@ class CustomListInfo:
     name: str
     preset: str
     position: ProcessPosition
-    frames: List[Tuple[int, int]] = field(default_factory=list)
+    frames: list[tuple[int, int]] = field(default_factory=list)
 
 
 @dataclass
@@ -276,16 +276,16 @@ class OrphanFieldInfo:
 # Preset processing function type
 PresetFunction = Callable[[vs.VideoNode], vs.VideoNode]
 
-ProjectData = Dict[str, Any]
-FrameMap = Dict[int, int]
-FramePropertyMap = Dict[int, FrameProperties]
-DecimatedFrameSet = Set[int]
+ProjectData = dict[str, Any]
+FrameMap = dict[int, int]
+FramePropertyMap = dict[int, FrameProperties]
+DecimatedFrameSet = set[int]
 MatchString = str
-PresetDict = Dict[str, PresetFunction]
-OrphanFieldDict = Dict[int, OrphanFieldInfo]
-CycleDecimationDict = Dict[int, Set[int]]
-DecimationRangeList = List[DecimationRange]
-CustomListRanges = List[Tuple[int, int, str, str]]
+PresetDict = dict[str, PresetFunction]
+OrphanFieldDict = dict[int, OrphanFieldInfo]
+CycleDecimationDict = dict[int, set[int]]
+DecimationRangeList = list[DecimationRange]
+CustomListRanges = list[tuple[int, int, str, str]]
 
 class TimecodeVersion:
     V1 = "v1"

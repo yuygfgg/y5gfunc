@@ -33,7 +33,8 @@ def draw_line(
     """
     assert clip.format.num_planes == 1
 
-    expr = infix2postfix(f"""
+    expr = infix2postfix(
+        f"""
             sx = {sx}
             sy = {sy}
             ex = {ex}
@@ -46,14 +47,15 @@ def draw_line(
             L2 = (ex - sx) * dx + dy ** 2
             half_thickness = thickness / 2
             half_thickness_sq = half_thickness ** 2
-            tt = ((X - sx) * dx + (Y - sy) * dy) / L2
+            tt = (($X - sx) * dx + ($Y - sy) * dy) / L2
             tt = clamp(tt, 0, 1)
             proj_x = sx + tt * dx
             proj_y = sy + tt * dy
-            d2 = (X - proj_x) * (X - proj_x) + (Y - proj_y) * (Y - proj_y)
+            d2 = ($X - proj_x) * ($X - proj_x) + ($Y - proj_y) * ($Y - proj_y)
             do = d2 <= half_thickness_sq
-            RESULT = do ? ((1 - factor) * src0 + factor * color) : src0
-            """)
+            RESULT = do ? ((1 - factor) * $src0 + factor * color) : $src0
+            """
+    )
 
     return clip.akarin.Expr(expr)
 
@@ -87,7 +89,8 @@ def draw_circle(
     """
     assert clip.format.num_planes == 1
 
-    expr = infix2postfix(f"""
+    expr = infix2postfix(
+        f"""
             cx = {cx}
             cy = {cy}
             radius = {radius}
@@ -95,16 +98,17 @@ def draw_circle(
             color = {color}
             factor = {factor}
             half_thickness = thickness / 2
-            dx = X - cx
-            dy = Y - cy
+            dx = $X - cx
+            dy = $Y - cy
             distance_sq = dx ** 2 + dy ** 2
             radius_minus_half = radius - half_thickness
             lower_sq = radius_minus_half ** 2
             lower_sq = max(lower_sq, 0)
             upper_sq = (radius + half_thickness) ** 2
             do = distance_sq >= lower_sq && distance_sq <= upper_sq
-            RESULT = do ? ((1 - factor) * src0 + factor * color) : src0
-            """)
+            RESULT = do ? ((1 - factor) * $src0 + factor * color) : $src0
+            """
+    )
 
     return clip.akarin.Expr(expr)
 
@@ -142,7 +146,8 @@ def draw_ellipse(
     """
     assert clip.format.num_planes == 1
 
-    expr = infix2postfix(f"""
+    expr = infix2postfix(
+        f"""
             f1x = {f1x}
             f1y = {f1y}
             f2x = {f2x}
@@ -159,11 +164,12 @@ def draw_ellipse(
             dy = f2y - f1y
             c2 = (dx ** 2 + dy ** 2) / 4
             b2 = a2 - c2
-            value = ((X - cx) ** 2) / a2 + ((Y - cy) ** 2) / b2
+            value = (($X - cx) ** 2) / a2 + (($Y - cy) ** 2) / b2
             norm_thresh = thickness / ellipse_sum
             do = abs(value - 1) <= norm_thresh
-            RESULT = do ? ((1 - factor) * src0 + factor * color) : src0
-            """)
+            RESULT = do ? ((1 - factor) * $src0 + factor * color) : $src0
+            """
+    )
 
     return clip.akarin.Expr(expr)
 
@@ -270,7 +276,7 @@ def draw_bezier_curve(
             f"segmentLengthSquared_{seg_index} = deltaX_{seg_index} * deltaX_{seg_index} + deltaY_{seg_index} * deltaY_{seg_index}"
         )
         expr_lines.append(
-            f"tSegment_{seg_index} = ((X - bezierX_{seg_index}) * deltaX_{seg_index} + (Y - bezierY_{seg_index}) * deltaY_{seg_index}) / segmentLengthSquared_{seg_index}"
+            f"tSegment_{seg_index} = (($X - bezierX_{seg_index}) * deltaX_{seg_index} + ($Y - bezierY_{seg_index}) * deltaY_{seg_index}) / segmentLengthSquared_{seg_index}"
         )
         expr_lines.append(f"tClamped_{seg_index} = clamp(tSegment_{seg_index}, 0, 1)")
         expr_lines.append(
@@ -280,7 +286,7 @@ def draw_bezier_curve(
             f"projectionY_{seg_index} = bezierY_{seg_index} + tClamped_{seg_index} * deltaY_{seg_index}"
         )
         expr_lines.append(
-            f"distanceSquared_{seg_index} = (X - projectionX_{seg_index}) ** 2 + (Y - projectionY_{seg_index}) ** 2)"
+            f"distanceSquared_{seg_index} = ($X - projectionX_{seg_index}) ** 2 + ($Y - projectionY_{seg_index}) ** 2)"
         )
         segment_distance_squared_expressions.append(f"distanceSquared_{seg_index}")
 
@@ -288,7 +294,9 @@ def draw_bezier_curve(
     expr_lines.append(f"finalMinDistanceSquared = nth_1({distance_arguments})")
 
     expr_lines.append("doDraw = finalMinDistanceSquared <= halfThicknessSquared")
-    expr_lines.append("RESULT = doDraw ? ((1 - factor) * src0 + factor * color) : src0")
+    expr_lines.append(
+        "RESULT = doDraw ? ((1 - factor) * $src0 + factor * color) : $src0"
+    )
 
     full_expression = "\n".join(expr_lines)
 
@@ -349,9 +357,9 @@ def draw_mandelbrot_zoomer(
     expr_lines.append(f"escapeRadius = {escapeRadius}")
     expr_lines.append("escapeSq = escapeRadius ** 2")
 
-    expr_lines.append("scale = initialZoom * exp(-zoomSpeed * N)")
+    expr_lines.append("scale = initialZoom * exp(-zoomSpeed * $N)")
 
-    expr_lines.append("ff = 1 - exp(-centerMoveSpeed * N)")
+    expr_lines.append("ff = 1 - exp(-centerMoveSpeed * $N)")
     expr_lines.append(f"C0_re = {fractalC0_re}")
     expr_lines.append(f"C0_im = {fractalC0_im}")
     expr_lines.append(f"C1_re = {fractalC1_re}")
@@ -359,8 +367,8 @@ def draw_mandelbrot_zoomer(
     expr_lines.append("dC_re = C0_re + (C1_re - C0_re) * ff")
     expr_lines.append("dC_im = C0_im + (C1_im - C0_im) * ff")
 
-    expr_lines.append("c_re = (X - centerX) * scale + dC_re")
-    expr_lines.append("c_im = (Y - centerY) * scale + dC_im")
+    expr_lines.append("c_re = ($X - centerX) * scale + dC_re")
+    expr_lines.append("c_im = ($Y - centerY) * scale + dC_im")
 
     expr_lines.append("z_re_0 = 0")
     expr_lines.append("z_im_0 = 0")
@@ -395,7 +403,7 @@ def draw_spiral(
     thickness: str,
     color: str,
     factor: str = "1",
-    sample_count=500,
+    sample_count: int = 500,
 ) -> vs.VideoNode:
     """
     Draw a spiral on a video clip.
@@ -453,13 +461,13 @@ def draw_spiral(
             f"segmentLengthSquared_{i} = deltaX_{i} * deltaX_{i} + deltaY_{i} * deltaY_{i}"
         )
         expr_lines.append(
-            f"t_{i} = ((X - spiralX_{i}) * deltaX_{i} + (Y - spiralY_{i}) * deltaY_{i}) / segmentLengthSquared_{i}"
+            f"t_{i} = (($X - spiralX_{i}) * deltaX_{i} + ($Y - spiralY_{i}) * deltaY_{i}) / segmentLengthSquared_{i}"
         )
         expr_lines.append(f"tClamped_{i} = clamp(t_{i}, 0, 1)")
         expr_lines.append(f"projectionX_{i} = spiralX_{i} + tClamped_{i} * deltaX_{i}")
         expr_lines.append(f"projectionY_{i} = spiralY_{i} + tClamped_{i} * deltaY_{i}")
         expr_lines.append(
-            f"distanceSquared_{i} = (X - projectionX_{i}) ** 2 + (Y - projectionY_{i}) ** 2"
+            f"distanceSquared_{i} = ($X - projectionX_{i}) ** 2 + ($Y - projectionY_{i}) ** 2"
         )
         segment_distance_exprs.append(f"distanceSquared_{i}")
 
@@ -467,7 +475,9 @@ def draw_spiral(
         "finalMinDistanceSquared = nth_1(" + ", ".join(segment_distance_exprs) + ")"
     )
     expr_lines.append("doDraw = finalMinDistanceSquared <= halfThicknessSquared")
-    expr_lines.append("RESULT = doDraw ? ((1 - factor) * src0 + factor * color) : src0")
+    expr_lines.append(
+        "RESULT = doDraw ? ((1 - factor) * $src0 + factor * color) : $src0"
+    )
 
     full_expr = "\n".join(expr_lines)
     converted_expr = infix2postfix(full_expr)

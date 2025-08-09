@@ -25,7 +25,7 @@ def subset_fonts(
         The Path object representing the output directory.
 
     Raises:
-        RuntimeError: If the 'assfonts' command fails (returns a non-zero exit code).
+        RuntimeError: If the 'assfonts' command fails (returns a non-zero exit code) or if there are warnings or errors.
     """
     if isinstance(ass_path, (str, Path)):
         ass_path = [ass_path]
@@ -42,7 +42,10 @@ def subset_fonts(
 
     process = subprocess.run(subtitle_command, capture_output=True, text=True)
     if process.returncode != 0:
-        raise RuntimeError(f"subset_fonts: assfonts failed: {process.stderr}")
+        raise RuntimeError(f"subset_fonts: assfonts failed: {process.stdout}")
+
+    if any(s in process.stdout for s in ["[WARN]", "[ERROR]"]):
+        raise RuntimeError(f"subset_fonts: assfonts failed: {process.stdout}")
 
     return output_directory
 

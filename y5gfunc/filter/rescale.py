@@ -483,25 +483,33 @@ def rescale(
             descaled,
             width=clip.width,
             height=clip.height,
-            src_left=dargs["src_left"],
-            src_top=dargs["src_top"],
-            src_width=dargs["src_width"],
-            src_height=dargs["src_height"],
+            src_left=dargs.get("src_left", None),
+            src_top=dargs.get("src_top", None),
+            src_width=dargs.get("src_width", None),
+            src_height=dargs.get("src_height", None),
             **extra_params.get("rparams", {}),
         )
 
         n2x = nn2x(descaled, opencl=opencl, nnedi3_args=nnedi3_args)
 
-        rescaled = SSIM_downsample(
-            clip=n2x,
-            width=clip.width,
-            height=clip.height,
-            sigmoid=False,
-            src_left=dargs["src_left"] * 2 - 0.5,  # type: ignore
-            src_top=dargs["src_top"] * 2 - 0.5,  # type: ignore
-            src_width=dargs["src_width"] * 2,  # type: ignore
-            src_height=dargs["src_height"] * 2,  # type: ignore
-        )
+        ssim_downsample_args: dict[str, Union[vs.VideoNode, int, float, bool]] = {
+            "clip": n2x,
+            "width": clip.width,
+            "height": clip.height,
+            "src_top": -0.5,
+            "src_height": descaled.height * 2,
+        }
+
+        if "src_left" in dargs:
+            ssim_downsample_args["src_left"] = dargs["src_left"] * 2 - 0.5
+        if "src_top" in dargs:
+            ssim_downsample_args["src_top"] = dargs["src_top"] * 2 - 0.5
+        if "src_width" in dargs:
+            ssim_downsample_args["src_width"] = dargs["src_width"] * 2
+        if "src_height" in dargs:
+            ssim_downsample_args["src_height"] = dargs["src_height"] * 2
+
+        rescaled = SSIM_downsample(**ssim_downsample_args)  # type: ignore
 
         upscaled_clips.append(upscaled)
         rescaled_clips.append(rescaled)

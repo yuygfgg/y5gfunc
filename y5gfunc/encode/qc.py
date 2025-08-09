@@ -78,9 +78,11 @@ def encode_check(
 
     if enable_cambi:
         cambi = core.cambi.Cambi(
-            encoded
-            if vstools.get_depth(encoded) <= 10
-            else vstools.depth(encoded, 10, dither_type="none"),
+            (
+                encoded
+                if vstools.get_depth(encoded) <= 10
+                else vstools.depth(encoded, 10, dither_type="none")
+            ),
             prop="CAMBI",
         )
 

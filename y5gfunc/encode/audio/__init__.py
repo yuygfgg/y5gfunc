@@ -10,3 +10,5 @@ __all__ = [
     "encode_audio",
     "check_audio_stream_lossless",
 ]
+
+# TODO: handle [truehd / ddp] atmos with [truehdd / cavern (+ wine)], (cmdline_atmos_conversion_tool) and deew.

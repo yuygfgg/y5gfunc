@@ -101,7 +101,7 @@ class ColorMatrixManager:
 
         # Calculate direct RGB↔OPP coefficients
         self._rgb_to_opp_coefs = self._matrix_to_coefs(self._rgb_opp_matrix)
-        self._opp_to_rgb_coefs = self._matrix_to_coefs(self._rgb_from_opp_matrix)
+        self._opp_to_rgb_coefs = self._matrix_to_coefs(self._rgb_from_opp_matrix)  # type: ignore
 
         # Calculate matrices and coefficients for all registered matrix types
         for matrix_type in self._yuv_to_rgb_matrices:

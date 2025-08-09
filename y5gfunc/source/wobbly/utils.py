@@ -2,7 +2,7 @@
 Utility functions for Wobbly parser.
 """
 
-from typing import Dict, List, Set, Tuple, Optional, TypeVar, Generic
+from typing import Optional, TypeVar, Generic
 from dataclasses import dataclass
 
 from .types import ProjectData, CycleDecimationDict, DecimationRange, DecimationRangeList
@@ -29,7 +29,7 @@ class Result(Generic[T]):
         return cls(success=False, error=error)
 
 
-def get_decimation_info(project: ProjectData) -> Tuple[CycleDecimationDict, DecimationRangeList]:
+def get_decimation_info(project: ProjectData) -> tuple[CycleDecimationDict, DecimationRangeList]:
     """
     Get decimation cycle information from the project
     
@@ -40,7 +40,7 @@ def get_decimation_info(project: ProjectData) -> Tuple[CycleDecimationDict, Deci
         Tuple of (decimated_by_cycle, ranges)
     """
     # Get decimated frames and project length
-    decimated_frames: List[int] = project.get('decimated frames', [])
+    decimated_frames: list[int] = project.get('decimated frames', [])
     
     # Calculate total frames from trim data
     num_frames = 0
@@ -50,7 +50,7 @@ def get_decimation_info(project: ProjectData) -> Tuple[CycleDecimationDict, Deci
                 num_frames += trim[1] - trim[0] + 1
                 
     # Group decimated frames by cycle
-    decimated_by_cycle: Dict[int, Set[int]] = {}
+    decimated_by_cycle: dict[int, set[int]] = {}
     for frame in decimated_frames:
         cycle = frame // 5
         if cycle not in decimated_by_cycle:
@@ -58,7 +58,7 @@ def get_decimation_info(project: ProjectData) -> Tuple[CycleDecimationDict, Deci
         decimated_by_cycle[cycle].add(frame % 5)
         
     # Calculate decimation ranges
-    ranges: List[DecimationRange] = []
+    ranges: list[DecimationRange] = []
     current_count = -1
     current_start = 0
     

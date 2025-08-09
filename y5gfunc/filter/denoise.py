@@ -8,7 +8,6 @@ import vstools
 from vsdenoise import (
     AnalyzeArgs,
     DFTTest,
-    FilterType,
     MVToolsPreset,
     MotionMode,
     RFilterMode,
@@ -36,6 +35,54 @@ from .resample import (
 )
 from .mask import GammaMask
 from .morpho import maximum
+import torch
+
+
+def _get_bm3d_backend() -> tuple[Callable, str]:
+    if torch.cuda.is_available():
+        device_name = torch.cuda.get_device_name(0).lower()
+        if any(
+            s in device_name
+            for s in [
+                "nvidia",
+                "geforce",
+                "quadro",
+                "tesla",
+                "rtx",
+                "gtx",
+                "rt",
+                "gt",
+                "titan",
+            ]
+        ):
+            if hasattr(core, "bm3dcuda_rtc"):
+                return core.lazy.bm3dcuda_rtc, "bm3dcuda_rtc"  # type: ignore
+            if hasattr(core, "bm3dcuda"):
+                return core.lazy.bm3dcuda, "bm3dcuda"  # type: ignore
+        elif any(
+            s in device_name
+            for s in [
+                "amd",
+                "radeon",
+                "vega",
+                "firepro",
+                "rx",
+                "r9",
+                "r7",
+                "r5",
+                "r3",
+                "r2",
+                "r1",
+                "r0",
+            ]
+        ):
+            if hasattr(core, "bm3dhip"):
+                return core.lazy.bm3dhip, "bm3dhip"  # type: ignore
+
+    if hasattr(core, "bm3dsycl") and hasattr(torch, "xpu") and torch.xpu.is_available():
+        return core.lazy.bm3dsycl, "bm3dsycl"  # type: ignore
+
+    return core.lazy.bm3dcpu, "bm3dcpu"  # type: ignore
 
 
 class BM3DPreset(StrEnum):
@@ -88,18 +135,18 @@ bm3d_presets: dict[str, dict[BM3DPreset, dict[str, int]]] = {
 # modified from rksfunc.BM3DWrapper()
 def Fast_BM3DWrapper(
     clip: vs.VideoNode,
-    bm3d: Callable = core.lazy.bm3dcpu,
+    bm3d: Optional[Callable] = None,
     chroma: bool = True,
     sigma_Y: Union[float, int] = 1.2,
     radius_Y: int = 1,
     delta_sigma_Y: Union[float, int] = 0.6,
-    preset_Y_basic: BM3DPreset = BM3DPreset.FAST,
-    preset_Y_final: BM3DPreset = BM3DPreset.FAST,
+    preset_Y_basic: Optional[BM3DPreset] = None,
+    preset_Y_final: Optional[BM3DPreset] = None,
     sigma_chroma: Union[float, int] = 2.4,
     radius_chroma: int = 0,
     delta_sigma_chroma: Union[float, int] = 1.2,
-    preset_chroma_basic: BM3DPreset = BM3DPreset.FAST,
-    preset_chroma_final: BM3DPreset = BM3DPreset.FAST,
+    preset_chroma_basic: Optional[BM3DPreset] = None,
+    preset_chroma_final: Optional[BM3DPreset] = None,
     ref: Optional[vs.VideoNode] = None,
     opp_matrix: ColorMatrixManager = default_opp,
     fast: Optional[bool] = None,
@@ -115,18 +162,24 @@ def Fast_BM3DWrapper(
 
     Args:
         clip: Input video clip. Must be in YUV420P16 format.
-        bm3d: The BM3D plugin implementation to use.
+        bm3d: The BM3D plugin implementation to use. If `None` (default), it will automatically detect and
+            select the best available backend (`bm3dcuda_rtc`, `bm3dcuda`, `bm3dhip`, `bm3dsycl`).
+            If no compatible GPU hardware is found, it falls back to `bm3dcpu`.
         chroma: If True, process chroma planes. If False, only luma is processed and original chroma is retained.
         sigma_Y: Denoising strength for the luma plane's final step.
         radius_Y: Temporal radius for luma processing. If > 0, V-BM3D is used.
         delta_sigma_Y: Additional sigma added to `sigma_Y` for the luma plane's basic step.
         preset_Y_basic: BM3D parameter preset for the luma basic step.
+            If `None` (default), it's set to `BM3DPreset.LC` for GPU backends and `BM3DPreset.FAST` for CPU backends.
         preset_Y_final: BM3D parameter preset for the luma final step.
+            If `None` (default), it's set to `BM3DPreset.LC` for GPU backends and `BM3DPreset.FAST` for CPU backends.
         sigma_chroma: Denoising strength for the chroma planes' final step.
         radius_chroma: Temporal radius for chroma processing. If > 0, V-BM3D is used.
         delta_sigma_chroma: Additional sigma added to `sigma_chroma` for the chroma planes' basic step.
         preset_chroma_basic: BM3D parameter preset for the chroma basic step.
+            If `None` (default), it's set to `BM3DPreset.LC` for GPU backends and `BM3DPreset.FAST` for CPU backends.
         preset_chroma_final: BM3D parameter preset for the chroma final step.
+            If `None` (default), it's set to `BM3DPreset.LC` for GPU backends and `BM3DPreset.FAST` for CPU backends.
         ref: Ref for final BM3D step. If provided, basic step is bypassed.
         opp_matrix: OPP transform type to use.
         fast: Multi-threaded copy between CPU and GPU at the expense of 4x memory consumption.
@@ -152,6 +205,29 @@ def Fast_BM3DWrapper(
             )
 
     matrix = vstools.Matrix.from_video(clip, strict=True)
+
+    bm3d_s: str
+    _bm3d: Callable
+    if bm3d is None:
+        _bm3d, bm3d_s = _get_bm3d_backend()
+    else:
+        _bm3d = bm3d
+        try:
+            bm3d_s = argname("bm3d")
+        except ImproperUseError:
+            bm3d_s = "bm3dcpu"
+
+    is_gpu = "cpu" not in bm3d_s
+    default_preset = BM3DPreset.LC if is_gpu else BM3DPreset.FAST
+
+    if preset_Y_basic is None:
+        preset_Y_basic = default_preset
+    if preset_Y_final is None:
+        preset_Y_final = default_preset
+    if preset_chroma_basic is None:
+        preset_chroma_basic = default_preset
+    if preset_chroma_final is None:
+        preset_chroma_final = default_preset
 
     try:
         to_opp = functools.partial(yuv2opp, matrix_in=matrix, opp_manager=opp_matrix)
@@ -187,11 +263,6 @@ def Fast_BM3DWrapper(
             BM3DPreset.MAGIC,
         ]:
             raise ValueError(f"Fast_BM3DWrapper: Unknown preset {preset}.")
-
-    try:
-        bm3d_s = argname("bm3d")
-    except ImproperUseError:
-        bm3d_s = "bm3dcpu"
 
     if "cpu" in bm3d_s:
         if fast is not None:
@@ -239,7 +310,7 @@ def Fast_BM3DWrapper(
     srcY_float, srcU_float, srcV_float = vstools.split(vstools.depth(clip, 32))
 
     if ref is None:
-        basic_y = bm3d.BM3Dv2(
+        basic_y = _bm3d.BM3Dv2(  # type: ignore
             clip=srcY_float,
             ref=srcY_float,
             sigma=sigma_Y + delta_sigma_Y,
@@ -249,7 +320,7 @@ def Fast_BM3DWrapper(
     else:
         basic_y = vstools.depth(vstools.get_y(ref), 32)
 
-    final_y = bm3d.BM3Dv2(
+    final_y = _bm3d.BM3Dv2(  # type: ignore
         clip=srcY_float,
         ref=basic_y,
         sigma=sigma_Y,
@@ -265,7 +336,7 @@ def Fast_BM3DWrapper(
         refhalf_opp = to_opp(refhalf444)
 
     if ref is None:
-        basic_half = bm3d.BM3Dv2(
+        basic_half = _bm3d.BM3Dv2(  # type: ignore
             clip=srchalf_opp,
             ref=srchalf_opp,
             sigma=sigma_chroma + delta_sigma_chroma,
@@ -277,7 +348,7 @@ def Fast_BM3DWrapper(
     else:
         basic_half = refhalf_opp
 
-    final_half = bm3d.BM3Dv2(
+    final_half = _bm3d.BM3Dv2(  # type: ignore
         clip=srchalf_opp,
         ref=basic_half,
         sigma=sigma_chroma,
@@ -420,7 +491,7 @@ def magic_denoise(clip: vs.VideoNode) -> vs.VideoNode:
         clip,
         pmax=1000000,
         pmin=1.25,
-        ftype=FilterType.MULT_RANGE,
+        ftype=4,
         tbsize=3,
         ssystem=1,
     )

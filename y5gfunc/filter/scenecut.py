@@ -122,6 +122,7 @@ def scd_koala(
                 is_cut = True
 
         fout.props._Scenecut = 1 if is_cut else 0
+
         return fout
 
     k = (filter_size - 1) // 2
