@@ -8,7 +8,6 @@ import vstools
 from vsdenoise import (
     AnalyzeArgs,
     DFTTest,
-    FilterType,
     MVToolsPreset,
     MotionMode,
     RFilterMode,
@@ -492,7 +491,7 @@ def magic_denoise(clip: vs.VideoNode) -> vs.VideoNode:
         clip,
         pmax=1000000,
         pmin=1.25,
-        ftype=FilterType.MULT_RANGE,
+        ftype=4,
         tbsize=3,
         ssystem=1,
     )
