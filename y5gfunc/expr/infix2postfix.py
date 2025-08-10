@@ -333,6 +333,7 @@ def infix2postfix(
 
     return ret
 
+
 _SCIENTIFIC_E_PATTERN = re.compile(r"(?<=[0-9\.])e(?=[+-]?[0-9])", re.IGNORECASE)
 _HEX_P_PATTERN = re.compile(r"(?<=[0-9a-fA-F\.])p(?=[+-]?[0-9])", re.IGNORECASE)
 _FUNC_CALL_PATTERN = re.compile(r"(\w+)\s*\(")
@@ -382,6 +383,7 @@ _STD_COMPAT_BITWISE_PATTERNS = {
     "|": _STD_COMPAT_BITOR_PATTERN,
     "^": _STD_COMPAT_BITXOR_PATTERN,
 }
+
 
 class SyntaxError(Exception):
     """Custom syntax error class with line information"""
@@ -572,6 +574,7 @@ def validate_static_relative_pixel_indices(
                     line_num,
                     function_name,
                 )
+
 
 def check_variable_usage(
     expr: str,

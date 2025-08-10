@@ -259,6 +259,7 @@ class _LiteralNode(_Node):
     def to_dsl_fragment(self, builder) -> str:
         return str(self.value)
 
+
 def _to_node(expr: ExprLike) -> _Node:
     return expr._node if isinstance(expr, DSLExpr) else _LiteralNode(expr)
 
@@ -408,7 +409,9 @@ class _PixelAccessNode(_Node):
     def __hash__(self):
         if self._hash_cache is not None:
             return self._hash_cache
-        self._hash_cache = hash(("pixel_access", self.clip_node, self.x_node, self.y_node))
+        self._hash_cache = hash(
+            ("pixel_access", self.clip_node, self.x_node, self.y_node)
+        )
         return self._hash_cache
 
     def __eq__(self, other):
@@ -424,7 +427,6 @@ class _PixelAccessNode(_Node):
         x_dsl_name = builder._process_node(self.x_node)
         y_dsl_name = builder._process_node(self.y_node)
         return f"{clip_dsl_name}[{x_dsl_name},{y_dsl_name}]"
-
 
 
 class _PropertyAccessor:

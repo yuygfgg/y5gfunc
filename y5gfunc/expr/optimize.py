@@ -161,7 +161,9 @@ def calculate_binary(
     try:
         arg1, arg2 = a, b
         if (op == "%" or op == "/") and arg2 == 0:
-            raise ZeroDivisionError(f"Division by zero in binary operation; Op: {op}, Args: {a}, {b}")
+            raise ZeroDivisionError(
+                f"Division by zero in binary operation; Op: {op}, Args: {a}, {b}"
+            )
         elif op in [
             ">",
             "<",
@@ -222,7 +224,7 @@ def fold_constants(
         i = 0
         while i < len(tokens) - 4:
             t1, t2, t3, t4, t5 = tokens[i : i + 5]
-            
+
             op1, op2 = t3, t5
 
             is_pattern1 = (

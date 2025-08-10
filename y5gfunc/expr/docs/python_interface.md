@@ -71,8 +71,8 @@ print(dsl_script)
 
 ```
 brighter_clip_0 = ($src3 + 10)
-much_brighter_clip_1 = (brighter_clip_0 * 1.5)
-RESULT = much_brighter_clip_1
+much_brighter_clip_0 = (brighter_clip_0 * 1.5)
+RESULT = much_brighter_clip_0
 ```
 
 > **Note:** It is recommended to use `varname_toggle(True)` only when needed, as it can impact the generation speed of very large and complex expression trees.
