@@ -5366,7 +5366,8 @@ Supports binary and unary operators, function calls, and custom function definit
 <span class="normal"><a href="#__codelineno-0-1297">1297</a></span>
 <span class="normal"><a href="#__codelineno-0-1298">1298</a></span>
 <span class="normal"><a href="#__codelineno-0-1299">1299</a></span>
-<span class="normal"><a href="#__codelineno-0-1300">1300</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-701" name="__codelineno-0-701"></a><span class="k">def</span><span class="w"> </span><span class="nf">convert_expr</span><span class="p">(</span>
+<span class="normal"><a href="#__codelineno-0-1300">1300</a></span>
+<span class="normal"><a href="#__codelineno-0-1301">1301</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-701" name="__codelineno-0-701"></a><span class="k">def</span><span class="w"> </span><span class="nf">convert_expr</span><span class="p">(</span>
 <a id="__codelineno-0-702" name="__codelineno-0-702"></a>    <span class="n">expr</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
 <a id="__codelineno-0-703" name="__codelineno-0-703"></a>    <span class="n">variables</span><span class="p">:</span> <span class="nb">set</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
 <a id="__codelineno-0-704" name="__codelineno-0-704"></a>    <span class="n">functions</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">set</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">bool</span><span class="p">]],</span>
@@ -5940,32 +5941,33 @@ Supports binary and unary operators, function calls, and custom function definit
 <a id="__codelineno-0-1272" name="__codelineno-0-1272"></a>    <span class="k">if</span> <span class="n">is_constant_infix</span><span class="p">(</span><span class="n">expr</span><span class="p">):</span>
 <a id="__codelineno-0-1273" name="__codelineno-0-1273"></a>        <span class="c1"># Remove $ prefix from constants in postfix expression</span>
 <a id="__codelineno-0-1274" name="__codelineno-0-1274"></a>        <span class="k">return</span> <span class="n">expr</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
-<a id="__codelineno-0-1275" name="__codelineno-0-1275"></a>    <span class="k">if</span> <span class="n">_LETTER_PATTERN</span><span class="o">.</span><span class="n">fullmatch</span><span class="p">(</span><span class="n">expr</span><span class="p">):</span>
-<a id="__codelineno-0-1276" name="__codelineno-0-1276"></a>        <span class="k">if</span> <span class="n">literals_in_scope</span> <span class="ow">and</span> <span class="n">expr</span> <span class="ow">in</span> <span class="n">literals_in_scope</span><span class="p">:</span>
-<a id="__codelineno-0-1277" name="__codelineno-0-1277"></a>            <span class="k">return</span> <span class="n">expr</span>
-<a id="__codelineno-0-1278" name="__codelineno-0-1278"></a>
-<a id="__codelineno-0-1279" name="__codelineno-0-1279"></a>        <span class="c1"># Only add &#39;@&#39; for known variables</span>
-<a id="__codelineno-0-1280" name="__codelineno-0-1280"></a>        <span class="n">is_var</span> <span class="o">=</span> <span class="kc">False</span>
-<a id="__codelineno-0-1281" name="__codelineno-0-1281"></a>        <span class="k">if</span> <span class="n">local_vars</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-<a id="__codelineno-0-1282" name="__codelineno-0-1282"></a>            <span class="c1"># Function scope</span>
-<a id="__codelineno-0-1283" name="__codelineno-0-1283"></a>            <span class="n">is_var</span> <span class="o">=</span> <span class="n">expr</span> <span class="ow">in</span> <span class="n">local_vars</span>
-<a id="__codelineno-0-1284" name="__codelineno-0-1284"></a>            <span class="k">if</span> <span class="ow">not</span> <span class="n">is_var</span> <span class="ow">and</span> <span class="n">expr</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;__internal_&quot;</span><span class="p">):</span>
-<a id="__codelineno-0-1285" name="__codelineno-0-1285"></a>                <span class="n">_</span><span class="p">,</span> <span class="n">orig_var</span> <span class="o">=</span> <span class="n">extract_function_info</span><span class="p">(</span><span class="n">expr</span><span class="p">,</span> <span class="n">current_function</span><span class="p">)</span>
-<a id="__codelineno-0-1286" name="__codelineno-0-1286"></a>                <span class="k">if</span> <span class="n">orig_var</span> <span class="ow">in</span> <span class="n">local_vars</span><span class="p">:</span>
-<a id="__codelineno-0-1287" name="__codelineno-0-1287"></a>                    <span class="n">is_var</span> <span class="o">=</span> <span class="kc">True</span>
-<a id="__codelineno-0-1288" name="__codelineno-0-1288"></a>        <span class="k">else</span><span class="p">:</span>
-<a id="__codelineno-0-1289" name="__codelineno-0-1289"></a>            <span class="c1"># Global scope</span>
-<a id="__codelineno-0-1290" name="__codelineno-0-1290"></a>            <span class="k">if</span> <span class="n">variables</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-<a id="__codelineno-0-1291" name="__codelineno-0-1291"></a>                <span class="n">is_var</span> <span class="o">=</span> <span class="n">expr</span> <span class="ow">in</span> <span class="n">variables</span>
-<a id="__codelineno-0-1292" name="__codelineno-0-1292"></a>
-<a id="__codelineno-0-1293" name="__codelineno-0-1293"></a>        <span class="k">if</span> <span class="n">is_var</span><span class="p">:</span>
-<a id="__codelineno-0-1294" name="__codelineno-0-1294"></a>            <span class="k">return</span> <span class="n">expr</span> <span class="k">if</span> <span class="n">expr</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;@&quot;</span><span class="p">)</span> <span class="k">else</span> <span class="n">expr</span> <span class="o">+</span> <span class="s2">&quot;@&quot;</span>
-<a id="__codelineno-0-1295" name="__codelineno-0-1295"></a>
-<a id="__codelineno-0-1296" name="__codelineno-0-1296"></a>        <span class="k">raise</span> <span class="ne">SyntaxError</span><span class="p">(</span>
-<a id="__codelineno-0-1297" name="__codelineno-0-1297"></a>            <span class="sa">f</span><span class="s2">&quot;Variable &#39;</span><span class="si">{</span><span class="n">expr</span><span class="si">}</span><span class="s2">&#39; used before definition&quot;</span><span class="p">,</span> <span class="n">line_num</span><span class="p">,</span> <span class="n">current_function</span>
-<a id="__codelineno-0-1298" name="__codelineno-0-1298"></a>        <span class="p">)</span>
-<a id="__codelineno-0-1299" name="__codelineno-0-1299"></a>
-<a id="__codelineno-0-1300" name="__codelineno-0-1300"></a>    <span class="k">return</span> <span class="n">expr</span>
+<a id="__codelineno-0-1275" name="__codelineno-0-1275"></a>
+<a id="__codelineno-0-1276" name="__codelineno-0-1276"></a>    <span class="k">if</span> <span class="n">_LETTER_PATTERN</span><span class="o">.</span><span class="n">fullmatch</span><span class="p">(</span><span class="n">expr</span><span class="p">):</span>
+<a id="__codelineno-0-1277" name="__codelineno-0-1277"></a>        <span class="k">if</span> <span class="n">literals_in_scope</span> <span class="ow">and</span> <span class="n">expr</span> <span class="ow">in</span> <span class="n">literals_in_scope</span><span class="p">:</span>
+<a id="__codelineno-0-1278" name="__codelineno-0-1278"></a>            <span class="k">return</span> <span class="n">expr</span>
+<a id="__codelineno-0-1279" name="__codelineno-0-1279"></a>
+<a id="__codelineno-0-1280" name="__codelineno-0-1280"></a>        <span class="c1"># Only add &#39;@&#39; for known variables</span>
+<a id="__codelineno-0-1281" name="__codelineno-0-1281"></a>        <span class="n">is_var</span> <span class="o">=</span> <span class="kc">False</span>
+<a id="__codelineno-0-1282" name="__codelineno-0-1282"></a>        <span class="k">if</span> <span class="n">local_vars</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+<a id="__codelineno-0-1283" name="__codelineno-0-1283"></a>            <span class="c1"># Function scope</span>
+<a id="__codelineno-0-1284" name="__codelineno-0-1284"></a>            <span class="n">is_var</span> <span class="o">=</span> <span class="n">expr</span> <span class="ow">in</span> <span class="n">local_vars</span>
+<a id="__codelineno-0-1285" name="__codelineno-0-1285"></a>            <span class="k">if</span> <span class="ow">not</span> <span class="n">is_var</span> <span class="ow">and</span> <span class="n">expr</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;__internal_&quot;</span><span class="p">):</span>
+<a id="__codelineno-0-1286" name="__codelineno-0-1286"></a>                <span class="n">_</span><span class="p">,</span> <span class="n">orig_var</span> <span class="o">=</span> <span class="n">extract_function_info</span><span class="p">(</span><span class="n">expr</span><span class="p">,</span> <span class="n">current_function</span><span class="p">)</span>
+<a id="__codelineno-0-1287" name="__codelineno-0-1287"></a>                <span class="k">if</span> <span class="n">orig_var</span> <span class="ow">in</span> <span class="n">local_vars</span><span class="p">:</span>
+<a id="__codelineno-0-1288" name="__codelineno-0-1288"></a>                    <span class="n">is_var</span> <span class="o">=</span> <span class="kc">True</span>
+<a id="__codelineno-0-1289" name="__codelineno-0-1289"></a>        <span class="k">else</span><span class="p">:</span>
+<a id="__codelineno-0-1290" name="__codelineno-0-1290"></a>            <span class="c1"># Global scope</span>
+<a id="__codelineno-0-1291" name="__codelineno-0-1291"></a>            <span class="k">if</span> <span class="n">variables</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+<a id="__codelineno-0-1292" name="__codelineno-0-1292"></a>                <span class="n">is_var</span> <span class="o">=</span> <span class="n">expr</span> <span class="ow">in</span> <span class="n">variables</span>
+<a id="__codelineno-0-1293" name="__codelineno-0-1293"></a>
+<a id="__codelineno-0-1294" name="__codelineno-0-1294"></a>        <span class="k">if</span> <span class="n">is_var</span><span class="p">:</span>
+<a id="__codelineno-0-1295" name="__codelineno-0-1295"></a>            <span class="k">return</span> <span class="n">expr</span> <span class="k">if</span> <span class="n">expr</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;@&quot;</span><span class="p">)</span> <span class="k">else</span> <span class="n">expr</span> <span class="o">+</span> <span class="s2">&quot;@&quot;</span>
+<a id="__codelineno-0-1296" name="__codelineno-0-1296"></a>
+<a id="__codelineno-0-1297" name="__codelineno-0-1297"></a>        <span class="k">raise</span> <span class="ne">SyntaxError</span><span class="p">(</span>
+<a id="__codelineno-0-1298" name="__codelineno-0-1298"></a>            <span class="sa">f</span><span class="s2">&quot;Variable &#39;</span><span class="si">{</span><span class="n">expr</span><span class="si">}</span><span class="s2">&#39; used before definition&quot;</span><span class="p">,</span> <span class="n">line_num</span><span class="p">,</span> <span class="n">current_function</span>
+<a id="__codelineno-0-1299" name="__codelineno-0-1299"></a>        <span class="p">)</span>
+<a id="__codelineno-0-1300" name="__codelineno-0-1300"></a>
+<a id="__codelineno-0-1301" name="__codelineno-0-1301"></a>    <span class="k">return</span> <span class="n">expr</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -5990,8 +5992,7 @@ Supports binary and unary operators, function calls, and custom function definit
 
             <details class="quote">
               <summary>Source code in <code>y5gfunc/expr/infix2postfix.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-1303">1303</a></span>
-<span class="normal"><a href="#__codelineno-0-1304">1304</a></span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-1304">1304</a></span>
 <span class="normal"><a href="#__codelineno-0-1305">1305</a></span>
 <span class="normal"><a href="#__codelineno-0-1306">1306</a></span>
 <span class="normal"><a href="#__codelineno-0-1307">1307</a></span>
@@ -6018,35 +6019,36 @@ Supports binary and unary operators, function calls, and custom function definit
 <span class="normal"><a href="#__codelineno-0-1328">1328</a></span>
 <span class="normal"><a href="#__codelineno-0-1329">1329</a></span>
 <span class="normal"><a href="#__codelineno-0-1330">1330</a></span>
-<span class="normal"><a href="#__codelineno-0-1331">1331</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-1303" name="__codelineno-0-1303"></a><span class="k">def</span><span class="w"> </span><span class="nf">find_binary_op</span><span class="p">(</span><span class="n">expr</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">op</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]]:</span>
-<a id="__codelineno-0-1304" name="__codelineno-0-1304"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<a id="__codelineno-0-1305" name="__codelineno-0-1305"></a><span class="sd">    Find the last occurrence of the binary operator op at the outer level and return the left and right parts.</span>
-<a id="__codelineno-0-1306" name="__codelineno-0-1306"></a><span class="sd">    &quot;&quot;&quot;</span>
-<a id="__codelineno-0-1307" name="__codelineno-0-1307"></a>    <span class="k">if</span> <span class="ow">not</span> <span class="n">op</span><span class="p">:</span>
-<a id="__codelineno-0-1308" name="__codelineno-0-1308"></a>        <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
-<a id="__codelineno-0-1309" name="__codelineno-0-1309"></a>
-<a id="__codelineno-0-1310" name="__codelineno-0-1310"></a>    <span class="n">paren_level</span> <span class="o">=</span> <span class="mi">0</span>
-<a id="__codelineno-0-1311" name="__codelineno-0-1311"></a>    <span class="n">levels</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">expr</span><span class="p">)</span>
-<a id="__codelineno-0-1312" name="__codelineno-0-1312"></a>    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">char</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">expr</span><span class="p">):</span>
-<a id="__codelineno-0-1313" name="__codelineno-0-1313"></a>        <span class="n">levels</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">paren_level</span>
-<a id="__codelineno-0-1314" name="__codelineno-0-1314"></a>        <span class="k">if</span> <span class="n">char</span> <span class="o">==</span> <span class="s2">&quot;(&quot;</span><span class="p">:</span>
-<a id="__codelineno-0-1315" name="__codelineno-0-1315"></a>            <span class="n">paren_level</span> <span class="o">+=</span> <span class="mi">1</span>
-<a id="__codelineno-0-1316" name="__codelineno-0-1316"></a>        <span class="k">elif</span> <span class="n">char</span> <span class="o">==</span> <span class="s2">&quot;)&quot;</span><span class="p">:</span>
-<a id="__codelineno-0-1317" name="__codelineno-0-1317"></a>            <span class="n">paren_level</span> <span class="o">-=</span> <span class="mi">1</span>
-<a id="__codelineno-0-1318" name="__codelineno-0-1318"></a>
-<a id="__codelineno-0-1319" name="__codelineno-0-1319"></a>    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">expr</span><span class="p">)</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">op</span><span class="p">),</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">):</span>
-<a id="__codelineno-0-1320" name="__codelineno-0-1320"></a>        <span class="k">if</span> <span class="n">levels</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">expr</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">op</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
-<a id="__codelineno-0-1321" name="__codelineno-0-1321"></a>            <span class="n">candidate</span> <span class="o">=</span> <span class="n">i</span>
-<a id="__codelineno-0-1322" name="__codelineno-0-1322"></a>            <span class="n">left_valid</span> <span class="o">=</span> <span class="p">(</span><span class="n">candidate</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">expr</span><span class="p">[</span><span class="n">candidate</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="ow">in</span> <span class="s2">&quot; (,</span><span class="se">\t</span><span class="s2">&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-1323" name="__codelineno-0-1323"></a>            <span class="n">after</span> <span class="o">=</span> <span class="n">candidate</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">op</span><span class="p">)</span>
-<a id="__codelineno-0-1324" name="__codelineno-0-1324"></a>            <span class="n">right_valid</span> <span class="o">=</span> <span class="p">(</span><span class="n">after</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">expr</span><span class="p">))</span> <span class="ow">or</span> <span class="p">(</span><span class="n">expr</span><span class="p">[</span><span class="n">after</span><span class="p">]</span> <span class="ow">in</span> <span class="s2">&quot; )</span><span class="se">\t</span><span class="s2">,&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-1325" name="__codelineno-0-1325"></a>
-<a id="__codelineno-0-1326" name="__codelineno-0-1326"></a>            <span class="k">if</span> <span class="n">left_valid</span> <span class="ow">and</span> <span class="n">right_valid</span><span class="p">:</span>
-<a id="__codelineno-0-1327" name="__codelineno-0-1327"></a>                <span class="n">left</span> <span class="o">=</span> <span class="n">expr</span><span class="p">[:</span><span class="n">candidate</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
-<a id="__codelineno-0-1328" name="__codelineno-0-1328"></a>                <span class="n">right</span> <span class="o">=</span> <span class="n">expr</span><span class="p">[</span><span class="n">candidate</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">op</span><span class="p">)</span> <span class="p">:]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
-<a id="__codelineno-0-1329" name="__codelineno-0-1329"></a>                <span class="k">return</span> <span class="n">left</span><span class="p">,</span> <span class="n">right</span>
-<a id="__codelineno-0-1330" name="__codelineno-0-1330"></a>
-<a id="__codelineno-0-1331" name="__codelineno-0-1331"></a>    <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
+<span class="normal"><a href="#__codelineno-0-1331">1331</a></span>
+<span class="normal"><a href="#__codelineno-0-1332">1332</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-1304" name="__codelineno-0-1304"></a><span class="k">def</span><span class="w"> </span><span class="nf">find_binary_op</span><span class="p">(</span><span class="n">expr</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">op</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]]:</span>
+<a id="__codelineno-0-1305" name="__codelineno-0-1305"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<a id="__codelineno-0-1306" name="__codelineno-0-1306"></a><span class="sd">    Find the last occurrence of the binary operator op at the outer level and return the left and right parts.</span>
+<a id="__codelineno-0-1307" name="__codelineno-0-1307"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="__codelineno-0-1308" name="__codelineno-0-1308"></a>    <span class="k">if</span> <span class="ow">not</span> <span class="n">op</span><span class="p">:</span>
+<a id="__codelineno-0-1309" name="__codelineno-0-1309"></a>        <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
+<a id="__codelineno-0-1310" name="__codelineno-0-1310"></a>
+<a id="__codelineno-0-1311" name="__codelineno-0-1311"></a>    <span class="n">paren_level</span> <span class="o">=</span> <span class="mi">0</span>
+<a id="__codelineno-0-1312" name="__codelineno-0-1312"></a>    <span class="n">levels</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">expr</span><span class="p">)</span>
+<a id="__codelineno-0-1313" name="__codelineno-0-1313"></a>    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">char</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">expr</span><span class="p">):</span>
+<a id="__codelineno-0-1314" name="__codelineno-0-1314"></a>        <span class="n">levels</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">paren_level</span>
+<a id="__codelineno-0-1315" name="__codelineno-0-1315"></a>        <span class="k">if</span> <span class="n">char</span> <span class="o">==</span> <span class="s2">&quot;(&quot;</span><span class="p">:</span>
+<a id="__codelineno-0-1316" name="__codelineno-0-1316"></a>            <span class="n">paren_level</span> <span class="o">+=</span> <span class="mi">1</span>
+<a id="__codelineno-0-1317" name="__codelineno-0-1317"></a>        <span class="k">elif</span> <span class="n">char</span> <span class="o">==</span> <span class="s2">&quot;)&quot;</span><span class="p">:</span>
+<a id="__codelineno-0-1318" name="__codelineno-0-1318"></a>            <span class="n">paren_level</span> <span class="o">-=</span> <span class="mi">1</span>
+<a id="__codelineno-0-1319" name="__codelineno-0-1319"></a>
+<a id="__codelineno-0-1320" name="__codelineno-0-1320"></a>    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">expr</span><span class="p">)</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">op</span><span class="p">),</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+<a id="__codelineno-0-1321" name="__codelineno-0-1321"></a>        <span class="k">if</span> <span class="n">levels</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">expr</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">op</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
+<a id="__codelineno-0-1322" name="__codelineno-0-1322"></a>            <span class="n">candidate</span> <span class="o">=</span> <span class="n">i</span>
+<a id="__codelineno-0-1323" name="__codelineno-0-1323"></a>            <span class="n">left_valid</span> <span class="o">=</span> <span class="p">(</span><span class="n">candidate</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">expr</span><span class="p">[</span><span class="n">candidate</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="ow">in</span> <span class="s2">&quot; (,</span><span class="se">\t</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-1324" name="__codelineno-0-1324"></a>            <span class="n">after</span> <span class="o">=</span> <span class="n">candidate</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">op</span><span class="p">)</span>
+<a id="__codelineno-0-1325" name="__codelineno-0-1325"></a>            <span class="n">right_valid</span> <span class="o">=</span> <span class="p">(</span><span class="n">after</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">expr</span><span class="p">))</span> <span class="ow">or</span> <span class="p">(</span><span class="n">expr</span><span class="p">[</span><span class="n">after</span><span class="p">]</span> <span class="ow">in</span> <span class="s2">&quot; )</span><span class="se">\t</span><span class="s2">,&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-1326" name="__codelineno-0-1326"></a>
+<a id="__codelineno-0-1327" name="__codelineno-0-1327"></a>            <span class="k">if</span> <span class="n">left_valid</span> <span class="ow">and</span> <span class="n">right_valid</span><span class="p">:</span>
+<a id="__codelineno-0-1328" name="__codelineno-0-1328"></a>                <span class="n">left</span> <span class="o">=</span> <span class="n">expr</span><span class="p">[:</span><span class="n">candidate</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+<a id="__codelineno-0-1329" name="__codelineno-0-1329"></a>                <span class="n">right</span> <span class="o">=</span> <span class="n">expr</span><span class="p">[</span><span class="n">candidate</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">op</span><span class="p">)</span> <span class="p">:]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+<a id="__codelineno-0-1330" name="__codelineno-0-1330"></a>                <span class="k">return</span> <span class="n">left</span><span class="p">,</span> <span class="n">right</span>
+<a id="__codelineno-0-1331" name="__codelineno-0-1331"></a>
+<a id="__codelineno-0-1332" name="__codelineno-0-1332"></a>    <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -6071,8 +6073,7 @@ Supports binary and unary operators, function calls, and custom function definit
 
             <details class="quote">
               <summary>Source code in <code>y5gfunc/expr/infix2postfix.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-1334">1334</a></span>
-<span class="normal"><a href="#__codelineno-0-1335">1335</a></span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-1335">1335</a></span>
 <span class="normal"><a href="#__codelineno-0-1336">1336</a></span>
 <span class="normal"><a href="#__codelineno-0-1337">1337</a></span>
 <span class="normal"><a href="#__codelineno-0-1338">1338</a></span>
@@ -6093,29 +6094,30 @@ Supports binary and unary operators, function calls, and custom function definit
 <span class="normal"><a href="#__codelineno-0-1353">1353</a></span>
 <span class="normal"><a href="#__codelineno-0-1354">1354</a></span>
 <span class="normal"><a href="#__codelineno-0-1355">1355</a></span>
-<span class="normal"><a href="#__codelineno-0-1356">1356</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-1334" name="__codelineno-0-1334"></a><span class="k">def</span><span class="w"> </span><span class="nf">parse_args</span><span class="p">(</span><span class="n">args_str</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
-<a id="__codelineno-0-1335" name="__codelineno-0-1335"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<a id="__codelineno-0-1336" name="__codelineno-0-1336"></a><span class="sd">    Parse the arguments of a function call.</span>
-<a id="__codelineno-0-1337" name="__codelineno-0-1337"></a><span class="sd">    &quot;&quot;&quot;</span>
-<a id="__codelineno-0-1338" name="__codelineno-0-1338"></a>    <span class="n">args</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
-<a id="__codelineno-0-1339" name="__codelineno-0-1339"></a>    <span class="n">current</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
-<a id="__codelineno-0-1340" name="__codelineno-0-1340"></a>    <span class="n">bracket_depth</span> <span class="o">=</span> <span class="mi">0</span>
-<a id="__codelineno-0-1341" name="__codelineno-0-1341"></a>    <span class="n">square_bracket_depth</span> <span class="o">=</span> <span class="mi">0</span>
-<a id="__codelineno-0-1342" name="__codelineno-0-1342"></a>    <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">args_str</span> <span class="o">+</span> <span class="s2">&quot;,&quot;</span><span class="p">:</span>
-<a id="__codelineno-0-1343" name="__codelineno-0-1343"></a>        <span class="k">if</span> <span class="n">c</span> <span class="o">==</span> <span class="s2">&quot;,&quot;</span> <span class="ow">and</span> <span class="n">bracket_depth</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">square_bracket_depth</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-<a id="__codelineno-0-1344" name="__codelineno-0-1344"></a>            <span class="n">args</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">current</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
-<a id="__codelineno-0-1345" name="__codelineno-0-1345"></a>            <span class="n">current</span> <span class="o">=</span> <span class="p">[]</span>
-<a id="__codelineno-0-1346" name="__codelineno-0-1346"></a>        <span class="k">else</span><span class="p">:</span>
-<a id="__codelineno-0-1347" name="__codelineno-0-1347"></a>            <span class="n">current</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">c</span><span class="p">)</span>
-<a id="__codelineno-0-1348" name="__codelineno-0-1348"></a>            <span class="k">if</span> <span class="n">c</span> <span class="o">==</span> <span class="s2">&quot;(&quot;</span><span class="p">:</span>
-<a id="__codelineno-0-1349" name="__codelineno-0-1349"></a>                <span class="n">bracket_depth</span> <span class="o">+=</span> <span class="mi">1</span>
-<a id="__codelineno-0-1350" name="__codelineno-0-1350"></a>            <span class="k">elif</span> <span class="n">c</span> <span class="o">==</span> <span class="s2">&quot;)&quot;</span><span class="p">:</span>
-<a id="__codelineno-0-1351" name="__codelineno-0-1351"></a>                <span class="n">bracket_depth</span> <span class="o">-=</span> <span class="mi">1</span>
-<a id="__codelineno-0-1352" name="__codelineno-0-1352"></a>            <span class="k">elif</span> <span class="n">c</span> <span class="o">==</span> <span class="s2">&quot;[&quot;</span><span class="p">:</span>
-<a id="__codelineno-0-1353" name="__codelineno-0-1353"></a>                <span class="n">square_bracket_depth</span> <span class="o">+=</span> <span class="mi">1</span>
-<a id="__codelineno-0-1354" name="__codelineno-0-1354"></a>            <span class="k">elif</span> <span class="n">c</span> <span class="o">==</span> <span class="s2">&quot;]&quot;</span><span class="p">:</span>
-<a id="__codelineno-0-1355" name="__codelineno-0-1355"></a>                <span class="n">square_bracket_depth</span> <span class="o">-=</span> <span class="mi">1</span>
-<a id="__codelineno-0-1356" name="__codelineno-0-1356"></a>    <span class="k">return</span> <span class="p">[</span><span class="n">arg</span> <span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="n">args</span> <span class="k">if</span> <span class="n">arg</span><span class="p">]</span>
+<span class="normal"><a href="#__codelineno-0-1356">1356</a></span>
+<span class="normal"><a href="#__codelineno-0-1357">1357</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-1335" name="__codelineno-0-1335"></a><span class="k">def</span><span class="w"> </span><span class="nf">parse_args</span><span class="p">(</span><span class="n">args_str</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<a id="__codelineno-0-1336" name="__codelineno-0-1336"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<a id="__codelineno-0-1337" name="__codelineno-0-1337"></a><span class="sd">    Parse the arguments of a function call.</span>
+<a id="__codelineno-0-1338" name="__codelineno-0-1338"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="__codelineno-0-1339" name="__codelineno-0-1339"></a>    <span class="n">args</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+<a id="__codelineno-0-1340" name="__codelineno-0-1340"></a>    <span class="n">current</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+<a id="__codelineno-0-1341" name="__codelineno-0-1341"></a>    <span class="n">bracket_depth</span> <span class="o">=</span> <span class="mi">0</span>
+<a id="__codelineno-0-1342" name="__codelineno-0-1342"></a>    <span class="n">square_bracket_depth</span> <span class="o">=</span> <span class="mi">0</span>
+<a id="__codelineno-0-1343" name="__codelineno-0-1343"></a>    <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">args_str</span> <span class="o">+</span> <span class="s2">&quot;,&quot;</span><span class="p">:</span>
+<a id="__codelineno-0-1344" name="__codelineno-0-1344"></a>        <span class="k">if</span> <span class="n">c</span> <span class="o">==</span> <span class="s2">&quot;,&quot;</span> <span class="ow">and</span> <span class="n">bracket_depth</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">square_bracket_depth</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+<a id="__codelineno-0-1345" name="__codelineno-0-1345"></a>            <span class="n">args</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">current</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
+<a id="__codelineno-0-1346" name="__codelineno-0-1346"></a>            <span class="n">current</span> <span class="o">=</span> <span class="p">[]</span>
+<a id="__codelineno-0-1347" name="__codelineno-0-1347"></a>        <span class="k">else</span><span class="p">:</span>
+<a id="__codelineno-0-1348" name="__codelineno-0-1348"></a>            <span class="n">current</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">c</span><span class="p">)</span>
+<a id="__codelineno-0-1349" name="__codelineno-0-1349"></a>            <span class="k">if</span> <span class="n">c</span> <span class="o">==</span> <span class="s2">&quot;(&quot;</span><span class="p">:</span>
+<a id="__codelineno-0-1350" name="__codelineno-0-1350"></a>                <span class="n">bracket_depth</span> <span class="o">+=</span> <span class="mi">1</span>
+<a id="__codelineno-0-1351" name="__codelineno-0-1351"></a>            <span class="k">elif</span> <span class="n">c</span> <span class="o">==</span> <span class="s2">&quot;)&quot;</span><span class="p">:</span>
+<a id="__codelineno-0-1352" name="__codelineno-0-1352"></a>                <span class="n">bracket_depth</span> <span class="o">-=</span> <span class="mi">1</span>
+<a id="__codelineno-0-1353" name="__codelineno-0-1353"></a>            <span class="k">elif</span> <span class="n">c</span> <span class="o">==</span> <span class="s2">&quot;[&quot;</span><span class="p">:</span>
+<a id="__codelineno-0-1354" name="__codelineno-0-1354"></a>                <span class="n">square_bracket_depth</span> <span class="o">+=</span> <span class="mi">1</span>
+<a id="__codelineno-0-1355" name="__codelineno-0-1355"></a>            <span class="k">elif</span> <span class="n">c</span> <span class="o">==</span> <span class="s2">&quot;]&quot;</span><span class="p">:</span>
+<a id="__codelineno-0-1356" name="__codelineno-0-1356"></a>                <span class="n">square_bracket_depth</span> <span class="o">-=</span> <span class="mi">1</span>
+<a id="__codelineno-0-1357" name="__codelineno-0-1357"></a>    <span class="k">return</span> <span class="p">[</span><span class="n">arg</span> <span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="n">args</span> <span class="k">if</span> <span class="n">arg</span><span class="p">]</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -6144,8 +6146,7 @@ Supports binary and unary operators, function calls, and custom function definit
 
             <details class="quote">
               <summary>Source code in <code>y5gfunc/expr/infix2postfix.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-1359">1359</a></span>
-<span class="normal"><a href="#__codelineno-0-1360">1360</a></span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-1360">1360</a></span>
 <span class="normal"><a href="#__codelineno-0-1361">1361</a></span>
 <span class="normal"><a href="#__codelineno-0-1362">1362</a></span>
 <span class="normal"><a href="#__codelineno-0-1363">1363</a></span>
@@ -6168,31 +6169,32 @@ Supports binary and unary operators, function calls, and custom function definit
 <span class="normal"><a href="#__codelineno-0-1380">1380</a></span>
 <span class="normal"><a href="#__codelineno-0-1381">1381</a></span>
 <span class="normal"><a href="#__codelineno-0-1382">1382</a></span>
-<span class="normal"><a href="#__codelineno-0-1383">1383</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-1359" name="__codelineno-0-1359"></a><span class="nd">@lru_cache</span>
-<a id="__codelineno-0-1360" name="__codelineno-0-1360"></a><span class="k">def</span><span class="w"> </span><span class="nf">is_builtin_function</span><span class="p">(</span><span class="n">func_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-<a id="__codelineno-0-1361" name="__codelineno-0-1361"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<a id="__codelineno-0-1362" name="__codelineno-0-1362"></a><span class="sd">    Check if the function name belongs to a built-in function.</span>
-<a id="__codelineno-0-1363" name="__codelineno-0-1363"></a><span class="sd">    &quot;&quot;&quot;</span>
-<a id="__codelineno-0-1364" name="__codelineno-0-1364"></a>    <span class="n">builtin_unary</span> <span class="o">=</span> <span class="p">[</span>
-<a id="__codelineno-0-1365" name="__codelineno-0-1365"></a>        <span class="s2">&quot;sin&quot;</span><span class="p">,</span>
-<a id="__codelineno-0-1366" name="__codelineno-0-1366"></a>        <span class="s2">&quot;cos&quot;</span><span class="p">,</span>
-<a id="__codelineno-0-1367" name="__codelineno-0-1367"></a>        <span class="s2">&quot;log&quot;</span><span class="p">,</span>
-<a id="__codelineno-0-1368" name="__codelineno-0-1368"></a>        <span class="s2">&quot;exp&quot;</span><span class="p">,</span>
-<a id="__codelineno-0-1369" name="__codelineno-0-1369"></a>        <span class="s2">&quot;round&quot;</span><span class="p">,</span>
-<a id="__codelineno-0-1370" name="__codelineno-0-1370"></a>        <span class="s2">&quot;floor&quot;</span><span class="p">,</span>
-<a id="__codelineno-0-1371" name="__codelineno-0-1371"></a>        <span class="s2">&quot;abs&quot;</span><span class="p">,</span>
-<a id="__codelineno-0-1372" name="__codelineno-0-1372"></a>        <span class="s2">&quot;sqrt&quot;</span><span class="p">,</span>
-<a id="__codelineno-0-1373" name="__codelineno-0-1373"></a>        <span class="s2">&quot;trunc&quot;</span><span class="p">,</span>
-<a id="__codelineno-0-1374" name="__codelineno-0-1374"></a>    <span class="p">]</span>
-<a id="__codelineno-0-1375" name="__codelineno-0-1375"></a>    <span class="n">builtin_binary</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;min&quot;</span><span class="p">,</span> <span class="s2">&quot;max&quot;</span><span class="p">]</span>
-<a id="__codelineno-0-1376" name="__codelineno-0-1376"></a>    <span class="n">builtin_ternary</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;clamp&quot;</span><span class="p">,</span> <span class="s2">&quot;dyn&quot;</span><span class="p">]</span>
-<a id="__codelineno-0-1377" name="__codelineno-0-1377"></a>    <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">func_name</span><span class="p">)</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">_BUILD_IN_FUNC_PATTERNS</span><span class="p">):</span>
-<a id="__codelineno-0-1378" name="__codelineno-0-1378"></a>        <span class="k">return</span> <span class="kc">True</span>
-<a id="__codelineno-0-1379" name="__codelineno-0-1379"></a>    <span class="k">return</span> <span class="p">(</span>
-<a id="__codelineno-0-1380" name="__codelineno-0-1380"></a>        <span class="n">func_name</span> <span class="ow">in</span> <span class="n">builtin_unary</span>
-<a id="__codelineno-0-1381" name="__codelineno-0-1381"></a>        <span class="ow">or</span> <span class="n">func_name</span> <span class="ow">in</span> <span class="n">builtin_binary</span>
-<a id="__codelineno-0-1382" name="__codelineno-0-1382"></a>        <span class="ow">or</span> <span class="n">func_name</span> <span class="ow">in</span> <span class="n">builtin_ternary</span>
-<a id="__codelineno-0-1383" name="__codelineno-0-1383"></a>    <span class="p">)</span>
+<span class="normal"><a href="#__codelineno-0-1383">1383</a></span>
+<span class="normal"><a href="#__codelineno-0-1384">1384</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-1360" name="__codelineno-0-1360"></a><span class="nd">@lru_cache</span>
+<a id="__codelineno-0-1361" name="__codelineno-0-1361"></a><span class="k">def</span><span class="w"> </span><span class="nf">is_builtin_function</span><span class="p">(</span><span class="n">func_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<a id="__codelineno-0-1362" name="__codelineno-0-1362"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<a id="__codelineno-0-1363" name="__codelineno-0-1363"></a><span class="sd">    Check if the function name belongs to a built-in function.</span>
+<a id="__codelineno-0-1364" name="__codelineno-0-1364"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="__codelineno-0-1365" name="__codelineno-0-1365"></a>    <span class="n">builtin_unary</span> <span class="o">=</span> <span class="p">[</span>
+<a id="__codelineno-0-1366" name="__codelineno-0-1366"></a>        <span class="s2">&quot;sin&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-1367" name="__codelineno-0-1367"></a>        <span class="s2">&quot;cos&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-1368" name="__codelineno-0-1368"></a>        <span class="s2">&quot;log&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-1369" name="__codelineno-0-1369"></a>        <span class="s2">&quot;exp&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-1370" name="__codelineno-0-1370"></a>        <span class="s2">&quot;round&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-1371" name="__codelineno-0-1371"></a>        <span class="s2">&quot;floor&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-1372" name="__codelineno-0-1372"></a>        <span class="s2">&quot;abs&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-1373" name="__codelineno-0-1373"></a>        <span class="s2">&quot;sqrt&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-1374" name="__codelineno-0-1374"></a>        <span class="s2">&quot;trunc&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-1375" name="__codelineno-0-1375"></a>    <span class="p">]</span>
+<a id="__codelineno-0-1376" name="__codelineno-0-1376"></a>    <span class="n">builtin_binary</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;min&quot;</span><span class="p">,</span> <span class="s2">&quot;max&quot;</span><span class="p">]</span>
+<a id="__codelineno-0-1377" name="__codelineno-0-1377"></a>    <span class="n">builtin_ternary</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;clamp&quot;</span><span class="p">,</span> <span class="s2">&quot;dyn&quot;</span><span class="p">]</span>
+<a id="__codelineno-0-1378" name="__codelineno-0-1378"></a>    <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">func_name</span><span class="p">)</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">_BUILD_IN_FUNC_PATTERNS</span><span class="p">):</span>
+<a id="__codelineno-0-1379" name="__codelineno-0-1379"></a>        <span class="k">return</span> <span class="kc">True</span>
+<a id="__codelineno-0-1380" name="__codelineno-0-1380"></a>    <span class="k">return</span> <span class="p">(</span>
+<a id="__codelineno-0-1381" name="__codelineno-0-1381"></a>        <span class="n">func_name</span> <span class="ow">in</span> <span class="n">builtin_unary</span>
+<a id="__codelineno-0-1382" name="__codelineno-0-1382"></a>        <span class="ow">or</span> <span class="n">func_name</span> <span class="ow">in</span> <span class="n">builtin_binary</span>
+<a id="__codelineno-0-1383" name="__codelineno-0-1383"></a>        <span class="ow">or</span> <span class="n">func_name</span> <span class="ow">in</span> <span class="n">builtin_ternary</span>
+<a id="__codelineno-0-1384" name="__codelineno-0-1384"></a>    <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
