@@ -4190,9 +4190,7 @@
 
                   <details class="quote">
                     <summary>Source code in <code>y5gfunc/expr/python2infix.py</code></summary>
-                    <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-445">445</a></span>
-<span class="normal"><a href="#__codelineno-0-446">446</a></span>
-<span class="normal"><a href="#__codelineno-0-447">447</a></span>
+                    <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-447">447</a></span>
 <span class="normal"><a href="#__codelineno-0-448">448</a></span>
 <span class="normal"><a href="#__codelineno-0-449">449</a></span>
 <span class="normal"><a href="#__codelineno-0-450">450</a></span>
@@ -4202,19 +4200,21 @@
 <span class="normal"><a href="#__codelineno-0-454">454</a></span>
 <span class="normal"><a href="#__codelineno-0-455">455</a></span>
 <span class="normal"><a href="#__codelineno-0-456">456</a></span>
-<span class="normal"><a href="#__codelineno-0-457">457</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-445" name="__codelineno-0-445"></a><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">identifier</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]):</span>
-<a id="__codelineno-0-446" name="__codelineno-0-446"></a>    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">identifier</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
-<a id="__codelineno-0-447" name="__codelineno-0-447"></a>        <span class="k">if</span> <span class="n">identifier</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ALIASES</span><span class="p">:</span>
-<a id="__codelineno-0-448" name="__codelineno-0-448"></a>            <span class="n">name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;src</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_ALIASES</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">identifier</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
-<a id="__codelineno-0-449" name="__codelineno-0-449"></a>        <span class="k">elif</span> <span class="n">identifier</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;src&quot;</span><span class="p">):</span>
-<a id="__codelineno-0-450" name="__codelineno-0-450"></a>            <span class="n">name</span> <span class="o">=</span> <span class="n">identifier</span>
-<a id="__codelineno-0-451" name="__codelineno-0-451"></a>        <span class="k">else</span><span class="p">:</span>
-<a id="__codelineno-0-452" name="__codelineno-0-452"></a>            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid string identifier: </span><span class="si">{</span><span class="n">identifier</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-453" name="__codelineno-0-453"></a>    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">identifier</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
-<a id="__codelineno-0-454" name="__codelineno-0-454"></a>        <span class="n">name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;src</span><span class="si">{</span><span class="n">identifier</span><span class="si">}</span><span class="s2">&quot;</span>
-<a id="__codelineno-0-455" name="__codelineno-0-455"></a>    <span class="k">else</span><span class="p">:</span>
-<a id="__codelineno-0-456" name="__codelineno-0-456"></a>        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;SourceClip identifier must be a string or integer.&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-457" name="__codelineno-0-457"></a>    <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">_InputNode</span><span class="p">(</span><span class="n">name</span><span class="p">))</span>
+<span class="normal"><a href="#__codelineno-0-457">457</a></span>
+<span class="normal"><a href="#__codelineno-0-458">458</a></span>
+<span class="normal"><a href="#__codelineno-0-459">459</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-447" name="__codelineno-0-447"></a><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">identifier</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]):</span>
+<a id="__codelineno-0-448" name="__codelineno-0-448"></a>    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">identifier</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+<a id="__codelineno-0-449" name="__codelineno-0-449"></a>        <span class="k">if</span> <span class="n">identifier</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ALIASES</span><span class="p">:</span>
+<a id="__codelineno-0-450" name="__codelineno-0-450"></a>            <span class="n">name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;src</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_ALIASES</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">identifier</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+<a id="__codelineno-0-451" name="__codelineno-0-451"></a>        <span class="k">elif</span> <span class="n">identifier</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;src&quot;</span><span class="p">):</span>
+<a id="__codelineno-0-452" name="__codelineno-0-452"></a>            <span class="n">name</span> <span class="o">=</span> <span class="n">identifier</span>
+<a id="__codelineno-0-453" name="__codelineno-0-453"></a>        <span class="k">else</span><span class="p">:</span>
+<a id="__codelineno-0-454" name="__codelineno-0-454"></a>            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid string identifier: </span><span class="si">{</span><span class="n">identifier</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-455" name="__codelineno-0-455"></a>    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">identifier</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+<a id="__codelineno-0-456" name="__codelineno-0-456"></a>        <span class="n">name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;src</span><span class="si">{</span><span class="n">identifier</span><span class="si">}</span><span class="s2">&quot;</span>
+<a id="__codelineno-0-457" name="__codelineno-0-457"></a>    <span class="k">else</span><span class="p">:</span>
+<a id="__codelineno-0-458" name="__codelineno-0-458"></a>        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;SourceClip identifier must be a string or integer.&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-459" name="__codelineno-0-459"></a>    <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">_InputNode</span><span class="p">(</span><span class="n">name</span><span class="p">))</span>
 </code></pre></div></td></tr></table></div>
                   </details>
 
@@ -4290,9 +4290,7 @@
 
             <details class="quote">
               <summary>Source code in <code>y5gfunc/expr/python2infix.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-459">459</a></span>
-<span class="normal"><a href="#__codelineno-0-460">460</a></span>
-<span class="normal"><a href="#__codelineno-0-461">461</a></span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-461">461</a></span>
 <span class="normal"><a href="#__codelineno-0-462">462</a></span>
 <span class="normal"><a href="#__codelineno-0-463">463</a></span>
 <span class="normal"><a href="#__codelineno-0-464">464</a></span>
@@ -4305,22 +4303,24 @@
 <span class="normal"><a href="#__codelineno-0-471">471</a></span>
 <span class="normal"><a href="#__codelineno-0-472">472</a></span>
 <span class="normal"><a href="#__codelineno-0-473">473</a></span>
-<span class="normal"><a href="#__codelineno-0-474">474</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-459" name="__codelineno-0-459"></a><span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
-<a id="__codelineno-0-460" name="__codelineno-0-460"></a>    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_node</span><span class="p">,</span> <span class="n">_InputNode</span><span class="p">):</span>
-<a id="__codelineno-0-461" name="__codelineno-0-461"></a>        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Pixel access is only valid on a direct source clip.&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-462" name="__codelineno-0-462"></a>    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">key</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">:</span>
-<a id="__codelineno-0-463" name="__codelineno-0-463"></a>        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
-<a id="__codelineno-0-464" name="__codelineno-0-464"></a>            <span class="s2">&quot;Pixel access requires a tuple of two indices, e.g., a[x, y].&quot;</span>
-<a id="__codelineno-0-465" name="__codelineno-0-465"></a>        <span class="p">)</span>
-<a id="__codelineno-0-466" name="__codelineno-0-466"></a>
-<a id="__codelineno-0-467" name="__codelineno-0-467"></a>    <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">key</span>
-<a id="__codelineno-0-468" name="__codelineno-0-468"></a>    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
-<a id="__codelineno-0-469" name="__codelineno-0-469"></a>        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Pixel access indices must be integers, not expressions.&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-470" name="__codelineno-0-470"></a>
-<a id="__codelineno-0-471" name="__codelineno-0-471"></a>    <span class="n">x_node</span> <span class="o">=</span> <span class="n">_to_node</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
-<a id="__codelineno-0-472" name="__codelineno-0-472"></a>    <span class="n">y_node</span> <span class="o">=</span> <span class="n">_to_node</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
-<a id="__codelineno-0-473" name="__codelineno-0-473"></a>
-<a id="__codelineno-0-474" name="__codelineno-0-474"></a>    <span class="k">return</span> <span class="n">DSLExpr</span><span class="p">(</span><span class="n">_PixelAccessNode</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_node</span><span class="p">,</span> <span class="n">x_node</span><span class="p">,</span> <span class="n">y_node</span><span class="p">))</span>
+<span class="normal"><a href="#__codelineno-0-474">474</a></span>
+<span class="normal"><a href="#__codelineno-0-475">475</a></span>
+<span class="normal"><a href="#__codelineno-0-476">476</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-461" name="__codelineno-0-461"></a><span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+<a id="__codelineno-0-462" name="__codelineno-0-462"></a>    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_node</span><span class="p">,</span> <span class="n">_InputNode</span><span class="p">):</span>
+<a id="__codelineno-0-463" name="__codelineno-0-463"></a>        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Pixel access is only valid on a direct source clip.&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-464" name="__codelineno-0-464"></a>    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">key</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">:</span>
+<a id="__codelineno-0-465" name="__codelineno-0-465"></a>        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+<a id="__codelineno-0-466" name="__codelineno-0-466"></a>            <span class="s2">&quot;Pixel access requires a tuple of two indices, e.g., a[x, y].&quot;</span>
+<a id="__codelineno-0-467" name="__codelineno-0-467"></a>        <span class="p">)</span>
+<a id="__codelineno-0-468" name="__codelineno-0-468"></a>
+<a id="__codelineno-0-469" name="__codelineno-0-469"></a>    <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">key</span>
+<a id="__codelineno-0-470" name="__codelineno-0-470"></a>    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+<a id="__codelineno-0-471" name="__codelineno-0-471"></a>        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Pixel access indices must be integers, not expressions.&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-472" name="__codelineno-0-472"></a>
+<a id="__codelineno-0-473" name="__codelineno-0-473"></a>    <span class="n">x_node</span> <span class="o">=</span> <span class="n">_to_node</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<a id="__codelineno-0-474" name="__codelineno-0-474"></a>    <span class="n">y_node</span> <span class="o">=</span> <span class="n">_to_node</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+<a id="__codelineno-0-475" name="__codelineno-0-475"></a>
+<a id="__codelineno-0-476" name="__codelineno-0-476"></a>    <span class="k">return</span> <span class="n">DSLExpr</span><span class="p">(</span><span class="n">_PixelAccessNode</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_node</span><span class="p">,</span> <span class="n">x_node</span><span class="p">,</span> <span class="n">y_node</span><span class="p">))</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -4353,17 +4353,17 @@
 
             <details class="quote">
               <summary>Source code in <code>y5gfunc/expr/python2infix.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-476">476</a></span>
-<span class="normal"><a href="#__codelineno-0-477">477</a></span>
-<span class="normal"><a href="#__codelineno-0-478">478</a></span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-478">478</a></span>
 <span class="normal"><a href="#__codelineno-0-479">479</a></span>
 <span class="normal"><a href="#__codelineno-0-480">480</a></span>
-<span class="normal"><a href="#__codelineno-0-481">481</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-476" name="__codelineno-0-476"></a><span class="k">def</span><span class="w"> </span><span class="nf">access</span><span class="p">(</span>
-<a id="__codelineno-0-477" name="__codelineno-0-477"></a>    <span class="bp">self</span><span class="p">,</span>
-<a id="__codelineno-0-478" name="__codelineno-0-478"></a>    <span class="n">x_expr</span><span class="p">:</span> <span class="n">ExprLike</span><span class="p">,</span>
-<a id="__codelineno-0-479" name="__codelineno-0-479"></a>    <span class="n">y_expr</span><span class="p">:</span> <span class="n">ExprLike</span><span class="p">,</span>
-<a id="__codelineno-0-480" name="__codelineno-0-480"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;DSLExpr&quot;</span><span class="p">:</span>
-<a id="__codelineno-0-481" name="__codelineno-0-481"></a>    <span class="k">return</span> <span class="n">DSLExpr</span><span class="p">(</span><span class="n">_FunctionCallNode</span><span class="p">(</span><span class="s2">&quot;dyn&quot;</span><span class="p">,</span> <span class="p">[</span><span class="bp">self</span><span class="p">,</span> <span class="n">x_expr</span><span class="p">,</span> <span class="n">y_expr</span><span class="p">]))</span>
+<span class="normal"><a href="#__codelineno-0-481">481</a></span>
+<span class="normal"><a href="#__codelineno-0-482">482</a></span>
+<span class="normal"><a href="#__codelineno-0-483">483</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-478" name="__codelineno-0-478"></a><span class="k">def</span><span class="w"> </span><span class="nf">access</span><span class="p">(</span>
+<a id="__codelineno-0-479" name="__codelineno-0-479"></a>    <span class="bp">self</span><span class="p">,</span>
+<a id="__codelineno-0-480" name="__codelineno-0-480"></a>    <span class="n">x_expr</span><span class="p">:</span> <span class="n">ExprLike</span><span class="p">,</span>
+<a id="__codelineno-0-481" name="__codelineno-0-481"></a>    <span class="n">y_expr</span><span class="p">:</span> <span class="n">ExprLike</span><span class="p">,</span>
+<a id="__codelineno-0-482" name="__codelineno-0-482"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;DSLExpr&quot;</span><span class="p">:</span>
+<a id="__codelineno-0-483" name="__codelineno-0-483"></a>    <span class="k">return</span> <span class="n">DSLExpr</span><span class="p">(</span><span class="n">_FunctionCallNode</span><span class="p">(</span><span class="s2">&quot;dyn&quot;</span><span class="p">,</span> <span class="p">[</span><span class="bp">self</span><span class="p">,</span> <span class="n">x_expr</span><span class="p">,</span> <span class="n">y_expr</span><span class="p">]))</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -5725,11 +5725,11 @@
 
             <details class="quote">
               <summary>Source code in <code>y5gfunc/expr/python2infix.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-498">498</a></span>
-<span class="normal"><a href="#__codelineno-0-499">499</a></span>
-<span class="normal"><a href="#__codelineno-0-500">500</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-498" name="__codelineno-0-498"></a><span class="nd">@staticmethod</span>
-<a id="__codelineno-0-499" name="__codelineno-0-499"></a><span class="k">def</span><span class="w"> </span><span class="nf">sin</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">ExprLike</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DSLExpr</span><span class="p">:</span>
-<a id="__codelineno-0-500" name="__codelineno-0-500"></a>    <span class="k">return</span> <span class="n">DSLExpr</span><span class="p">(</span><span class="n">_FunctionCallNode</span><span class="p">(</span><span class="s2">&quot;sin&quot;</span><span class="p">,</span> <span class="p">[</span><span class="n">x</span><span class="p">]))</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-500">500</a></span>
+<span class="normal"><a href="#__codelineno-0-501">501</a></span>
+<span class="normal"><a href="#__codelineno-0-502">502</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-500" name="__codelineno-0-500"></a><span class="nd">@staticmethod</span>
+<a id="__codelineno-0-501" name="__codelineno-0-501"></a><span class="k">def</span><span class="w"> </span><span class="nf">sin</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">ExprLike</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DSLExpr</span><span class="p">:</span>
+<a id="__codelineno-0-502" name="__codelineno-0-502"></a>    <span class="k">return</span> <span class="n">DSLExpr</span><span class="p">(</span><span class="n">_FunctionCallNode</span><span class="p">(</span><span class="s2">&quot;sin&quot;</span><span class="p">,</span> <span class="p">[</span><span class="n">x</span><span class="p">]))</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -5761,11 +5761,11 @@
 
             <details class="quote">
               <summary>Source code in <code>y5gfunc/expr/python2infix.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-502">502</a></span>
-<span class="normal"><a href="#__codelineno-0-503">503</a></span>
-<span class="normal"><a href="#__codelineno-0-504">504</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-502" name="__codelineno-0-502"></a><span class="nd">@staticmethod</span>
-<a id="__codelineno-0-503" name="__codelineno-0-503"></a><span class="k">def</span><span class="w"> </span><span class="nf">cos</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">ExprLike</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DSLExpr</span><span class="p">:</span>
-<a id="__codelineno-0-504" name="__codelineno-0-504"></a>    <span class="k">return</span> <span class="n">DSLExpr</span><span class="p">(</span><span class="n">_FunctionCallNode</span><span class="p">(</span><span class="s2">&quot;cos&quot;</span><span class="p">,</span> <span class="p">[</span><span class="n">x</span><span class="p">]))</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-504">504</a></span>
+<span class="normal"><a href="#__codelineno-0-505">505</a></span>
+<span class="normal"><a href="#__codelineno-0-506">506</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-504" name="__codelineno-0-504"></a><span class="nd">@staticmethod</span>
+<a id="__codelineno-0-505" name="__codelineno-0-505"></a><span class="k">def</span><span class="w"> </span><span class="nf">cos</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">ExprLike</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DSLExpr</span><span class="p">:</span>
+<a id="__codelineno-0-506" name="__codelineno-0-506"></a>    <span class="k">return</span> <span class="n">DSLExpr</span><span class="p">(</span><span class="n">_FunctionCallNode</span><span class="p">(</span><span class="s2">&quot;cos&quot;</span><span class="p">,</span> <span class="p">[</span><span class="n">x</span><span class="p">]))</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -5797,11 +5797,11 @@
 
             <details class="quote">
               <summary>Source code in <code>y5gfunc/expr/python2infix.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-506">506</a></span>
-<span class="normal"><a href="#__codelineno-0-507">507</a></span>
-<span class="normal"><a href="#__codelineno-0-508">508</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-506" name="__codelineno-0-506"></a><span class="nd">@staticmethod</span>
-<a id="__codelineno-0-507" name="__codelineno-0-507"></a><span class="k">def</span><span class="w"> </span><span class="nf">log</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">ExprLike</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DSLExpr</span><span class="p">:</span>
-<a id="__codelineno-0-508" name="__codelineno-0-508"></a>    <span class="k">return</span> <span class="n">DSLExpr</span><span class="p">(</span><span class="n">_FunctionCallNode</span><span class="p">(</span><span class="s2">&quot;log&quot;</span><span class="p">,</span> <span class="p">[</span><span class="n">x</span><span class="p">]))</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-508">508</a></span>
+<span class="normal"><a href="#__codelineno-0-509">509</a></span>
+<span class="normal"><a href="#__codelineno-0-510">510</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-508" name="__codelineno-0-508"></a><span class="nd">@staticmethod</span>
+<a id="__codelineno-0-509" name="__codelineno-0-509"></a><span class="k">def</span><span class="w"> </span><span class="nf">log</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">ExprLike</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DSLExpr</span><span class="p">:</span>
+<a id="__codelineno-0-510" name="__codelineno-0-510"></a>    <span class="k">return</span> <span class="n">DSLExpr</span><span class="p">(</span><span class="n">_FunctionCallNode</span><span class="p">(</span><span class="s2">&quot;log&quot;</span><span class="p">,</span> <span class="p">[</span><span class="n">x</span><span class="p">]))</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -5833,11 +5833,11 @@
 
             <details class="quote">
               <summary>Source code in <code>y5gfunc/expr/python2infix.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-510">510</a></span>
-<span class="normal"><a href="#__codelineno-0-511">511</a></span>
-<span class="normal"><a href="#__codelineno-0-512">512</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-510" name="__codelineno-0-510"></a><span class="nd">@staticmethod</span>
-<a id="__codelineno-0-511" name="__codelineno-0-511"></a><span class="k">def</span><span class="w"> </span><span class="nf">exp</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">ExprLike</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DSLExpr</span><span class="p">:</span>
-<a id="__codelineno-0-512" name="__codelineno-0-512"></a>    <span class="k">return</span> <span class="n">DSLExpr</span><span class="p">(</span><span class="n">_FunctionCallNode</span><span class="p">(</span><span class="s2">&quot;exp&quot;</span><span class="p">,</span> <span class="p">[</span><span class="n">x</span><span class="p">]))</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-512">512</a></span>
+<span class="normal"><a href="#__codelineno-0-513">513</a></span>
+<span class="normal"><a href="#__codelineno-0-514">514</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-512" name="__codelineno-0-512"></a><span class="nd">@staticmethod</span>
+<a id="__codelineno-0-513" name="__codelineno-0-513"></a><span class="k">def</span><span class="w"> </span><span class="nf">exp</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">ExprLike</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DSLExpr</span><span class="p">:</span>
+<a id="__codelineno-0-514" name="__codelineno-0-514"></a>    <span class="k">return</span> <span class="n">DSLExpr</span><span class="p">(</span><span class="n">_FunctionCallNode</span><span class="p">(</span><span class="s2">&quot;exp&quot;</span><span class="p">,</span> <span class="p">[</span><span class="n">x</span><span class="p">]))</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -5869,11 +5869,11 @@
 
             <details class="quote">
               <summary>Source code in <code>y5gfunc/expr/python2infix.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-514">514</a></span>
-<span class="normal"><a href="#__codelineno-0-515">515</a></span>
-<span class="normal"><a href="#__codelineno-0-516">516</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-514" name="__codelineno-0-514"></a><span class="nd">@staticmethod</span>
-<a id="__codelineno-0-515" name="__codelineno-0-515"></a><span class="k">def</span><span class="w"> </span><span class="nf">sqrt</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">ExprLike</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DSLExpr</span><span class="p">:</span>
-<a id="__codelineno-0-516" name="__codelineno-0-516"></a>    <span class="k">return</span> <span class="n">DSLExpr</span><span class="p">(</span><span class="n">_FunctionCallNode</span><span class="p">(</span><span class="s2">&quot;sqrt&quot;</span><span class="p">,</span> <span class="p">[</span><span class="n">x</span><span class="p">]))</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-516">516</a></span>
+<span class="normal"><a href="#__codelineno-0-517">517</a></span>
+<span class="normal"><a href="#__codelineno-0-518">518</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-516" name="__codelineno-0-516"></a><span class="nd">@staticmethod</span>
+<a id="__codelineno-0-517" name="__codelineno-0-517"></a><span class="k">def</span><span class="w"> </span><span class="nf">sqrt</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">ExprLike</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DSLExpr</span><span class="p">:</span>
+<a id="__codelineno-0-518" name="__codelineno-0-518"></a>    <span class="k">return</span> <span class="n">DSLExpr</span><span class="p">(</span><span class="n">_FunctionCallNode</span><span class="p">(</span><span class="s2">&quot;sqrt&quot;</span><span class="p">,</span> <span class="p">[</span><span class="n">x</span><span class="p">]))</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -5905,11 +5905,11 @@
 
             <details class="quote">
               <summary>Source code in <code>y5gfunc/expr/python2infix.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-518">518</a></span>
-<span class="normal"><a href="#__codelineno-0-519">519</a></span>
-<span class="normal"><a href="#__codelineno-0-520">520</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-518" name="__codelineno-0-518"></a><span class="nd">@staticmethod</span>
-<a id="__codelineno-0-519" name="__codelineno-0-519"></a><span class="k">def</span><span class="w"> </span><span class="nf">abs</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">ExprLike</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DSLExpr</span><span class="p">:</span>
-<a id="__codelineno-0-520" name="__codelineno-0-520"></a>    <span class="k">return</span> <span class="n">DSLExpr</span><span class="p">(</span><span class="n">_FunctionCallNode</span><span class="p">(</span><span class="s2">&quot;abs&quot;</span><span class="p">,</span> <span class="p">[</span><span class="n">x</span><span class="p">]))</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-520">520</a></span>
+<span class="normal"><a href="#__codelineno-0-521">521</a></span>
+<span class="normal"><a href="#__codelineno-0-522">522</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-520" name="__codelineno-0-520"></a><span class="nd">@staticmethod</span>
+<a id="__codelineno-0-521" name="__codelineno-0-521"></a><span class="k">def</span><span class="w"> </span><span class="nf">abs</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">ExprLike</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DSLExpr</span><span class="p">:</span>
+<a id="__codelineno-0-522" name="__codelineno-0-522"></a>    <span class="k">return</span> <span class="n">DSLExpr</span><span class="p">(</span><span class="n">_FunctionCallNode</span><span class="p">(</span><span class="s2">&quot;abs&quot;</span><span class="p">,</span> <span class="p">[</span><span class="n">x</span><span class="p">]))</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -5946,11 +5946,11 @@
 
             <details class="quote">
               <summary>Source code in <code>y5gfunc/expr/python2infix.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-522">522</a></span>
-<span class="normal"><a href="#__codelineno-0-523">523</a></span>
-<span class="normal"><a href="#__codelineno-0-524">524</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-522" name="__codelineno-0-522"></a><span class="nd">@staticmethod</span>
-<a id="__codelineno-0-523" name="__codelineno-0-523"></a><span class="k">def</span><span class="w"> </span><span class="nf">min</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">ExprLike</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="n">ExprLike</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DSLExpr</span><span class="p">:</span>
-<a id="__codelineno-0-524" name="__codelineno-0-524"></a>    <span class="k">return</span> <span class="n">DSLExpr</span><span class="p">(</span><span class="n">_FunctionCallNode</span><span class="p">(</span><span class="s2">&quot;min&quot;</span><span class="p">,</span> <span class="p">[</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">]))</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-524">524</a></span>
+<span class="normal"><a href="#__codelineno-0-525">525</a></span>
+<span class="normal"><a href="#__codelineno-0-526">526</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-524" name="__codelineno-0-524"></a><span class="nd">@staticmethod</span>
+<a id="__codelineno-0-525" name="__codelineno-0-525"></a><span class="k">def</span><span class="w"> </span><span class="nf">min</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">ExprLike</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="n">ExprLike</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DSLExpr</span><span class="p">:</span>
+<a id="__codelineno-0-526" name="__codelineno-0-526"></a>    <span class="k">return</span> <span class="n">DSLExpr</span><span class="p">(</span><span class="n">_FunctionCallNode</span><span class="p">(</span><span class="s2">&quot;min&quot;</span><span class="p">,</span> <span class="p">[</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">]))</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -5987,11 +5987,11 @@
 
             <details class="quote">
               <summary>Source code in <code>y5gfunc/expr/python2infix.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-526">526</a></span>
-<span class="normal"><a href="#__codelineno-0-527">527</a></span>
-<span class="normal"><a href="#__codelineno-0-528">528</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-526" name="__codelineno-0-526"></a><span class="nd">@staticmethod</span>
-<a id="__codelineno-0-527" name="__codelineno-0-527"></a><span class="k">def</span><span class="w"> </span><span class="nf">max</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">ExprLike</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="n">ExprLike</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DSLExpr</span><span class="p">:</span>
-<a id="__codelineno-0-528" name="__codelineno-0-528"></a>    <span class="k">return</span> <span class="n">DSLExpr</span><span class="p">(</span><span class="n">_FunctionCallNode</span><span class="p">(</span><span class="s2">&quot;max&quot;</span><span class="p">,</span> <span class="p">[</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">]))</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-528">528</a></span>
+<span class="normal"><a href="#__codelineno-0-529">529</a></span>
+<span class="normal"><a href="#__codelineno-0-530">530</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-528" name="__codelineno-0-528"></a><span class="nd">@staticmethod</span>
+<a id="__codelineno-0-529" name="__codelineno-0-529"></a><span class="k">def</span><span class="w"> </span><span class="nf">max</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">ExprLike</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="n">ExprLike</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DSLExpr</span><span class="p">:</span>
+<a id="__codelineno-0-530" name="__codelineno-0-530"></a>    <span class="k">return</span> <span class="n">DSLExpr</span><span class="p">(</span><span class="n">_FunctionCallNode</span><span class="p">(</span><span class="s2">&quot;max&quot;</span><span class="p">,</span> <span class="p">[</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">]))</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -6033,19 +6033,19 @@
 
             <details class="quote">
               <summary>Source code in <code>y5gfunc/expr/python2infix.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-530">530</a></span>
-<span class="normal"><a href="#__codelineno-0-531">531</a></span>
-<span class="normal"><a href="#__codelineno-0-532">532</a></span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-532">532</a></span>
 <span class="normal"><a href="#__codelineno-0-533">533</a></span>
 <span class="normal"><a href="#__codelineno-0-534">534</a></span>
 <span class="normal"><a href="#__codelineno-0-535">535</a></span>
-<span class="normal"><a href="#__codelineno-0-536">536</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-530" name="__codelineno-0-530"></a><span class="nd">@staticmethod</span>
-<a id="__codelineno-0-531" name="__codelineno-0-531"></a><span class="k">def</span><span class="w"> </span><span class="nf">clamp</span><span class="p">(</span>
-<a id="__codelineno-0-532" name="__codelineno-0-532"></a>    <span class="n">x</span><span class="p">:</span> <span class="n">ExprLike</span><span class="p">,</span>
-<a id="__codelineno-0-533" name="__codelineno-0-533"></a>    <span class="n">min_val</span><span class="p">:</span> <span class="n">ExprLike</span><span class="p">,</span>
-<a id="__codelineno-0-534" name="__codelineno-0-534"></a>    <span class="n">max_val</span><span class="p">:</span> <span class="n">ExprLike</span><span class="p">,</span>
-<a id="__codelineno-0-535" name="__codelineno-0-535"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DSLExpr</span><span class="p">:</span>
-<a id="__codelineno-0-536" name="__codelineno-0-536"></a>    <span class="k">return</span> <span class="n">DSLExpr</span><span class="p">(</span><span class="n">_FunctionCallNode</span><span class="p">(</span><span class="s2">&quot;clamp&quot;</span><span class="p">,</span> <span class="p">[</span><span class="n">x</span><span class="p">,</span> <span class="n">min_val</span><span class="p">,</span> <span class="n">max_val</span><span class="p">]))</span>
+<span class="normal"><a href="#__codelineno-0-536">536</a></span>
+<span class="normal"><a href="#__codelineno-0-537">537</a></span>
+<span class="normal"><a href="#__codelineno-0-538">538</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-532" name="__codelineno-0-532"></a><span class="nd">@staticmethod</span>
+<a id="__codelineno-0-533" name="__codelineno-0-533"></a><span class="k">def</span><span class="w"> </span><span class="nf">clamp</span><span class="p">(</span>
+<a id="__codelineno-0-534" name="__codelineno-0-534"></a>    <span class="n">x</span><span class="p">:</span> <span class="n">ExprLike</span><span class="p">,</span>
+<a id="__codelineno-0-535" name="__codelineno-0-535"></a>    <span class="n">min_val</span><span class="p">:</span> <span class="n">ExprLike</span><span class="p">,</span>
+<a id="__codelineno-0-536" name="__codelineno-0-536"></a>    <span class="n">max_val</span><span class="p">:</span> <span class="n">ExprLike</span><span class="p">,</span>
+<a id="__codelineno-0-537" name="__codelineno-0-537"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DSLExpr</span><span class="p">:</span>
+<a id="__codelineno-0-538" name="__codelineno-0-538"></a>    <span class="k">return</span> <span class="n">DSLExpr</span><span class="p">(</span><span class="n">_FunctionCallNode</span><span class="p">(</span><span class="s2">&quot;clamp&quot;</span><span class="p">,</span> <span class="p">[</span><span class="n">x</span><span class="p">,</span> <span class="n">min_val</span><span class="p">,</span> <span class="n">max_val</span><span class="p">]))</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -6077,19 +6077,19 @@
 
             <details class="quote">
               <summary>Source code in <code>y5gfunc/expr/python2infix.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-538">538</a></span>
-<span class="normal"><a href="#__codelineno-0-539">539</a></span>
-<span class="normal"><a href="#__codelineno-0-540">540</a></span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-540">540</a></span>
 <span class="normal"><a href="#__codelineno-0-541">541</a></span>
 <span class="normal"><a href="#__codelineno-0-542">542</a></span>
 <span class="normal"><a href="#__codelineno-0-543">543</a></span>
-<span class="normal"><a href="#__codelineno-0-544">544</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-538" name="__codelineno-0-538"></a><span class="nd">@staticmethod</span>
-<a id="__codelineno-0-539" name="__codelineno-0-539"></a><span class="k">def</span><span class="w"> </span><span class="nf">sort</span><span class="p">(</span><span class="n">items</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">ExprLike</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">DSLExpr</span><span class="p">]:</span>
-<a id="__codelineno-0-540" name="__codelineno-0-540"></a>    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">items</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">items</span><span class="p">:</span>
-<a id="__codelineno-0-541" name="__codelineno-0-541"></a>        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Input for sort must be a non-empty list of expressions.&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-542" name="__codelineno-0-542"></a>    <span class="k">return</span> <span class="p">[</span>
-<a id="__codelineno-0-543" name="__codelineno-0-543"></a>        <span class="n">DSLExpr</span><span class="p">(</span><span class="n">_FunctionCallNode</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;nth_</span><span class="si">{</span><span class="n">i</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">items</span><span class="p">))</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">items</span><span class="p">))</span>
-<a id="__codelineno-0-544" name="__codelineno-0-544"></a>    <span class="p">]</span>
+<span class="normal"><a href="#__codelineno-0-544">544</a></span>
+<span class="normal"><a href="#__codelineno-0-545">545</a></span>
+<span class="normal"><a href="#__codelineno-0-546">546</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-540" name="__codelineno-0-540"></a><span class="nd">@staticmethod</span>
+<a id="__codelineno-0-541" name="__codelineno-0-541"></a><span class="k">def</span><span class="w"> </span><span class="nf">sort</span><span class="p">(</span><span class="n">items</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">ExprLike</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">DSLExpr</span><span class="p">]:</span>
+<a id="__codelineno-0-542" name="__codelineno-0-542"></a>    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">items</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">items</span><span class="p">:</span>
+<a id="__codelineno-0-543" name="__codelineno-0-543"></a>        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Input for sort must be a non-empty list of expressions.&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-544" name="__codelineno-0-544"></a>    <span class="k">return</span> <span class="p">[</span>
+<a id="__codelineno-0-545" name="__codelineno-0-545"></a>        <span class="n">DSLExpr</span><span class="p">(</span><span class="n">_FunctionCallNode</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;nth_</span><span class="si">{</span><span class="n">i</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">items</span><span class="p">))</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">items</span><span class="p">))</span>
+<a id="__codelineno-0-546" name="__codelineno-0-546"></a>    <span class="p">]</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -6121,11 +6121,11 @@
 
             <details class="quote">
               <summary>Source code in <code>y5gfunc/expr/python2infix.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-546">546</a></span>
-<span class="normal"><a href="#__codelineno-0-547">547</a></span>
-<span class="normal"><a href="#__codelineno-0-548">548</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-546" name="__codelineno-0-546"></a><span class="nd">@staticmethod</span>
-<a id="__codelineno-0-547" name="__codelineno-0-547"></a><span class="k">def</span><span class="w"> </span><span class="nf">trunc</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">ExprLike</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DSLExpr</span><span class="p">:</span>
-<a id="__codelineno-0-548" name="__codelineno-0-548"></a>    <span class="k">return</span> <span class="n">DSLExpr</span><span class="p">(</span><span class="n">_FunctionCallNode</span><span class="p">(</span><span class="s2">&quot;trunc&quot;</span><span class="p">,</span> <span class="p">[</span><span class="n">x</span><span class="p">]))</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-548">548</a></span>
+<span class="normal"><a href="#__codelineno-0-549">549</a></span>
+<span class="normal"><a href="#__codelineno-0-550">550</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-548" name="__codelineno-0-548"></a><span class="nd">@staticmethod</span>
+<a id="__codelineno-0-549" name="__codelineno-0-549"></a><span class="k">def</span><span class="w"> </span><span class="nf">trunc</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">ExprLike</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DSLExpr</span><span class="p">:</span>
+<a id="__codelineno-0-550" name="__codelineno-0-550"></a>    <span class="k">return</span> <span class="n">DSLExpr</span><span class="p">(</span><span class="n">_FunctionCallNode</span><span class="p">(</span><span class="s2">&quot;trunc&quot;</span><span class="p">,</span> <span class="p">[</span><span class="n">x</span><span class="p">]))</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -6157,11 +6157,11 @@
 
             <details class="quote">
               <summary>Source code in <code>y5gfunc/expr/python2infix.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-550">550</a></span>
-<span class="normal"><a href="#__codelineno-0-551">551</a></span>
-<span class="normal"><a href="#__codelineno-0-552">552</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-550" name="__codelineno-0-550"></a><span class="nd">@staticmethod</span>
-<a id="__codelineno-0-551" name="__codelineno-0-551"></a><span class="k">def</span><span class="w"> </span><span class="nf">round</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">ExprLike</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DSLExpr</span><span class="p">:</span>
-<a id="__codelineno-0-552" name="__codelineno-0-552"></a>    <span class="k">return</span> <span class="n">DSLExpr</span><span class="p">(</span><span class="n">_FunctionCallNode</span><span class="p">(</span><span class="s2">&quot;round&quot;</span><span class="p">,</span> <span class="p">[</span><span class="n">x</span><span class="p">]))</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-552">552</a></span>
+<span class="normal"><a href="#__codelineno-0-553">553</a></span>
+<span class="normal"><a href="#__codelineno-0-554">554</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-552" name="__codelineno-0-552"></a><span class="nd">@staticmethod</span>
+<a id="__codelineno-0-553" name="__codelineno-0-553"></a><span class="k">def</span><span class="w"> </span><span class="nf">round</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">ExprLike</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DSLExpr</span><span class="p">:</span>
+<a id="__codelineno-0-554" name="__codelineno-0-554"></a>    <span class="k">return</span> <span class="n">DSLExpr</span><span class="p">(</span><span class="n">_FunctionCallNode</span><span class="p">(</span><span class="s2">&quot;round&quot;</span><span class="p">,</span> <span class="p">[</span><span class="n">x</span><span class="p">]))</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -6193,11 +6193,11 @@
 
             <details class="quote">
               <summary>Source code in <code>y5gfunc/expr/python2infix.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-554">554</a></span>
-<span class="normal"><a href="#__codelineno-0-555">555</a></span>
-<span class="normal"><a href="#__codelineno-0-556">556</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-554" name="__codelineno-0-554"></a><span class="nd">@staticmethod</span>
-<a id="__codelineno-0-555" name="__codelineno-0-555"></a><span class="k">def</span><span class="w"> </span><span class="nf">floor</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">ExprLike</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DSLExpr</span><span class="p">:</span>
-<a id="__codelineno-0-556" name="__codelineno-0-556"></a>    <span class="k">return</span> <span class="n">DSLExpr</span><span class="p">(</span><span class="n">_FunctionCallNode</span><span class="p">(</span><span class="s2">&quot;floor&quot;</span><span class="p">,</span> <span class="p">[</span><span class="n">x</span><span class="p">]))</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-556">556</a></span>
+<span class="normal"><a href="#__codelineno-0-557">557</a></span>
+<span class="normal"><a href="#__codelineno-0-558">558</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-556" name="__codelineno-0-556"></a><span class="nd">@staticmethod</span>
+<a id="__codelineno-0-557" name="__codelineno-0-557"></a><span class="k">def</span><span class="w"> </span><span class="nf">floor</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">ExprLike</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DSLExpr</span><span class="p">:</span>
+<a id="__codelineno-0-558" name="__codelineno-0-558"></a>    <span class="k">return</span> <span class="n">DSLExpr</span><span class="p">(</span><span class="n">_FunctionCallNode</span><span class="p">(</span><span class="s2">&quot;floor&quot;</span><span class="p">,</span> <span class="p">[</span><span class="n">x</span><span class="p">]))</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -6239,19 +6239,19 @@
 
             <details class="quote">
               <summary>Source code in <code>y5gfunc/expr/python2infix.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-558">558</a></span>
-<span class="normal"><a href="#__codelineno-0-559">559</a></span>
-<span class="normal"><a href="#__codelineno-0-560">560</a></span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-560">560</a></span>
 <span class="normal"><a href="#__codelineno-0-561">561</a></span>
 <span class="normal"><a href="#__codelineno-0-562">562</a></span>
 <span class="normal"><a href="#__codelineno-0-563">563</a></span>
-<span class="normal"><a href="#__codelineno-0-564">564</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-558" name="__codelineno-0-558"></a><span class="nd">@staticmethod</span>
-<a id="__codelineno-0-559" name="__codelineno-0-559"></a><span class="k">def</span><span class="w"> </span><span class="nf">if_then_else</span><span class="p">(</span>
-<a id="__codelineno-0-560" name="__codelineno-0-560"></a>    <span class="n">cond</span><span class="p">:</span> <span class="n">ExprLike</span><span class="p">,</span>
-<a id="__codelineno-0-561" name="__codelineno-0-561"></a>    <span class="n">true_expr</span><span class="p">:</span> <span class="n">ExprLike</span><span class="p">,</span>
-<a id="__codelineno-0-562" name="__codelineno-0-562"></a>    <span class="n">false_expr</span><span class="p">:</span> <span class="n">ExprLike</span><span class="p">,</span>
-<a id="__codelineno-0-563" name="__codelineno-0-563"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DSLExpr</span><span class="p">:</span>
-<a id="__codelineno-0-564" name="__codelineno-0-564"></a>    <span class="k">return</span> <span class="n">DSLExpr</span><span class="p">(</span><span class="n">_TernaryOpNode</span><span class="p">(</span><span class="n">cond</span><span class="p">,</span> <span class="n">true_expr</span><span class="p">,</span> <span class="n">false_expr</span><span class="p">))</span>
+<span class="normal"><a href="#__codelineno-0-564">564</a></span>
+<span class="normal"><a href="#__codelineno-0-565">565</a></span>
+<span class="normal"><a href="#__codelineno-0-566">566</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-560" name="__codelineno-0-560"></a><span class="nd">@staticmethod</span>
+<a id="__codelineno-0-561" name="__codelineno-0-561"></a><span class="k">def</span><span class="w"> </span><span class="nf">if_then_else</span><span class="p">(</span>
+<a id="__codelineno-0-562" name="__codelineno-0-562"></a>    <span class="n">cond</span><span class="p">:</span> <span class="n">ExprLike</span><span class="p">,</span>
+<a id="__codelineno-0-563" name="__codelineno-0-563"></a>    <span class="n">true_expr</span><span class="p">:</span> <span class="n">ExprLike</span><span class="p">,</span>
+<a id="__codelineno-0-564" name="__codelineno-0-564"></a>    <span class="n">false_expr</span><span class="p">:</span> <span class="n">ExprLike</span><span class="p">,</span>
+<a id="__codelineno-0-565" name="__codelineno-0-565"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DSLExpr</span><span class="p">:</span>
+<a id="__codelineno-0-566" name="__codelineno-0-566"></a>    <span class="k">return</span> <span class="n">DSLExpr</span><span class="p">(</span><span class="n">_TernaryOpNode</span><span class="p">(</span><span class="n">cond</span><span class="p">,</span> <span class="n">true_expr</span><span class="p">,</span> <span class="n">false_expr</span><span class="p">))</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -6283,11 +6283,11 @@
 
             <details class="quote">
               <summary>Source code in <code>y5gfunc/expr/python2infix.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-566">566</a></span>
-<span class="normal"><a href="#__codelineno-0-567">567</a></span>
-<span class="normal"><a href="#__codelineno-0-568">568</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-566" name="__codelineno-0-566"></a><span class="nd">@staticmethod</span>
-<a id="__codelineno-0-567" name="__codelineno-0-567"></a><span class="k">def</span><span class="w"> </span><span class="nf">logical_not</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">ExprLike</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DSLExpr</span><span class="p">:</span>
-<a id="__codelineno-0-568" name="__codelineno-0-568"></a>    <span class="k">return</span> <span class="n">DSLExpr</span><span class="p">(</span><span class="n">_UnaryOpNode</span><span class="p">(</span><span class="s2">&quot;!&quot;</span><span class="p">,</span> <span class="n">x</span><span class="p">))</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-568">568</a></span>
+<span class="normal"><a href="#__codelineno-0-569">569</a></span>
+<span class="normal"><a href="#__codelineno-0-570">570</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-568" name="__codelineno-0-568"></a><span class="nd">@staticmethod</span>
+<a id="__codelineno-0-569" name="__codelineno-0-569"></a><span class="k">def</span><span class="w"> </span><span class="nf">logical_not</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">ExprLike</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DSLExpr</span><span class="p">:</span>
+<a id="__codelineno-0-570" name="__codelineno-0-570"></a>    <span class="k">return</span> <span class="n">DSLExpr</span><span class="p">(</span><span class="n">_UnaryOpNode</span><span class="p">(</span><span class="s2">&quot;!&quot;</span><span class="p">,</span> <span class="n">x</span><span class="p">))</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -6324,11 +6324,11 @@
 
             <details class="quote">
               <summary>Source code in <code>y5gfunc/expr/python2infix.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-570">570</a></span>
-<span class="normal"><a href="#__codelineno-0-571">571</a></span>
-<span class="normal"><a href="#__codelineno-0-572">572</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-570" name="__codelineno-0-570"></a><span class="nd">@staticmethod</span>
-<a id="__codelineno-0-571" name="__codelineno-0-571"></a><span class="k">def</span><span class="w"> </span><span class="nf">bitwise_or</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">ExprLike</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="n">ExprLike</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DSLExpr</span><span class="p">:</span>
-<a id="__codelineno-0-572" name="__codelineno-0-572"></a>    <span class="k">return</span> <span class="n">DSLExpr</span><span class="p">(</span><span class="n">_BinaryOpNode</span><span class="p">(</span><span class="s2">&quot;|&quot;</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">))</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-572">572</a></span>
+<span class="normal"><a href="#__codelineno-0-573">573</a></span>
+<span class="normal"><a href="#__codelineno-0-574">574</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-572" name="__codelineno-0-572"></a><span class="nd">@staticmethod</span>
+<a id="__codelineno-0-573" name="__codelineno-0-573"></a><span class="k">def</span><span class="w"> </span><span class="nf">bitwise_or</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">ExprLike</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="n">ExprLike</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DSLExpr</span><span class="p">:</span>
+<a id="__codelineno-0-574" name="__codelineno-0-574"></a>    <span class="k">return</span> <span class="n">DSLExpr</span><span class="p">(</span><span class="n">_BinaryOpNode</span><span class="p">(</span><span class="s2">&quot;|&quot;</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">))</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -6365,11 +6365,11 @@
 
             <details class="quote">
               <summary>Source code in <code>y5gfunc/expr/python2infix.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-574">574</a></span>
-<span class="normal"><a href="#__codelineno-0-575">575</a></span>
-<span class="normal"><a href="#__codelineno-0-576">576</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-574" name="__codelineno-0-574"></a><span class="nd">@staticmethod</span>
-<a id="__codelineno-0-575" name="__codelineno-0-575"></a><span class="k">def</span><span class="w"> </span><span class="nf">bitwise_xor</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">ExprLike</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="n">ExprLike</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DSLExpr</span><span class="p">:</span>
-<a id="__codelineno-0-576" name="__codelineno-0-576"></a>    <span class="k">return</span> <span class="n">DSLExpr</span><span class="p">(</span><span class="n">_BinaryOpNode</span><span class="p">(</span><span class="s2">&quot;^&quot;</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">))</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-576">576</a></span>
+<span class="normal"><a href="#__codelineno-0-577">577</a></span>
+<span class="normal"><a href="#__codelineno-0-578">578</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-576" name="__codelineno-0-576"></a><span class="nd">@staticmethod</span>
+<a id="__codelineno-0-577" name="__codelineno-0-577"></a><span class="k">def</span><span class="w"> </span><span class="nf">bitwise_xor</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">ExprLike</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="n">ExprLike</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DSLExpr</span><span class="p">:</span>
+<a id="__codelineno-0-578" name="__codelineno-0-578"></a>    <span class="k">return</span> <span class="n">DSLExpr</span><span class="p">(</span><span class="n">_BinaryOpNode</span><span class="p">(</span><span class="s2">&quot;^&quot;</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">))</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -6406,11 +6406,11 @@
 
             <details class="quote">
               <summary>Source code in <code>y5gfunc/expr/python2infix.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-578">578</a></span>
-<span class="normal"><a href="#__codelineno-0-579">579</a></span>
-<span class="normal"><a href="#__codelineno-0-580">580</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-578" name="__codelineno-0-578"></a><span class="nd">@staticmethod</span>
-<a id="__codelineno-0-579" name="__codelineno-0-579"></a><span class="k">def</span><span class="w"> </span><span class="nf">bitwise_and</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">ExprLike</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="n">ExprLike</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DSLExpr</span><span class="p">:</span>
-<a id="__codelineno-0-580" name="__codelineno-0-580"></a>    <span class="k">return</span> <span class="n">DSLExpr</span><span class="p">(</span><span class="n">_BinaryOpNode</span><span class="p">(</span><span class="s2">&quot;&amp;&quot;</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">))</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-580">580</a></span>
+<span class="normal"><a href="#__codelineno-0-581">581</a></span>
+<span class="normal"><a href="#__codelineno-0-582">582</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-580" name="__codelineno-0-580"></a><span class="nd">@staticmethod</span>
+<a id="__codelineno-0-581" name="__codelineno-0-581"></a><span class="k">def</span><span class="w"> </span><span class="nf">bitwise_and</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">ExprLike</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="n">ExprLike</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DSLExpr</span><span class="p">:</span>
+<a id="__codelineno-0-582" name="__codelineno-0-582"></a>    <span class="k">return</span> <span class="n">DSLExpr</span><span class="p">(</span><span class="n">_BinaryOpNode</span><span class="p">(</span><span class="s2">&quot;&amp;&quot;</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">))</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
