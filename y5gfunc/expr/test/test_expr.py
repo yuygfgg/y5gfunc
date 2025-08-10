@@ -8,6 +8,7 @@ import random
 
 from y5gfunc.expr import (
     infix2postfix,
+    optimize_akarin_expr,
     emulate_expr,
     SourceClip,
     Constant,
@@ -290,6 +291,14 @@ class TestOptimizer(TestComprehensiveSuite):
                     places=5,
                     msg=f"Optimizer level {level} failed",
                 )
+
+    def test_optimizer_generic(self):
+        self.assertEqual(optimize_akarin_expr("1 2 +"), "3")
+        self.assertEqual(optimize_akarin_expr("1 2 + x +"), "3 x +")
+        self.assertEqual(optimize_akarin_expr("x 1 + 2 +"), "x 3 +")
+        self.assertEqual(optimize_akarin_expr("1 2 * x *"), "2 x *")
+        self.assertEqual(optimize_akarin_expr("x 1 * 2 + 3 +"), "x 1 * 5 +")
+        self.assertEqual(optimize_akarin_expr("X 6 + 3 - Y 3 + 2 - x[]"), "x[3,1]")
 
 
 class TestPythonInterface(TestComprehensiveSuite):

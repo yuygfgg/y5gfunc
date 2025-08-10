@@ -216,6 +216,81 @@ def fold_constants(
 ) -> str:
     """Perform constant folding optimization"""
     tokens = tokenize_expr(expr)
+
+    # Peephole optimization for associative operators
+    if optimize_level >= OptimizeLevel.O1:
+        i = 0
+        while i < len(tokens) - 4:
+            t1, t2, t3, t4, t5 = tokens[i : i + 5]
+            
+            op1, op2 = t3, t5
+
+            is_pattern1 = (
+                not is_token_numeric(t1)
+                and is_token_numeric(t2)
+                and is_token_numeric(t4)
+            )
+            is_pattern2 = (
+                is_token_numeric(t1)
+                and not is_token_numeric(t2)
+                and is_token_numeric(t4)
+            )
+
+            if is_pattern1 or is_pattern2:
+                c1_str = t2 if is_pattern1 else t1
+                c2_str = t4
+                var_str = t1 if is_pattern1 else t2
+
+                res_op, new_op = None, None
+                c1_first = True
+
+                if is_pattern1:  # V C1 op1 C2 op2
+                    if (op1, op2) in [("+", "+"), ("*", "*")]:
+                        res_op, new_op = op1, op1
+                    elif (op1, op2) == ("+", "-"):
+                        res_op, new_op = "-", "+"
+                    elif (op1, op2) == ("-", "-"):
+                        res_op, new_op = "+", "-"
+                    elif (op1, op2) == ("-", "+"):
+                        res_op, new_op = "-", "-"
+                    elif (op1, op2) == ("*", "/"):
+                        res_op, new_op = "/", "*"
+                    elif (op1, op2) == ("/", "*"):
+                        res_op, new_op = "/", "*"
+                        c1_first = False
+                    elif (op1, op2) == ("/", "/"):
+                        res_op, new_op = "*", "/"
+                elif is_pattern2:  # C1 V op1 C2 op2
+                    if (op1, op2) in [("+", "+"), ("*", "*")]:
+                        res_op, new_op = op1, op1
+                    elif (op1, op2) == ("+", "-"):
+                        res_op, new_op = "-", "+"
+                    elif (op1, op2) == ("-", "-"):
+                        res_op, new_op = "-", "-"
+                    elif (op1, op2) == ("-", "+"):
+                        res_op, new_op = "+", "-"
+                    elif (op1, op2) == ("*", "/"):
+                        res_op, new_op = "/", "*"
+                    elif (op1, op2) == ("/", "*"):
+                        res_op, new_op = "*", "/"
+
+                if res_op and new_op:
+                    c1 = parse_numeric(c1_str)
+                    c2 = parse_numeric(c2_str)
+
+                    op_args = (c1, c2) if c1_first else (c2, c1)
+                    res = calculate_binary(res_op, op_args[0], op_args[1])
+
+                    if res is not None:
+                        if is_pattern1:
+                            new_sequence = [var_str, format_number(res), new_op]
+                        else:  # is_pattern2
+                            new_sequence = [format_number(res), var_str, new_op]
+
+                        tokens = tokens[:i] + new_sequence + tokens[i + 5 :]
+                        i = -1  # Restart scan
+            i += 1
+
     stack: list[Any] = []
     result_tokens: list[str] = []
     variable_values: dict[str, Union[int, float, None]] = {}

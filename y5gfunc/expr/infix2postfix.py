@@ -1272,6 +1272,7 @@ def convert_expr(
     if is_constant_infix(expr):
         # Remove $ prefix from constants in postfix expression
         return expr[1:]
+
     if _LETTER_PATTERN.fullmatch(expr):
         if literals_in_scope and expr in literals_in_scope:
             return expr
