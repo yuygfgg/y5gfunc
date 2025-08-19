@@ -359,7 +359,7 @@ _FUNCTION_PATTERN = re.compile(
 )
 _BUILD_IN_FUNC_PATTERNS = [
     re.compile(r)
-    for r in [rf"^{prefix}\d+$" for prefix in ["nth_", "sort", "dup", "drop", "swap"]]
+    for r in [rf"^{prefix}\d+$" for prefix in ["nth_", "sort"]]
 ]
 _STD_COMPAT_CONST_N_PATTERN = re.compile(r"\$N(?![a-zA-Z0-9_])")
 _STD_COMPAT_CONST_X_PATTERN = re.compile(r"\$X(?![a-zA-Z0-9_])")
