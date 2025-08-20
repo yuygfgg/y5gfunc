@@ -115,14 +115,14 @@ def scd_koala(
             ssim_frame = ssim_frames[i]
 
             prev_array = np.dstack(
-                [np.array(prev_frame[p]) for p in range(prev_frame.format.num_planes)]  # type: ignore
+                [np.array(prev_frame[p]) for p in range(prev_frame.format.num_planes)]  # type: ignore[arg-type]
             )
             curr_array = np.dstack(
-                [np.array(curr_frame[p]) for p in range(curr_frame.format.num_planes)]  # type: ignore
+                [np.array(curr_frame[p]) for p in range(curr_frame.format.num_planes)]  # type: ignore[arg-type]
             )
             delta_edges = ssim_frame.props.get("PlaneSSIM", 0.0)
 
-            score = _get_score(curr_array, prev_array, delta_edges)  # type: ignore
+            score = _get_score(curr_array, prev_array, delta_edges)  # type: ignore[arg-type]
             scores.append(score)
 
         current_idx = window_size + k

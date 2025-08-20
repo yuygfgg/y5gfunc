@@ -64,7 +64,7 @@ def set_preview(*args, debug: bool = True) -> None:
     if debug and __name__ == "__vapoursynth__":
         raise ValueError("output: Do not set debug=True when encoding!")
 
-    frame: FrameType = inspect.currentframe().f_back  # type: ignore
+    frame: FrameType = inspect.currentframe().f_back  # type: ignore[union-attr]
 
     global _output_index
     global used_indices

@@ -134,12 +134,12 @@ class DecimationProcessor(BaseProcessor):
                 # If not a frame to delete
                 if orig_frame not in frames_to_delete:
                     if n in frame_props:
-                        new_frame_props[new_idx] = frame_props[n].copy()  # type: ignore
+                        new_frame_props[new_idx] = frame_props[n].copy()  # type: ignore[index]
                         new_idx += 1
 
             # Delete frames
             clip = core.std.DeleteFrames(clip=clip, frames=frames_to_delete)
-            frame_props = new_frame_props  # type: ignore # Update frame properties
+            frame_props = new_frame_props  # type: ignore[assignment] # Update frame properties
 
         return clip, frame_props, frame_mapping
 

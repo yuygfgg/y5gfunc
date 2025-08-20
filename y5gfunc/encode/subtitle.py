@@ -148,7 +148,7 @@ def extract_pgs_subtitles(
         )
 
         while True:
-            output = process.stdout.readline()  # type: ignore
+            output = process.stdout.readline()  # type: ignore[union-attr]
             if output == "" and process.poll() is not None:
                 break
             if output:

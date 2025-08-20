@@ -116,7 +116,7 @@ class ResizeProcessor(BaseProcessor):
 
             # Update all frame properties
             for n in frame_props:
-                frame_props[n].update(resize_props)  # type: ignore
+                frame_props[n].update(resize_props)  # type: ignore[index]
 
             # Apply resize
             resize_filter = getattr(core.resize, resize_filter_name)

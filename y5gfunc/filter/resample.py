@@ -101,7 +101,7 @@ class ColorMatrixManager:
 
         # Calculate direct RGB↔OPP coefficients
         self._rgb_to_opp_coefs = self._matrix_to_coefs(self._rgb_opp_matrix)
-        self._opp_to_rgb_coefs = self._matrix_to_coefs(self._rgb_from_opp_matrix)  # type: ignore
+        self._opp_to_rgb_coefs = self._matrix_to_coefs(self._rgb_from_opp_matrix)  # type: ignore[attr-defined]
 
         # Calculate matrices and coefficients for all registered matrix types
         for matrix_type in self._yuv_to_rgb_matrices:
@@ -134,14 +134,14 @@ class ColorMatrixManager:
         if not self._initialized:
             self.initialize()
 
-        return self._rgb_to_opp_coefs  # type: ignore
+        return self._rgb_to_opp_coefs  # type: ignore[attr-defined]
 
     def get_opp_to_rgb_coefs(self) -> list[float]:
         """Get OPP to RGB conversion coefficients."""
         if not self._initialized:
             self.initialize()
 
-        return self._opp_to_rgb_coefs  # type: ignore
+        return self._opp_to_rgb_coefs  # type: ignore[attr-defined]
 
 
 # Dictionary to store all OPP matrix managers by name
@@ -308,7 +308,7 @@ def opp2yuv(
     if target_range is None:
         target_range = get_prop(clip, "BM3D_OPP_SRC_RANGE", int, ColorRange)
 
-    coef = opp_manager.get_opp_to_yuv_coefs(target_matrix)  # type: ignore
+    coef = opp_manager.get_opp_to_yuv_coefs(target_matrix)  # type: ignore[attr-defined]
 
     yuv = core.fmtc.matrix(
         clip, fulls=True, fulld=not target_range, col_fam=vs.YUV, coef=coef
@@ -368,7 +368,7 @@ def opp2rgb(
             raise ValueError(f"Unknown OPP variant: {variant_name}")
         opp_manager = _opp_managers[variant_name]
 
-    coef = opp_manager.get_opp_to_rgb_coefs()  # type: ignore
+    coef = opp_manager.get_opp_to_rgb_coefs()  # type: ignore[attr-defined]
 
     rgb = core.fmtc.matrix(clip, fulls=True, fulld=True, col_fam=vs.RGB, coef=coef)
     return rgb.std.SetFrameProps(
@@ -493,12 +493,12 @@ def SSIM_downsample(
 
     clip = depth(clip, 32)
 
-    l1 = core.resize2.Bicubic(clip, width, height, **resample_args)  # type: ignore
+    l1 = core.resize2.Bicubic(clip, width, height, **resample_args)  # type: ignore[arg-type]
     l2 = core.resize2.Bicubic(
         core.akarin.Expr([clip], ["x 2 **"]),
         width,
         height,
-        **resample_args,  # type: ignore
+        **resample_args,  # type: ignore[arg-type]
     )
 
     m = Filter(l1)

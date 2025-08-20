@@ -84,7 +84,7 @@ class SectionProcessor(BaseProcessor):
                         orig_frame = frame_mapping[src_idx]
                         # Copy original frame properties
                         if src_idx in frame_props:
-                            new_frame_props[new_frame_idx] = frame_props[src_idx].copy()  # type: ignore
+                            new_frame_props[new_frame_idx] = frame_props[src_idx].copy()  # type: ignore[index]
                             # Update mapping
                             frame_mapping[new_frame_idx] = orig_frame
                             new_frame_idx += 1
@@ -94,7 +94,7 @@ class SectionProcessor(BaseProcessor):
             # Merge all sections
             if sections:
                 clip = core.std.Splice(clips=sections, mismatch=True)
-                frame_props = new_frame_props  # type: ignore # Update frame properties
+                frame_props = new_frame_props  # type: ignore[assignment] # Update frame properties
 
         return clip, frame_props, frame_mapping
 

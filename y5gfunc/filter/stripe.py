@@ -61,8 +61,8 @@ def is_stripe(
             ver_accum = 0
             while i < prefetch.num_frames:
                 frame = prefetch.get_frame(i)
-                hor_accum += frame.props["hor"]  # type: ignore
-                ver_accum += frame.props["ver"]  # type: ignore
+                hor_accum += frame.props["hor"]  # type: ignore[index]
+                ver_accum += frame.props["ver"]  # type: ignore[index]
                 scene_length += 1
                 i += 1
                 if frame.props["_SceneChangeNext"] == 1:  # scene end

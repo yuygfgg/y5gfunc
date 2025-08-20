@@ -120,8 +120,8 @@ def get_bd_chapter(
                     if target_item_index in chapters_by_item:
                         marks = chapters_by_item[target_item_index]
                         offset = min(marks)
-                        if play_items[target_item_index]["in_time"] < offset:  # type: ignore
-                            offset = play_items[target_item_index]["in_time"]  # type: ignore
+                        if play_items[target_item_index]["in_time"] < offset:  # type: ignore[index]
+                            offset = play_items[target_item_index]["in_time"]  # type: ignore[index]
 
                         for timestamp in marks:
                             relative_time = (timestamp - offset) / 45000.0

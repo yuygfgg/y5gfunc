@@ -99,13 +99,13 @@ def encode_check(
         if enable_ssim:
             fout.props["PlaneSSIM"] = ssim_val = f[2].props["PlaneSSIM"]
             fout.props["ssim_err"] = ssim_err = (
-                1 if threshold_ssim > f[2].props["PlaneSSIM"] else 0  # type: ignore
+                1 if threshold_ssim > f[2].props["PlaneSSIM"] else 0  # type: ignore[index]
             )
 
         if enable_cambi:
             fout.props["CAMBI"] = cambi_val = f[1].props["CAMBI"]
             fout.props["cambi_err"] = cambi_err = (
-                1 if threshold_cambi < f[1].props["CAMBI"] else 0  # type: ignore
+                1 if threshold_cambi < f[1].props["CAMBI"] else 0  # type: ignore[index]
             )
 
         if cambi_err and enable_cambi:

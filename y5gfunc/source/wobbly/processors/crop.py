@@ -73,7 +73,7 @@ class CropProcessor(BaseProcessor):
 
                 # Update all frame properties
                 for n in frame_props:
-                    frame_props[n].update(crop_props)  # type: ignore
+                    frame_props[n].update(crop_props)  # type: ignore[index]
 
                 # Apply crop
                 clip = core.std.CropRel(

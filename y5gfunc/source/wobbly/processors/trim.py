@@ -68,7 +68,7 @@ class TrimProcessor(BaseProcessor):
                             props.update(
                                 {"WobblyTrimStart": first, "WobblyTrimEnd": last}
                             )
-                            new_frame_props[new_frame_idx] = props  # type: ignore
+                            new_frame_props[new_frame_idx] = props  # type: ignore[index]
                             # Update mapping
                             frame_mapping[new_frame_idx] = i
                             new_frame_idx += 1
@@ -77,6 +77,6 @@ class TrimProcessor(BaseProcessor):
 
             if segments:
                 clip = core.std.Splice(clips=segments)
-                frame_props = new_frame_props  # type: ignore # Update frame property map
+                frame_props = new_frame_props  # type: ignore[assignment] # Update frame property map
 
         return clip, frame_props, frame_mapping

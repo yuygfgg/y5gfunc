@@ -81,13 +81,13 @@ def mux_mkv(
 
     for track_list in (videos, audios, subtitles):
         for track in track_list:
-            track["path"] = resolve_path(track["path"])  # type: ignore
+            track["path"] = resolve_path(track["path"])  # type: ignore[index]
 
     all_files = [track["path"] for track in videos + audios + subtitles] + (
         [chapters] if chapters else []
     )
     for file in all_files:
-        if not file.exists():  # type: ignore
+        if not file.exists():  # type: ignore[union-attr]
             raise FileNotFoundError(f"mux_mkv: Required file not found: {file}")
 
     mkvmerge_cmd = ["mkvmerge", "-o", str(output_path)]

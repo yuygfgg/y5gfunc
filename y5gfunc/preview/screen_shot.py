@@ -39,7 +39,7 @@ def screen_shot(
 
     for i, _ in enumerate(clip.frames()):
         tmp = clip.std.Trim(first=i, last=i).fpng.Write(
-            filename=(output_path / (file_name % frames[i])).with_suffix(".png"),  # type: ignore
+            filename=(output_path / (file_name % frames[i])).with_suffix(".png"),  # type: ignore[union-attr]
             overwrite=overwrite,
             compression=2,
         )

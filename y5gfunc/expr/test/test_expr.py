@@ -166,8 +166,8 @@ class TestMathFunctionsRandomized(TestComprehensiveSuite):
         }
         py_name = py_name_map.get(name, name)
 
-        if hasattr(math, py_name):  # type: ignore
-            return getattr(math, py_name)  # type: ignore
+        if hasattr(math, py_name):  # type: ignore[attr-defined]
+            return getattr(math, py_name)  # type: ignore[attr-defined]
 
         # Custom implementations for functions not in standard math
         py_funcs = {

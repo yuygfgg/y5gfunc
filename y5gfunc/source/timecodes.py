@@ -76,19 +76,19 @@ def clip_to_timecodes(clip: vs.VideoNode, path: Optional[str] = None) -> deque[f
         A deque of timecodes.
     """
     if path:
-        path = resolve_path(path)  # type: ignore
+        path = resolve_path(path)  # type: ignore[union-attr]
 
     timecodes = collections.deque([0.0], maxlen=clip.num_frames + 1)
     curr_time = fractions.Fraction()
     init_percentage = 0
 
-    with open(path, "w", encoding="utf-8") if path else None as file:  # type: ignore
+    with open(path, "w", encoding="utf-8") if path else None as file:  # type: ignore[union-attr]
         if file:
             file.write("# timecode format v2\n")
 
         for _, frame in enumerate(clip.frames()):
-            num: int = frame.props["_DurationNum"]  # type: ignore
-            den: int = frame.props["_DurationDen"]  # type: ignore
+            num: int = frame.props["_DurationNum"]  # type: ignore[index]
+            den: int = frame.props["_DurationDen"]  # type: ignore[index]
             curr_time += fractions.Fraction(num, den)
             timecode = float(curr_time)
             timecodes.append(timecode)

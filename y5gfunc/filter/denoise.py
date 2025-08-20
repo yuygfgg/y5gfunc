@@ -56,9 +56,9 @@ def _get_bm3d_backend() -> tuple[Callable, str]:
             ]
         ):
             if hasattr(core, "bm3dcuda_rtc"):
-                return core.lazy.bm3dcuda_rtc, "bm3dcuda_rtc"  # type: ignore
+                return core.lazy.bm3dcuda_rtc, "bm3dcuda_rtc"  # type: ignore[attr-defined]
             if hasattr(core, "bm3dcuda"):
-                return core.lazy.bm3dcuda, "bm3dcuda"  # type: ignore
+                return core.lazy.bm3dcuda, "bm3dcuda"  # type: ignore[attr-defined]
         elif any(
             s in device_name
             for s in [
@@ -77,12 +77,12 @@ def _get_bm3d_backend() -> tuple[Callable, str]:
             ]
         ):
             if hasattr(core, "bm3dhip"):
-                return core.lazy.bm3dhip, "bm3dhip"  # type: ignore
+                return core.lazy.bm3dhip, "bm3dhip"  # type: ignore[attr-defined]
 
     if hasattr(core, "bm3dsycl") and hasattr(torch, "xpu") and torch.xpu.is_available():
-        return core.lazy.bm3dsycl, "bm3dsycl"  # type: ignore
+        return core.lazy.bm3dsycl, "bm3dsycl"  # type: ignore[attr-defined]
 
-    return core.lazy.bm3dcpu, "bm3dcpu"  # type: ignore
+    return core.lazy.bm3dcpu, "bm3dcpu"  # type: ignore[attr-defined]
 
 
 class BM3DPreset(StrEnum):
@@ -100,7 +100,7 @@ class BM3DPreset(StrEnum):
     MAGIC = "magic"
 
 
-bm3d_presets: dict[str, dict[BM3DPreset, dict[str, int]]] = {
+_bm3d_presets: dict[str, dict[BM3DPreset, dict[str, int]]] = {
     "basic": {
         BM3DPreset.FAST: {"block_step": 8, "bm_range": 9, "ps_num": 2, "ps_range": 4},
         BM3DPreset.LC: {"block_step": 6, "bm_range": 9, "ps_num": 2, "ps_range": 4},
@@ -182,7 +182,8 @@ def Fast_BM3DWrapper(
             If `None` (default), it's set to `BM3DPreset.LC` for GPU backends and `BM3DPreset.FAST` for CPU backends.
         ref: Ref for final BM3D step. If provided, basic step is bypassed.
         opp_matrix: OPP transform type to use.
-        fast: Multi-threaded copy between CPU and GPU at the expense of 4x memory consumption.
+        fast: Multi-threaded copy between CPU and GPU at the expense of 4x memory consumption. Only available for GPU backends.
+            If `None` (default), it's set to `True` for GPU backends and `False` for CPU backends.
 
     Returns:
         Denoised video clip in YUV420P16 format.
@@ -270,16 +271,16 @@ def Fast_BM3DWrapper(
                 "Fast_BM3DWrapper: bm3dcpu does not support argument `fast`"
             )
         params = {
-            "y_basic": bm3d_presets["vbasic" if radius_Y > 0 else "basic"][
+            "y_basic": _bm3d_presets["vbasic" if radius_Y > 0 else "basic"][
                 preset_Y_basic
             ],
-            "y_final": bm3d_presets["vfinal" if radius_Y > 0 else "final"][
+            "y_final": _bm3d_presets["vfinal" if radius_Y > 0 else "final"][
                 preset_Y_final
             ],
-            "chroma_basic": bm3d_presets["vbasic" if radius_chroma > 0 else "basic"][
+            "chroma_basic": _bm3d_presets["vbasic" if radius_chroma > 0 else "basic"][
                 preset_chroma_basic
             ],
-            "chroma_final": bm3d_presets["vfinal" if radius_chroma > 0 else "final"][
+            "chroma_final": _bm3d_presets["vfinal" if radius_chroma > 0 else "final"][
                 preset_chroma_final
             ],
         }
@@ -287,19 +288,19 @@ def Fast_BM3DWrapper(
         if fast is None:
             fast = True
         params = {
-            "y_basic": bm3d_presets["vbasic" if radius_Y > 0 else "basic"][
+            "y_basic": _bm3d_presets["vbasic" if radius_Y > 0 else "basic"][
                 preset_Y_basic
             ]
             | {"fast": fast},
-            "y_final": bm3d_presets["vfinal" if radius_Y > 0 else "final"][
+            "y_final": _bm3d_presets["vfinal" if radius_Y > 0 else "final"][
                 preset_Y_final
             ]
             | {"fast": fast},
-            "chroma_basic": bm3d_presets["vbasic" if radius_chroma > 0 else "basic"][
+            "chroma_basic": _bm3d_presets["vbasic" if radius_chroma > 0 else "basic"][
                 preset_chroma_basic
             ]
             | {"fast": fast},
-            "chroma_final": bm3d_presets["vfinal" if radius_chroma > 0 else "final"][
+            "chroma_final": _bm3d_presets["vfinal" if radius_chroma > 0 else "final"][
                 preset_chroma_final
             ]
             | {"fast": fast},
@@ -310,7 +311,7 @@ def Fast_BM3DWrapper(
     srcY_float, srcU_float, srcV_float = vstools.split(vstools.depth(clip, 32))
 
     if ref is None:
-        basic_y = _bm3d.BM3Dv2(  # type: ignore
+        basic_y = _bm3d.BM3Dv2(
             clip=srcY_float,
             ref=srcY_float,
             sigma=sigma_Y + delta_sigma_Y,
@@ -320,7 +321,7 @@ def Fast_BM3DWrapper(
     else:
         basic_y = vstools.depth(vstools.get_y(ref), 32)
 
-    final_y = _bm3d.BM3Dv2(  # type: ignore
+    final_y = _bm3d.BM3Dv2(
         clip=srcY_float,
         ref=basic_y,
         sigma=sigma_Y,
@@ -336,7 +337,7 @@ def Fast_BM3DWrapper(
         refhalf_opp = to_opp(refhalf444)
 
     if ref is None:
-        basic_half = _bm3d.BM3Dv2(  # type: ignore
+        basic_half = _bm3d.BM3Dv2(
             clip=srchalf_opp,
             ref=srchalf_opp,
             sigma=sigma_chroma + delta_sigma_chroma,
@@ -348,7 +349,7 @@ def Fast_BM3DWrapper(
     else:
         basic_half = refhalf_opp
 
-    final_half = _bm3d.BM3Dv2(  # type: ignore
+    final_half = _bm3d.BM3Dv2(
         clip=srchalf_opp,
         ref=basic_half,
         sigma=sigma_chroma,
@@ -394,7 +395,7 @@ def hybrid_denoise(
 
     if mc_degrain_preset is None:
         mc_degrain_preset = MVToolsPreset(
-            search_clip=prefilter_to_full_range,  # type: ignore
+            search_clip=prefilter_to_full_range,
             pel=2,
             super_args=SuperArgs(sharp=SharpMode.WIENER, rfilter=RFilterMode.TRIANGLE),
             analyze_args=AnalyzeArgs(

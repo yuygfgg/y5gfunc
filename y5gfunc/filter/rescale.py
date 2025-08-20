@@ -304,7 +304,7 @@ def rescale(
 
             while i < prefetch.num_frames:
                 frame = prefetch.get_frame(i)
-                min_index_buffer[frame.props["MinIndex"]] += 1  # type: ignore
+                min_index_buffer[frame.props["MinIndex"]] += 1  # type: ignore[index]
                 if frame.props["Descaled"]:
                     num_descaled += 1
                 scene_length += 1
@@ -403,8 +403,8 @@ def rescale(
             for i in range(len(diffs)):
                 d[f"Diff{i}"] = load_PlaneStatsAverage_exprs[i]
                 params = params_list[i]
-                d[f"KernelId{i}"] = KERNEL_MAP.get(params["Kernel"], 0)  # type: ignore
-                d[f"Bw{i}"] = (params.get("BaseWidth", 0),)  # type: ignore
+                d[f"KernelId{i}"] = KERNEL_MAP.get(params["Kernel"], 0)  # type: ignore[index]
+                d[f"Bw{i}"] = (params.get("BaseWidth", 0),)  # type: ignore[index]
                 d[f"Bh{i}"] = params.get("BaseHeight", 0)
                 d[f"SrcHeight{i}"] = params["SrcHeight"]
                 d[f"B{i}"] = params.get("B", 0)
@@ -509,7 +509,7 @@ def rescale(
         if "src_height" in dargs:
             ssim_downsample_args["src_height"] = dargs["src_height"] * 2
 
-        rescaled = SSIM_downsample(**ssim_downsample_args)  # type: ignore
+        rescaled = SSIM_downsample(**ssim_downsample_args)  # type: ignore[arg-type]
 
         upscaled_clips.append(upscaled)
         rescaled_clips.append(rescaled)

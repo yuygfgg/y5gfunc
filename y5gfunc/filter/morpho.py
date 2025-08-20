@@ -62,7 +62,7 @@ def minimum(
     use_std: bool = is_optimized_cpu(),
 ) -> vs.VideoNode:
     if use_std:
-        return core.std.Minimum(clip, planes, threshold, coordinates)  # type: ignore
+        return core.std.Minimum(clip, planes, threshold, coordinates)  # type: ignore[arg-type]
     else:
         return _create_minmax_expr(
             clip,
@@ -84,7 +84,7 @@ def maximum(
     use_std: bool = is_optimized_cpu(),
 ) -> vs.VideoNode:
     if use_std:
-        return core.std.Maximum(clip, planes, threshold, coordinates)  # type: ignore
+        return core.std.Maximum(clip, planes, threshold, coordinates)  # type: ignore[arg-type]
     else:
         return _create_minmax_expr(
             clip,
@@ -177,7 +177,7 @@ def inflate(
         planes = [planes]
 
     if use_std:
-        return core.std.Inflate(clip, planes, threshold)  # type: ignore
+        return core.std.Inflate(clip, planes, threshold)  # type: ignore[arg-type]
 
     expr_parts = []
 
@@ -211,7 +211,7 @@ def deflate(
         planes = [planes]
 
     if use_std:
-        return core.std.Deflate(clip, planes, threshold)  # type: ignore
+        return core.std.Deflate(clip, planes, threshold)  # type: ignore[arg-type]
 
     expr_parts = []
 

@@ -105,7 +105,7 @@ def apply_frame_properties(
             for key, value in frame_props[n].items():
                 if value is not None:  # Skip None values
                     # VapourSynth doesn't accept None as frame property value
-                    fout.props[key] = value  # type: ignore
+                    fout.props[key] = value  # type: ignore[index]
 
             return fout
         return f

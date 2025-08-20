@@ -358,8 +358,7 @@ _FUNCTION_PATTERN = re.compile(
     r"function\s+(\w+)\s*\(([^)]*)\)\s*\{([^{}]*(?:\{[^{}]*\}[^{}]*)*)\}"
 )
 _BUILD_IN_FUNC_PATTERNS = [
-    re.compile(r)
-    for r in [rf"^{prefix}\d+$" for prefix in ["nth_", "sort"]]
+    re.compile(r) for r in [rf"^{prefix}\d+$" for prefix in ["nth_", "sort"]]
 ]
 _STD_COMPAT_CONST_N_PATTERN = re.compile(r"\$N(?![a-zA-Z0-9_])")
 _STD_COMPAT_CONST_X_PATTERN = re.compile(r"\$X(?![a-zA-Z0-9_])")
@@ -678,8 +677,8 @@ def check_std_compatibility(
             current_function,
         )
 
-    akarin_only_funcs = {"round", "floor", "dyn", "trunc"}
-    if func_name in akarin_only_funcs:
+    akarin_only_functions = {"round", "floor", "dyn", "trunc"}
+    if func_name in akarin_only_functions:
         raise SyntaxError(
             f"Function '{func_name}' is Akarin Only and not supported in std.Expr mode.",
             line_num,

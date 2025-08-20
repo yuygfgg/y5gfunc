@@ -88,7 +88,7 @@ def _MIMO(clips: Sequence[vs.VideoNode], files: Sequence[IO]) -> None:
     for n in range(num_clips):
         if is_y4m[n]:
             clip = clips[n]
-            fileobj = files[n].buffer if buffer[n] else files[n]  # type: ignore
+            fileobj = files[n].buffer if buffer[n] else files[n]  # type: ignore[union-attr]
             data = _y4m_header(clip)
             fileobj.write(data.encode("ascii"))
 
@@ -96,16 +96,16 @@ def _MIMO(clips: Sequence[vs.VideoNode], files: Sequence[IO]) -> None:
     for idx, frame in enumerate(interleaved.frames(close=True)):
         n = idx % num_clips
         clip = clips[n]
-        fileobj = files[n].buffer if buffer[n] else files[n]  # type: ignore
+        fileobj = files[n].buffer if buffer[n] else files[n]  # type: ignore[union-attr]
         finished = idx // num_clips
         if finished < len(clip):
             if is_y4m[n]:
                 fileobj.write(b"FRAME\n")
-            for planeno, plane in enumerate(frame):  # type: ignore
+            for planeno, plane in enumerate(frame):  # type: ignore[arg-type]
                 if (
-                    frame.get_stride(planeno)  # type: ignore
+                    frame.get_stride(planeno)  # type: ignore[arg-type]
                     != plane.shape[1] * clip.format.bytes_per_sample
-                ):  # type: ignore
+                ):  # type: ignore[arg-type]
                     fileobj.write(bytes(plane))
                 else:
                     fileobj.write(plane)
@@ -181,12 +181,12 @@ def encode_video(
         # Allow direct output to stdout when encoder is None
         if encoder is None:
             _MIMO([output_clip], [sys.stdout])
-        elif hasattr(encoder, "write") and callable(encoder.write):  # type: ignore # type: ignore # File-like object
-            _MIMO([output_clip], [encoder])  # type: ignore
+        elif hasattr(encoder, "write") and callable(encoder.write):  # type: ignore[union-attr] # File-like object
+            _MIMO([output_clip], [encoder])  # type: ignore[arg-type]
         else:  # Subprocess.Popen object
-            _MIMO([output_clip], [encoder.stdin])  # type: ignore
-            encoder.communicate()  # type: ignore
-            encoder.wait()  # type: ignore
+            _MIMO([output_clip], [encoder.stdin])  # type: ignore[arg-type]
+            encoder.communicate()  # type: ignore[union-attr]
+            encoder.wait()  # type: ignore[union-attr]
     else:
         assert isinstance(
             encoder, list
@@ -201,25 +201,25 @@ def encode_video(
             isinstance(item, vs.VideoNode) for item in clip
         ), "encode_video: all items in clip must be VideoNodes"
         assert all(
-            clip.format.color_family == vs.YUV for clip in clip  # type: ignore
+            clip.format.color_family == vs.YUV for clip in clip  # type: ignore[index]
         ), "encode_video: all clips must be YUV color family"
         assert all(
-            clip.fps != 0 for clip in clip  # type: ignore
+            clip.fps != 0 for clip in clip  # type: ignore[index]
         ), "encode_video: all clips must be CFR"
 
         output_clips = []
         stdins = []
-        for i, clip in enumerate(clip):  # type: ignore
+        for i, clip in enumerate(clip):  # type: ignore[index]
             output_clips.append(clip)
-            if hasattr(encoder[i], "write") and callable(encoder[i].write):  # type: ignore # File-like object
+            if hasattr(encoder[i], "write") and callable(encoder[i].write):  # type: ignore[union-attr] # File-like object
                 stdins.append(encoder[i])
             else:  # Subprocess.Popen object
                 stdins.append(encoder[i].stdin)
 
-        _MIMO(output_clips, stdins)  # type: ignore
+        _MIMO(output_clips, stdins)  # type: ignore[arg-type]
 
         # Only call communicate and wait for Popen objects
         for i, enc in enumerate(encoder):
-            if not hasattr(enc, "write") or not callable(enc.write):  # type: ignore # Not a file-like object
+            if not hasattr(enc, "write") or not callable(enc.write):  # type: ignore[union-attr] # Not a file-like object
                 enc.communicate()
                 enc.wait()
