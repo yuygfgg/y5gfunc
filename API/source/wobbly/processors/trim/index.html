@@ -3213,7 +3213,7 @@
 <a id="__codelineno-0-68" name="__codelineno-0-68"></a>                        <span class="n">props</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
 <a id="__codelineno-0-69" name="__codelineno-0-69"></a>                            <span class="p">{</span><span class="s2">&quot;WobblyTrimStart&quot;</span><span class="p">:</span> <span class="n">first</span><span class="p">,</span> <span class="s2">&quot;WobblyTrimEnd&quot;</span><span class="p">:</span> <span class="n">last</span><span class="p">}</span>
 <a id="__codelineno-0-70" name="__codelineno-0-70"></a>                        <span class="p">)</span>
-<a id="__codelineno-0-71" name="__codelineno-0-71"></a>                        <span class="n">new_frame_props</span><span class="p">[</span><span class="n">new_frame_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">props</span>  <span class="c1"># type: ignore</span>
+<a id="__codelineno-0-71" name="__codelineno-0-71"></a>                        <span class="n">new_frame_props</span><span class="p">[</span><span class="n">new_frame_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">props</span>  <span class="c1"># type: ignore[index]</span>
 <a id="__codelineno-0-72" name="__codelineno-0-72"></a>                        <span class="c1"># Update mapping</span>
 <a id="__codelineno-0-73" name="__codelineno-0-73"></a>                        <span class="n">frame_mapping</span><span class="p">[</span><span class="n">new_frame_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">i</span>
 <a id="__codelineno-0-74" name="__codelineno-0-74"></a>                        <span class="n">new_frame_idx</span> <span class="o">+=</span> <span class="mi">1</span>
@@ -3222,7 +3222,7 @@
 <a id="__codelineno-0-77" name="__codelineno-0-77"></a>
 <a id="__codelineno-0-78" name="__codelineno-0-78"></a>        <span class="k">if</span> <span class="n">segments</span><span class="p">:</span>
 <a id="__codelineno-0-79" name="__codelineno-0-79"></a>            <span class="n">clip</span> <span class="o">=</span> <span class="n">core</span><span class="o">.</span><span class="n">std</span><span class="o">.</span><span class="n">Splice</span><span class="p">(</span><span class="n">clips</span><span class="o">=</span><span class="n">segments</span><span class="p">)</span>
-<a id="__codelineno-0-80" name="__codelineno-0-80"></a>            <span class="n">frame_props</span> <span class="o">=</span> <span class="n">new_frame_props</span>  <span class="c1"># type: ignore # Update frame property map</span>
+<a id="__codelineno-0-80" name="__codelineno-0-80"></a>            <span class="n">frame_props</span> <span class="o">=</span> <span class="n">new_frame_props</span>  <span class="c1"># type: ignore[assignment] # Update frame property map</span>
 <a id="__codelineno-0-81" name="__codelineno-0-81"></a>
 <a id="__codelineno-0-82" name="__codelineno-0-82"></a>    <span class="k">return</span> <span class="n">clip</span><span class="p">,</span> <span class="n">frame_props</span><span class="p">,</span> <span class="n">frame_mapping</span>
 </code></pre></div></td></tr></table></div>
