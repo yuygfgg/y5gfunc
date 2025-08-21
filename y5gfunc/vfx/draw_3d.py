@@ -672,10 +672,10 @@ def render_model_scene(
         The video clip with the rendered 3D model.
     """
     points_str, faces_str_color = load_mesh(model_path, **mesh_kwargs)
-    points = [
+    points: List[Dict[str, ExprLike]] = [
         {"x": float(p["x"]), "y": float(p["y"]), "z": float(p["z"])} for p in points_str
     ]
-    faces = []
+    faces: List[Dict[str, Any]] = []
     for face in faces_str_color:
         new_face = face.copy()
         if "color" in new_face:
