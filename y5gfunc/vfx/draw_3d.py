@@ -1,5 +1,5 @@
 import math
-from typing import Any, Dict, List, Literal, Tuple
+from typing import Any, Literal, Tuple
 import trimesh
 from vstools import vs
 from ..expr import DSLExpr, Constant, BuiltInFunc, ExprLike, infix2postfix
@@ -324,9 +324,9 @@ def draw_3d_polyhedron(
 
 def render_triangle_scene(
     clip: vs.VideoNode,
-    points: List[Dict[str, ExprLike]],
-    faces: List[Dict[str, Any]],
-    lights: List[Dict[str, ExprLike]],
+    points: list[dict[str, ExprLike]],
+    faces: list[dict[str, Any]],
+    lights: list[dict[str, ExprLike]],
     camX: ExprLike,
     camY: ExprLike,
     camZ: ExprLike,
@@ -639,7 +639,7 @@ def load_mesh(
 def render_model_scene(
     clip: vs.VideoNode,
     model_path: str,
-    lights: List[Dict[str, ExprLike]],
+    lights: list[dict[str, ExprLike]],
     camX: ExprLike,
     camY: ExprLike,
     camZ: ExprLike,
@@ -672,10 +672,10 @@ def render_model_scene(
         The video clip with the rendered 3D model.
     """
     points_str, faces_str_color = load_mesh(model_path, **mesh_kwargs)
-    points: List[Dict[str, ExprLike]] = [
+    points: list[dict[str, ExprLike]] = [
         {"x": float(p["x"]), "y": float(p["y"]), "z": float(p["z"])} for p in points_str
     ]
-    faces: List[Dict[str, Any]] = []
+    faces: list[dict[str, Any]] = []
     for face in faces_str_color:
         new_face = face.copy()
         if "color" in new_face:
