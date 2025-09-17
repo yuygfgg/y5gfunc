@@ -5,7 +5,7 @@ from typing import Optional, Union
 from pathlib import Path
 from ..utils import resolve_path
 from vssource import BestSource, FFMS2, LSMAS
-from vstools import Matrix, Primaries, Transfer
+from vstools import Matrix, Primaries, Transfer, ChromaLocation
 from ..filter import tonemap, ColorSpace
 from .rpu import write_rpu
 
@@ -170,7 +170,9 @@ def load_dv_p7(
     file_path = resolve_path(file_path)
 
     bl = LSMAS.source(
-        file_path, stream_index=bl_index, chroma_location=vs.CHROMA_TOP_LEFT
+        file_path,
+        stream_index=bl_index,
+        chroma_location=ChromaLocation.TOP_LEFT,
     ).resize2.Spline36(format=vs.YUV420P16)
 
     el = (

@@ -196,7 +196,7 @@ def calculate_ternary(
     cond: Union[int, float], true_val: Union[int, float], false_val: Union[int, float]
 ) -> Union[int, float]:
     """Calculate result of ternary operation"""
-    return true_val if cond else false_val
+    return true_val if cond > 0 else false_val
 
 
 @lru_cache
