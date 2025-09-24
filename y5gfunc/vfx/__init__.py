@@ -12,7 +12,7 @@ from .draw_3d import (
     render_model_scene,
     load_mesh,
 )
-from .misc import rotate_image, ZoomMode, BoundaryMode
+from .misc import rotate_image, ZoomMode
 
 __all__ = [
     "draw_line",
@@ -27,5 +27,4 @@ __all__ = [
     "load_mesh",
     "rotate_image",
     "ZoomMode",
-    "BoundaryMode",
 ]
