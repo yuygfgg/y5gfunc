@@ -43,5 +43,4 @@ def screen_shot(
             overwrite=overwrite,
             compression=2,
         )
-        for f in tmp.frames():
-            pass
+        _ = tmp.get_frame(0)
