@@ -506,3 +506,26 @@ def adaptive_denoise(clip: vs.VideoNode, denoised: vs.VideoNode) -> vs.VideoNode
     degrain = core.std.MaskedMerge(denoised, bilateral, amask, first_plane=True)
     clear_edge = core.std.MaskedMerge(degrain, denoised, maximum(GammaMask(denoised)))
     return vstools.join(clear_edge, denoised)
+
+
+def remove_dirt(
+    clip: vs.VideoNode, repmode: int = 16, remgrainmode: int = 17, limit: int = 10
+) -> vs.VideoNode:
+    cleansed = vsrgtools.clense(clip)
+    sbegin = vsrgtools.clense(clip, mode=vsrgtools.rgtools.Clense.Mode.FORWARD)
+    send = vsrgtools.clense(clip, mode=vsrgtools.rgtools.Clense.Mode.BACKWARD)
+    scenechange = core.rdvs.SCSelect(clip, sbegin, send, cleansed)
+    alt = vsrgtools.repair(scenechange, clip, mode=[repmode, repmode, 1])
+    restore = vsrgtools.repair(cleansed, clip, mode=[repmode, repmode, 1])
+    corrected = core.rdvs.RestoreMotionBlocks(
+        cleansed,
+        restore,
+        neighbour=clip,
+        alternative=alt,
+        gmthreshold=70,
+        dist=1,
+        dmode=2,
+        noise=limit,
+        noisy=12,
+    )
+    return remove_grain(corrected, mode=[remgrainmode, remgrainmode, 1])

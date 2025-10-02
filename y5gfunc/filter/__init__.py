@@ -5,6 +5,7 @@ from .denoise import (
     hybrid_denoise,
     magic_denoise,
     adaptive_denoise,
+    remove_dirt,
 )
 from .ivtc import TIVTC_VFR
 from .mask import (
@@ -56,6 +57,7 @@ __all__ = [
     "hybrid_denoise",
     "magic_denoise",
     "adaptive_denoise",
+    "remove_dirt",
     "TIVTC_VFR",
     "DBMask",
     "AnimeMask",
