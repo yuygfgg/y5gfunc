@@ -508,6 +508,7 @@ def adaptive_denoise(clip: vs.VideoNode, denoised: vs.VideoNode) -> vs.VideoNode
     return vstools.join(clear_edge, denoised)
 
 
+# modified from https://forum.doom9.org/showthread.php?p=1992601#post1992601
 def remove_dirt(
     clip: vs.VideoNode, repmode: int = 16, remgrainmode: int = 17, limit: int = 10
 ) -> vs.VideoNode:
