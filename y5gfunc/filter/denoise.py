@@ -82,7 +82,7 @@ def _get_bm3d_backend() -> tuple[Callable, str]:
     if hasattr(core, "bm3dsycl") and hasattr(torch, "xpu") and torch.xpu.is_available():
         return core.lazy.bm3dsycl, "bm3dsycl"  # type: ignore[attr-defined]
 
-    if hasattr(core, "bm3dmetal") and torch.mps.is_available():
+    if hasattr(core, "bm3dmetal") and hasattr(torch, "mps") and torch.mps.is_available():
         return core.lazy.bm3dmetal, "bm3dmetal"  # type: ignore[attr-defined]
 
     return core.lazy.bm3dcpu, "bm3dcpu"  # type: ignore[attr-defined]
