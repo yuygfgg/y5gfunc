@@ -82,7 +82,11 @@ def _get_bm3d_backend() -> tuple[Callable, str]:
     if hasattr(core, "bm3dsycl") and hasattr(torch, "xpu") and torch.xpu.is_available():
         return core.lazy.bm3dsycl, "bm3dsycl"  # type: ignore[attr-defined]
 
-    if hasattr(core, "bm3dmetal") and hasattr(torch, "mps") and torch.mps.is_available():
+    if (
+        hasattr(core, "bm3dmetal")
+        and hasattr(torch, "mps")
+        and torch.mps.is_available()
+    ):
         return core.lazy.bm3dmetal, "bm3dmetal"  # type: ignore[attr-defined]
 
     return core.lazy.bm3dcpu, "bm3dcpu"  # type: ignore[attr-defined]
@@ -143,6 +147,7 @@ def Fast_BM3DWrapper(
     sigma_Y: Union[float, int] = 1.2,
     radius_Y: int = 1,
     delta_sigma_Y: Union[float, int] = 0.6,
+    preset: Optional[BM3DPreset] = None,
     preset_Y_basic: Optional[BM3DPreset] = None,
     preset_Y_final: Optional[BM3DPreset] = None,
     sigma_chroma: Union[float, int] = 2.4,
@@ -166,27 +171,31 @@ def Fast_BM3DWrapper(
     Args:
         clip: Input video clip. Must be in YUV420P16 format.
         bm3d: The BM3D plugin implementation to use. If `None` (default), it will automatically detect and
-            select the best available backend (`bm3dcuda_rtc`, `bm3dcuda`, `bm3dhip`, `bm3dsycl`).
+            select the best available backend (`bm3dcuda_rtc`, `bm3dcuda`, `bm3dhip`, `bm3dsycl`, `bm3dmetal`).
             If no compatible GPU hardware is found, it falls back to `bm3dcpu`.
         chroma: If True, process chroma planes. If False, only luma is processed and original chroma is retained.
         sigma_Y: Denoising strength for the luma plane's final step.
         radius_Y: Temporal radius for luma processing. If > 0, V-BM3D is used.
         delta_sigma_Y: Additional sigma added to `sigma_Y` for the luma plane's basic step.
+        preset: BM3D parameter preset for all steps (basic and final, for both luma and chroma).
+            This is a convenience parameter that sets all four preset_* parameters at once.
+            Individual preset_* parameters will override this if specified.
+            If `None` (default), individual presets default to `BM3DPreset.LC` for GPU backends and `BM3DPreset.FAST` for CPU backends.
         preset_Y_basic: BM3D parameter preset for the luma basic step.
-            If `None` (default), it's set to `BM3DPreset.LC` for GPU backends and `BM3DPreset.FAST` for CPU backends.
+            If `None`, uses `preset` if specified, otherwise defaults based on backend.
         preset_Y_final: BM3D parameter preset for the luma final step.
-            If `None` (default), it's set to `BM3DPreset.LC` for GPU backends and `BM3DPreset.FAST` for CPU backends.
+            If `None`, uses `preset` if specified, otherwise defaults based on backend.
         sigma_chroma: Denoising strength for the chroma planes' final step.
         radius_chroma: Temporal radius for chroma processing. If > 0, V-BM3D is used.
         delta_sigma_chroma: Additional sigma added to `sigma_chroma` for the chroma planes' basic step.
         preset_chroma_basic: BM3D parameter preset for the chroma basic step.
-            If `None` (default), it's set to `BM3DPreset.LC` for GPU backends and `BM3DPreset.FAST` for CPU backends.
+            If `None`, uses `preset` if specified, otherwise defaults based on backend.
         preset_chroma_final: BM3D parameter preset for the chroma final step.
-            If `None` (default), it's set to `BM3DPreset.LC` for GPU backends and `BM3DPreset.FAST` for CPU backends.
+            If `None`, uses `preset` if specified, otherwise defaults based on backend.
         ref: Ref for final BM3D step. If provided, basic step is bypassed.
         opp_matrix: OPP transform type to use.
         fast: Multi-threaded copy between CPU and GPU at the expense of 4x memory consumption. Only available for GPU backends.
-            If `None` (default), it's set to `True` for GPU backends and `False` for CPU backends.
+            If `None` (default), it's set to `True` for non-metal GPU backends and `False` for other backends.
 
     Returns:
         Denoised video clip in YUV420P16 format.
@@ -224,14 +233,15 @@ def Fast_BM3DWrapper(
     is_gpu = "cpu" not in bm3d_s
     default_preset = BM3DPreset.LC if is_gpu else BM3DPreset.FAST
 
+    # Specific preset_* > preset > default_preset
     if preset_Y_basic is None:
-        preset_Y_basic = default_preset
+        preset_Y_basic = preset if preset is not None else default_preset
     if preset_Y_final is None:
-        preset_Y_final = default_preset
+        preset_Y_final = preset if preset is not None else default_preset
     if preset_chroma_basic is None:
-        preset_chroma_basic = default_preset
+        preset_chroma_basic = preset if preset is not None else default_preset
     if preset_chroma_final is None:
-        preset_chroma_final = default_preset
+        preset_chroma_final = preset if preset is not None else default_preset
 
     try:
         to_opp = functools.partial(yuv2opp, matrix_in=matrix, opp_manager=opp_matrix)
@@ -253,20 +263,21 @@ def Fast_BM3DWrapper(
                 format=vs.YUV444PS, matrix=matrix
             )
 
-    for preset in [
+    for p in [
+        preset,
         preset_Y_basic,
         preset_Y_final,
         preset_chroma_basic,
         preset_chroma_final,
     ]:
-        if preset not in [
+        if p is not None and p not in [
             BM3DPreset.FAST,
             BM3DPreset.LC,
             BM3DPreset.NP,
             BM3DPreset.HIGH,
             BM3DPreset.MAGIC,
         ]:
-            raise ValueError(f"Fast_BM3DWrapper: Unknown preset {preset}.")
+            raise ValueError(f"Fast_BM3DWrapper: Unknown preset {p}.")
 
     if "cpu" in bm3d_s:
         if fast is not None:
@@ -289,7 +300,9 @@ def Fast_BM3DWrapper(
         }
     else:
         if fast is None:
-            fast = True
+            fast = (
+                "metal" not in bm3d_s
+            )  # TODO: get a Intel Mac with AMD GPU to test. For Apple SoC `fast` should be False
         params = {
             "y_basic": _bm3d_presets["vbasic" if radius_Y > 0 else "basic"][
                 preset_Y_basic

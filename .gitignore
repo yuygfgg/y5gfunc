@@ -3,3 +3,4 @@ checks.json
 *.pyc
 y5gfunc.egg-info/*
 .cursor/rules/codacy.mdc
+.codacy/*
