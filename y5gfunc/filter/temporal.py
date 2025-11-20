@@ -1,6 +1,17 @@
-from vstools import core
+from vstools import ColorRange, core, get_peak_value
 from vstools import vs
 from vstools import get_neutral_value
+from vsdenoise import (
+    AnalyzeArgs,
+    MVToolsPreset,
+    MotionMode,
+    RFilterMode,
+    RecalculateArgs,
+    SADMode,
+    SuperArgs,
+    mc_degrain,
+)
+import vstools
 
 
 # modified from vsTaambk
@@ -80,3 +91,31 @@ def temporal_stabilize(
     )
     clip_stabilized = core.std.MakeDiff(ref_clip, diff_stabilized)
     return clip_stabilized
+
+
+# modified from https://discord.com/channels/1168547111139283026/1168591112160690227/1440944892854669402
+def reduce_fliker(clip: vs.VideoNode, tr: int = 5):
+    mv_preset = MVToolsPreset(
+        super_args=SuperArgs(rfilter=RFilterMode.CUBIC),
+        analyze_args=AnalyzeArgs(
+            dct=SADMode.DCT,
+            truemotion=MotionMode.SAD,
+        ),
+        recalculate_args=RecalculateArgs(
+            dct=SADMode.DCT,
+            truemotion=MotionMode.SAD,
+        ),
+    )
+
+    clip = vstools.get_y(clip).std.PlaneStats()
+
+    exprs = [
+        f"x.PlaneStatsAverage {get_peak_value(clip, flag, ColorRange.FULL)} *"
+        for flag in ([False, True] if clip.format.num_planes > 1 else [False])
+    ]
+
+    avgluma = core.akarin.Expr(clip, exprs)
+    smoothed = mc_degrain(
+        avgluma, prefilter=clip, preset=mv_preset, tr=tr, refine=0, blksize=8
+    )
+    return core.akarin.Expr([clip, avgluma, smoothed], "x y - z +")

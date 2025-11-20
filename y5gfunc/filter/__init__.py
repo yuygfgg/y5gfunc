@@ -37,7 +37,7 @@ from .resample import (
 from .stripe import is_stripe
 from .morpho import convolution, maximum, minimum, inflate, deflate
 from .scenecut import scd_koala
-from .temporal import temporal_stabilize
+from .temporal import temporal_stabilize, reduce_fliker
 from .aa import double_aa
 from .dehalo import simple_dehalo
 from .tonemap import (
@@ -89,6 +89,7 @@ __all__ = [
     "deflate",
     "scd_koala",
     "temporal_stabilize",
+    "reduce_fliker",
     "nn2x",
     "Gammarize",
     "double_aa",

@@ -24,7 +24,7 @@ from .expr import (
     BuiltInFunc,
     DSLExpr,
     ExprLike,
-    varname_toggle
+    varname_toggle,
 )
 from .filter import (
     sakiko_deband,
@@ -66,6 +66,7 @@ from .filter import (
     deflate,
     scd_koala,
     temporal_stabilize,
+    reduce_fliker,
     nn2x,
     double_aa,
     simple_dehalo,
@@ -146,6 +147,7 @@ __all__ = [
     "deflate",
     "scd_koala",
     "temporal_stabilize",
+    "reduce_fliker",
     "postfix2infix",
     "infix2postfix",
     "to_std_expr",
