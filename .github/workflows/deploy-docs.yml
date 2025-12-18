@@ -38,7 +38,7 @@ jobs:
 
       - name: Add CNAME file
         run: |
-          echo "docs.yuygfgg.xyz" > ./docs/CNAME
+          echo "y5gfunc.docs.yuygfgg.xyz" > ./docs/CNAME
 
       - name: Deploy documentation
         env:
