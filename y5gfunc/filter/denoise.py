@@ -559,8 +559,8 @@ def immerkaer(
 ) -> vs.VideoNode:
     r"""
     Estimate the noise standard deviation of a clip using Immerkaer's method.
-    
-    Noise strength (sigma) is defined as the standard deviation of the AWGN component, 
+
+    Noise strength (sigma) is defined as the standard deviation of the AWGN component,
     implying $Noise \sim \mathcal{N}(0, \sigma^2)$ on a $0\text{-}255$ scale.
 
     Args:
@@ -578,7 +578,7 @@ def immerkaer(
 
     Raises:
         ValueError: If a specified plane index is larger than the number of planes in the clip.
-    
+
     Reference:
         John Immerkær, "Fast Noise Variance Estimation," Computer Vision and Image
         Understanding, vol. 64, no. 2, pp. 300-302, 1996.
@@ -599,7 +599,11 @@ def immerkaer(
         conv_rpn if i in planes else "0" for i in range(clip.format.num_planes)
     ]
 
-    conv = core.llvmexpr.VkExpr(clip, expr_list) if gpu else core.llvmexpr.Expr(clip, expr_list)
+    conv = (
+        core.llvmexpr.VkExpr(clip, expr_list)
+        if gpu
+        else core.llvmexpr.Expr(clip, expr_list)
+    )
 
     conv = conv.std.Crop(left=2, right=2, top=2, bottom=2)
 
@@ -621,8 +625,11 @@ def immerkaer(
 
     return core.std.CopyFrameProps(clip, sigma, [f"{prop_name}{i}" for i in planes])
 
+
+# Inspired by https://github.com/Gabriella-Chaos/spanns
 def rmt_analyze(
     clip: vs.VideoNode,
+    planes: list[int] | int | None = None,
     prop_name: str = "RMTSigma",
     patch_size: int = 10,
     n_patches: int = 2000,
@@ -631,14 +638,16 @@ def rmt_analyze(
 ) -> vs.VideoNode:
     r"""
     Estimate the noise standard deviation of a clip using Random Matrix Theory.
-    
-    Noise strength (sigma) is defined as the standard deviation of the AWGN component, 
+
+    Noise strength (sigma) is defined as the standard deviation of the AWGN component,
     implying $Noise \sim \mathcal{N}(0, \sigma^2)$ on a $0\text{-}1$ scale. The estimation
     is performed by analyzing the eigenvalue distribution of the covariance matrix of
     random patches extracted from the frame and fitting it to the Marchenko-Pastur law.
 
     Args:
-        clip: The input video clip. All planes will be processed.
+        clip: The input video clip.
+        planes: The index or list of indices of the planes to process.
+            If None, all planes are processed.
         prop_name: The prefix for the generated frame property.
             The final property name will be f"{prop_name}{plane_index}"
             (e.g., "RMTSigma0" for the Y plane).
@@ -653,15 +662,30 @@ def rmt_analyze(
 
     Raises:
         ValueError: If `cutoff` is not between 0 and 1.
+        ValueError: If a specified plane index is larger than the number of planes in the clip.
         ValueError: If `patch_size` is not positive or is larger than the smallest plane dimension.
         ValueError: If `n_patches` is not positive or is greater than the number of available unique patches.
     """
     if not (0 < cutoff < 1):
-        raise ValueError(f"rmt_analyze: cutoff must be between 0 and 1 (exclusive), but got {cutoff}")
+        raise ValueError(
+            f"rmt_analyze: cutoff must be between 0 and 1 (exclusive), but got {cutoff}"
+        )
     if patch_size <= 0:
-        raise ValueError(f"rmt_analyze: patch_size must be a positive integer, but got {patch_size}")
+        raise ValueError(
+            f"rmt_analyze: patch_size must be a positive integer, but got {patch_size}"
+        )
     if n_patches <= 0:
-        raise ValueError(f"rmt_analyze: n_patches must be a positive integer, but got {n_patches}")
+        raise ValueError(
+            f"rmt_analyze: n_patches must be a positive integer, but got {n_patches}"
+        )
+
+    if planes is None:
+        planes = list(range(0, clip.format.num_planes))
+    elif isinstance(planes, int):
+        planes = [planes]
+
+    if min(planes) < 0 or max(planes) >= clip.format.num_planes:
+        raise ValueError("rmt_analyze: Plane index out of range.")
 
     min_width = clip.width >> clip.format.subsampling_w
     min_height = clip.height >> clip.format.subsampling_h
@@ -689,7 +713,9 @@ def rmt_analyze(
         inclusive: str = "both",
     ) -> np.ndarray:
         if start is None and stop is None:
-            raise ValueError("Error: provide start and/or stop for the indicator function.")
+            raise ValueError(
+                "Error: provide start and/or stop for the indicator function."
+            )
         left_inclusive = inclusive in {"both", "left"}
         right_inclusive = inclusive in {"both", "right"}
 
@@ -801,7 +827,8 @@ def rmt_analyze(
                 / (2 * np.pi * ratio)
                 * (
                     np.pi * ratio
-                    + (1 / var) * np.sqrt(_relu(lambda_plus - x) * _relu(x - lambda_minus))
+                    + (1 / var)
+                    * np.sqrt(_relu(lambda_plus - x) * _relu(x - lambda_minus))
                     - (1 + ratio) * first_term
                     + (1 - ratio) * second_term
                 )
@@ -868,7 +895,7 @@ def rmt_analyze(
     def _estimator(n: int, f: vs.VideoFrame) -> vs.VideoFrame:
         fout = f.copy()
 
-        for p in range(fout.format.num_planes):
+        for p in planes:
             plane_array = np.asarray(fout[p])
 
             if max_val != 1.0:
@@ -876,9 +903,7 @@ def rmt_analyze(
             else:
                 plane_norm = plane_array.astype(np.float64)
 
-            X = _get_random_patches(
-                plane_norm, patch_size, n_patches, seed + n
-            )
+            X = _get_random_patches(plane_norm, patch_size, n_patches, seed + n)
             N, M = X.shape
 
             sigma_result = 0.0
@@ -902,4 +927,4 @@ def rmt_analyze(
 
         return fout
 
-    return vs.core.std.ModifyFrame(clip, clip, _estimator)
+    return core.std.ModifyFrame(clip, clip, _estimator)
