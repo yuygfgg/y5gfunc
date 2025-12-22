@@ -6,6 +6,7 @@ from .denoise import (
     magic_denoise,
     adaptive_denoise,
     remove_dirt,
+    immerkaer,
 )
 from .ivtc import TIVTC_VFR
 from .mask import (
@@ -48,6 +49,7 @@ from .tonemap import (
     Metadata,
     tonemap,
 )
+from .noise import add_noise
 from .utils import get_peak_value_full, is_optimized_cpu
 
 __all__ = [
@@ -57,6 +59,7 @@ __all__ = [
     "hybrid_denoise",
     "magic_denoise",
     "adaptive_denoise",
+    "immerkaer",
     "remove_dirt",
     "TIVTC_VFR",
     "DBMask",
@@ -100,6 +103,7 @@ __all__ = [
     "ToneMappingFunction",
     "Metadata",
     "tonemap",
+    "add_noise",
     "get_peak_value_full",
     "is_optimized_cpu",
 ]

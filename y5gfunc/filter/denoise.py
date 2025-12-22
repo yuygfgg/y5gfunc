@@ -546,3 +546,74 @@ def remove_dirt(
         noisy=12,
     )
     return remove_grain(corrected, mode=[remgrainmode, remgrainmode, 1])
+
+
+def immerkaer(
+    clip: vs.VideoNode,
+    planes: list[int] | int | None = None,
+    prop_name: str = "NoiseSigma",
+    gpu: bool = False,
+) -> vs.VideoNode:
+    r"""
+    Estimate the noise standard deviation of a clip using Immerkaer's method.
+    
+    Noise strength (sigma) is defined as the standard deviation of the AWGN component, 
+    implying $Noise \sim \mathcal{N}(0, \sigma^2)$ on a $0\text{-}255$ scale.
+
+    Args:
+        clip: The input video clip.
+        planes: The index or list of indices of the planes to process.
+            If None, all planes are processed.
+        prop_name: The prefix for the generated frame property.
+            The final property name will be f"{prop_name}{plane_index}"
+            (e.g., "NoiseSigma0" for the Y plane).
+        gpu: Whether to use GPU acceleration.
+
+    Returns:
+        The input clip with the estimated noise sigma attached as frame
+        properties for the requested planes.
+
+    Raises:
+        ValueError: If a specified plane index is larger than the number of planes in the clip.
+    
+    Reference:
+        John Immerkær, "Fast Noise Variance Estimation," Computer Vision and Image
+        Understanding, vol. 64, no. 2, pp. 300-302, 1996.
+        https://doi.org/10.1006/cviu.1996.0060
+    """
+
+    if planes is None:
+        planes = list(range(0, clip.format.num_planes))
+    elif isinstance(planes, int):
+        planes = [planes]
+
+    if max(planes) >= clip.format.num_planes:
+        raise ValueError("immerkaer: Plane index out of range.")
+
+    conv_rpn = "x[-1,-1] x[1,-1] + x[-1,1] + x[1,1] + x[0,-1] x[-1,0] + x[1,0] + x[0,1] + -2 * + x 4 * + abs"
+
+    expr_list = [
+        conv_rpn if i in planes else "0" for i in range(clip.format.num_planes)
+    ]
+
+    conv = core.llvmexpr.VkExpr(clip, expr_list) if gpu else core.llvmexpr.Expr(clip, expr_list)
+
+    conv = conv.std.Crop(left=2, right=2, top=2, bottom=2)
+
+    prop = conv
+    for i in planes:
+        prop = core.std.PlaneStats(prop, plane=i, prop=f"Immerkaer{i}")
+
+    assert prop
+
+    sigma = core.llvmexpr.SingleExpr(
+        prop,
+        " ".join(
+            [
+                f"x.Immerkaer{i}Average pi 0.5 * sqrt * 6 / 255 * {prop_name}{i}$f"
+                for i in planes
+            ]
+        ),
+    )
+
+    return core.std.CopyFrameProps(clip, sigma, [f"{prop_name}{i}" for i in planes])

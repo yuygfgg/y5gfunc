@@ -4,3 +4,7 @@ checks.json
 y5gfunc.egg-info/*
 .cursor/rules/codacy.mdc
 .codacy/*
+
+
+#Ignore vscode AI rules
+.github/instructions/codacy.instructions.md
