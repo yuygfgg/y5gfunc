@@ -7,6 +7,7 @@ from .denoise import (
     adaptive_denoise,
     remove_dirt,
     immerkaer,
+    rmt_analyze,
 )
 from .ivtc import TIVTC_VFR
 from .mask import (
@@ -60,6 +61,7 @@ __all__ = [
     "magic_denoise",
     "adaptive_denoise",
     "immerkaer",
+    "rmt_analyze",
     "remove_dirt",
     "TIVTC_VFR",
     "DBMask",
