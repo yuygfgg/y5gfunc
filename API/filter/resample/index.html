@@ -11,7 +11,7 @@
       
       
       
-        <link rel="prev" href="../morpho/">
+        <link rel="prev" href="../noise/">
       
       
         <link rel="next" href="../rescale/">
@@ -21,7 +21,7 @@
       
       
       <link rel="icon" href="../../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.0">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.1">
     
     
       
@@ -29,7 +29,7 @@
       
     
     
-      <link rel="stylesheet" href="../../../assets/stylesheets/main.618322db.min.css">
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.484c7ddc.min.css">
       
         
         <link rel="stylesheet" href="../../../assets/stylesheets/palette.ab4e12ef.min.css">
@@ -1521,6 +1521,34 @@
     
   
     morpho
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../noise/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    noise
   
 
     
@@ -4911,24 +4939,18 @@
 <span class="normal"><a href="#__codelineno-0-389">389</a></span>
 <span class="normal"><a href="#__codelineno-0-390">390</a></span>
 <span class="normal"><a href="#__codelineno-0-391">391</a></span>
-<span class="normal"><a href="#__codelineno-0-392">392</a></span>
-<span class="normal"><a href="#__codelineno-0-393">393</a></span>
-<span class="normal"><a href="#__codelineno-0-394">394</a></span>
-<span class="normal"><a href="#__codelineno-0-395">395</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-381" name="__codelineno-0-381"></a><span class="k">def</span><span class="w"> </span><span class="nf">nn2x</span><span class="p">(</span>
+<span class="normal"><a href="#__codelineno-0-392">392</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-381" name="__codelineno-0-381"></a><span class="k">def</span><span class="w"> </span><span class="nf">nn2x</span><span class="p">(</span>
 <a id="__codelineno-0-382" name="__codelineno-0-382"></a>    <span class="n">clip</span><span class="p">:</span> <span class="n">vs</span><span class="o">.</span><span class="n">VideoNode</span><span class="p">,</span>
 <a id="__codelineno-0-383" name="__codelineno-0-383"></a>    <span class="n">opencl</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
 <a id="__codelineno-0-384" name="__codelineno-0-384"></a>    <span class="n">nnedi3_args</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;field&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;nsize&quot;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span> <span class="s2">&quot;nns&quot;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span> <span class="s2">&quot;qual&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">},</span>
 <a id="__codelineno-0-385" name="__codelineno-0-385"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">vs</span><span class="o">.</span><span class="n">VideoNode</span><span class="p">:</span>
 <a id="__codelineno-0-386" name="__codelineno-0-386"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Doubles the resolution of input clip with nnedi3.&quot;&quot;&quot;</span>
-<a id="__codelineno-0-387" name="__codelineno-0-387"></a>    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">core</span><span class="p">,</span> <span class="s2">&quot;sneedif&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">opencl</span><span class="p">:</span>
-<a id="__codelineno-0-388" name="__codelineno-0-388"></a>        <span class="n">nnedi3</span> <span class="o">=</span> <span class="n">functools</span><span class="o">.</span><span class="n">partial</span><span class="p">(</span><span class="n">core</span><span class="o">.</span><span class="n">sneedif</span><span class="o">.</span><span class="n">NNEDI3</span><span class="p">,</span> <span class="o">**</span><span class="n">nnedi3_args</span><span class="p">)</span>
+<a id="__codelineno-0-387" name="__codelineno-0-387"></a>    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">core</span><span class="p">,</span> <span class="s2">&quot;nnedi3cl&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">opencl</span><span class="p">:</span>
+<a id="__codelineno-0-388" name="__codelineno-0-388"></a>        <span class="n">nnedi3</span> <span class="o">=</span> <span class="n">functools</span><span class="o">.</span><span class="n">partial</span><span class="p">(</span><span class="n">core</span><span class="o">.</span><span class="n">nnedi3cl</span><span class="o">.</span><span class="n">NNEDI3CL</span><span class="p">,</span> <span class="o">**</span><span class="n">nnedi3_args</span><span class="p">)</span>
 <a id="__codelineno-0-389" name="__codelineno-0-389"></a>        <span class="k">return</span> <span class="n">nnedi3</span><span class="p">(</span><span class="n">nnedi3</span><span class="p">(</span><span class="n">clip</span><span class="p">,</span> <span class="n">dh</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span> <span class="n">dw</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<a id="__codelineno-0-390" name="__codelineno-0-390"></a>    <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">core</span><span class="p">,</span> <span class="s2">&quot;nnedi3cl&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">opencl</span><span class="p">:</span>
-<a id="__codelineno-0-391" name="__codelineno-0-391"></a>        <span class="n">nnedi3</span> <span class="o">=</span> <span class="n">functools</span><span class="o">.</span><span class="n">partial</span><span class="p">(</span><span class="n">core</span><span class="o">.</span><span class="n">nnedi3cl</span><span class="o">.</span><span class="n">NNEDI3CL</span><span class="p">,</span> <span class="o">**</span><span class="n">nnedi3_args</span><span class="p">)</span>
-<a id="__codelineno-0-392" name="__codelineno-0-392"></a>        <span class="k">return</span> <span class="n">nnedi3</span><span class="p">(</span><span class="n">nnedi3</span><span class="p">(</span><span class="n">clip</span><span class="p">,</span> <span class="n">dh</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span> <span class="n">dw</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<a id="__codelineno-0-393" name="__codelineno-0-393"></a>    <span class="k">else</span><span class="p">:</span>
-<a id="__codelineno-0-394" name="__codelineno-0-394"></a>        <span class="n">nnedi3</span> <span class="o">=</span> <span class="n">functools</span><span class="o">.</span><span class="n">partial</span><span class="p">(</span><span class="n">core</span><span class="o">.</span><span class="n">nnedi3</span><span class="o">.</span><span class="n">nnedi3</span><span class="p">,</span> <span class="o">**</span><span class="n">nnedi3_args</span><span class="p">)</span>
-<a id="__codelineno-0-395" name="__codelineno-0-395"></a>        <span class="k">return</span> <span class="n">nnedi3</span><span class="p">(</span><span class="n">nnedi3</span><span class="p">(</span><span class="n">clip</span><span class="p">,</span> <span class="n">dh</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">std</span><span class="o">.</span><span class="n">Transpose</span><span class="p">(),</span> <span class="n">dh</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">std</span><span class="o">.</span><span class="n">Transpose</span><span class="p">()</span>
+<a id="__codelineno-0-390" name="__codelineno-0-390"></a>    <span class="k">else</span><span class="p">:</span>
+<a id="__codelineno-0-391" name="__codelineno-0-391"></a>        <span class="n">nnedi3</span> <span class="o">=</span> <span class="n">functools</span><span class="o">.</span><span class="n">partial</span><span class="p">(</span><span class="n">core</span><span class="o">.</span><span class="n">nnedi3</span><span class="o">.</span><span class="n">nnedi3</span><span class="p">,</span> <span class="o">**</span><span class="n">nnedi3_args</span><span class="p">)</span>
+<a id="__codelineno-0-392" name="__codelineno-0-392"></a>        <span class="k">return</span> <span class="n">nnedi3</span><span class="p">(</span><span class="n">nnedi3</span><span class="p">(</span><span class="n">clip</span><span class="p">,</span> <span class="n">dh</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">std</span><span class="o">.</span><span class="n">Transpose</span><span class="p">(),</span> <span class="n">dh</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">std</span><span class="o">.</span><span class="n">Transpose</span><span class="p">()</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -4951,7 +4973,10 @@
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>y5gfunc/filter/resample.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-399">399</a></span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-396">396</a></span>
+<span class="normal"><a href="#__codelineno-0-397">397</a></span>
+<span class="normal"><a href="#__codelineno-0-398">398</a></span>
+<span class="normal"><a href="#__codelineno-0-399">399</a></span>
 <span class="normal"><a href="#__codelineno-0-400">400</a></span>
 <span class="normal"><a href="#__codelineno-0-401">401</a></span>
 <span class="normal"><a href="#__codelineno-0-402">402</a></span>
@@ -4967,29 +4992,26 @@
 <span class="normal"><a href="#__codelineno-0-412">412</a></span>
 <span class="normal"><a href="#__codelineno-0-413">413</a></span>
 <span class="normal"><a href="#__codelineno-0-414">414</a></span>
-<span class="normal"><a href="#__codelineno-0-415">415</a></span>
-<span class="normal"><a href="#__codelineno-0-416">416</a></span>
-<span class="normal"><a href="#__codelineno-0-417">417</a></span>
-<span class="normal"><a href="#__codelineno-0-418">418</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-399" name="__codelineno-0-399"></a><span class="k">def</span><span class="w"> </span><span class="nf">Gammarize</span><span class="p">(</span><span class="n">clip</span><span class="p">:</span> <span class="n">vs</span><span class="o">.</span><span class="n">VideoNode</span><span class="p">,</span> <span class="n">gamma</span><span class="p">,</span> <span class="n">tvrange</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">vs</span><span class="o">.</span><span class="n">VideoNode</span><span class="p">:</span>
-<a id="__codelineno-0-400" name="__codelineno-0-400"></a>    <span class="k">if</span> <span class="n">clip</span><span class="o">.</span><span class="n">format</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;YUV&quot;</span><span class="p">):</span>
-<a id="__codelineno-0-401" name="__codelineno-0-401"></a>        <span class="n">is_yuv</span> <span class="o">=</span> <span class="kc">True</span>
-<a id="__codelineno-0-402" name="__codelineno-0-402"></a>        <span class="n">y</span> <span class="o">=</span> <span class="n">get_y</span><span class="p">(</span><span class="n">clip</span><span class="p">)</span>
-<a id="__codelineno-0-403" name="__codelineno-0-403"></a>    <span class="k">elif</span> <span class="n">clip</span><span class="o">.</span><span class="n">format</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;Gray&quot;</span><span class="p">):</span>
-<a id="__codelineno-0-404" name="__codelineno-0-404"></a>        <span class="n">is_yuv</span> <span class="o">=</span> <span class="kc">False</span>
-<a id="__codelineno-0-405" name="__codelineno-0-405"></a>        <span class="n">y</span> <span class="o">=</span> <span class="n">clip</span>
-<a id="__codelineno-0-406" name="__codelineno-0-406"></a>    <span class="k">else</span><span class="p">:</span>
-<a id="__codelineno-0-407" name="__codelineno-0-407"></a>        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Gammarize: Input clip must be either YUV or GRAY.&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-408" name="__codelineno-0-408"></a>
-<a id="__codelineno-0-409" name="__codelineno-0-409"></a>    <span class="nb">range</span> <span class="o">=</span> <span class="n">ColorRange</span><span class="o">.</span><span class="n">LIMITED</span> <span class="k">if</span> <span class="n">tvrange</span> <span class="k">else</span> <span class="n">ColorRange</span><span class="o">.</span><span class="n">FULL</span>
-<a id="__codelineno-0-410" name="__codelineno-0-410"></a>
-<a id="__codelineno-0-411" name="__codelineno-0-411"></a>    <span class="n">thrl</span> <span class="o">=</span> <span class="n">get_lowest_value</span><span class="p">(</span><span class="n">clip</span><span class="p">,</span> <span class="n">range_in</span><span class="o">=</span><span class="nb">range</span><span class="p">)</span>
-<a id="__codelineno-0-412" name="__codelineno-0-412"></a>    <span class="n">thrh</span> <span class="o">=</span> <span class="n">get_peak_value</span><span class="p">(</span><span class="n">clip</span><span class="p">,</span> <span class="n">range_in</span><span class="o">=</span><span class="nb">range</span><span class="p">)</span>
-<a id="__codelineno-0-413" name="__codelineno-0-413"></a>    <span class="n">rng</span> <span class="o">=</span> <span class="n">scale_mask</span><span class="p">(</span><span class="mi">219</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="n">clip</span><span class="p">)</span> <span class="k">if</span> <span class="n">tvrange</span> <span class="k">else</span> <span class="n">scale_mask</span><span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="n">clip</span><span class="p">)</span>
-<a id="__codelineno-0-414" name="__codelineno-0-414"></a>    <span class="n">corrected</span> <span class="o">=</span> <span class="n">y</span><span class="o">.</span><span class="n">akarin</span><span class="o">.</span><span class="n">Expr</span><span class="p">(</span>
-<a id="__codelineno-0-415" name="__codelineno-0-415"></a>        <span class="sa">f</span><span class="s2">&quot;x </span><span class="si">{</span><span class="n">rng</span><span class="si">}</span><span class="s2"> / </span><span class="si">{</span><span class="n">gamma</span><span class="si">}</span><span class="s2"> pow </span><span class="si">{</span><span class="n">rng</span><span class="si">}</span><span class="s2"> * </span><span class="si">{</span><span class="n">thrl</span><span class="si">}</span><span class="s2"> + </span><span class="si">{</span><span class="n">thrl</span><span class="si">}</span><span class="s2"> max </span><span class="si">{</span><span class="n">thrh</span><span class="si">}</span><span class="s2"> min&quot;</span>
-<a id="__codelineno-0-416" name="__codelineno-0-416"></a>    <span class="p">)</span>
-<a id="__codelineno-0-417" name="__codelineno-0-417"></a>
-<a id="__codelineno-0-418" name="__codelineno-0-418"></a>    <span class="k">return</span> <span class="n">join</span><span class="p">(</span><span class="n">corrected</span><span class="p">,</span> <span class="n">clip</span><span class="p">)</span> <span class="k">if</span> <span class="n">is_yuv</span> <span class="k">else</span> <span class="n">corrected</span>
+<span class="normal"><a href="#__codelineno-0-415">415</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-396" name="__codelineno-0-396"></a><span class="k">def</span><span class="w"> </span><span class="nf">Gammarize</span><span class="p">(</span><span class="n">clip</span><span class="p">:</span> <span class="n">vs</span><span class="o">.</span><span class="n">VideoNode</span><span class="p">,</span> <span class="n">gamma</span><span class="p">,</span> <span class="n">tvrange</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">vs</span><span class="o">.</span><span class="n">VideoNode</span><span class="p">:</span>
+<a id="__codelineno-0-397" name="__codelineno-0-397"></a>    <span class="k">if</span> <span class="n">clip</span><span class="o">.</span><span class="n">format</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;YUV&quot;</span><span class="p">):</span>
+<a id="__codelineno-0-398" name="__codelineno-0-398"></a>        <span class="n">is_yuv</span> <span class="o">=</span> <span class="kc">True</span>
+<a id="__codelineno-0-399" name="__codelineno-0-399"></a>        <span class="n">y</span> <span class="o">=</span> <span class="n">get_y</span><span class="p">(</span><span class="n">clip</span><span class="p">)</span>
+<a id="__codelineno-0-400" name="__codelineno-0-400"></a>    <span class="k">elif</span> <span class="n">clip</span><span class="o">.</span><span class="n">format</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;Gray&quot;</span><span class="p">):</span>
+<a id="__codelineno-0-401" name="__codelineno-0-401"></a>        <span class="n">is_yuv</span> <span class="o">=</span> <span class="kc">False</span>
+<a id="__codelineno-0-402" name="__codelineno-0-402"></a>        <span class="n">y</span> <span class="o">=</span> <span class="n">clip</span>
+<a id="__codelineno-0-403" name="__codelineno-0-403"></a>    <span class="k">else</span><span class="p">:</span>
+<a id="__codelineno-0-404" name="__codelineno-0-404"></a>        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Gammarize: Input clip must be either YUV or GRAY.&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-405" name="__codelineno-0-405"></a>
+<a id="__codelineno-0-406" name="__codelineno-0-406"></a>    <span class="nb">range</span> <span class="o">=</span> <span class="n">ColorRange</span><span class="o">.</span><span class="n">LIMITED</span> <span class="k">if</span> <span class="n">tvrange</span> <span class="k">else</span> <span class="n">ColorRange</span><span class="o">.</span><span class="n">FULL</span>
+<a id="__codelineno-0-407" name="__codelineno-0-407"></a>
+<a id="__codelineno-0-408" name="__codelineno-0-408"></a>    <span class="n">thrl</span> <span class="o">=</span> <span class="n">get_lowest_value</span><span class="p">(</span><span class="n">clip</span><span class="p">,</span> <span class="n">range_in</span><span class="o">=</span><span class="nb">range</span><span class="p">)</span>
+<a id="__codelineno-0-409" name="__codelineno-0-409"></a>    <span class="n">thrh</span> <span class="o">=</span> <span class="n">get_peak_value</span><span class="p">(</span><span class="n">clip</span><span class="p">,</span> <span class="n">range_in</span><span class="o">=</span><span class="nb">range</span><span class="p">)</span>
+<a id="__codelineno-0-410" name="__codelineno-0-410"></a>    <span class="n">rng</span> <span class="o">=</span> <span class="n">scale_mask</span><span class="p">(</span><span class="mi">219</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="n">clip</span><span class="p">)</span> <span class="k">if</span> <span class="n">tvrange</span> <span class="k">else</span> <span class="n">scale_mask</span><span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="n">clip</span><span class="p">)</span>
+<a id="__codelineno-0-411" name="__codelineno-0-411"></a>    <span class="n">corrected</span> <span class="o">=</span> <span class="n">y</span><span class="o">.</span><span class="n">akarin</span><span class="o">.</span><span class="n">Expr</span><span class="p">(</span>
+<a id="__codelineno-0-412" name="__codelineno-0-412"></a>        <span class="sa">f</span><span class="s2">&quot;x </span><span class="si">{</span><span class="n">rng</span><span class="si">}</span><span class="s2"> / </span><span class="si">{</span><span class="n">gamma</span><span class="si">}</span><span class="s2"> pow </span><span class="si">{</span><span class="n">rng</span><span class="si">}</span><span class="s2"> * </span><span class="si">{</span><span class="n">thrl</span><span class="si">}</span><span class="s2"> + </span><span class="si">{</span><span class="n">thrl</span><span class="si">}</span><span class="s2"> max </span><span class="si">{</span><span class="n">thrh</span><span class="si">}</span><span class="s2"> min&quot;</span>
+<a id="__codelineno-0-413" name="__codelineno-0-413"></a>    <span class="p">)</span>
+<a id="__codelineno-0-414" name="__codelineno-0-414"></a>
+<a id="__codelineno-0-415" name="__codelineno-0-415"></a>    <span class="k">return</span> <span class="n">join</span><span class="p">(</span><span class="n">corrected</span><span class="p">,</span> <span class="n">clip</span><span class="p">)</span> <span class="k">if</span> <span class="n">is_yuv</span> <span class="k">else</span> <span class="n">corrected</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -5251,7 +5273,10 @@ This helps reducing the dark halo artifacts around sharp edges caused by resizin
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>y5gfunc/filter/resample.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-422">422</a></span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-419">419</a></span>
+<span class="normal"><a href="#__codelineno-0-420">420</a></span>
+<span class="normal"><a href="#__codelineno-0-421">421</a></span>
+<span class="normal"><a href="#__codelineno-0-422">422</a></span>
 <span class="normal"><a href="#__codelineno-0-423">423</a></span>
 <span class="normal"><a href="#__codelineno-0-424">424</a></span>
 <span class="normal"><a href="#__codelineno-0-425">425</a></span>
@@ -5355,117 +5380,114 @@ This helps reducing the dark halo artifacts around sharp edges caused by resizin
 <span class="normal"><a href="#__codelineno-0-523">523</a></span>
 <span class="normal"><a href="#__codelineno-0-524">524</a></span>
 <span class="normal"><a href="#__codelineno-0-525">525</a></span>
-<span class="normal"><a href="#__codelineno-0-526">526</a></span>
-<span class="normal"><a href="#__codelineno-0-527">527</a></span>
-<span class="normal"><a href="#__codelineno-0-528">528</a></span>
-<span class="normal"><a href="#__codelineno-0-529">529</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-422" name="__codelineno-0-422"></a><span class="k">def</span><span class="w"> </span><span class="nf">SSIM_downsample</span><span class="p">(</span>
-<a id="__codelineno-0-423" name="__codelineno-0-423"></a>    <span class="n">clip</span><span class="p">:</span> <span class="n">vs</span><span class="o">.</span><span class="n">VideoNode</span><span class="p">,</span>
-<a id="__codelineno-0-424" name="__codelineno-0-424"></a>    <span class="n">width</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-<a id="__codelineno-0-425" name="__codelineno-0-425"></a>    <span class="n">height</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-<a id="__codelineno-0-426" name="__codelineno-0-426"></a>    <span class="n">smooth</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
-<a id="__codelineno-0-427" name="__codelineno-0-427"></a>    <span class="n">gamma</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-<a id="__codelineno-0-428" name="__codelineno-0-428"></a>    <span class="n">fulls</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-<a id="__codelineno-0-429" name="__codelineno-0-429"></a>    <span class="n">fulld</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-<a id="__codelineno-0-430" name="__codelineno-0-430"></a>    <span class="n">curve</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;709&quot;</span><span class="p">,</span>
-<a id="__codelineno-0-431" name="__codelineno-0-431"></a>    <span class="n">sigmoid</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-<a id="__codelineno-0-432" name="__codelineno-0-432"></a>    <span class="n">epsilon</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-6</span><span class="p">,</span>
-<a id="__codelineno-0-433" name="__codelineno-0-433"></a>    <span class="o">**</span><span class="n">resample_args</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
-<a id="__codelineno-0-434" name="__codelineno-0-434"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">vs</span><span class="o">.</span><span class="n">VideoNode</span><span class="p">:</span>
-<a id="__codelineno-0-435" name="__codelineno-0-435"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<a id="__codelineno-0-436" name="__codelineno-0-436"></a><span class="sd">    SSIM downsampler</span>
-<a id="__codelineno-0-437" name="__codelineno-0-437"></a>
-<a id="__codelineno-0-438" name="__codelineno-0-438"></a><span class="sd">    SSIM downsampler is an image downscaling technique that aims to optimize for the perceptual quality of the downscaled results.</span>
-<a id="__codelineno-0-439" name="__codelineno-0-439"></a><span class="sd">    Image downscaling is considered as an optimization problem</span>
-<a id="__codelineno-0-440" name="__codelineno-0-440"></a><span class="sd">    where the difference between the input and output images is measured using famous Structural SIMilarity (SSIM) index.</span>
-<a id="__codelineno-0-441" name="__codelineno-0-441"></a><span class="sd">    The solution is derived in closed-form, which leads to the simple, efficient implementation.</span>
-<a id="__codelineno-0-442" name="__codelineno-0-442"></a><span class="sd">    The downscaled images retain perceptually important features and details,</span>
-<a id="__codelineno-0-443" name="__codelineno-0-443"></a><span class="sd">    resulting in an accurate and spatio-temporally consistent representation of the high resolution input.</span>
-<a id="__codelineno-0-444" name="__codelineno-0-444"></a>
-<a id="__codelineno-0-445" name="__codelineno-0-445"></a><span class="sd">    All the internal calculations are done at 32-bit float, except gamma correction is done at integer.</span>
-<a id="__codelineno-0-446" name="__codelineno-0-446"></a>
-<a id="__codelineno-0-447" name="__codelineno-0-447"></a><span class="sd">    Args:</span>
-<a id="__codelineno-0-448" name="__codelineno-0-448"></a><span class="sd">        clip: The input clip.</span>
-<a id="__codelineno-0-449" name="__codelineno-0-449"></a><span class="sd">        width: The width of the output clip.</span>
-<a id="__codelineno-0-450" name="__codelineno-0-450"></a><span class="sd">        height: The height of the output clip</span>
-<a id="__codelineno-0-451" name="__codelineno-0-451"></a><span class="sd">        smooth: The method to smooth the image.</span>
-<a id="__codelineno-0-452" name="__codelineno-0-452"></a><span class="sd">            If it&#39;s an int, it specifies the &quot;radius&quot; of the internal used boxfilter, i.e. the window has a size of (2*smooth+1)x(2*smooth+1).</span>
-<a id="__codelineno-0-453" name="__codelineno-0-453"></a><span class="sd">            If it&#39;s a float, it specifies the &quot;sigma&quot; of core.tcanny.TCanny, i.e. the standard deviation of gaussian blur.</span>
-<a id="__codelineno-0-454" name="__codelineno-0-454"></a><span class="sd">            If it&#39;s a function, it acs as a general smoother.</span>
-<a id="__codelineno-0-455" name="__codelineno-0-455"></a><span class="sd">        gamma: Set to true to turn on gamma correction for the y channel.</span>
-<a id="__codelineno-0-456" name="__codelineno-0-456"></a><span class="sd">        fulls: Specifies if the luma is limited range (False) or full range (True)</span>
-<a id="__codelineno-0-457" name="__codelineno-0-457"></a><span class="sd">        fulld: Same as fulls, but for output.</span>
-<a id="__codelineno-0-458" name="__codelineno-0-458"></a><span class="sd">        curve: Type of gamma mapping.</span>
-<a id="__codelineno-0-459" name="__codelineno-0-459"></a><span class="sd">        sigmoid: When True, applies a sigmoidal curve after the power-like curve (or before when converting from linear to gamma-corrected).</span>
-<a id="__codelineno-0-460" name="__codelineno-0-460"></a><span class="sd">            This helps reducing the dark halo artifacts around sharp edges caused by resizing in linear luminance.</span>
-<a id="__codelineno-0-461" name="__codelineno-0-461"></a><span class="sd">        resample_args: Additional arguments passed to `core.resize2` in the form of keyword arguments.</span>
+<span class="normal"><a href="#__codelineno-0-526">526</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-419" name="__codelineno-0-419"></a><span class="k">def</span><span class="w"> </span><span class="nf">SSIM_downsample</span><span class="p">(</span>
+<a id="__codelineno-0-420" name="__codelineno-0-420"></a>    <span class="n">clip</span><span class="p">:</span> <span class="n">vs</span><span class="o">.</span><span class="n">VideoNode</span><span class="p">,</span>
+<a id="__codelineno-0-421" name="__codelineno-0-421"></a>    <span class="n">width</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+<a id="__codelineno-0-422" name="__codelineno-0-422"></a>    <span class="n">height</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+<a id="__codelineno-0-423" name="__codelineno-0-423"></a>    <span class="n">smooth</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+<a id="__codelineno-0-424" name="__codelineno-0-424"></a>    <span class="n">gamma</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+<a id="__codelineno-0-425" name="__codelineno-0-425"></a>    <span class="n">fulls</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+<a id="__codelineno-0-426" name="__codelineno-0-426"></a>    <span class="n">fulld</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+<a id="__codelineno-0-427" name="__codelineno-0-427"></a>    <span class="n">curve</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;709&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-428" name="__codelineno-0-428"></a>    <span class="n">sigmoid</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+<a id="__codelineno-0-429" name="__codelineno-0-429"></a>    <span class="n">epsilon</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-6</span><span class="p">,</span>
+<a id="__codelineno-0-430" name="__codelineno-0-430"></a>    <span class="o">**</span><span class="n">resample_args</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+<a id="__codelineno-0-431" name="__codelineno-0-431"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">vs</span><span class="o">.</span><span class="n">VideoNode</span><span class="p">:</span>
+<a id="__codelineno-0-432" name="__codelineno-0-432"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<a id="__codelineno-0-433" name="__codelineno-0-433"></a><span class="sd">    SSIM downsampler</span>
+<a id="__codelineno-0-434" name="__codelineno-0-434"></a>
+<a id="__codelineno-0-435" name="__codelineno-0-435"></a><span class="sd">    SSIM downsampler is an image downscaling technique that aims to optimize for the perceptual quality of the downscaled results.</span>
+<a id="__codelineno-0-436" name="__codelineno-0-436"></a><span class="sd">    Image downscaling is considered as an optimization problem</span>
+<a id="__codelineno-0-437" name="__codelineno-0-437"></a><span class="sd">    where the difference between the input and output images is measured using famous Structural SIMilarity (SSIM) index.</span>
+<a id="__codelineno-0-438" name="__codelineno-0-438"></a><span class="sd">    The solution is derived in closed-form, which leads to the simple, efficient implementation.</span>
+<a id="__codelineno-0-439" name="__codelineno-0-439"></a><span class="sd">    The downscaled images retain perceptually important features and details,</span>
+<a id="__codelineno-0-440" name="__codelineno-0-440"></a><span class="sd">    resulting in an accurate and spatio-temporally consistent representation of the high resolution input.</span>
+<a id="__codelineno-0-441" name="__codelineno-0-441"></a>
+<a id="__codelineno-0-442" name="__codelineno-0-442"></a><span class="sd">    All the internal calculations are done at 32-bit float, except gamma correction is done at integer.</span>
+<a id="__codelineno-0-443" name="__codelineno-0-443"></a>
+<a id="__codelineno-0-444" name="__codelineno-0-444"></a><span class="sd">    Args:</span>
+<a id="__codelineno-0-445" name="__codelineno-0-445"></a><span class="sd">        clip: The input clip.</span>
+<a id="__codelineno-0-446" name="__codelineno-0-446"></a><span class="sd">        width: The width of the output clip.</span>
+<a id="__codelineno-0-447" name="__codelineno-0-447"></a><span class="sd">        height: The height of the output clip</span>
+<a id="__codelineno-0-448" name="__codelineno-0-448"></a><span class="sd">        smooth: The method to smooth the image.</span>
+<a id="__codelineno-0-449" name="__codelineno-0-449"></a><span class="sd">            If it&#39;s an int, it specifies the &quot;radius&quot; of the internal used boxfilter, i.e. the window has a size of (2*smooth+1)x(2*smooth+1).</span>
+<a id="__codelineno-0-450" name="__codelineno-0-450"></a><span class="sd">            If it&#39;s a float, it specifies the &quot;sigma&quot; of core.tcanny.TCanny, i.e. the standard deviation of gaussian blur.</span>
+<a id="__codelineno-0-451" name="__codelineno-0-451"></a><span class="sd">            If it&#39;s a function, it acs as a general smoother.</span>
+<a id="__codelineno-0-452" name="__codelineno-0-452"></a><span class="sd">        gamma: Set to true to turn on gamma correction for the y channel.</span>
+<a id="__codelineno-0-453" name="__codelineno-0-453"></a><span class="sd">        fulls: Specifies if the luma is limited range (False) or full range (True)</span>
+<a id="__codelineno-0-454" name="__codelineno-0-454"></a><span class="sd">        fulld: Same as fulls, but for output.</span>
+<a id="__codelineno-0-455" name="__codelineno-0-455"></a><span class="sd">        curve: Type of gamma mapping.</span>
+<a id="__codelineno-0-456" name="__codelineno-0-456"></a><span class="sd">        sigmoid: When True, applies a sigmoidal curve after the power-like curve (or before when converting from linear to gamma-corrected).</span>
+<a id="__codelineno-0-457" name="__codelineno-0-457"></a><span class="sd">            This helps reducing the dark halo artifacts around sharp edges caused by resizing in linear luminance.</span>
+<a id="__codelineno-0-458" name="__codelineno-0-458"></a><span class="sd">        resample_args: Additional arguments passed to `core.resize2` in the form of keyword arguments.</span>
+<a id="__codelineno-0-459" name="__codelineno-0-459"></a>
+<a id="__codelineno-0-460" name="__codelineno-0-460"></a><span class="sd">    Returns:</span>
+<a id="__codelineno-0-461" name="__codelineno-0-461"></a><span class="sd">        Downsampled clip in 32-bit format.</span>
 <a id="__codelineno-0-462" name="__codelineno-0-462"></a>
-<a id="__codelineno-0-463" name="__codelineno-0-463"></a><span class="sd">    Returns:</span>
-<a id="__codelineno-0-464" name="__codelineno-0-464"></a><span class="sd">        Downsampled clip in 32-bit format.</span>
+<a id="__codelineno-0-463" name="__codelineno-0-463"></a><span class="sd">    Raises:</span>
+<a id="__codelineno-0-464" name="__codelineno-0-464"></a><span class="sd">        TypeError: If `smooth` is neither a int, float nor a function.</span>
 <a id="__codelineno-0-465" name="__codelineno-0-465"></a>
-<a id="__codelineno-0-466" name="__codelineno-0-466"></a><span class="sd">    Raises:</span>
-<a id="__codelineno-0-467" name="__codelineno-0-467"></a><span class="sd">        TypeError: If `smooth` is neither a int, float nor a function.</span>
+<a id="__codelineno-0-466" name="__codelineno-0-466"></a><span class="sd">    Ref:</span>
+<a id="__codelineno-0-467" name="__codelineno-0-467"></a><span class="sd">        [1] Oeztireli, A. C., &amp; Gross, M. (2015). Perceptually based downscaling of images. ACM Transactions on Graphics (TOG), 34(4), 77.</span>
 <a id="__codelineno-0-468" name="__codelineno-0-468"></a>
-<a id="__codelineno-0-469" name="__codelineno-0-469"></a><span class="sd">    Ref:</span>
-<a id="__codelineno-0-470" name="__codelineno-0-470"></a><span class="sd">        [1] Oeztireli, A. C., &amp; Gross, M. (2015). Perceptually based downscaling of images. ACM Transactions on Graphics (TOG), 34(4), 77.</span>
-<a id="__codelineno-0-471" name="__codelineno-0-471"></a>
-<a id="__codelineno-0-472" name="__codelineno-0-472"></a><span class="sd">    &quot;&quot;&quot;</span>
-<a id="__codelineno-0-473" name="__codelineno-0-473"></a>    <span class="k">if</span> <span class="nb">callable</span><span class="p">(</span><span class="n">smooth</span><span class="p">):</span>
-<a id="__codelineno-0-474" name="__codelineno-0-474"></a>        <span class="n">Filter</span> <span class="o">=</span> <span class="n">smooth</span>
-<a id="__codelineno-0-475" name="__codelineno-0-475"></a>    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">smooth</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
-<a id="__codelineno-0-476" name="__codelineno-0-476"></a>        <span class="n">Filter</span> <span class="o">=</span> <span class="n">functools</span><span class="o">.</span><span class="n">partial</span><span class="p">(</span><span class="n">box_blur</span><span class="p">,</span> <span class="n">radius</span><span class="o">=</span><span class="n">smooth</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
-<a id="__codelineno-0-477" name="__codelineno-0-477"></a>    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">smooth</span><span class="p">,</span> <span class="nb">float</span><span class="p">):</span>
-<a id="__codelineno-0-478" name="__codelineno-0-478"></a>        <span class="n">Filter</span> <span class="o">=</span> <span class="n">functools</span><span class="o">.</span><span class="n">partial</span><span class="p">(</span><span class="n">core</span><span class="o">.</span><span class="n">tcanny</span><span class="o">.</span><span class="n">TCanny</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="n">smooth</span><span class="p">,</span> <span class="n">mode</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
-<a id="__codelineno-0-479" name="__codelineno-0-479"></a>    <span class="k">else</span><span class="p">:</span>
-<a id="__codelineno-0-480" name="__codelineno-0-480"></a>        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;SSIM_downsample: &quot;smooth&quot; must be a int, float or a function!&#39;</span><span class="p">)</span>
+<a id="__codelineno-0-469" name="__codelineno-0-469"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="__codelineno-0-470" name="__codelineno-0-470"></a>    <span class="k">if</span> <span class="nb">callable</span><span class="p">(</span><span class="n">smooth</span><span class="p">):</span>
+<a id="__codelineno-0-471" name="__codelineno-0-471"></a>        <span class="n">Filter</span> <span class="o">=</span> <span class="n">smooth</span>
+<a id="__codelineno-0-472" name="__codelineno-0-472"></a>    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">smooth</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+<a id="__codelineno-0-473" name="__codelineno-0-473"></a>        <span class="n">Filter</span> <span class="o">=</span> <span class="n">functools</span><span class="o">.</span><span class="n">partial</span><span class="p">(</span><span class="n">box_blur</span><span class="p">,</span> <span class="n">radius</span><span class="o">=</span><span class="n">smooth</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+<a id="__codelineno-0-474" name="__codelineno-0-474"></a>    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">smooth</span><span class="p">,</span> <span class="nb">float</span><span class="p">):</span>
+<a id="__codelineno-0-475" name="__codelineno-0-475"></a>        <span class="n">Filter</span> <span class="o">=</span> <span class="n">functools</span><span class="o">.</span><span class="n">partial</span><span class="p">(</span><span class="n">core</span><span class="o">.</span><span class="n">tcanny</span><span class="o">.</span><span class="n">TCanny</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="n">smooth</span><span class="p">,</span> <span class="n">mode</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+<a id="__codelineno-0-476" name="__codelineno-0-476"></a>    <span class="k">else</span><span class="p">:</span>
+<a id="__codelineno-0-477" name="__codelineno-0-477"></a>        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;SSIM_downsample: &quot;smooth&quot; must be a int, float or a function!&#39;</span><span class="p">)</span>
+<a id="__codelineno-0-478" name="__codelineno-0-478"></a>
+<a id="__codelineno-0-479" name="__codelineno-0-479"></a>    <span class="k">if</span> <span class="n">gamma</span><span class="p">:</span>
+<a id="__codelineno-0-480" name="__codelineno-0-480"></a>        <span class="kn">import</span><span class="w"> </span><span class="nn">nnedi3_resample</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">nnrs</span>
 <a id="__codelineno-0-481" name="__codelineno-0-481"></a>
-<a id="__codelineno-0-482" name="__codelineno-0-482"></a>    <span class="k">if</span> <span class="n">gamma</span><span class="p">:</span>
-<a id="__codelineno-0-483" name="__codelineno-0-483"></a>        <span class="kn">import</span><span class="w"> </span><span class="nn">nnedi3_resample</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">nnrs</span>
-<a id="__codelineno-0-484" name="__codelineno-0-484"></a>
-<a id="__codelineno-0-485" name="__codelineno-0-485"></a>        <span class="n">clip</span> <span class="o">=</span> <span class="n">nnrs</span><span class="o">.</span><span class="n">GammaToLinear</span><span class="p">(</span>
-<a id="__codelineno-0-486" name="__codelineno-0-486"></a>            <span class="n">depth</span><span class="p">(</span><span class="n">clip</span><span class="p">,</span> <span class="mi">16</span><span class="p">),</span>
-<a id="__codelineno-0-487" name="__codelineno-0-487"></a>            <span class="n">fulls</span><span class="o">=</span><span class="n">fulls</span><span class="p">,</span>
-<a id="__codelineno-0-488" name="__codelineno-0-488"></a>            <span class="n">fulld</span><span class="o">=</span><span class="n">fulld</span><span class="p">,</span>
-<a id="__codelineno-0-489" name="__codelineno-0-489"></a>            <span class="n">curve</span><span class="o">=</span><span class="n">curve</span><span class="p">,</span>
-<a id="__codelineno-0-490" name="__codelineno-0-490"></a>            <span class="n">sigmoid</span><span class="o">=</span><span class="n">sigmoid</span><span class="p">,</span>
-<a id="__codelineno-0-491" name="__codelineno-0-491"></a>            <span class="n">planes</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
-<a id="__codelineno-0-492" name="__codelineno-0-492"></a>        <span class="p">)</span>
-<a id="__codelineno-0-493" name="__codelineno-0-493"></a>
-<a id="__codelineno-0-494" name="__codelineno-0-494"></a>    <span class="n">clip</span> <span class="o">=</span> <span class="n">depth</span><span class="p">(</span><span class="n">clip</span><span class="p">,</span> <span class="mi">32</span><span class="p">)</span>
-<a id="__codelineno-0-495" name="__codelineno-0-495"></a>
-<a id="__codelineno-0-496" name="__codelineno-0-496"></a>    <span class="n">l1</span> <span class="o">=</span> <span class="n">core</span><span class="o">.</span><span class="n">resize2</span><span class="o">.</span><span class="n">Bicubic</span><span class="p">(</span><span class="n">clip</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">,</span> <span class="o">**</span><span class="n">resample_args</span><span class="p">)</span>  <span class="c1"># type: ignore[arg-type]</span>
-<a id="__codelineno-0-497" name="__codelineno-0-497"></a>    <span class="n">l2</span> <span class="o">=</span> <span class="n">core</span><span class="o">.</span><span class="n">resize2</span><span class="o">.</span><span class="n">Bicubic</span><span class="p">(</span>
-<a id="__codelineno-0-498" name="__codelineno-0-498"></a>        <span class="n">core</span><span class="o">.</span><span class="n">akarin</span><span class="o">.</span><span class="n">Expr</span><span class="p">([</span><span class="n">clip</span><span class="p">],</span> <span class="p">[</span><span class="s2">&quot;x 2 **&quot;</span><span class="p">]),</span>
-<a id="__codelineno-0-499" name="__codelineno-0-499"></a>        <span class="n">width</span><span class="p">,</span>
-<a id="__codelineno-0-500" name="__codelineno-0-500"></a>        <span class="n">height</span><span class="p">,</span>
-<a id="__codelineno-0-501" name="__codelineno-0-501"></a>        <span class="o">**</span><span class="n">resample_args</span><span class="p">,</span>  <span class="c1"># type: ignore[arg-type]</span>
-<a id="__codelineno-0-502" name="__codelineno-0-502"></a>    <span class="p">)</span>
-<a id="__codelineno-0-503" name="__codelineno-0-503"></a>
-<a id="__codelineno-0-504" name="__codelineno-0-504"></a>    <span class="n">m</span> <span class="o">=</span> <span class="n">Filter</span><span class="p">(</span><span class="n">l1</span><span class="p">)</span>
-<a id="__codelineno-0-505" name="__codelineno-0-505"></a>    <span class="n">sl_plus_m_square</span> <span class="o">=</span> <span class="n">Filter</span><span class="p">(</span><span class="n">core</span><span class="o">.</span><span class="n">akarin</span><span class="o">.</span><span class="n">Expr</span><span class="p">([</span><span class="n">l1</span><span class="p">],</span> <span class="p">[</span><span class="s2">&quot;x 2 **&quot;</span><span class="p">]))</span>
-<a id="__codelineno-0-506" name="__codelineno-0-506"></a>    <span class="n">sh_plus_m_square</span> <span class="o">=</span> <span class="n">Filter</span><span class="p">(</span><span class="n">l2</span><span class="p">)</span>
-<a id="__codelineno-0-507" name="__codelineno-0-507"></a>    <span class="n">m_square</span> <span class="o">=</span> <span class="n">core</span><span class="o">.</span><span class="n">akarin</span><span class="o">.</span><span class="n">Expr</span><span class="p">([</span><span class="n">m</span><span class="p">],</span> <span class="p">[</span><span class="s2">&quot;x 2 **&quot;</span><span class="p">])</span>
-<a id="__codelineno-0-508" name="__codelineno-0-508"></a>    <span class="n">r</span> <span class="o">=</span> <span class="n">core</span><span class="o">.</span><span class="n">akarin</span><span class="o">.</span><span class="n">Expr</span><span class="p">(</span>
-<a id="__codelineno-0-509" name="__codelineno-0-509"></a>        <span class="p">[</span><span class="n">sl_plus_m_square</span><span class="p">,</span> <span class="n">sh_plus_m_square</span><span class="p">,</span> <span class="n">m_square</span><span class="p">],</span>
-<a id="__codelineno-0-510" name="__codelineno-0-510"></a>        <span class="p">[</span>
-<a id="__codelineno-0-511" name="__codelineno-0-511"></a>            <span class="sa">f</span><span class="s2">&quot;x z - </span><span class="si">{</span><span class="n">epsilon</span><span class="si">}</span><span class="s2"> &lt; 0 y z - x z - / sqrt ?&quot;</span>
-<a id="__codelineno-0-512" name="__codelineno-0-512"></a>        <span class="p">],</span>  <span class="c1"># akarin.Expr adds &quot;0 max&quot; to sqrt by default</span>
-<a id="__codelineno-0-513" name="__codelineno-0-513"></a>    <span class="p">)</span>
-<a id="__codelineno-0-514" name="__codelineno-0-514"></a>    <span class="n">t</span> <span class="o">=</span> <span class="n">Filter</span><span class="p">(</span><span class="n">core</span><span class="o">.</span><span class="n">akarin</span><span class="o">.</span><span class="n">Expr</span><span class="p">([</span><span class="n">r</span><span class="p">,</span> <span class="n">m</span><span class="p">],</span> <span class="p">[</span><span class="s2">&quot;x y *&quot;</span><span class="p">]))</span>
-<a id="__codelineno-0-515" name="__codelineno-0-515"></a>    <span class="n">m</span> <span class="o">=</span> <span class="n">Filter</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
-<a id="__codelineno-0-516" name="__codelineno-0-516"></a>    <span class="n">r</span> <span class="o">=</span> <span class="n">Filter</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
-<a id="__codelineno-0-517" name="__codelineno-0-517"></a>    <span class="n">d</span> <span class="o">=</span> <span class="n">core</span><span class="o">.</span><span class="n">akarin</span><span class="o">.</span><span class="n">Expr</span><span class="p">([</span><span class="n">m</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">l1</span><span class="p">,</span> <span class="n">t</span><span class="p">],</span> <span class="p">[</span><span class="s2">&quot;x y z * + a -&quot;</span><span class="p">])</span>
-<a id="__codelineno-0-518" name="__codelineno-0-518"></a>
-<a id="__codelineno-0-519" name="__codelineno-0-519"></a>    <span class="k">if</span> <span class="n">gamma</span><span class="p">:</span>
-<a id="__codelineno-0-520" name="__codelineno-0-520"></a>        <span class="n">d</span> <span class="o">=</span> <span class="n">nnrs</span><span class="o">.</span><span class="n">LinearToGamma</span><span class="p">(</span>
-<a id="__codelineno-0-521" name="__codelineno-0-521"></a>            <span class="n">depth</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="mi">16</span><span class="p">),</span>
-<a id="__codelineno-0-522" name="__codelineno-0-522"></a>            <span class="n">fulls</span><span class="o">=</span><span class="n">fulls</span><span class="p">,</span>
-<a id="__codelineno-0-523" name="__codelineno-0-523"></a>            <span class="n">fulld</span><span class="o">=</span><span class="n">fulld</span><span class="p">,</span>
-<a id="__codelineno-0-524" name="__codelineno-0-524"></a>            <span class="n">curve</span><span class="o">=</span><span class="n">curve</span><span class="p">,</span>
-<a id="__codelineno-0-525" name="__codelineno-0-525"></a>            <span class="n">sigmoid</span><span class="o">=</span><span class="n">sigmoid</span><span class="p">,</span>
-<a id="__codelineno-0-526" name="__codelineno-0-526"></a>            <span class="n">planes</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
-<a id="__codelineno-0-527" name="__codelineno-0-527"></a>        <span class="p">)</span>
-<a id="__codelineno-0-528" name="__codelineno-0-528"></a>
-<a id="__codelineno-0-529" name="__codelineno-0-529"></a>    <span class="k">return</span> <span class="n">depth</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="mi">32</span><span class="p">)</span>
+<a id="__codelineno-0-482" name="__codelineno-0-482"></a>        <span class="n">clip</span> <span class="o">=</span> <span class="n">nnrs</span><span class="o">.</span><span class="n">GammaToLinear</span><span class="p">(</span>
+<a id="__codelineno-0-483" name="__codelineno-0-483"></a>            <span class="n">depth</span><span class="p">(</span><span class="n">clip</span><span class="p">,</span> <span class="mi">16</span><span class="p">),</span>
+<a id="__codelineno-0-484" name="__codelineno-0-484"></a>            <span class="n">fulls</span><span class="o">=</span><span class="n">fulls</span><span class="p">,</span>
+<a id="__codelineno-0-485" name="__codelineno-0-485"></a>            <span class="n">fulld</span><span class="o">=</span><span class="n">fulld</span><span class="p">,</span>
+<a id="__codelineno-0-486" name="__codelineno-0-486"></a>            <span class="n">curve</span><span class="o">=</span><span class="n">curve</span><span class="p">,</span>
+<a id="__codelineno-0-487" name="__codelineno-0-487"></a>            <span class="n">sigmoid</span><span class="o">=</span><span class="n">sigmoid</span><span class="p">,</span>
+<a id="__codelineno-0-488" name="__codelineno-0-488"></a>            <span class="n">planes</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+<a id="__codelineno-0-489" name="__codelineno-0-489"></a>        <span class="p">)</span>
+<a id="__codelineno-0-490" name="__codelineno-0-490"></a>
+<a id="__codelineno-0-491" name="__codelineno-0-491"></a>    <span class="n">clip</span> <span class="o">=</span> <span class="n">depth</span><span class="p">(</span><span class="n">clip</span><span class="p">,</span> <span class="mi">32</span><span class="p">)</span>
+<a id="__codelineno-0-492" name="__codelineno-0-492"></a>
+<a id="__codelineno-0-493" name="__codelineno-0-493"></a>    <span class="n">l1</span> <span class="o">=</span> <span class="n">core</span><span class="o">.</span><span class="n">resize2</span><span class="o">.</span><span class="n">Bicubic</span><span class="p">(</span><span class="n">clip</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">,</span> <span class="o">**</span><span class="n">resample_args</span><span class="p">)</span>  <span class="c1"># type: ignore[arg-type]</span>
+<a id="__codelineno-0-494" name="__codelineno-0-494"></a>    <span class="n">l2</span> <span class="o">=</span> <span class="n">core</span><span class="o">.</span><span class="n">resize2</span><span class="o">.</span><span class="n">Bicubic</span><span class="p">(</span>
+<a id="__codelineno-0-495" name="__codelineno-0-495"></a>        <span class="n">core</span><span class="o">.</span><span class="n">akarin</span><span class="o">.</span><span class="n">Expr</span><span class="p">([</span><span class="n">clip</span><span class="p">],</span> <span class="p">[</span><span class="s2">&quot;x 2 **&quot;</span><span class="p">]),</span>
+<a id="__codelineno-0-496" name="__codelineno-0-496"></a>        <span class="n">width</span><span class="p">,</span>
+<a id="__codelineno-0-497" name="__codelineno-0-497"></a>        <span class="n">height</span><span class="p">,</span>
+<a id="__codelineno-0-498" name="__codelineno-0-498"></a>        <span class="o">**</span><span class="n">resample_args</span><span class="p">,</span>  <span class="c1"># type: ignore[arg-type]</span>
+<a id="__codelineno-0-499" name="__codelineno-0-499"></a>    <span class="p">)</span>
+<a id="__codelineno-0-500" name="__codelineno-0-500"></a>
+<a id="__codelineno-0-501" name="__codelineno-0-501"></a>    <span class="n">m</span> <span class="o">=</span> <span class="n">Filter</span><span class="p">(</span><span class="n">l1</span><span class="p">)</span>
+<a id="__codelineno-0-502" name="__codelineno-0-502"></a>    <span class="n">sl_plus_m_square</span> <span class="o">=</span> <span class="n">Filter</span><span class="p">(</span><span class="n">core</span><span class="o">.</span><span class="n">akarin</span><span class="o">.</span><span class="n">Expr</span><span class="p">([</span><span class="n">l1</span><span class="p">],</span> <span class="p">[</span><span class="s2">&quot;x 2 **&quot;</span><span class="p">]))</span>
+<a id="__codelineno-0-503" name="__codelineno-0-503"></a>    <span class="n">sh_plus_m_square</span> <span class="o">=</span> <span class="n">Filter</span><span class="p">(</span><span class="n">l2</span><span class="p">)</span>
+<a id="__codelineno-0-504" name="__codelineno-0-504"></a>    <span class="n">m_square</span> <span class="o">=</span> <span class="n">core</span><span class="o">.</span><span class="n">akarin</span><span class="o">.</span><span class="n">Expr</span><span class="p">([</span><span class="n">m</span><span class="p">],</span> <span class="p">[</span><span class="s2">&quot;x 2 **&quot;</span><span class="p">])</span>
+<a id="__codelineno-0-505" name="__codelineno-0-505"></a>    <span class="n">r</span> <span class="o">=</span> <span class="n">core</span><span class="o">.</span><span class="n">akarin</span><span class="o">.</span><span class="n">Expr</span><span class="p">(</span>
+<a id="__codelineno-0-506" name="__codelineno-0-506"></a>        <span class="p">[</span><span class="n">sl_plus_m_square</span><span class="p">,</span> <span class="n">sh_plus_m_square</span><span class="p">,</span> <span class="n">m_square</span><span class="p">],</span>
+<a id="__codelineno-0-507" name="__codelineno-0-507"></a>        <span class="p">[</span>
+<a id="__codelineno-0-508" name="__codelineno-0-508"></a>            <span class="sa">f</span><span class="s2">&quot;x z - </span><span class="si">{</span><span class="n">epsilon</span><span class="si">}</span><span class="s2"> &lt; 0 y z - x z - / sqrt ?&quot;</span>
+<a id="__codelineno-0-509" name="__codelineno-0-509"></a>        <span class="p">],</span>  <span class="c1"># akarin.Expr adds &quot;0 max&quot; to sqrt by default</span>
+<a id="__codelineno-0-510" name="__codelineno-0-510"></a>    <span class="p">)</span>
+<a id="__codelineno-0-511" name="__codelineno-0-511"></a>    <span class="n">t</span> <span class="o">=</span> <span class="n">Filter</span><span class="p">(</span><span class="n">core</span><span class="o">.</span><span class="n">akarin</span><span class="o">.</span><span class="n">Expr</span><span class="p">([</span><span class="n">r</span><span class="p">,</span> <span class="n">m</span><span class="p">],</span> <span class="p">[</span><span class="s2">&quot;x y *&quot;</span><span class="p">]))</span>
+<a id="__codelineno-0-512" name="__codelineno-0-512"></a>    <span class="n">m</span> <span class="o">=</span> <span class="n">Filter</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+<a id="__codelineno-0-513" name="__codelineno-0-513"></a>    <span class="n">r</span> <span class="o">=</span> <span class="n">Filter</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+<a id="__codelineno-0-514" name="__codelineno-0-514"></a>    <span class="n">d</span> <span class="o">=</span> <span class="n">core</span><span class="o">.</span><span class="n">akarin</span><span class="o">.</span><span class="n">Expr</span><span class="p">([</span><span class="n">m</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">l1</span><span class="p">,</span> <span class="n">t</span><span class="p">],</span> <span class="p">[</span><span class="s2">&quot;x y z * + a -&quot;</span><span class="p">])</span>
+<a id="__codelineno-0-515" name="__codelineno-0-515"></a>
+<a id="__codelineno-0-516" name="__codelineno-0-516"></a>    <span class="k">if</span> <span class="n">gamma</span><span class="p">:</span>
+<a id="__codelineno-0-517" name="__codelineno-0-517"></a>        <span class="n">d</span> <span class="o">=</span> <span class="n">nnrs</span><span class="o">.</span><span class="n">LinearToGamma</span><span class="p">(</span>
+<a id="__codelineno-0-518" name="__codelineno-0-518"></a>            <span class="n">depth</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="mi">16</span><span class="p">),</span>
+<a id="__codelineno-0-519" name="__codelineno-0-519"></a>            <span class="n">fulls</span><span class="o">=</span><span class="n">fulls</span><span class="p">,</span>
+<a id="__codelineno-0-520" name="__codelineno-0-520"></a>            <span class="n">fulld</span><span class="o">=</span><span class="n">fulld</span><span class="p">,</span>
+<a id="__codelineno-0-521" name="__codelineno-0-521"></a>            <span class="n">curve</span><span class="o">=</span><span class="n">curve</span><span class="p">,</span>
+<a id="__codelineno-0-522" name="__codelineno-0-522"></a>            <span class="n">sigmoid</span><span class="o">=</span><span class="n">sigmoid</span><span class="p">,</span>
+<a id="__codelineno-0-523" name="__codelineno-0-523"></a>            <span class="n">planes</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+<a id="__codelineno-0-524" name="__codelineno-0-524"></a>        <span class="p">)</span>
+<a id="__codelineno-0-525" name="__codelineno-0-525"></a>
+<a id="__codelineno-0-526" name="__codelineno-0-526"></a>    <span class="k">return</span> <span class="n">depth</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="mi">32</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -5488,7 +5510,10 @@ This helps reducing the dark halo artifacts around sharp edges caused by resizin
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>y5gfunc/filter/resample.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-532">532</a></span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-529">529</a></span>
+<span class="normal"><a href="#__codelineno-0-530">530</a></span>
+<span class="normal"><a href="#__codelineno-0-531">531</a></span>
+<span class="normal"><a href="#__codelineno-0-532">532</a></span>
 <span class="normal"><a href="#__codelineno-0-533">533</a></span>
 <span class="normal"><a href="#__codelineno-0-534">534</a></span>
 <span class="normal"><a href="#__codelineno-0-535">535</a></span>
@@ -5574,99 +5599,96 @@ This helps reducing the dark halo artifacts around sharp edges caused by resizin
 <span class="normal"><a href="#__codelineno-0-615">615</a></span>
 <span class="normal"><a href="#__codelineno-0-616">616</a></span>
 <span class="normal"><a href="#__codelineno-0-617">617</a></span>
-<span class="normal"><a href="#__codelineno-0-618">618</a></span>
-<span class="normal"><a href="#__codelineno-0-619">619</a></span>
-<span class="normal"><a href="#__codelineno-0-620">620</a></span>
-<span class="normal"><a href="#__codelineno-0-621">621</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-532" name="__codelineno-0-532"></a><span class="k">def</span><span class="w"> </span><span class="nf">Descale</span><span class="p">(</span>
-<a id="__codelineno-0-533" name="__codelineno-0-533"></a>    <span class="n">src</span><span class="p">:</span> <span class="n">vs</span><span class="o">.</span><span class="n">VideoNode</span><span class="p">,</span>
-<a id="__codelineno-0-534" name="__codelineno-0-534"></a>    <span class="n">width</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-<a id="__codelineno-0-535" name="__codelineno-0-535"></a>    <span class="n">height</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-<a id="__codelineno-0-536" name="__codelineno-0-536"></a>    <span class="n">kernel</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-<a id="__codelineno-0-537" name="__codelineno-0-537"></a>    <span class="n">custom_kernel</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-<a id="__codelineno-0-538" name="__codelineno-0-538"></a>    <span class="n">taps</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span>
-<a id="__codelineno-0-539" name="__codelineno-0-539"></a>    <span class="n">b</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span>
-<a id="__codelineno-0-540" name="__codelineno-0-540"></a>    <span class="n">c</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.5</span><span class="p">,</span>
-<a id="__codelineno-0-541" name="__codelineno-0-541"></a>    <span class="n">blur</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
-<a id="__codelineno-0-542" name="__codelineno-0-542"></a>    <span class="n">post_conv</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-<a id="__codelineno-0-543" name="__codelineno-0-543"></a>    <span class="n">src_left</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span>
-<a id="__codelineno-0-544" name="__codelineno-0-544"></a>    <span class="n">src_top</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span>
-<a id="__codelineno-0-545" name="__codelineno-0-545"></a>    <span class="n">src_width</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-<a id="__codelineno-0-546" name="__codelineno-0-546"></a>    <span class="n">src_height</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-<a id="__codelineno-0-547" name="__codelineno-0-547"></a>    <span class="n">border_handling</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
-<a id="__codelineno-0-548" name="__codelineno-0-548"></a>    <span class="n">ignore_mask</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">vs</span><span class="o">.</span><span class="n">VideoNode</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-<a id="__codelineno-0-549" name="__codelineno-0-549"></a>    <span class="n">force</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-<a id="__codelineno-0-550" name="__codelineno-0-550"></a>    <span class="n">force_h</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-<a id="__codelineno-0-551" name="__codelineno-0-551"></a>    <span class="n">force_v</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-<a id="__codelineno-0-552" name="__codelineno-0-552"></a>    <span class="n">opt</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
-<a id="__codelineno-0-553" name="__codelineno-0-553"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">vs</span><span class="o">.</span><span class="n">VideoNode</span><span class="p">:</span>
-<a id="__codelineno-0-554" name="__codelineno-0-554"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">_get_resize_name</span><span class="p">(</span><span class="n">kernel_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<a id="__codelineno-0-555" name="__codelineno-0-555"></a>        <span class="k">if</span> <span class="n">kernel_name</span> <span class="o">==</span> <span class="s2">&quot;Decustom&quot;</span><span class="p">:</span>
-<a id="__codelineno-0-556" name="__codelineno-0-556"></a>            <span class="k">return</span> <span class="s2">&quot;ScaleCustom&quot;</span>
-<a id="__codelineno-0-557" name="__codelineno-0-557"></a>        <span class="k">if</span> <span class="n">kernel_name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;De&quot;</span><span class="p">):</span>
-<a id="__codelineno-0-558" name="__codelineno-0-558"></a>            <span class="k">return</span> <span class="n">kernel_name</span><span class="p">[</span><span class="mi">2</span><span class="p">:]</span><span class="o">.</span><span class="n">capitalize</span><span class="p">()</span>
-<a id="__codelineno-0-559" name="__codelineno-0-559"></a>        <span class="k">return</span> <span class="n">kernel_name</span>
-<a id="__codelineno-0-560" name="__codelineno-0-560"></a>
-<a id="__codelineno-0-561" name="__codelineno-0-561"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">_get_descaler_name</span><span class="p">(</span><span class="n">kernel_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<a id="__codelineno-0-562" name="__codelineno-0-562"></a>        <span class="k">if</span> <span class="n">kernel_name</span> <span class="o">==</span> <span class="s2">&quot;ScaleCustom&quot;</span><span class="p">:</span>
-<a id="__codelineno-0-563" name="__codelineno-0-563"></a>            <span class="k">return</span> <span class="s2">&quot;Decustom&quot;</span>
-<a id="__codelineno-0-564" name="__codelineno-0-564"></a>        <span class="k">if</span> <span class="n">kernel_name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;De&quot;</span><span class="p">):</span>
-<a id="__codelineno-0-565" name="__codelineno-0-565"></a>            <span class="k">return</span> <span class="n">kernel_name</span>
-<a id="__codelineno-0-566" name="__codelineno-0-566"></a>        <span class="k">return</span> <span class="s2">&quot;De&quot;</span> <span class="o">+</span> <span class="n">kernel_name</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">+</span> <span class="n">kernel_name</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
-<a id="__codelineno-0-567" name="__codelineno-0-567"></a>
-<a id="__codelineno-0-568" name="__codelineno-0-568"></a>    <span class="k">assert</span> <span class="n">width</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">height</span> <span class="o">&gt;</span> <span class="mi">0</span>
-<a id="__codelineno-0-569" name="__codelineno-0-569"></a>    <span class="k">assert</span> <span class="n">opt</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span>
-<a id="__codelineno-0-570" name="__codelineno-0-570"></a>    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">vs</span><span class="o">.</span><span class="n">VideoNode</span><span class="p">)</span> <span class="ow">and</span> <span class="n">src</span><span class="o">.</span><span class="n">format</span><span class="o">.</span><span class="n">id</span> <span class="o">==</span> <span class="n">vs</span><span class="o">.</span><span class="n">GRAYS</span>
-<a id="__codelineno-0-571" name="__codelineno-0-571"></a>
-<a id="__codelineno-0-572" name="__codelineno-0-572"></a>    <span class="n">kernel</span> <span class="o">=</span> <span class="n">kernel</span><span class="o">.</span><span class="n">capitalize</span><span class="p">()</span>
-<a id="__codelineno-0-573" name="__codelineno-0-573"></a>
-<a id="__codelineno-0-574" name="__codelineno-0-574"></a>    <span class="k">if</span> <span class="n">src_width</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-<a id="__codelineno-0-575" name="__codelineno-0-575"></a>        <span class="n">src_width</span> <span class="o">=</span> <span class="n">width</span>
-<a id="__codelineno-0-576" name="__codelineno-0-576"></a>    <span class="k">if</span> <span class="n">src_height</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-<a id="__codelineno-0-577" name="__codelineno-0-577"></a>        <span class="n">src_height</span> <span class="o">=</span> <span class="n">height</span>
-<a id="__codelineno-0-578" name="__codelineno-0-578"></a>
-<a id="__codelineno-0-579" name="__codelineno-0-579"></a>    <span class="k">if</span> <span class="n">width</span> <span class="o">&gt;</span> <span class="n">src</span><span class="o">.</span><span class="n">width</span> <span class="ow">or</span> <span class="n">height</span> <span class="o">&gt;</span> <span class="n">src</span><span class="o">.</span><span class="n">height</span><span class="p">:</span>
-<a id="__codelineno-0-580" name="__codelineno-0-580"></a>        <span class="n">kernel</span> <span class="o">=</span> <span class="n">_get_resize_name</span><span class="p">(</span><span class="n">kernel</span><span class="p">)</span>
-<a id="__codelineno-0-581" name="__codelineno-0-581"></a>    <span class="k">else</span><span class="p">:</span>
-<a id="__codelineno-0-582" name="__codelineno-0-582"></a>        <span class="n">kernel</span> <span class="o">=</span> <span class="n">_get_descaler_name</span><span class="p">(</span><span class="n">kernel</span><span class="p">)</span>
-<a id="__codelineno-0-583" name="__codelineno-0-583"></a>
-<a id="__codelineno-0-584" name="__codelineno-0-584"></a>    <span class="n">descaler</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">core</span><span class="o">.</span><span class="n">descale</span><span class="p">,</span> <span class="n">kernel</span><span class="p">)</span>
-<a id="__codelineno-0-585" name="__codelineno-0-585"></a>    <span class="k">assert</span> <span class="nb">callable</span><span class="p">(</span><span class="n">descaler</span><span class="p">)</span>
-<a id="__codelineno-0-586" name="__codelineno-0-586"></a>    <span class="n">extra_params</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="n">Callable</span><span class="p">]]]</span> <span class="o">=</span> <span class="p">{}</span>
-<a id="__codelineno-0-587" name="__codelineno-0-587"></a>    <span class="k">if</span> <span class="n">_get_descaler_name</span><span class="p">(</span><span class="n">kernel</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;Debicubic&quot;</span><span class="p">:</span>
-<a id="__codelineno-0-588" name="__codelineno-0-588"></a>        <span class="n">extra_params</span> <span class="o">=</span> <span class="p">{</span>
-<a id="__codelineno-0-589" name="__codelineno-0-589"></a>            <span class="s2">&quot;dparams&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;b&quot;</span><span class="p">:</span> <span class="n">b</span><span class="p">,</span> <span class="s2">&quot;c&quot;</span><span class="p">:</span> <span class="n">c</span><span class="p">},</span>
-<a id="__codelineno-0-590" name="__codelineno-0-590"></a>        <span class="p">}</span>
-<a id="__codelineno-0-591" name="__codelineno-0-591"></a>    <span class="k">elif</span> <span class="n">_get_descaler_name</span><span class="p">(</span><span class="n">kernel</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;Delanczos&quot;</span><span class="p">:</span>
-<a id="__codelineno-0-592" name="__codelineno-0-592"></a>        <span class="n">extra_params</span> <span class="o">=</span> <span class="p">{</span>
-<a id="__codelineno-0-593" name="__codelineno-0-593"></a>            <span class="s2">&quot;dparams&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;taps&quot;</span><span class="p">:</span> <span class="n">taps</span><span class="p">},</span>
-<a id="__codelineno-0-594" name="__codelineno-0-594"></a>        <span class="p">}</span>
-<a id="__codelineno-0-595" name="__codelineno-0-595"></a>    <span class="k">elif</span> <span class="n">_get_descaler_name</span><span class="p">(</span><span class="n">kernel</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;Decustom&quot;</span><span class="p">:</span>
-<a id="__codelineno-0-596" name="__codelineno-0-596"></a>        <span class="k">assert</span> <span class="nb">callable</span><span class="p">(</span><span class="n">custom_kernel</span><span class="p">)</span>
-<a id="__codelineno-0-597" name="__codelineno-0-597"></a>        <span class="n">extra_params</span> <span class="o">=</span> <span class="p">{</span>
-<a id="__codelineno-0-598" name="__codelineno-0-598"></a>            <span class="s2">&quot;dparams&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;custom_kernel&quot;</span><span class="p">:</span> <span class="n">custom_kernel</span><span class="p">},</span>
-<a id="__codelineno-0-599" name="__codelineno-0-599"></a>        <span class="p">}</span>
-<a id="__codelineno-0-600" name="__codelineno-0-600"></a>    <span class="n">descaled</span> <span class="o">=</span> <span class="n">descaler</span><span class="p">(</span>
-<a id="__codelineno-0-601" name="__codelineno-0-601"></a>        <span class="n">src</span><span class="o">=</span><span class="n">src</span><span class="p">,</span>
-<a id="__codelineno-0-602" name="__codelineno-0-602"></a>        <span class="n">width</span><span class="o">=</span><span class="n">width</span><span class="p">,</span>
-<a id="__codelineno-0-603" name="__codelineno-0-603"></a>        <span class="n">height</span><span class="o">=</span><span class="n">height</span><span class="p">,</span>
-<a id="__codelineno-0-604" name="__codelineno-0-604"></a>        <span class="n">blur</span><span class="o">=</span><span class="n">blur</span><span class="p">,</span>
-<a id="__codelineno-0-605" name="__codelineno-0-605"></a>        <span class="n">post_conv</span><span class="o">=</span><span class="n">post_conv</span><span class="p">,</span>
-<a id="__codelineno-0-606" name="__codelineno-0-606"></a>        <span class="n">src_left</span><span class="o">=</span><span class="n">src_left</span><span class="p">,</span>
-<a id="__codelineno-0-607" name="__codelineno-0-607"></a>        <span class="n">src_top</span><span class="o">=</span><span class="n">src_top</span><span class="p">,</span>
-<a id="__codelineno-0-608" name="__codelineno-0-608"></a>        <span class="n">src_width</span><span class="o">=</span><span class="n">src_width</span><span class="p">,</span>
-<a id="__codelineno-0-609" name="__codelineno-0-609"></a>        <span class="n">src_height</span><span class="o">=</span><span class="n">src_height</span><span class="p">,</span>
-<a id="__codelineno-0-610" name="__codelineno-0-610"></a>        <span class="n">border_handling</span><span class="o">=</span><span class="n">border_handling</span><span class="p">,</span>
-<a id="__codelineno-0-611" name="__codelineno-0-611"></a>        <span class="n">ignore_mask</span><span class="o">=</span><span class="n">ignore_mask</span><span class="p">,</span>
-<a id="__codelineno-0-612" name="__codelineno-0-612"></a>        <span class="n">force</span><span class="o">=</span><span class="n">force</span><span class="p">,</span>
-<a id="__codelineno-0-613" name="__codelineno-0-613"></a>        <span class="n">force_h</span><span class="o">=</span><span class="n">force_h</span><span class="p">,</span>
-<a id="__codelineno-0-614" name="__codelineno-0-614"></a>        <span class="n">force_v</span><span class="o">=</span><span class="n">force_v</span><span class="p">,</span>
-<a id="__codelineno-0-615" name="__codelineno-0-615"></a>        <span class="n">opt</span><span class="o">=</span><span class="n">opt</span><span class="p">,</span>
-<a id="__codelineno-0-616" name="__codelineno-0-616"></a>        <span class="o">**</span><span class="n">extra_params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;dparams&quot;</span><span class="p">,</span> <span class="p">{}),</span>
-<a id="__codelineno-0-617" name="__codelineno-0-617"></a>    <span class="p">)</span>
-<a id="__codelineno-0-618" name="__codelineno-0-618"></a>
-<a id="__codelineno-0-619" name="__codelineno-0-619"></a>    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">descaled</span><span class="p">,</span> <span class="n">vs</span><span class="o">.</span><span class="n">VideoNode</span><span class="p">)</span>
-<a id="__codelineno-0-620" name="__codelineno-0-620"></a>
-<a id="__codelineno-0-621" name="__codelineno-0-621"></a>    <span class="k">return</span> <span class="n">descaled</span>
+<span class="normal"><a href="#__codelineno-0-618">618</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-529" name="__codelineno-0-529"></a><span class="k">def</span><span class="w"> </span><span class="nf">Descale</span><span class="p">(</span>
+<a id="__codelineno-0-530" name="__codelineno-0-530"></a>    <span class="n">src</span><span class="p">:</span> <span class="n">vs</span><span class="o">.</span><span class="n">VideoNode</span><span class="p">,</span>
+<a id="__codelineno-0-531" name="__codelineno-0-531"></a>    <span class="n">width</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+<a id="__codelineno-0-532" name="__codelineno-0-532"></a>    <span class="n">height</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+<a id="__codelineno-0-533" name="__codelineno-0-533"></a>    <span class="n">kernel</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+<a id="__codelineno-0-534" name="__codelineno-0-534"></a>    <span class="n">custom_kernel</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<a id="__codelineno-0-535" name="__codelineno-0-535"></a>    <span class="n">taps</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span>
+<a id="__codelineno-0-536" name="__codelineno-0-536"></a>    <span class="n">b</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span>
+<a id="__codelineno-0-537" name="__codelineno-0-537"></a>    <span class="n">c</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.5</span><span class="p">,</span>
+<a id="__codelineno-0-538" name="__codelineno-0-538"></a>    <span class="n">blur</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
+<a id="__codelineno-0-539" name="__codelineno-0-539"></a>    <span class="n">post_conv</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<a id="__codelineno-0-540" name="__codelineno-0-540"></a>    <span class="n">src_left</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span>
+<a id="__codelineno-0-541" name="__codelineno-0-541"></a>    <span class="n">src_top</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span>
+<a id="__codelineno-0-542" name="__codelineno-0-542"></a>    <span class="n">src_width</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<a id="__codelineno-0-543" name="__codelineno-0-543"></a>    <span class="n">src_height</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<a id="__codelineno-0-544" name="__codelineno-0-544"></a>    <span class="n">border_handling</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+<a id="__codelineno-0-545" name="__codelineno-0-545"></a>    <span class="n">ignore_mask</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">vs</span><span class="o">.</span><span class="n">VideoNode</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<a id="__codelineno-0-546" name="__codelineno-0-546"></a>    <span class="n">force</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+<a id="__codelineno-0-547" name="__codelineno-0-547"></a>    <span class="n">force_h</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+<a id="__codelineno-0-548" name="__codelineno-0-548"></a>    <span class="n">force_v</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+<a id="__codelineno-0-549" name="__codelineno-0-549"></a>    <span class="n">opt</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+<a id="__codelineno-0-550" name="__codelineno-0-550"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">vs</span><span class="o">.</span><span class="n">VideoNode</span><span class="p">:</span>
+<a id="__codelineno-0-551" name="__codelineno-0-551"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">_get_resize_name</span><span class="p">(</span><span class="n">kernel_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<a id="__codelineno-0-552" name="__codelineno-0-552"></a>        <span class="k">if</span> <span class="n">kernel_name</span> <span class="o">==</span> <span class="s2">&quot;Decustom&quot;</span><span class="p">:</span>
+<a id="__codelineno-0-553" name="__codelineno-0-553"></a>            <span class="k">return</span> <span class="s2">&quot;ScaleCustom&quot;</span>
+<a id="__codelineno-0-554" name="__codelineno-0-554"></a>        <span class="k">if</span> <span class="n">kernel_name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;De&quot;</span><span class="p">):</span>
+<a id="__codelineno-0-555" name="__codelineno-0-555"></a>            <span class="k">return</span> <span class="n">kernel_name</span><span class="p">[</span><span class="mi">2</span><span class="p">:]</span><span class="o">.</span><span class="n">capitalize</span><span class="p">()</span>
+<a id="__codelineno-0-556" name="__codelineno-0-556"></a>        <span class="k">return</span> <span class="n">kernel_name</span>
+<a id="__codelineno-0-557" name="__codelineno-0-557"></a>
+<a id="__codelineno-0-558" name="__codelineno-0-558"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">_get_descaler_name</span><span class="p">(</span><span class="n">kernel_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<a id="__codelineno-0-559" name="__codelineno-0-559"></a>        <span class="k">if</span> <span class="n">kernel_name</span> <span class="o">==</span> <span class="s2">&quot;ScaleCustom&quot;</span><span class="p">:</span>
+<a id="__codelineno-0-560" name="__codelineno-0-560"></a>            <span class="k">return</span> <span class="s2">&quot;Decustom&quot;</span>
+<a id="__codelineno-0-561" name="__codelineno-0-561"></a>        <span class="k">if</span> <span class="n">kernel_name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;De&quot;</span><span class="p">):</span>
+<a id="__codelineno-0-562" name="__codelineno-0-562"></a>            <span class="k">return</span> <span class="n">kernel_name</span>
+<a id="__codelineno-0-563" name="__codelineno-0-563"></a>        <span class="k">return</span> <span class="s2">&quot;De&quot;</span> <span class="o">+</span> <span class="n">kernel_name</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">+</span> <span class="n">kernel_name</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+<a id="__codelineno-0-564" name="__codelineno-0-564"></a>
+<a id="__codelineno-0-565" name="__codelineno-0-565"></a>    <span class="k">assert</span> <span class="n">width</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">height</span> <span class="o">&gt;</span> <span class="mi">0</span>
+<a id="__codelineno-0-566" name="__codelineno-0-566"></a>    <span class="k">assert</span> <span class="n">opt</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span>
+<a id="__codelineno-0-567" name="__codelineno-0-567"></a>    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">vs</span><span class="o">.</span><span class="n">VideoNode</span><span class="p">)</span> <span class="ow">and</span> <span class="n">src</span><span class="o">.</span><span class="n">format</span><span class="o">.</span><span class="n">id</span> <span class="o">==</span> <span class="n">vs</span><span class="o">.</span><span class="n">GRAYS</span>
+<a id="__codelineno-0-568" name="__codelineno-0-568"></a>
+<a id="__codelineno-0-569" name="__codelineno-0-569"></a>    <span class="n">kernel</span> <span class="o">=</span> <span class="n">kernel</span><span class="o">.</span><span class="n">capitalize</span><span class="p">()</span>
+<a id="__codelineno-0-570" name="__codelineno-0-570"></a>
+<a id="__codelineno-0-571" name="__codelineno-0-571"></a>    <span class="k">if</span> <span class="n">src_width</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+<a id="__codelineno-0-572" name="__codelineno-0-572"></a>        <span class="n">src_width</span> <span class="o">=</span> <span class="n">width</span>
+<a id="__codelineno-0-573" name="__codelineno-0-573"></a>    <span class="k">if</span> <span class="n">src_height</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+<a id="__codelineno-0-574" name="__codelineno-0-574"></a>        <span class="n">src_height</span> <span class="o">=</span> <span class="n">height</span>
+<a id="__codelineno-0-575" name="__codelineno-0-575"></a>
+<a id="__codelineno-0-576" name="__codelineno-0-576"></a>    <span class="k">if</span> <span class="n">width</span> <span class="o">&gt;</span> <span class="n">src</span><span class="o">.</span><span class="n">width</span> <span class="ow">or</span> <span class="n">height</span> <span class="o">&gt;</span> <span class="n">src</span><span class="o">.</span><span class="n">height</span><span class="p">:</span>
+<a id="__codelineno-0-577" name="__codelineno-0-577"></a>        <span class="n">kernel</span> <span class="o">=</span> <span class="n">_get_resize_name</span><span class="p">(</span><span class="n">kernel</span><span class="p">)</span>
+<a id="__codelineno-0-578" name="__codelineno-0-578"></a>    <span class="k">else</span><span class="p">:</span>
+<a id="__codelineno-0-579" name="__codelineno-0-579"></a>        <span class="n">kernel</span> <span class="o">=</span> <span class="n">_get_descaler_name</span><span class="p">(</span><span class="n">kernel</span><span class="p">)</span>
+<a id="__codelineno-0-580" name="__codelineno-0-580"></a>
+<a id="__codelineno-0-581" name="__codelineno-0-581"></a>    <span class="n">descaler</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">core</span><span class="o">.</span><span class="n">descale</span><span class="p">,</span> <span class="n">kernel</span><span class="p">)</span>
+<a id="__codelineno-0-582" name="__codelineno-0-582"></a>    <span class="k">assert</span> <span class="nb">callable</span><span class="p">(</span><span class="n">descaler</span><span class="p">)</span>
+<a id="__codelineno-0-583" name="__codelineno-0-583"></a>    <span class="n">extra_params</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="n">Callable</span><span class="p">]]]</span> <span class="o">=</span> <span class="p">{}</span>
+<a id="__codelineno-0-584" name="__codelineno-0-584"></a>    <span class="k">if</span> <span class="n">_get_descaler_name</span><span class="p">(</span><span class="n">kernel</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;Debicubic&quot;</span><span class="p">:</span>
+<a id="__codelineno-0-585" name="__codelineno-0-585"></a>        <span class="n">extra_params</span> <span class="o">=</span> <span class="p">{</span>
+<a id="__codelineno-0-586" name="__codelineno-0-586"></a>            <span class="s2">&quot;dparams&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;b&quot;</span><span class="p">:</span> <span class="n">b</span><span class="p">,</span> <span class="s2">&quot;c&quot;</span><span class="p">:</span> <span class="n">c</span><span class="p">},</span>
+<a id="__codelineno-0-587" name="__codelineno-0-587"></a>        <span class="p">}</span>
+<a id="__codelineno-0-588" name="__codelineno-0-588"></a>    <span class="k">elif</span> <span class="n">_get_descaler_name</span><span class="p">(</span><span class="n">kernel</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;Delanczos&quot;</span><span class="p">:</span>
+<a id="__codelineno-0-589" name="__codelineno-0-589"></a>        <span class="n">extra_params</span> <span class="o">=</span> <span class="p">{</span>
+<a id="__codelineno-0-590" name="__codelineno-0-590"></a>            <span class="s2">&quot;dparams&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;taps&quot;</span><span class="p">:</span> <span class="n">taps</span><span class="p">},</span>
+<a id="__codelineno-0-591" name="__codelineno-0-591"></a>        <span class="p">}</span>
+<a id="__codelineno-0-592" name="__codelineno-0-592"></a>    <span class="k">elif</span> <span class="n">_get_descaler_name</span><span class="p">(</span><span class="n">kernel</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;Decustom&quot;</span><span class="p">:</span>
+<a id="__codelineno-0-593" name="__codelineno-0-593"></a>        <span class="k">assert</span> <span class="nb">callable</span><span class="p">(</span><span class="n">custom_kernel</span><span class="p">)</span>
+<a id="__codelineno-0-594" name="__codelineno-0-594"></a>        <span class="n">extra_params</span> <span class="o">=</span> <span class="p">{</span>
+<a id="__codelineno-0-595" name="__codelineno-0-595"></a>            <span class="s2">&quot;dparams&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;custom_kernel&quot;</span><span class="p">:</span> <span class="n">custom_kernel</span><span class="p">},</span>
+<a id="__codelineno-0-596" name="__codelineno-0-596"></a>        <span class="p">}</span>
+<a id="__codelineno-0-597" name="__codelineno-0-597"></a>    <span class="n">descaled</span> <span class="o">=</span> <span class="n">descaler</span><span class="p">(</span>
+<a id="__codelineno-0-598" name="__codelineno-0-598"></a>        <span class="n">src</span><span class="o">=</span><span class="n">src</span><span class="p">,</span>
+<a id="__codelineno-0-599" name="__codelineno-0-599"></a>        <span class="n">width</span><span class="o">=</span><span class="n">width</span><span class="p">,</span>
+<a id="__codelineno-0-600" name="__codelineno-0-600"></a>        <span class="n">height</span><span class="o">=</span><span class="n">height</span><span class="p">,</span>
+<a id="__codelineno-0-601" name="__codelineno-0-601"></a>        <span class="n">blur</span><span class="o">=</span><span class="n">blur</span><span class="p">,</span>
+<a id="__codelineno-0-602" name="__codelineno-0-602"></a>        <span class="n">post_conv</span><span class="o">=</span><span class="n">post_conv</span><span class="p">,</span>
+<a id="__codelineno-0-603" name="__codelineno-0-603"></a>        <span class="n">src_left</span><span class="o">=</span><span class="n">src_left</span><span class="p">,</span>
+<a id="__codelineno-0-604" name="__codelineno-0-604"></a>        <span class="n">src_top</span><span class="o">=</span><span class="n">src_top</span><span class="p">,</span>
+<a id="__codelineno-0-605" name="__codelineno-0-605"></a>        <span class="n">src_width</span><span class="o">=</span><span class="n">src_width</span><span class="p">,</span>
+<a id="__codelineno-0-606" name="__codelineno-0-606"></a>        <span class="n">src_height</span><span class="o">=</span><span class="n">src_height</span><span class="p">,</span>
+<a id="__codelineno-0-607" name="__codelineno-0-607"></a>        <span class="n">border_handling</span><span class="o">=</span><span class="n">border_handling</span><span class="p">,</span>
+<a id="__codelineno-0-608" name="__codelineno-0-608"></a>        <span class="n">ignore_mask</span><span class="o">=</span><span class="n">ignore_mask</span><span class="p">,</span>
+<a id="__codelineno-0-609" name="__codelineno-0-609"></a>        <span class="n">force</span><span class="o">=</span><span class="n">force</span><span class="p">,</span>
+<a id="__codelineno-0-610" name="__codelineno-0-610"></a>        <span class="n">force_h</span><span class="o">=</span><span class="n">force_h</span><span class="p">,</span>
+<a id="__codelineno-0-611" name="__codelineno-0-611"></a>        <span class="n">force_v</span><span class="o">=</span><span class="n">force_v</span><span class="p">,</span>
+<a id="__codelineno-0-612" name="__codelineno-0-612"></a>        <span class="n">opt</span><span class="o">=</span><span class="n">opt</span><span class="p">,</span>
+<a id="__codelineno-0-613" name="__codelineno-0-613"></a>        <span class="o">**</span><span class="n">extra_params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;dparams&quot;</span><span class="p">,</span> <span class="p">{}),</span>
+<a id="__codelineno-0-614" name="__codelineno-0-614"></a>    <span class="p">)</span>
+<a id="__codelineno-0-615" name="__codelineno-0-615"></a>
+<a id="__codelineno-0-616" name="__codelineno-0-616"></a>    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">descaled</span><span class="p">,</span> <span class="n">vs</span><span class="o">.</span><span class="n">VideoNode</span><span class="p">)</span>
+<a id="__codelineno-0-617" name="__codelineno-0-617"></a>
+<a id="__codelineno-0-618" name="__codelineno-0-618"></a>    <span class="k">return</span> <span class="n">descaled</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -5742,10 +5764,10 @@ This helps reducing the dark halo artifacts around sharp edges caused by resizin
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["navigation.tabs", "navigation.sections", "toc.integrate", "navigation.top", "search.suggest", "search.highlight", "content.code.copy"], "search": "../../../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["navigation.tabs", "navigation.sections", "toc.integrate", "navigation.top", "search.suggest", "search.highlight", "content.code.copy"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../../../assets/javascripts/bundle.e71a0d61.min.js"></script>
+      <script src="../../../assets/javascripts/bundle.79ae519e.min.js"></script>
       
     
   </body>
