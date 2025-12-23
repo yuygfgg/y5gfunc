@@ -1,8 +1,6 @@
 from typing import Union
-import numpy as np
-from vapoursynth import ColorRange
 from vstools import core, vs
-from .utils import get_peak_value_full
+import vstools
 
 def add_noise(
     clip: vs.VideoNode, sigma: Union[int, float] | list[Union[int, float]] = 5
@@ -17,6 +15,10 @@ def add_noise(
 
     Returns:
         A new clip with the added noise.
+    
+    Raises:
+        ValueError: If sigma values are not positive
+        ValueError: If sigma is not a single value or the length of sigma list does not match the number of planes in the clip.
     """
     if isinstance(sigma, (int, float)):
         sigma = [sigma] * clip.format.num_planes
@@ -24,22 +26,13 @@ def add_noise(
         raise ValueError(
             "add_noise: Length of sigma list must match the number of planes in the clip, or a single value that applies to all planes."
         )
+    
+    if min(sigma) <= 0:
+        raise ValueError("add_noise: Sigma values must be positive.")
 
-    max_val = get_peak_value_full(clip)
-
-    def noise_eval(n: int, f: vs.VideoFrame) -> vs.VideoFrame:
-        fout = f.copy()
-        for p in range(fout.format.num_planes):
-            plane_arr = np.asarray(fout[p])
-
-            noise = np.random.normal(0, sigma[p] / 255.0, plane_arr.shape)
-
-            if clip.format.sample_type == vs.INTEGER:
-                img_norm = plane_arr.astype(np.float32) / max_val
-                noisy = np.clip(img_norm + noise, 0, 1.0) * max_val
-                plane_arr[:] = noisy.astype(plane_arr.dtype)
-            else:
-                plane_arr[:] = plane_arr + noise
-        return fout
-
-    return core.std.ModifyFrame(clip, clip, noise_eval)
+    planes = vstools.split(clip)
+    out_planes = []
+    for i, p in enumerate(planes):
+        out_planes.append(core.grain.Add(p, sigma[i] ** 2))
+    
+    return vstools.join(out_planes, clip.format.color_family)
