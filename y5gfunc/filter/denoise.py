@@ -665,15 +665,14 @@ def rmt_analyze(
     References:
         - Gavish, M., & Donoho, D. L. (2014). The optimal hard threshold for singular
           values is $4/\sqrt{3}$. IEEE Transactions on Information Theory, 60(8), 5040-5053.
+          https://doi.org/10.1109/TIT.2014.2323359
     """
     if patch_size <= 0:
-        raise ValueError("rmt_analyze: patch_size must be a positive integer")
+        raise ValueError("rmt_analyze: patch_size must be a positive integer.")
     if n_patches <= 0:
-        raise ValueError(
-            "rmt_analyze: n_patches must be a positive integer, but got {n_patches}"
-        )
+        raise ValueError("rmt_analyze: n_patches must be a positive integer.")
     if n_patches < patch_size**2:
-        raise ValueError("rmt_analyze: n_patches must be at least patch_size^2")
+        raise ValueError("rmt_analyze: n_patches must be at least patch_size^2.")
 
     if planes is None:
         planes = list(range(0, clip.format.num_planes))
@@ -688,15 +687,13 @@ def rmt_analyze(
 
     if patch_size >= min_width or patch_size >= min_height:
         raise ValueError(
-            f"rmt_analyze: patch_size ({patch_size}) must be strictly smaller than the smallest plane's dimensions "
-            f"({min_width}x{min_height})."
+            "rmt_analyze: patch_size must be strictly smaller than the smallest plane's dimensions."
         )
 
     max_patches = (min_width - patch_size + 1) * (min_height - patch_size + 1)
     if n_patches > max_patches:
         raise ValueError(
-            f"rmt_analyze: n_patches ({n_patches}) is greater than the maximum number of available unique patches "
-            f"({max_patches}) for the smallest plane."
+            "rmt_analyze: n_patches is greater than the maximum number of available unique patches."
         )
 
     def _relu(x: Union[float, np.ndarray]):
@@ -704,9 +701,6 @@ def rmt_analyze(
 
     @functools.lru_cache
     def _get_mp_median(ratio: float) -> float:
-        """
-        Calculates the theoretical median of the Marchenko-Pastur distribution for a given aspect ratio.
-        """
         lambda_minus = (1 - np.sqrt(ratio)) ** 2
         lambda_plus = (1 + np.sqrt(ratio)) ** 2
         var = 1.0
