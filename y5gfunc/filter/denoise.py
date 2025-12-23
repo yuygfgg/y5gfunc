@@ -660,19 +660,20 @@ def rmt_analyze(
         ValueError: If a specified plane index is larger than the number of planes in the clip.
         ValueError: If `patch_size` is not positive or is larger than the smallest plane dimension.
         ValueError: If `n_patches` is not positive or is greater than the number of available unique patches.
+        ValueError: If `n_patches` is less than `patch_size` squared.
 
     References:
         - Gavish, M., & Donoho, D. L. (2014). The optimal hard threshold for singular
           values is $4/\sqrt{3}$. IEEE Transactions on Information Theory, 60(8), 5040-5053.
     """
     if patch_size <= 0:
-        raise ValueError(
-            f"rmt_analyze: patch_size must be a positive integer, but got {patch_size}"
-        )
+        raise ValueError("rmt_analyze: patch_size must be a positive integer")
     if n_patches <= 0:
         raise ValueError(
-            f"rmt_analyze: n_patches must be a positive integer, but got {n_patches}"
+            "rmt_analyze: n_patches must be a positive integer, but got {n_patches}"
         )
+    if n_patches < patch_size**2:
+        raise ValueError("rmt_analyze: n_patches must be at least patch_size^2")
 
     if planes is None:
         planes = list(range(0, clip.format.num_planes))
@@ -751,7 +752,9 @@ def rmt_analyze(
             pass
         return (lambda_plus + lambda_minus) / 2.0
 
-    def _get_random_patches(img_plane: np.ndarray, sz: int, n_pts: int, seed_val: int) -> np.ndarray:
+    def _get_random_patches(
+        img_plane: np.ndarray, sz: int, n_pts: int, seed_val: int
+    ) -> np.ndarray:
         h, w = img_plane.shape
         valid_h = h - sz + 1
         valid_w = w - sz + 1
@@ -788,23 +791,22 @@ def rmt_analyze(
 
             sigma_result = 0.0
 
-            if N >= M:
-                try:
-                    C = (X.T @ X) / N
+            try:
+                C = (X.T @ X) / N
 
-                    eigenvalues = np.linalg.eigvalsh(C)
-                    observed_median = np.median(eigenvalues)
+                eigenvalues = np.linalg.eigvalsh(C)
+                observed_median = np.median(eigenvalues)
 
-                    ratio = M / N
-                    mp_median = _get_mp_median(ratio)
+                ratio = M / N
+                mp_median = _get_mp_median(ratio)
 
-                    if mp_median > 1e-9:
-                        estimated_sigma_sq = observed_median / mp_median
-                        if estimated_sigma_sq > 0:
-                            sigma_result = np.sqrt(estimated_sigma_sq)
+                if mp_median > 1e-9:
+                    estimated_sigma_sq = observed_median / mp_median
+                    if estimated_sigma_sq > 0:
+                        sigma_result = np.sqrt(estimated_sigma_sq)
 
-                except np.linalg.LinAlgError:
-                    pass
+            except np.linalg.LinAlgError:
+                pass
 
             key = f"{prop_name}{p}"
             fout.props[key] = float(sigma_result) * 255.0

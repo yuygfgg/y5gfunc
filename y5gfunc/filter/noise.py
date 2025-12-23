@@ -2,6 +2,7 @@ from typing import Union
 from vstools import core, vs
 import vstools
 
+
 def add_noise(
     clip: vs.VideoNode, sigma: Union[int, float] | list[Union[int, float]] = 5
 ) -> vs.VideoNode:
@@ -15,7 +16,7 @@ def add_noise(
 
     Returns:
         A new clip with the added noise.
-    
+
     Raises:
         ValueError: If sigma values are not positive
         ValueError: If sigma is not a single value or the length of sigma list does not match the number of planes in the clip.
@@ -26,7 +27,7 @@ def add_noise(
         raise ValueError(
             "add_noise: Length of sigma list must match the number of planes in the clip, or a single value that applies to all planes."
         )
-    
+
     if min(sigma) <= 0:
         raise ValueError("add_noise: Sigma values must be positive.")
 
@@ -34,5 +35,5 @@ def add_noise(
     out_planes = []
     for i, p in enumerate(planes):
         out_planes.append(core.grain.Add(p, sigma[i] ** 2))
-    
+
     return vstools.join(out_planes, clip.format.color_family)
