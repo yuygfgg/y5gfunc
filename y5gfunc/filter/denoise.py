@@ -640,7 +640,7 @@ def rmt_analyze(
     Estimate the noise standard deviation of a clip using Random Matrix Theory.
 
     Noise strength (sigma) is defined as the standard deviation of the AWGN component,
-    implying $Noise \sim \mathcal{N}(0, \sigma^2)$ on a $0\text{-}1$ scale.
+    implying $Noise \sim \mathcal{N}(0, \sigma^2)$ on a $0\text{-}255$ scale.
 
     Args:
         clip: The input video clip.
