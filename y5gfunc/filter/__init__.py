@@ -1,4 +1,4 @@
-from .deband import sakiko_deband
+from .deband import sakiko_deband, sakiko_deband_v2
 from .denoise import (
     BM3DPreset,
     Fast_BM3DWrapper,
@@ -55,6 +55,7 @@ from .utils import get_peak_value_full, is_optimized_cpu
 
 __all__ = [
     "sakiko_deband",
+    "sakiko_deband_v2",
     "BM3DPreset",
     "Fast_BM3DWrapper",
     "hybrid_denoise",

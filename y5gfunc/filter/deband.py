@@ -1,9 +1,11 @@
 from vstools import vs
 from vstools import core
 import vstools
-from typing import Union, Optional
+from typing import Union, Optional, Literal, Callable
 import functools
 import mvsfunc as mvf
+from vsdeband import deband_detail_mask
+
 
 from .mask import retinex_edgemask
 from vsrgtools import remove_grain
@@ -61,3 +63,87 @@ def sakiko_deband(
         return deband, bmask
     else:
         return deband
+
+
+# modified from rksfunc.SynDebandv2()
+def sakiko_deband_v2(
+    clip: vs.VideoNode,
+    preset: Literal["low", "high", "mid"] = "low",
+    banding_mask: Optional[vs.VideoNode] = None,
+    debander: Optional[Callable[[vs.VideoNode], vs.VideoNode]] = None,
+    killer: Optional[Callable[[vs.VideoNode], vs.VideoNode]] = None,
+    ampo: float = 1.0,
+    include_mask: bool = False,
+) -> Union[vs.VideoNode, tuple[vs.VideoNode, vs.VideoNode]]:
+    if banding_mask is None:
+        banding_mask = (
+            deband_detail_mask(clip).std.Maximum().std.Maximum().std.Deflate()
+        )
+    kill = clip if killer is None else killer(clip)
+    if debander is None:
+        deband = vstools.depth(kill, 32)
+        _d = deband.vszip.Deband
+        match preset:
+            case "low":
+                deband = _d(
+                    range=12,
+                    thr=0.6,
+                    grain=0,
+                    sample_mode=7,
+                    thr1=1.9,
+                    thr2=1.2,
+                    angle_boost=1.9,
+                )
+                deband = _d(
+                    range=22,
+                    thr=0.5,
+                    grain=0,
+                    sample_mode=7,
+                    thr1=1.7,
+                    thr2=1.1,
+                    angle_boost=1.8,
+                )
+            case "mid":
+                deband = _d(
+                    range=12,
+                    thr=1.8,
+                    grain=0,
+                    sample_mode=7,
+                    thr1=4.0,
+                    thr2=2.0,
+                    angle_boost=1.6,
+                )
+                deband = _d(
+                    range=22,
+                    thr=1.6,
+                    grain=0,
+                    sample_mode=7,
+                    thr1=3.6,
+                    thr2=1.8,
+                    angle_boost=1.5,
+                )
+            case "high":
+                deband = _d(
+                    range=12, thr=3.4, grain=0, sample_mode=6, thr1=6.8, thr2=3.3
+                )
+                deband = _d(
+                    range=12, thr=3.2, grain=0, sample_mode=6, thr1=6.4, thr2=3.1
+                )
+            case _:
+                raise ValueError(f"{preset = } is not available.")
+        origin = kill.format.bits_per_sample
+        if origin < 32:
+            deband = deband.fmtc.bitdepth(bits=origin, dmode=0, ampn=0.1, ampo=ampo)
+    else:
+        deband = debander(kill)
+    deband = core.std.MaskedMerge(deband, kill, banding_mask)
+    if include_mask:
+        if killer is not None:
+            return deband.std.MergeFullDiff(clip.std.MakeFullDiff(kill)), banding_mask
+        else:
+            return deband, banding_mask
+    else:
+        if killer is not None:
+            return deband.std.MergeFullDiff(clip.std.MakeFullDiff(kill))
+        else:
+            return deband

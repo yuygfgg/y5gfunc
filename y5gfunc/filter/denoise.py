@@ -759,11 +759,9 @@ def rmt_analyze(
         r = rng.integers(0, valid_h, size=n_pts)
         c = rng.integers(0, valid_w, size=n_pts)
 
-        # windows: (valid_h, valid_w, sz, sz) view (no copy)
         windows = sliding_window_view(img_plane, (sz, sz))
         patches = windows[r, c].reshape(n_pts, sz * sz).astype(np.float64, copy=False)
 
-        # per-patch mean centering
         patches -= patches.mean(axis=1, keepdims=True)
         return patches
 

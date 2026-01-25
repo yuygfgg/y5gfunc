@@ -28,6 +28,7 @@ from .expr import (
 )
 from .filter import (
     sakiko_deband,
+    sakiko_deband_v2,
     BM3DPreset,
     Fast_BM3DWrapper,
     hybrid_denoise,
@@ -157,6 +158,7 @@ __all__ = [
     "optimize_akarin_expr",
     "math_functions",
     "sakiko_deband",
+    "sakiko_deband_v2",
     "SynDeband",
     "BM3DPreset",
     "Fast_BM3DWrapper",
