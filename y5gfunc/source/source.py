@@ -1,9 +1,8 @@
 from vstools import vs, core
-from vstools.utils.vs_proxy import PRIMARIES_BT2020
 from .wobbly import load_and_process
 from typing import Optional, Union
 from pathlib import Path
-from ..utils import resolve_path
+from ..utils import resolve_path, primaries_from_matrix, transfer_from_matrix
 from vssource import BestSource, FFMS2, LSMAS
 from vstools import Matrix, Primaries, Transfer, ChromaLocation
 from ..filter import tonemap, ColorSpace
@@ -120,10 +119,10 @@ def load_source(
     if matrix_in is None:
         matrix_in = Matrix.from_res(clip)
 
-    primaries = Primaries.from_matrix(matrix)
-    primaries_in = Primaries.from_matrix(matrix_in)
-    transfer = Transfer.from_matrix(matrix).value_vs
-    transfer_in = Transfer.from_matrix(matrix).value_vs
+    primaries = primaries_from_matrix(matrix)
+    primaries_in = primaries_from_matrix(matrix_in)
+    transfer = transfer_from_matrix(matrix).value
+    transfer_in = transfer_from_matrix(matrix).value
 
     return clip.resize2.Spline36(
         matrix=matrix,
@@ -194,9 +193,9 @@ def load_dv_p7(
     ).resize2.Spline36(format=vs.YUV420P16)
 
     hdr = core.vsnlq.MapNLQ(bl, el).std.SetFrameProps(
-        _Matrix=Matrix.BT2020NCL,
-        _Primaries=PRIMARIES_BT2020,
-        _Transfer=Transfer.ST2084.value_vs,
+        _Matrix=Matrix.BT2020_NCL,
+        _Primaries=Primaries.BT2020.value,
+        _Transfer=Transfer.ST2084.value,
     )
 
     hdr = core.akarin.PropExpr([hdr, el], lambda: {"_FEL": "y.PlaneStatsAverage 0 >"})

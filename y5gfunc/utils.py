@@ -1,6 +1,62 @@
 from typing import Union
-from vstools import vs
+from vstools import vs, Matrix, Primaries, Transfer
 from pathlib import Path
+
+_MATRIX_TRANSFER_MAP: dict[Matrix, Transfer] = {
+    Matrix.RGB: Transfer.IEC_61966_2_1,
+    Matrix.BT709: Transfer.BT709,
+    Matrix.BT470_BG: Transfer.BT601,
+    Matrix.ST170_M: Transfer.BT601,
+    Matrix.ST240_M: Transfer.ST240_M,
+    Matrix.CHROMATICITY_DERIVED_NC: Transfer.IEC_61966_2_1,
+    Matrix.ICTCP: Transfer.BT2020_10,
+}
+
+
+def primaries_from_matrix(matrix: Matrix, strict: bool = False) -> Primaries:
+    """
+    Derive the ``Primaries`` for a given ``Matrix``.
+
+    Args:
+        matrix: Source matrix object.
+        strict: When True, raise on matrices whose value has no ``Primaries``
+            counterpart instead of falling back to ``Primaries.UNSPECIFIED``.
+
+    Returns:
+        The matching ``Primaries`` value.
+
+    Raises:
+        ValueError: If ``strict`` is True and ``matrix`` cannot be mapped.
+    """
+    try:
+        return Primaries(matrix.value)
+    except ValueError:
+        if strict:
+            raise
+        return Primaries.UNSPECIFIED
+
+
+def transfer_from_matrix(matrix: Matrix, strict: bool = False) -> Transfer:
+    """
+    Derive the ``Transfer`` for a given ``Matrix``.
+
+    Args:
+        matrix: Source matrix object.
+        strict: When True, raise on matrices missing from the mapping table
+            instead of falling back to ``Transfer(matrix.value)``.
+
+    Returns:
+        The matching ``Transfer`` value.
+
+    Raises:
+        ValueError: If ``strict`` is True and ``matrix`` is not in the mapping.
+    """
+    transfer = _MATRIX_TRANSFER_MAP.get(matrix)
+    if transfer is not None:
+        return transfer
+    if strict:
+        raise ValueError(f"{matrix} is not supported by transfer_from_matrix")
+    return Transfer(matrix.value)
 
 
 def ranger(

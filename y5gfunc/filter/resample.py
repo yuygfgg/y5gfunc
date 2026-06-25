@@ -8,7 +8,6 @@ from vstools import (
     get_peak_value,
     get_lowest_value,
     ColorRange,
-    Primaries,
     Transfer,
     join,
     scale_mask,
@@ -17,6 +16,7 @@ from vstools import (
 from vsrgtools import box_blur
 from typing import Any, Optional, Union, Callable
 import sympy
+from ..utils import primaries_from_matrix, transfer_from_matrix
 from sympy import S, Rational, sqrt
 
 
@@ -162,8 +162,8 @@ def _register_standard_matrices(manager: ColorMatrixManager) -> None:
 
     manager.register_yuv_matrix(
         [
-            vstools.Matrix.BT470BG,
-            vstools.Matrix.SMPTE170M,
+            vstools.Matrix.BT470_BG,
+            vstools.Matrix.ST170_M,
         ],
         sympy.Matrix(
             [[1.0, 0.0, 1.402], [1.0, -0.344136, -0.714136], [1.0, 1.772, 0.0]]
@@ -171,7 +171,7 @@ def _register_standard_matrices(manager: ColorMatrixManager) -> None:
     )
 
     manager.register_yuv_matrix(
-        [vstools.Matrix.BT2020NCL, vstools.Matrix.BT2020CL],
+        [vstools.Matrix.BT2020_NCL, vstools.Matrix.BT2020_CL],
         sympy.Matrix(
             [[1.0, 0.0, 1.47493], [1.0, -0.16479, -0.57135], [1.0, 1.8814, 0.0]]
         ),
@@ -302,8 +302,8 @@ def opp2yuv(
     if target_matrix is None:
         target_matrix = get_prop(clip, "BM3D_OPP_SRC_MATRIX", int, vstools.Matrix)
 
-    primaries = Primaries.from_matrix(target_matrix)
-    transfer = Transfer.from_matrix(target_matrix)
+    primaries = primaries_from_matrix(target_matrix)
+    transfer = transfer_from_matrix(target_matrix)
 
     if target_range is None:
         target_range = get_prop(clip, "BM3D_OPP_SRC_RANGE", int, ColorRange)
@@ -372,7 +372,7 @@ def opp2rgb(
 
     rgb = core.fmtc.matrix(clip, fulls=True, fulld=True, col_fam=vs.RGB, coef=coef)
     return rgb.std.SetFrameProps(
-        _Matrix=vstools.Matrix.RGB, _Transfer=Transfer.SRGB
+        _Matrix=vstools.Matrix.RGB, _Transfer=Transfer.IEC_61966_2_1
     ).std.RemoveFrameProps(
         ["BM3D_OPP", "BM3D_OPP_VARIANT", "BM3D_OPP_SRC_MATRIX", "BM3D_OPP_SRC_RANGE"]
     )
