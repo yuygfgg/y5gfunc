@@ -3903,7 +3903,7 @@ If <code>None</code> (default), it's set to <code>True</code> for non-metal GPU 
             </td>
             <td>
               <div class="doc-md-description">
-                <p>Denoised video clip in YUV420P16 format.</p>
+                <p>Denoised video clip in YUV420PS format.</p>
               </div>
             </td>
           </tr>
@@ -3926,7 +3926,7 @@ If <code>None</code> (default), it's set to <code>True</code> for non-metal GPU 
             </td>
             <td>
               <div class="doc-md-description">
-                <p>If the input clip format is not YUV420P16.</p>
+                <p>If the input clip format is not YUV420PS.</p>
               </div>
             </td>
           </tr>
@@ -4259,10 +4259,10 @@ If <code>None</code> (default), it's set to <code>True</code> for non-metal GPU 
 <a id="__codelineno-0-202" name="__codelineno-0-202"></a><span class="sd">            If `None` (default), it&#39;s set to `True` for non-metal GPU backends and `False` for other backends.</span>
 <a id="__codelineno-0-203" name="__codelineno-0-203"></a>
 <a id="__codelineno-0-204" name="__codelineno-0-204"></a><span class="sd">    Returns:</span>
-<a id="__codelineno-0-205" name="__codelineno-0-205"></a><span class="sd">        Denoised video clip in YUV420P16 format.</span>
+<a id="__codelineno-0-205" name="__codelineno-0-205"></a><span class="sd">        Denoised video clip in YUV420PS format.</span>
 <a id="__codelineno-0-206" name="__codelineno-0-206"></a>
 <a id="__codelineno-0-207" name="__codelineno-0-207"></a><span class="sd">    Raises:</span>
-<a id="__codelineno-0-208" name="__codelineno-0-208"></a><span class="sd">        ValueError: If the input clip format is not YUV420P16.</span>
+<a id="__codelineno-0-208" name="__codelineno-0-208"></a><span class="sd">        ValueError: If the input clip format is not YUV420PS.</span>
 <a id="__codelineno-0-209" name="__codelineno-0-209"></a><span class="sd">        ValueError: If any provided preset name is invalid.</span>
 <a id="__codelineno-0-210" name="__codelineno-0-210"></a><span class="sd">        ValueError: If `fast` is set for non-gpu backend.</span>
 <a id="__codelineno-0-211" name="__codelineno-0-211"></a>
@@ -4270,8 +4270,8 @@ If <code>None</code> (default), it's set to <code>True</code> for non-metal GPU 
 <a id="__codelineno-0-213" name="__codelineno-0-213"></a><span class="sd">        - The `delta_sigma_xxx` value is added to `sigma_xxx` only for the &#39;basic&#39; denoising step. The &#39;final&#39; step uses `sigma_xxx` directly.</span>
 <a id="__codelineno-0-214" name="__codelineno-0-214"></a><span class="sd">    &quot;&quot;&quot;</span>
 <a id="__codelineno-0-215" name="__codelineno-0-215"></a>
-<a id="__codelineno-0-216" name="__codelineno-0-216"></a>    <span class="k">if</span> <span class="n">clip</span><span class="o">.</span><span class="n">format</span><span class="o">.</span><span class="n">id</span> <span class="o">!=</span> <span class="n">vs</span><span class="o">.</span><span class="n">YUV420P16</span><span class="p">:</span>
-<a id="__codelineno-0-217" name="__codelineno-0-217"></a>        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Fast_BM3DWrapper: Input clip format must be YUV420P16.&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-216" name="__codelineno-0-216"></a>    <span class="k">if</span> <span class="n">clip</span><span class="o">.</span><span class="n">format</span><span class="o">.</span><span class="n">id</span> <span class="o">!=</span> <span class="n">vs</span><span class="o">.</span><span class="n">YUV420PS</span><span class="p">:</span>
+<a id="__codelineno-0-217" name="__codelineno-0-217"></a>        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Fast_BM3DWrapper: Input clip format must be YUV420PS.&quot;</span><span class="p">)</span>
 <a id="__codelineno-0-218" name="__codelineno-0-218"></a>    <span class="k">if</span> <span class="n">ref</span><span class="p">:</span>
 <a id="__codelineno-0-219" name="__codelineno-0-219"></a>        <span class="k">if</span> <span class="n">ref</span><span class="o">.</span><span class="n">format</span><span class="o">.</span><span class="n">id</span> <span class="o">!=</span> <span class="n">clip</span><span class="o">.</span><span class="n">format</span><span class="o">.</span><span class="n">id</span><span class="p">:</span>
 <a id="__codelineno-0-220" name="__codelineno-0-220"></a>            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
@@ -4439,7 +4439,7 @@ If <code>None</code> (default), it's set to <code>True</code> for non-metal GPU 
 <a id="__codelineno-0-382" name="__codelineno-0-382"></a>    <span class="n">final_half</span> <span class="o">=</span> <span class="n">to_yuv</span><span class="p">(</span><span class="n">final_half</span><span class="p">)</span>
 <a id="__codelineno-0-383" name="__codelineno-0-383"></a>    <span class="n">_</span><span class="p">,</span> <span class="n">final_u</span><span class="p">,</span> <span class="n">final_v</span> <span class="o">=</span> <span class="n">vstools</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">final_half</span><span class="p">)</span>
 <a id="__codelineno-0-384" name="__codelineno-0-384"></a>    <span class="n">vfinal</span> <span class="o">=</span> <span class="n">vstools</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">final_y</span><span class="p">,</span> <span class="n">final_u</span><span class="p">,</span> <span class="n">final_v</span><span class="p">])</span>
-<a id="__codelineno-0-385" name="__codelineno-0-385"></a>    <span class="k">return</span> <span class="n">vstools</span><span class="o">.</span><span class="n">depth</span><span class="p">(</span><span class="n">vfinal</span><span class="p">,</span> <span class="mi">16</span><span class="p">)</span>
+<a id="__codelineno-0-385" name="__codelineno-0-385"></a>    <span class="k">return</span> <span class="n">vfinal</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
