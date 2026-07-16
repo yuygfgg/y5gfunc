@@ -59,6 +59,8 @@ def _get_bm3d_backend() -> tuple[Callable, str]:
                 "titan",
             ]
         ):
+            if hasattr(core, "vszipcu"):
+                return core.lazy.vszipcu, "vszipcu"  # type: ignore[attr-defined]
             if hasattr(core, "bm3dcuda_rtc"):
                 return core.lazy.bm3dcuda_rtc, "bm3dcuda_rtc"  # type: ignore[attr-defined]
             if hasattr(core, "bm3dcuda"):
@@ -198,7 +200,7 @@ def Fast_BM3DWrapper(
             If `None`, uses `preset` if specified, otherwise defaults based on backend.
         ref: Ref for final BM3D step. If provided, basic step is bypassed.
         opp_matrix: OPP transform type to use.
-        fast: Multi-threaded copy between CPU and GPU at the expense of 4x memory consumption. Only available for GPU backends.
+        fast: Multi-threaded copy between CPU and GPU at the expense of more GPU memory consumption. Only available for GPU backends.
             If `None` (default), it's set to `True` for non-metal GPU backends and `False` for other backends.
 
     Returns:
@@ -303,6 +305,7 @@ def Fast_BM3DWrapper(
             ],
         }
     else:
+        fast_param_name = "fast" if bm3d_s != "vszipcu" else "fast_fused"
         if fast is None:
             fast = (
                 "metal" not in bm3d_s
@@ -311,19 +314,19 @@ def Fast_BM3DWrapper(
             "y_basic": _bm3d_presets["vbasic" if radius_Y > 0 else "basic"][
                 preset_Y_basic
             ]
-            | {"fast": fast},
+            | {fast_param_name: fast},
             "y_final": _bm3d_presets["vfinal" if radius_Y > 0 else "final"][
                 preset_Y_final
             ]
-            | {"fast": fast},
+            | {fast_param_name: fast},
             "chroma_basic": _bm3d_presets["vbasic" if radius_chroma > 0 else "basic"][
                 preset_chroma_basic
             ]
-            | {"fast": fast},
+            | {fast_param_name: fast},
             "chroma_final": _bm3d_presets["vfinal" if radius_chroma > 0 else "final"][
                 preset_chroma_final
             ]
-            | {"fast": fast},
+            | {fast_param_name: fast},
         }
 
     half_width = clip.width // 2
