@@ -388,7 +388,7 @@ def nn2x(
         nnedi3 = functools.partial(core.nnedi3cl.NNEDI3CL, **nnedi3_args)
         return nnedi3(nnedi3(clip, dh=True), dw=True)
     else:
-        nnedi3 = functools.partial(core.nnedi3.nnedi3, **nnedi3_args)
+        nnedi3 = functools.partial(core.nnedi3vk.nnedi3vk, **nnedi3_args)
         return nnedi3(nnedi3(clip, dh=True).std.Transpose(), dh=True).std.Transpose()
 
 

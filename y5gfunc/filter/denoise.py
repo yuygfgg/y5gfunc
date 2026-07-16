@@ -202,10 +202,10 @@ def Fast_BM3DWrapper(
             If `None` (default), it's set to `True` for non-metal GPU backends and `False` for other backends.
 
     Returns:
-        Denoised video clip in YUV420P16 format.
+        Denoised video clip in YUV420PS format.
 
     Raises:
-        ValueError: If the input clip format is not YUV420P16.
+        ValueError: If the input clip format is not YUV420PS.
         ValueError: If any provided preset name is invalid.
         ValueError: If `fast` is set for non-gpu backend.
 
@@ -213,8 +213,8 @@ def Fast_BM3DWrapper(
         - The `delta_sigma_xxx` value is added to `sigma_xxx` only for the 'basic' denoising step. The 'final' step uses `sigma_xxx` directly.
     """
 
-    if clip.format.id != vs.YUV420P16:
-        raise ValueError("Fast_BM3DWrapper: Input clip format must be YUV420P16.")
+    if clip.format.id != vs.YUV420PS:
+        raise ValueError("Fast_BM3DWrapper: Input clip format must be YUV420PS.")
     if ref:
         if ref.format.id != clip.format.id:
             raise ValueError(
@@ -382,7 +382,7 @@ def Fast_BM3DWrapper(
     final_half = to_yuv(final_half)
     _, final_u, final_v = vstools.split(final_half)
     vfinal = vstools.join([final_y, final_u, final_v])
-    return vstools.depth(vfinal, 16)
+    return vfinal
 
 
 # Inspired by mawen1250's bm3d readme, Vodesfunc and EoEfunc

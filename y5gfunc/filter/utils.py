@@ -8,7 +8,7 @@ get_peak_value_full = partial(get_peak_value, range_in=ColorRange.FULL)
 def is_optimized_cpu() -> bool:
     machine = platform.machine()
 
-    if "arm64" or "x86_64" in machine.lower():
+    if "x86_64" in machine.lower():
         return True
 
     return False
